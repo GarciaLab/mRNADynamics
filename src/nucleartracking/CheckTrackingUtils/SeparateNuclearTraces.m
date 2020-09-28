@@ -7,7 +7,6 @@ fieldNames = fields(schnitzcells);
 fieldNames(cellfun(@(x) strcmpi(x, 'Approved'), fieldNames)) = [];
 
 FrameFilter=schnitzcells(CurrentNucleus).frames < CurrentFrame;
-
 %Create a gap for a new particle
 NewSchnitzCells(1:CurrentNucleus)=schnitzcells(1:CurrentNucleus);
 NewSchnitzCells(CurrentNucleus+2:length(schnitzcells)+1)=schnitzcells(CurrentNucleus+1:end);

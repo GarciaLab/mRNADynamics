@@ -33,36 +33,81 @@ nc9, nc10, nc11, nc12, nc13, nc14, CF] = getExperimentDataFromMovieDatabase(Pref
 
 
 %Load all the information
-disp('Loading CompiledNuclei.mat...');
 load([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat']);
 load([DropboxFolder,filesep,Prefix,filesep,'FrameInfo.mat']);
-load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat']);
-
-APDivisionTimes = zeros(size(APDivision));
-for i=1:size(APDivision, 1)
-    for j = 1:size(APDivision, 2)
-        if APDivision(i,j) ~= 0
-            APDivisionTimes(i,j) = FrameInfo(APDivision(i,j)).Time;
-        end
-    end
-end
+% load([DropboxFolder,filesep,Prefix,filesep,'APDivision.mat']);
+% 
+% APDivisionTimes = zeros(size(APDivision));
+% for i=1:size(APDivision, 1)
+%     for j = 1:size(APDivision, 2)
+%         if APDivision(i,j) ~= 0
+%             APDivisionTimes(i,j) = FrameInfo(APDivision(i,j)).Time;
+%         end
+%     end
+% end
 
 
 % 
 %% 
 numNuclei = size(CompiledNuclei, 2);
-varnames =  { 'Prefix','NucleusID', 'Frame', 'Time', 'TimeNC', 'FrameCount', 'xPos',...
-    'yPos', 'Radius', 'cellno', 'nc', 'schnitz', 'MeanAP', 'MedianAP', 'APbin',...
-    'MeanDV', 'MedianDV', 'ncStart', 'Fluo', 'FluoMax', 'Fluo2', 'MaxSlice2', 'Fluo2Delta1','Time2Delta1',  'Fluo2Delta2','Time2Delta2',...
-    'Fluo2Delta3', 'Time2Delta3','Fluo2Delta4','Time2Delta4', 'Fluo2Delta5','Time2Delta5', 'Fluo2Delta6','Time2Delta6', 'Fluo2Delta7','Time2Delta7', 'Fluo2Delta8','Time2Delta8',...
-    'Fluo2Delta9', 'Time2Delta9', 'Fluo2Delta10', 'Time2Delta10', 'Flag1', 'Flag2', 'Flag3', 'Flag4'};
-vartypes = { 'string','int64', 'int64', 'double', 'double', 'int64', 'int64',...
-    'int64', 'double', 'int64', 'int64', 'int64', 'double', 'double','double',...
-    'double', 'double','int64', 'double', 'double', 'double', 'int64', 'double', 'double','double', 'double',...
-    'double', 'double','double', 'double','double', 'double','double', 'double','double', 'double','double', 'double',...
-    'double', 'double','double', 'double','logical', 'logical', 'logical', 'logical'};
+fns = fieldnames(CompiledNuclei);
+
+varnames =  { 'Prefix','NucleusID', 'Frame', 'FrameNC','FrameAnaphase', 'Time', 'TimeNC','timeSinceAnaphase', 'FrameCount', 'xPos',...
+    'yPos', 'Radius', 'cellno', 'nc', 'MeanAP', 'MedianAP', 'APbin','APbinIdx',...
+    'MeanDV', 'MedianDV', 'ncStart', 'Fluo', 'FrameApproved'};
+
+ 
+vartypes = { 'string','int64', 'int64', 'int64', 'int64','double', 'double', 'double', 'int64', 'int64',...
+    'int64', 'double', 'int64', 'int64', 'double', 'double','double','int64',...
+    'double', 'double','int64', 'double', 'int64'};
+FluoTimeStrings = {};
+FluoZStrings = {};
+FluoApprovedStrings = {};
+FlagStrings = {};
 
 
+for i=1:length(fns)
+    fn = fns{i};
+    if regexp(fn, '^Fluo[A-za-z_0-9]*_TimeTrace')
+        FluoTimeStrings{length(FluoTimeStrings)+1} = fn;
+        FluoZStrings{length(FluoZStrings)+1} = strrep(fn, '_TimeTrace', '_Z');
+        FluoApprovedStrings{length(FluoApprovedStrings)+1} = strrep(fn, '_TimeTrace', '_FrameApproved');
+        varnames{length(varnames) + 1} = fn;
+        vartypes{length(vartypes) + 1} = 'double';
+    end
+end
+
+for i=1:length(fns)
+    fn = fns{i};
+    if regexp(fn, '^Fluo[A-za-z_0-9]*_TimeTrace')
+        varnames{length(varnames) + 1} =  strrep(fn, '_TimeTrace', '_Z');
+        vartypes{length(vartypes) + 1} = 'double';
+    end
+end
+
+for i=1:length(fns)
+    fn = fns{i};
+    if regexp(fn, '^Fluo[A-za-z_0-9]*_TimeTrace')
+        varnames{length(varnames) + 1} = strrep(fn, '_TimeTrace', '_FrameApproved');
+        vartypes{length(vartypes) + 1} = 'double';
+        
+    end
+end
+
+
+for i=1:length(fns)
+    fn = fns{i};
+    if regexp(fn, '^Flag[A-za-z_0-9]*')
+        FlagStrings{length(FlagStrings) + 1} = fn;
+        varnames{length(varnames) + 1} = fn;
+        vartypes{length(vartypes) + 1} = 'double';
+        
+    end
+end
+
+%% 
+
+% STOPPED HERE 
 nvars = length(varnames);
 
 compnucfields = fieldnames(CompiledNuclei(1));
@@ -73,13 +118,44 @@ while n <= numNuclei
     n = n + 1;
 end
 
-CompiledNucleiTable = table('Size', [totalSamples nvars],...
-    'VariableTypes', vartypes,'VariableNames', varnames);
+
+
+
+
+
+AllPrefixes = cell(totalSamples,1);
+AllNucleusID = zeros(totalSamples,1, 'uint16');
+AllFrame = zeros(totalSamples,1, 'uint16');
+AllFrameNC = zeros(totalSamples,1, 'uint16');
+AllFrameAnaphase = zeros(totalSamples,1, 'uint16');
+AllTime = zeros(totalSamples,1, 'double');
+AllTimeNC = zeros(totalSamples,1, 'double');
+AlltimeSinceAnaphase = zeros(totalSamples,1, 'double');
+AllFrameCount = zeros(totalSamples,1, 'uint16');
+AllxPos = zeros(totalSamples,1, 'uint16');
+AllyPos = zeros( totalSamples,1, 'uint16');
+AllRadius = zeros(totalSamples,1, 'double');
+Allcellno = zeros(totalSamples,1, 'uint16');
+Allnc = zeros(totalSamples,1, 'uint16');
+AllMeanAP = zeros(totalSamples,1, 'double');
+AllMedianAP = zeros(totalSamples,1, 'double');
+AllAPbin = zeros(totalSamples,1, 'double');
+AllAPbinIdx = zeros(totalSamples,1, 'uint8');
+AllMeanDV = zeros(totalSamples,1, 'double');
+AllMedianDV = zeros(totalSamples,1, 'double');
+AllncStart = zeros(totalSamples,1, 'uint16');
+AllFluo = zeros(totalSamples,1, 'double');
+AllFrameApproved = zeros(totalSamples,1, 'uint16');
+AllFluoTimeTraces = zeros(totalSamples, length(FluoTimeStrings), 'double');
+AllFluoZTraces = zeros(totalSamples, length(FluoTimeStrings), 'uint16');
+AllFluoFrameApproved= zeros(totalSamples, length(FluoTimeStrings), 'uint16');
+AllFlags = zeros(totalSamples, length(FlagStrings), 'double');
 
 sample = 1;
 n = 1;
 nc_frames = [nc9, nc10, nc11, nc12, nc13, nc14];
 NCDeltas = {[], [], [], [], [], []};
+%% 
 
 h=waitbar(0,'Converting Compiled Nuclei');
 while n <= numNuclei
@@ -88,7 +164,8 @@ while n <= numNuclei
      schnitz = CompiledNuclei(n).schnitz;
      MeanAP = CompiledNuclei(n).MeanAP;
      MedianAP = CompiledNuclei(n).MedianAP;
-     APbin = round(MeanAP/APResolution)*APResolution;
+     APbin = ceil(MeanAP/APResolution)*APResolution;
+     APbinIdx = ceil(MeanAP/APResolution);
      MeanDV = CompiledNuclei(n).MeanDV;
      MedianDV = CompiledNuclei(n).MedianDV;
      ncStart = nc_frames(nc-8);
@@ -96,107 +173,109 @@ while n <= numNuclei
      ncOffset = FrameInfo(ncStart).Time/60;
      FrameTimes = vertcat(FrameInfo.Time)/60;
      NCFrameTimes = FrameTimes(CompiledNuclei(n).Frames)-ncOffset;
-     
-     if (nc > 12) & (length(NCFrameTimes) < 20)
-         Flag1 = true;
-     elseif (nc <= 12) & (length(NCFrameTimes) < 10)
-         Flag1 = true;
-     else
-         Flag1 = false;
-     end
-     if min(NCFrameTimes) > 10
-         Flag3 = true;
-     else
-         Flag3 = false;
-     end
-     NucleusFluoDeltas = diff(CompiledNuclei(n).FluoTimeTrace2);
+      
+     NucleusFluoDeltas = diff(CompiledNuclei(n).FluoTimeTrace);
      TimeDeltas = diff(NCFrameTimes);
      NucleusDeltas = NucleusFluoDeltas./(TimeDeltas.');
      NCDeltas{nc-8} = [NCDeltas{nc-8} NucleusDeltas];
-
+     if ~isempty(CompiledNuclei(n).anaphaseFrame)
+        anaphaseFrame = CompiledNuclei(n).anaphaseFrame;
+     else
+         anaphaseFrame = nan;
+     end
+     
      for f=1:FrameCount
         waitbar(sample/totalSamples,h)
-        CompiledNucleiTable.Prefix(sample) = Prefix;
-        CompiledNucleiTable.NucleusID(sample) = n; 
-        CompiledNucleiTable.MeanAP(sample) = MeanAP;
-        CompiledNucleiTable.MedianAP(sample) = MedianAP;
-        CompiledNucleiTable.APbin(sample) = APbin;
-        CompiledNucleiTable.Frame(sample) = CompiledNuclei(n).Frames(f);
-        CompiledNucleiTable.FrameNC(sample) = CompiledNuclei(n).Frames(f)-APDivision(uint16(nc),uint16(APbin/APResolution)+1);
+        AllPrefixes{sample} = Prefix;
+        %CompiledNucleiTable.Prefix(sample) = Prefix;
+        %CompiledNucleiTable.NucleusID(sample) = schnitz; 
+        AllNucleusID(sample) = schnitz;
+        %CompiledNucleiTable.Frame(sample) = CompiledNuclei(n).Frames(f);
+        AllFrame(sample) = CompiledNuclei(n).Frames(f);
+        AllFrameNC(sample) = CompiledNuclei(n).Frames(f)-nc_frames(nc-8);
+        if ~isempty(CompiledNuclei(n).anaphaseFrame)
+            AllFrameAnaphase(sample) = CompiledNuclei(n).Frames(f)-anaphaseFrame;
+        else
+            AllFrameAnaphase(sample) = nan;
+        end
+        AllTime(sample) = FrameInfo(AllFrame(sample)).Time/60;
+        AllTimeNC(sample) = AllTime(sample)-FrameInfo(nc_frames(nc-8)).Time/60;
+        if ~isnan(anaphaseFrame)
+            AlltimeSinceAnaphase(sample) = AllTime(sample)-FrameInfo(anaphaseFrame).Time/60;
+        else
+            AlltimeSinceAnaphase = nan;
+        end
+        AllFrameCount(sample) = FrameCount;
+        AllxPos(sample) = CompiledNuclei(n).xPos(f);
+        AllyPos(sample) = CompiledNuclei(n).yPos(f);
+        AllRadius(sample) = CompiledNuclei(n).Radius(f);
+        Allcellno(sample) = CompiledNuclei(n).cellno(f);
+        Allnc(sample) = nc;
         
-        CompiledNucleiTable.Time(sample) = FrameInfo(CompiledNucleiTable.Frame(sample)).Time/60;
-        %CompiledNucleiTable.TimeNC(sample) = CompiledNucleiTable.Time(sample)-ncOffset;
-        CompiledNucleiTable.TimeNC(sample) = CompiledNucleiTable.Time(sample)-APDivisionTimes(uint16(nc), uint16(APbin/APResolution)+1)/60;
-        CompiledNucleiTable.FrameCount(sample) = FrameCount;
-        CompiledNucleiTable.xPos(sample) = CompiledNuclei(n).xPos(f);
-        CompiledNucleiTable.yPos(sample) = CompiledNuclei(n).yPos(f);
-        CompiledNucleiTable.Radius(sample) = CompiledNuclei(n).Radius(f);
-        CompiledNucleiTable.cellno(sample) = CompiledNuclei(n).cellno(f);
-        CompiledNucleiTable.nc(sample) = nc;
-        CompiledNucleiTable.schnitz(sample) = schnitz;
+        AllMeanAP(sample) = MeanAP;
+        AllMedianAP(sample) = MedianAP;
+        AllAPbin(sample) = APbin;
+        AllAPbinIdx(sample) = APbinIdx;
         
-        CompiledNucleiTable.MeanDV(sample) = MeanDV;
-        CompiledNucleiTable.MedianDV(sample) = MedianDV;
-        CompiledNucleiTable.ncStart(sample) = ncStart;
-        CompiledNucleiTable.Fluo(sample) = CompiledNuclei(n).FluoTimeTrace(f);
-        CompiledNucleiTable.FluoMax(sample) = CompiledNuclei(n).FluoMax(f);
-        CompiledNucleiTable.Fluo2(sample) = CompiledNuclei(n).FluoTimeTrace2(f);
-        CompiledNucleiTable.MaxSlice2(sample) = CompiledNuclei(n).MaxSlice2(f);
         
-        CompiledNucleiTable.Flag1(sample) = Flag1;
-        CompiledNucleiTable.Flag2(sample) = CompiledNuclei(n).Flag2(f);
-        CompiledNucleiTable.Flag3(sample) = Flag3;
+        AllMeanDV(sample) = MeanDV;
+        AllMedianDV(sample) = MedianDV;
+        
+        AllncStart(sample) = ncStart;
+        
+        AllFluo(sample) = CompiledNuclei(n).FluoTimeTrace(f);
+        AllFrameApproved(sample) = CompiledNuclei(n).FrameApproved(f);
+        for j=1:length(FluoTimeStrings)
+            %CompiledNucleiTable.(FluoTimeStrings{j})(sample) = CompiledNuclei(n).(FluoTimeStrings{j})(f);
+            AllFluoTimeTraces(sample,j) = CompiledNuclei(n).(FluoTimeStrings{j})(f);
+            %CompiledNucleiTable.(FluoZStrings{j})(sample) 
+            AllFluoZTraces(sample,j)= CompiledNuclei(n).(FluoZStrings{j})(f);
+            %CompiledNucleiTable.(FluoApprovedStrings{j})(sample) 
+            AllFluoFrameApproved(sample,j)= CompiledNuclei(n).(FluoApprovedStrings{j})(f);
+        end
+        
+        for j=1:length(FlagStrings)
+            %CompiledNucleiTable.(FlagStrings{j})(sample) 
+            AllFlags(sample,j)= double(CompiledNuclei(n).(FlagStrings{j}));
+        end
+        
         
         sample = sample + 1;
      end
      n = n + 1;
 end
+%% 
+close(h)
 
-for nc=9:14
-   if (size(CompiledNucleiTable(CompiledNucleiTable.nc == nc,:), 1) > 0) &...
-      (length(NCDeltas{nc-8}) > 100)
-        deltas = abs(NCDeltas{nc-8});
-        maxdelta = mean(deltas) + 3*std(deltas);
-        uniqueNCIDs = unique(CompiledNucleiTable.NucleusID);
-        for i=1:length(uniqueNCIDs)
-            NCID = uniqueNCIDs(i);
-            NCID_idx = find(CompiledNucleiTable.NucleusID == NCID);
-            Fluos = CompiledNucleiTable.Fluo2(NCID_idx);
-            ncidTimes = CompiledNucleiTable.TimeNC(NCID_idx);
-            FluoTab = CompiledNucleiTable(NCID_idx, {'Fluo2Delta1','Fluo2Delta2', 'Fluo2Delta3',...
-                'Fluo2Delta4', 'Fluo2Delta5', 'Fluo2Delta6', 'Fluo2Delta7', 'Fluo2Delta8', 'Fluo2Delta9', 'Fluo2Delta10'}); 
-            TimeTab = CompiledNucleiTable(NCID_idx, {'Time2Delta1','Time2Delta2', 'Time2Delta3',...
-                'Time2Delta4', 'Time2Delta5', 'Time2Delta6', 'Time2Delta7', 'Time2Delta8', 'Time2Delta9', 'Time2Delta10'}); 
-            
-            CompiledNucleiTable.Flag4(NCID_idx(1)) = false;
-            if length(NCID_idx) == 1
-                continue
-            end
-            prevbadframes = 0;
-            for j = 2:length(NCID_idx)
-                if ncidTimes(j) < 10
-                    continue 
-                end
-                if prevbadframes >= 10
-                    CompiledNucleiTable.Flag4(NCID_idx(j)) = true;
-                    continue
-                elseif abs((Fluos(j)-Fluos(j-(1+prevbadframes)))/(ncidTimes(j)-ncidTimes(j-(1+prevbadframes)))) > maxdelta
-                    CompiledNucleiTable.Flag4(NCID_idx(j)) = true;
-                    prevbadframes = prevbadframes+1;
-                else
-                    CompiledNucleiTable.Flag4(NCID_idx(j))= false;
-                    prevbadframes = 0;
-                end     
-            end
-        end
-   end
+% CompiledNucleiTable = table('Size', [totalSamples nvars],...
+%     'VariableTypes', vartypes,'VariableNames', varnames);
+try
+    CompiledNucleiTable = table(AllPrefixes, AllNucleusID, AllFrame, AllFrameNC, AllFrameAnaphase,...
+        AllTime, AllTimeNC, AlltimeSinceAnaphase, AllFrameCount, AllxPos, AllyPos, AllRadius,...
+        Allcellno, Allnc, AllMeanAP, AllMedianAP, AllAPbin, AllAPbinIdx, AllMeanDV, AllMedianDV,...
+        AllncStart, AllFluo, AllFrameApproved, AllFluoTimeTraces, AllFluoZTraces, AllFluoFrameApproved, AllFlags);
+catch
+    AlltimeSinceAnaphase = AlltimeSinceAnaphase.';
+    CompiledNucleiTable = table(AllPrefixes, AllNucleusID, AllFrame, AllFrameNC, AllFrameAnaphase,...
+        AllTime, AllTimeNC, AlltimeSinceAnaphase, AllFrameCount, AllxPos, AllyPos, AllRadius,...
+        Allcellno, Allnc, AllMeanAP, AllMedianAP, AllAPbin, AllAPbinIdx, AllMeanDV, AllMedianDV,...
+        AllncStart, AllFluo, AllFrameApproved, AllFluoTimeTraces, AllFluoZTraces, AllFluoFrameApproved, AllFlags);%,...
 end
+%'VariableNames', varnames);
+Nvars = size(CompiledNucleiTable, 2);
+CompiledNucleiTableSub = table2array(CompiledNucleiTable(:,Nvars-3));
+CompiledNucleiTableSub = array2table(CompiledNucleiTableSub);
+CompiledNucleiTableSub2= table2array(CompiledNucleiTable(:,Nvars-2:Nvars-1));
+CompiledNucleiTableSub2 = array2table(CompiledNucleiTableSub2);
+CompiledNucleiTableSub3 = table2array(CompiledNucleiTable(:,Nvars));
+CompiledNucleiTableSub3 = array2table(CompiledNucleiTableSub3);
+CompiledNucleiTableOld = CompiledNucleiTable;
+CompiledNucleiTable = horzcat([CompiledNucleiTableOld(:, 1:Nvars-4) CompiledNucleiTableSub CompiledNucleiTableSub2 CompiledNucleiTableSub3]);
+CompiledNucleiTable.Properties.VariableNames = varnames;
 
-close all
+%% 
 
 
 save([DropboxFolder,filesep,Prefix,filesep,'CompiledNucleiTable.mat'],...
         'CompiledNucleiTable');
-save([DropboxFolder,filesep,Prefix,filesep,'NCDeltas.mat'],...
-    'NCDeltas');
 

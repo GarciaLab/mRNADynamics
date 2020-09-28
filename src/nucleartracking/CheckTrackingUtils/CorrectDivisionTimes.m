@@ -104,9 +104,11 @@ for i=1:Rows
         Angle = atan2((i-coordAZoom(2)),(j-coordAZoom(1)));
         APDistance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
         APPosition=APDistance.*cos(Angle-APAngle);
-        DVPosition = (-m*j + i - b )/sqrt(m^2 + 1);
+        %DVPosition = (-m*j + i - b )/sqrt(m^2 + 1);
+        DVPosition= APDistance.*sin(Angle-APAngle);
         APPosImage(i,j)=APPosition/APLength;
         DVPosImage(i,j)=DVPosition/APLength;
+        
     end
 end
 %% 
@@ -143,7 +145,7 @@ if ~resetAnaphaseFrames
         load([DropboxFolder,filesep,Prefix,filesep,'GridDivision.mat'], 'GridDivision')
         %Check if we changed the number of AP bins
         if (size(GridDivision,2)~=length(APbinID)) | ((size(GridDivision, 3) ~= length(DVbinID)))
-            GridDivision=zeros(14,length(APbinID), length(DVbindID));
+            GridDivision=zeros(14,length(APbinID), length(DVbinID));
         end
     else
         %Matrix where we'll store the information about the divisions
@@ -151,13 +153,35 @@ if ~resetAnaphaseFrames
     end
 else
     GridDivision=zeros(14,length(APbinID), length(DVbinID));
+    for i=1:length(schnitzcells)
+        schnitzcells(i).anaphaseFrame = [];
+        schnitzcells(i).inferredAnaphaseFrame = false;
+    end
 end
 
 
 
 %Show the frames on top of the AP bins
 figureOverlay=figure;
+set(figureOverlay,'units', 'normalized', 'position',[0.01, .5, .4, .4]);
+set(figureOverlay, 'ToolBar', 'none');
 axOverlay = axes(figureOverlay);
+
+%Show the frames on top of the AP bins
+prevOverlay=figure(2);
+set(prevOverlay,'units', 'normalized', 'position',[0.01, 0.05, .4, .4]);
+axPrevOverlay = axes(prevOverlay);
+set(prevOverlay, 'ToolBar', 'none');
+set(prevOverlay,'menubar','none')
+set(prevOverlay,'NumberTitle','off');
+% 
+% tb = axtoolbar(axOverlay);
+% tb.Visible = 'off';
+% tb2 = axtoolbar(axPrevOverlay);
+% tb2.Visible = 'off';
+
+
+
 
 
 try
@@ -208,6 +232,9 @@ while (cc~='x')
     if length(axOverlay.Children) > 1
         delete(axOverlay.Children(1:end-1))
     end
+    if length(axPrevOverlay.Children) > 1
+        delete(axPrevOverlay.Children(1:end-1))
+    end
     
     
     
@@ -218,6 +245,8 @@ while (cc~='x')
     %than the current one
     %Red: The division of this AP bin has not been determined.
     
+    
+    set(0, 'CurrentFigure', figureOverlay);
     BlueImage=zeros(size(APPosBinImage));
     GreenImage=zeros(size(APPosBinImage));
     RedImage=zeros(size(APPosBinImage));
@@ -235,6 +264,8 @@ while (cc~='x')
             end
         end
     end
+    
+    
     
     unselectedSchnitzCells = [];
     currentFrameSchnitzCells = [];
@@ -263,7 +294,7 @@ while (cc~='x')
     end
     
     
-    
+    DisplayRange=[min(min(HisImage)),max(max(HisImage))];
     %Combine the images
     HisOverlay=cat(3,mat2gray(HisImage)+mat2gray(RedImage),...
         mat2gray(HisImage)+mat2gray(GreenImage)/2,...
@@ -297,7 +328,7 @@ while (cc~='x')
         end
     end
     if isempty(axOverlay.Children)
-        hisImageHandle = imshow(HisOverlay, 'Parent', axOverlay);
+        hisImageHandle = imshow(HisOverlay,'Border','Tight','Parent', axOverlay);
     else
         hisImageHandle.CData = HisOverlay;
     end
@@ -316,10 +347,59 @@ while (cc~='x')
     
 
     set(figureOverlay,'Name',(['Frame: ',num2str(CurrentFrame),'/',num2str(nFrames),...
-        '. Current nc:',num2str(CurrentNC)]));
-    title(['Selection Mode: ', SelectionLabels{SelectionMode}])
+        ', Current nc:',num2str(CurrentNC),...
+        ', Selection Mode: ', SelectionLabels{SelectionMode}]));
     hold(axOverlay, 'off')
+    
+    if CurrentFrame > 1
+        set(0, 'CurrentFigure', prevOverlay);
+        hold(axPrevOverlay, 'on')
+        PrevBlueImage=zeros(size(APPosBinImage));
+        PrevGreenImage=zeros(size(APPosBinImage));
+        PrevRedImage=zeros(size(APPosBinImage));
+
+        for i=1:length(APbinID)
+            for j = 1:length(DVbinID)
+                if GridDivision(CurrentNC,i, j)
+                    if GridDivision(CurrentNC,i,j)==CurrentFrame-1
+                        PrevGreenImage((APPosBinImage==i) & (DVPosBinImage == j))=i+j;
+                    else
+                        PrevBlueImage((APPosBinImage==i) & (DVPosBinImage == j))=i+j;
+                    end
+                else
+                    PrevRedImage((APPosBinImage==i) & (DVPosBinImage == j))=i+j;
+                end
+            end
+        end
+
+         if ~isnan(CurrentFrame-1)
+            try
+                PrevHisImage = hisMat(:, :, CurrentFrame-1);
+            catch
+                PrevHisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame-1).name]);
+            end
+         end
+        PrevDisplayRange=[min(min(PrevHisImage)),max(max(PrevHisImage))];
+         %Combine the images
+        PrevHisOverlay=cat(3,mat2gray(PrevHisImage)+mat2gray(PrevRedImage),...
+            mat2gray(PrevHisImage)+mat2gray(PrevGreenImage)/2,...
+            mat2gray(PrevHisImage)+mat2gray(PrevBlueImage));
+        if isempty(axPrevOverlay.Children)
+            hisPrevImageHandle = imshow(PrevHisOverlay,'Border','Tight','Parent', axPrevOverlay);
+        else
+            hisPrevImageHandle.CData = PrevHisOverlay;
+        end
+        
+        set(prevOverlay,'Name',(['Frame: ',num2str(CurrentFrame-1),'/',num2str(nFrames),...
+            '. Current nc:',num2str(CurrentNC)]));
+        title('Previous Frame')
+        hold(axPrevOverlay, 'off')
+        %     figure(Overlay)
+    end
+    
+    
     %     figure(Overlay)
+    set(0, 'CurrentFigure', figureOverlay);
     ct=waitforbuttonpress;
     cc=get(figureOverlay,'currentcharacter');
     cm=get(axOverlay,'CurrentPoint');
@@ -479,7 +559,7 @@ end
 close(figureOverlay);
 %% 
  
-
+schnitzes_manual = schnitzAnaphaseFrames;
 schnitz_ncs = [schnitzcells(:).cycle];
 for nc=9:14
     if isempty(find([schnitzcells(:).cycle] == nc, 1))
@@ -503,7 +583,7 @@ for nc=9:14
                 %schnitzes_idx = Ellipses{anaFrame}(schnitz_match, 9);
                 for k=1:size(Ellipses{anaFrame}, 1)
                     sc = Ellipses{anaFrame}(k, 9);
-                    if schnitzAnaphaseFrames(sc) == 0
+                    if schnitzes_manual(sc) == 0
                         xpos = min([max([round(ellipses_x(k)), 1]), size(APPosImage, 2)]);
                         ypos = min([max([round(ellipses_y(k)), 1]), size(APPosImage, 1)]);
                         schnitzAP = APPosImage(ypos, xpos);
@@ -514,7 +594,11 @@ for nc=9:14
                         if (schnitzAP >= APbinMin) & (schnitzAP <= APbinMax) & ...
                                 (schnitzDV >= DVbinMin) & (schnitzDV <= DVbinMax)
                             %disp(['yes', num2str(k)])
-                            schnitzAnaphaseFrames(sc) = anaFrame;
+                            if schnitzAnaphaseFrames(sc) > 0
+                                schnitzAnaphaseFrames(sc) = min(anaFrame, schnitzAnaphaseFrames(sc));
+                            else  
+                                schnitzAnaphaseFrames(sc) = anaFrame;
+                            end
                             
                         end
 
@@ -529,7 +613,7 @@ end
 %% 
 for i = 1:length(schnitzcells)
     if schnitzAnaphaseFrames(i) > 0
-        schnitzcells(i).anaphaseFrame = schnitzAnaphaseFrames(i);
+       schnitzcells(i).anaphaseFrame = schnitzAnaphaseFrames(i);
     end
 end
 %% 
@@ -559,22 +643,24 @@ for i =1:length(schnitzcells)
         if schnitzcells(sc_idx).frames(1) ~= schnitzcells(sc_idx).anaphaseFrame
             anaFrame = schnitzcells(sc_idx).anaphaseFrame;
             approved_status = schnitzcells(sc_idx).Approved;
-            schnitzcells=SeparateNuclearTraces(sc_idx,anaFrame,schnitzcells, FrameInfo, ncs);
-            % First part of split 
-            schnitzcells(sc_idx).cycle = schnitzcells(sc_idx).cycle -1;
-            schnitzcells(sc_idx).anaphaseFrame = [];
-            schnitzcells(sc_idx).inferredAnaphaseFrame = false;
-            schnitzcells(sc_idx).Approved = 0;
-            % Second part of split 
-            schnitzcells(sc_idx+1).anaphaseFrame = anaFrame;
-            schnitzcells(sc_idx+1).inferredAnaphaseFrame = false;
-            schnitzcells(sc_idx+1).Approved = approved_status;
-            anaTime = FrameInfo(anaFrame).Time/60;
-            for j=1:length(schnitzcells(sc_idx+1).frames)
-                schnitzcells(sc_idx+1).timeSinceAnaphase(j) = ...
-                    FrameInfo(schnitzcells(sc_idx+1).frames(j)).Time/60-anaTime;
+            if ~isempty(find(schnitzcells(sc_idx).frames == anaFrame, 1))
+                schnitzcells=SeparateNuclearTraces(sc_idx,anaFrame,schnitzcells, FrameInfo, ncs);
+                % First part of split 
+                schnitzcells(sc_idx).cycle = schnitzcells(sc_idx).cycle -1;
+                schnitzcells(sc_idx).anaphaseFrame = [];
+                schnitzcells(sc_idx).inferredAnaphaseFrame = false;
+                schnitzcells(sc_idx).Approved = 0;
+                % Second part of split 
+                schnitzcells(sc_idx+1).anaphaseFrame = anaFrame;
+                schnitzcells(sc_idx+1).inferredAnaphaseFrame = false;
+                schnitzcells(sc_idx+1).Approved = approved_status;
+                anaTime = FrameInfo(anaFrame).Time/60;
+                for j=1:length(schnitzcells(sc_idx+1).frames)
+                    schnitzcells(sc_idx+1).timeSinceAnaphase(j) = ...
+                        FrameInfo(schnitzcells(sc_idx+1).frames(j)).Time/60-anaTime;
+                end
+                adjust_idx = adjust_idx + 1;
             end
-            adjust_idx = adjust_idx + 1;
         end
     end
 end
@@ -589,6 +675,9 @@ for i = 1:length(schnitzcells)
         hasAnaphaseFrame(i) = 1;
     end
 end
+
+%% 
+
 for i=1:length(ncs)
     nc = i+8;
     if ncs(i) == 0
@@ -616,7 +705,7 @@ for i=1:length(ncs)
         good_xpos = Ellipses{inferenceframe}(goodschnitz_idx,1);
         good_ypos = Ellipses{inferenceframe}(goodschnitz_idx,2);
         Distances=sqrt((good_xpos-xpos).^2+(good_ypos-ypos).^2);
-        inferenceidx = find(Distances == min(Distances));
+        inferenceidx = find(Distances == min(Distances), 1);
         inferenceschnitz = Ellipses{inferenceframe}(goodschnitz_idx(inferenceidx), 9);
         anaphaseFrame = schnitzcells(inferenceschnitz).anaphaseFrame;
         schnitzcells(matchNoAnaFrameIdx(j)).anaphaseFrame = anaphaseFrame;
@@ -625,6 +714,43 @@ for i=1:length(ncs)
         for l=1:length(schnitzcells(matchNoAnaFrameIdx(j)).frames)
             schnitzcells(matchNoAnaFrameIdx(j)).timeSinceAnaphase(l) = ...
                 FrameInfo(schnitzcells(matchNoAnaFrameIdx(j)).frames(l)).Time/60-anaTime;
+        end
+    end
+end
+
+%% Check inferred frames make sense
+schnitz_ncs = [schnitzcells(:).cycle];
+hasAnaphaseFrame = zeros(1, length(schnitzcells));
+for i = 1:length(schnitzcells)
+    if ~isempty(schnitzcells(i).anaphaseFrame)
+        hasAnaphaseFrame(i) = 1;
+    end
+end
+anaphaseFrameInferred = zeros(1, length(schnitzcells));
+for i = 1:length(schnitzcells)
+    if schnitzcells(i).inferredAnaphaseFrame
+        anaphaseFrameInferred(i) = 1;
+    end
+end
+for i=1:length(ncs)
+    nc = i+8;
+    if ncs(i) == 0
+        continue
+    end
+    DirectAnaphaseFrames = find((schnitz_ncs == nc) & ~anaphaseFrameInferred);
+    DirectlyIndicatedAnaphaseFrames = [schnitzcells(DirectAnaphaseFrames).anaphaseFrame];
+    MinValidAnaphaseFrame = min(DirectlyIndicatedAnaphaseFrames);
+    MaxValidAnaphaseFrame = max(DirectlyIndicatedAnaphaseFrames);
+    
+    inferredAnaphaseFrames = find((schnitz_ncs == nc) & anaphaseFrameInferred);
+    for j=1:length(inferredAnaphaseFrames)
+        idx = inferredAnaphaseFrames(j);
+        if ~isempty(schnitzcells(idx).anaphaseFrame)
+            if (schnitzcells(idx).anaphaseFrame > MaxValidAnaphaseFrame) | ...
+                 (schnitzcells(idx).anaphaseFrame < MinValidAnaphaseFrame)   
+                schnitzcells(idx).anaphaseFrame = [];
+                schnitzcells(idx).inferredAnaphaseFrame = false;
+            end
         end
     end
 end

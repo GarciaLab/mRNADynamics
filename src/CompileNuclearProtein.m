@@ -118,6 +118,14 @@ load([DropboxFolder,filesep,Prefix,'\Ellipses.mat'], 'Ellipses')
 load([DropboxFolder,filesep,Prefix,'\FrameInfo.mat'], 'FrameInfo')
 load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'schnitzcells')
 
+% start - Added by GM 9/25/20
+if exist([DropboxFolder,filesep,Prefix,'\GridDivision.mat'], 'file')
+    load([DropboxFolder,filesep,Prefix,'\GridDivision.mat'], 'GridDivision')
+end
+% end - Added by GM 9/25/20
+
+    
+
 numFrames = length(FrameInfo);
 
 %See if FrameInfo has information about the number of input channels. This
@@ -164,6 +172,7 @@ NewCyclePos=[nc9,nc10,nc11,nc12,nc13,nc14];
 NewCyclePos=NewCyclePos(~(NewCyclePos==0));
 NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
 
+%% 
 
 
 
@@ -220,6 +229,7 @@ end
 
 
 
+%% 
 
 %Now get the nuclear information for those that were approved
 NZSclices=size(schnitzcells(1).Fluo,2);

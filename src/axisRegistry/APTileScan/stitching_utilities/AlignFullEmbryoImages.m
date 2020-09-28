@@ -388,23 +388,49 @@ if MatchFilePresent
         ColumnMinsTemp = [1, MaxColumn_surf-(size(im1_surf, 2)-1),  MaxColumn_surf_post-(size(im1_surf_post, 2)-1)];
         ColumnMaxsTemp = [size(im2_surf, 2), MaxColumn_surf,  MaxColumn_surf_post];
         if (all(RowMinsTemp > 0) & all(ColumnMinsTemp > 0) & (RowMaxsTemp(1) == max(RowMaxsTemp)) & (ColumnMaxsTemp(1) == max(ColumnMaxsTemp)))
+            MakeNewSurf = false;
             MidEmbryoImageV2 = im2_surf;
             MidEmbryoImageV2(RowMinsTemp(2):RowMaxsTemp(2), ColumnMinsTemp(2):ColumnMaxsTemp(2)) = ...
                 MidEmbryoImageV2(RowMinsTemp(2):RowMaxsTemp(2), ColumnMinsTemp(2):ColumnMaxsTemp(2)) + im1_mid;
             MidEmbryoImageV2(RowMinsTemp(3):RowMaxsTemp(3), ColumnMinsTemp(3):ColumnMaxsTemp(3)) = ...
                 MidEmbryoImageV2(RowMinsTemp(3):RowMaxsTemp(3), ColumnMinsTemp(3):ColumnMaxsTemp(3)) + im1_mid_post;
         else
-            error('Stack match image boundaries not supported.');
+            MakeNewSurf = true;
+            RowMinsAdj = RowMinsTemp- min(RowMinsTemp) + 1;
+            RowMaxsAdj = RowMaxsTemp- min(RowMinsTemp) + 1;
+            ColumnMinsAdj = ColumnMinsTemp- min(ColumnMinsTemp) + 1;
+            ColumnMaxsAdj = ColumnMaxsTemp- min(ColumnMinsTemp) + 1;
+            
+            MidEmbryoImageV2 = zeros(max(RowMaxsAdj), max(ColumnMaxsAdj), 'uint16');
+            MidEmbryoImageV2(RowMinsAdj(1):RowMaxsAdj(1), ColumnMinsAdj(1):ColumnMaxsAdj(1)) = ...
+                MidEmbryoImageV2(RowMinsAdj(1):RowMaxsAdj(1), ColumnMinsAdj(1):ColumnMaxsAdj(1)) + im2_surf;
+            MidEmbryoImageV2(RowMinsAdj(2):RowMaxsAdj(2), ColumnMinsAdj(2):ColumnMaxsAdj(2)) = ...
+                MidEmbryoImageV2(RowMinsAdj(2):RowMaxsAdj(2), ColumnMinsAdj(2):ColumnMaxsAdj(2)) + im1_mid;
+            MidEmbryoImageV2(RowMinsAdj(3):RowMaxsAdj(3), ColumnMinsAdj(3):ColumnMaxsAdj(3)) = ...
+                MidEmbryoImageV2(RowMinsAdj(3):RowMaxsAdj(3), ColumnMinsAdj(3):ColumnMaxsAdj(3)) + im1_mid_post;
         end
+        
+        if MakeNewSurf
+            SurfEmbryoImageV2 = zeros(max(RowMaxsAdj), max(ColumnMaxsAdj), 'uint16');
+            SurfEmbryoImageV2(RowMinsAdj(1):RowMaxsAdj(1), ColumnMinsAdj(1):ColumnMaxsAdj(1)) = ...
+                SurfEmbryoImageV2(RowMinsAdj(1):RowMaxsAdj(1), ColumnMinsAdj(1):ColumnMaxsAdj(1)) + im2_surf;
+        end
+        
         
         if ZoomRatio > 1
             MidEmbryoImageV2 = imresize(MidEmbryoImageV2, 1/ZoomRatio);
+            if MakeNewSurf
+                SurfEmbryoImageV2 = imresize(SurfEmbryoImageV2, 1/ZoomRatio);
+            end
         end
 
 
         if DeltaR > 0
             if DeltaC > 0
                 MidEmbryoImageV2TempPadding = MidEmbryoImageV2;
+                if MakeNewSurf
+                    SurfEmbryoImageV2TempPadding = SurfEmbryoImageV2;
+                end
             else
 
                 MidEmbryoImageV2TempPadding = zeros(size(MidEmbryoImageV2, 1),...
@@ -412,6 +438,13 @@ if MatchFilePresent
                                              'uint16');
                 MidEmbryoImageV2TempPadding(1:size(MidEmbryoImageV2TempPadding, 1),...
                     (1-DeltaC):size(MidEmbryoImageV2TempPadding, 2)) = MidEmbryoImageV2;
+                if MakeNewSurf
+                    SurfEmbryoImageV2TempPadding = zeros(size(SurfEmbryoImageV2, 1),...
+                                             size(SurfEmbryoImageV2, 2)-DeltaC,...   
+                                             'uint16');
+                    SurfEmbryoImageV2TempPadding(1:size(SurfEmbryoImageV2TempPadding, 1),...
+                        (1-DeltaC):size(SurfEmbryoImageV2TempPadding, 2)) = SurfEmbryoImageV2;
+                end
 
             end
         else
@@ -421,6 +454,14 @@ if MatchFilePresent
                                              'uint16');
                 MidEmbryoImageV2TempPadding((1-DeltaR):size(MidEmbryoImageV2TempPadding, 1),...
                     1:size(MidEmbryoImageV2TempPadding, 2)) = MidEmbryoImageV2;
+                
+                if MakeNewSurf
+                    SurfEmbryoImageV2TempPadding = zeros(size(SurfEmbryoImageV2, 1)-DeltaR,...
+                                                 size(SurfEmbryoImageV2, 2),...   
+                                                 'uint16');
+                    SurfEmbryoImageV2TempPadding((1-DeltaR):size(SurfEmbryoImageV2TempPadding, 1),...
+                        1:size(SurfEmbryoImageV2TempPadding, 2)) = SurfEmbryoImageV2;
+                end
 
             else
                 MidEmbryoImageV2TempPadding = zeros(size(MidEmbryoImageV2, 1) - DeltaR,...
@@ -428,13 +469,27 @@ if MatchFilePresent
                                              'uint16');
                 MidEmbryoImageV2TempPadding((-DeltaR+1):size(MidEmbryoImageV2TempPadding, 1),...
                     (-DeltaC+1):size(MidEmbryoImageV2TempPadding, 2)) = MidEmbryoImageV2;
+                if MakeNewSurf
+                    SurfEmbryoImageV2TempPadding = zeros(size(SurfEmbryoImageV2, 1) - DeltaR,...
+                                             size(SurfEmbryoImageV2, 2) - DeltaC,...   
+                                             'uint16');
+                    SurfEmbryoImageV2TempPadding((-DeltaR+1):size(SurfEmbryoImageV2TempPadding, 1),...
+                        (-DeltaC+1):size(SurfEmbryoImageV2TempPadding, 2)) = SurfEmbryoImageV2;
+                end
             end 
         end
 
 
-        MidEmbryoMaxImageV2 =  zeros(full_embryo_nrows, full_embryo_ncols, 'uint16');
+        MidEmbryoMaxImageV2 =  zeros(full_embryo_nrows,full_embryo_ncols, 'uint16');
         MidEmbryoMaxImageV2(1:size(MidEmbryoImageV2TempPadding, 1), 1:size(MidEmbryoImageV2TempPadding, 2)) = MidEmbryoImageV2TempPadding;
-       
+       if MakeNewSurf
+             MidEmbryoMaxImageV2 =  zeros(full_embryo_nrows+(min(RowMinsAdj)-min(RowMinsTemp)+1),...
+            full_embryo_ncols+(min(ColumnMinsAdj)-min(ColumnMinsTemp)+1), 'uint16');
+        MidEmbryoMaxImageV2(1:size(MidEmbryoImageV2TempPadding, 1), 1:size(MidEmbryoImageV2TempPadding, 2)) = MidEmbryoImageV2TempPadding;
+            SurfEmbryoMaxImageV2 =  zeros(full_embryo_nrows+(min(RowMinsAdj)-min(RowMinsTemp)+1),...
+                full_embryo_ncols+(min(ColumnMinsAdj)-min(ColumnMinsTemp)+1), 'uint16');
+            SurfEmbryoMaxImageV2(1:size(SurfEmbryoImageV2TempPadding, 1), 1:size(SurfEmbryoImageV2TempPadding, 2)) = SurfEmbryoImageV2TempPadding;
+       end
         
     end
     
@@ -556,4 +611,10 @@ if PostFilePresent
     imagesc(MidEmbryoMaxImageV2)
     MidMaxProjFileNameV2 = 'MidTileStitch_MaxPaddedV2.tif';
     imwrite(MidEmbryoMaxImageV2,[outputFolder, filesep,MidMaxProjFileNameV2],'compression','none');
+    if MakeNewSurf
+    figure(3)
+    imagesc(SurfEmbryoMaxImageV2)
+    SurfMaxProjFileNameV2 = 'SurfTileStitch_MaxPadded.tif';
+    imwrite(SurfEmbryoMaxImageV2,[outputFolder, filesep,SurfMaxProjFileNameV2],'compression','none');
+    end
 end
