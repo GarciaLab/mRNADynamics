@@ -37,7 +37,7 @@ function FluoTimeTrace = extractDorsalFluo(FluoMatrix, Thresh)
 
 %FluoMatrix = schnitzcells(1086).Fluo;
 
-displayFigures = true;
+displayFigures = false;
 
 FluoTimeTrace = [];
 
