@@ -13,7 +13,12 @@ for seriesIndex = 0:nSeries-1
     
     nPlanes = LIFMeta.getPlaneCount(seriesIndex);
     
-    nPlanes = nPlanes - (NSlices(seriesIndex+1)*nChannels);
+    %MT 2020-09-29: modification to process Modular Enhancer 45uW data, 
+    %which was taken with a fixed number of time frames (2) in a single
+    %series
+    if nSeries ~= 1
+        nPlanes = nPlanes - (NSlices(seriesIndex+1)*nChannels);
+    end
     
     if nPlanes > 0
         seriesStamp = LIFMeta.getImageAcquisitionDate(seriesIndex);

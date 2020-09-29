@@ -19,8 +19,17 @@ function [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrame
   %Finally, use this information to determine the number of frames in each series        
   NFrames = NPlanes./NSlices/NChannels;
 
-  %Get rid of the last frame as it is always incomplete because that's when we stopped it
-  NFrames = NFrames - 1;
-  NPlanes = NPlanes - (NSlices * NChannels);
+  %MT 2020-09-29: modification to process Modular Enhancer 45uW data, which
+  %was taken with a fixed number of time frames (2)
+  if NSeries == 1 && NFrames == 2
+       %NFrames stays the same
+      disp('Keeping the last frame of the only series in this dataset.')
+  else
+    %Get rid of the last frame as it is always incomplete because we stop
+    %it in middle of the last frame
+    NFrames = NFrames - 1;
+    NPlanes = NPlanes - (NSlices * NChannels);
+  end
+  
   Frame_Times = zeros(1, sum(NFrames.*NSlices));
 end
