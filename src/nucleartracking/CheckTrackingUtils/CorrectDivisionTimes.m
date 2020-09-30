@@ -225,6 +225,9 @@ SelectionMode = 1;
 SelectionLabels = {'AP', 'DV', 'AP/DV', 'Ellipses', 'Unselect Ellipses'};
 debug_mode = false;
 
+if ~exist([DropboxFolder, filesep,Prefix, filesep, 'TempDivImage'], 'dir')
+    mkdir([DropboxFolder, filesep,Prefix, filesep, 'TempDivImage']);
+end
 %% 
 
 while (cc~='x')
@@ -351,52 +354,54 @@ while (cc~='x')
         ', Selection Mode: ', SelectionLabels{SelectionMode}]));
     hold(axOverlay, 'off')
     
-    if CurrentFrame > 1
-        set(0, 'CurrentFigure', prevOverlay);
-        hold(axPrevOverlay, 'on')
-        PrevBlueImage=zeros(size(APPosBinImage));
-        PrevGreenImage=zeros(size(APPosBinImage));
-        PrevRedImage=zeros(size(APPosBinImage));
-
-        for i=1:length(APbinID)
-            for j = 1:length(DVbinID)
-                if GridDivision(CurrentNC,i, j)
-                    if GridDivision(CurrentNC,i,j)==CurrentFrame-1
-                        PrevGreenImage((APPosBinImage==i) & (DVPosBinImage == j))=i+j;
-                    else
-                        PrevBlueImage((APPosBinImage==i) & (DVPosBinImage == j))=i+j;
-                    end
-                else
-                    PrevRedImage((APPosBinImage==i) & (DVPosBinImage == j))=i+j;
-                end
-            end
-        end
-
-         if ~isnan(CurrentFrame-1)
-            try
-                PrevHisImage = hisMat(:, :, CurrentFrame-1);
-            catch
-                PrevHisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame-1).name]);
-            end
-         end
-        PrevDisplayRange=[min(min(PrevHisImage)),max(max(PrevHisImage))];
-         %Combine the images
-        PrevHisOverlay=cat(3,mat2gray(PrevHisImage)+mat2gray(PrevRedImage),...
-            mat2gray(PrevHisImage)+mat2gray(PrevGreenImage)/2,...
-            mat2gray(PrevHisImage)+mat2gray(PrevBlueImage));
-        if isempty(axPrevOverlay.Children)
-            hisPrevImageHandle = imshow(PrevHisOverlay,'Border','Tight','Parent', axPrevOverlay);
-        else
-            hisPrevImageHandle.CData = PrevHisOverlay;
-        end
-        
-        set(prevOverlay,'Name',(['Frame: ',num2str(CurrentFrame-1),'/',num2str(nFrames),...
-            '. Current nc:',num2str(CurrentNC)]));
-        title('Previous Frame')
-        hold(axPrevOverlay, 'off')
-        %     figure(Overlay)
-    end
     
+    
+%     if CurrentFrame > 1
+%         set(0, 'CurrentFigure', prevOverlay);
+%         hold(axPrevOverlay, 'on')
+%         PrevBlueImage=zeros(size(APPosBinImage));
+%         PrevGreenImage=zeros(size(APPosBinImage));
+%         PrevRedImage=zeros(size(APPosBinImage));
+% 
+%         for i=1:length(APbinID)
+%             for j = 1:length(DVbinID)
+%                 if GridDivision(CurrentNC,i, j)
+%                     if GridDivision(CurrentNC,i,j)==CurrentFrame-1
+%                         PrevGreenImage((APPosBinImage==i) & (DVPosBinImage == j))=i+j;
+%                     else
+%                         PrevBlueImage((APPosBinImage==i) & (DVPosBinImage == j))=i+j;
+%                     end
+%                 else
+%                     PrevRedImage((APPosBinImage==i) & (DVPosBinImage == j))=i+j;
+%                 end
+%             end
+%         end
+% 
+%          if ~isnan(CurrentFrame-1)
+%             try
+%                 PrevHisImage = hisMat(:, :, CurrentFrame-1);
+%             catch
+%                 PrevHisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame-1).name]);
+%             end
+%          end
+%         PrevDisplayRange=[min(min(PrevHisImage)),max(max(PrevHisImage))];
+%          %Combine the images
+%         PrevHisOverlay=cat(3,mat2gray(PrevHisImage)+mat2gray(PrevRedImage),...
+%             mat2gray(PrevHisImage)+mat2gray(PrevGreenImage)/2,...
+%             mat2gray(PrevHisImage)+mat2gray(PrevBlueImage));
+%         if isempty(axPrevOverlay.Children)
+%             hisPrevImageHandle = imshow(PrevHisOverlay,'Border','Tight','Parent', axPrevOverlay);
+%         else
+%             hisPrevImageHandle.CData = PrevHisOverlay;
+%         end
+%         
+%         set(prevOverlay,'Name',(['Frame: ',num2str(CurrentFrame-1),'/',num2str(nFrames),...
+%             '. Current nc:',num2str(CurrentNC)]));
+%         title('Previous Frame')
+%         hold(axPrevOverlay, 'off')
+%         %     figure(Overlay)
+%     end
+%     
     
     %     figure(Overlay)
     set(0, 'CurrentFigure', figureOverlay);
@@ -406,13 +411,78 @@ while (cc~='x')
     
     %Move frames
     if (ct~=0)&(cc=='.')&(CurrentFrame<nFrames)
+        export_fig(axOverlay,[DropboxFolder, filesep,Prefix, filesep, 'TempDivImage', filesep, 'TempCorrectDivTimesPrevImage', num2str(CurrentFrame),'.png'],...
+            '-a1', '-png');
         CurrentFrame=CurrentFrame+1;
+        if isfile([DropboxFolder, filesep,Prefix,  filesep, 'TempDivImage', filesep, 'TempCorrectDivTimesPrevImage', num2str(CurrentFrame-1),'.png'])
+             PrevHisOverlay = imread([DropboxFolder, filesep,Prefix, filesep, 'TempDivImage', filesep, 'TempCorrectDivTimesPrevImage', num2str(CurrentFrame-1),'.png']);
+            if isempty(axPrevOverlay.Children)
+
+                hisPrevImageHandle = imshow(PrevHisOverlay,'Border','Tight','Parent', axPrevOverlay);
+            else
+                hisPrevImageHandle.CData = PrevHisOverlay;
+            end
+
+            set(prevOverlay,'Name',(['Frame: ',num2str(CurrentFrame-1),'/',num2str(nFrames),...
+                '. Current nc: ',num2str(CurrentNC)]));
+            title('Previous Frame')
+            hold(axPrevOverlay, 'off')
+        end
+        
     elseif (ct~=0)&(cc==',')&(CurrentFrame>1)
+        export_fig(axOverlay,[DropboxFolder, filesep,Prefix, filesep, 'TempDivImage', filesep, 'TempCorrectDivTimesPrevImage', num2str(CurrentFrame),'.png'],...
+            '-a1', '-png');
         CurrentFrame=CurrentFrame-1;
+        if isfile([DropboxFolder, filesep,Prefix,  filesep, 'TempDivImage', filesep, 'TempCorrectDivTimesPrevImage', num2str(CurrentFrame-1),'.png'])
+             PrevHisOverlay = imread([DropboxFolder, filesep,Prefix, filesep, 'TempDivImage', filesep, 'TempCorrectDivTimesPrevImage', num2str(CurrentFrame-1),'.png']);
+            if isempty(axPrevOverlay.Children)
+
+                hisPrevImageHandle = imshow(PrevHisOverlay,'Border','Tight','Parent', axPrevOverlay);
+            else
+                hisPrevImageHandle.CData = PrevHisOverlay;
+            end
+
+            set(prevOverlay,'Name',(['Frame: ',num2str(CurrentFrame-1),'/',num2str(nFrames),...
+                '. Current nc: ',num2str(CurrentNC)]));
+            title('Previous Frame')
+            hold(axPrevOverlay, 'off')
+        end
     elseif (ct~=0)&(cc=='>')& (CurrentFrame+10)< nFrames
+       export_fig(axOverlay,[DropboxFolder, filesep,Prefix, filesep, 'TempDivImage', filesep, 'TempCorrectDivTimesPrevImage', num2str(CurrentFrame),'.png'],...
+            '-a1', '-png');
         CurrentFrame=CurrentFrame+10;
+        if isfile([DropboxFolder, filesep,Prefix,  filesep, 'TempDivImage', filesep, 'TempCorrectDivTimesPrevImage', num2str(CurrentFrame-1),'.png'])
+             PrevHisOverlay = imread([DropboxFolder, filesep,Prefix, filesep, 'TempDivImage', filesep, 'TempCorrectDivTimesPrevImage', num2str(CurrentFrame-1),'.png']);
+            if isempty(axPrevOverlay.Children)
+
+                hisPrevImageHandle = imshow(PrevHisOverlay,'Border','Tight','Parent', axPrevOverlay);
+            else
+                hisPrevImageHandle.CData = PrevHisOverlay;
+            end
+
+            set(prevOverlay,'Name',(['Frame: ',num2str(CurrentFrame-1),'/',num2str(nFrames),...
+                '. Current nc: ',num2str(CurrentNC)]));
+            title('Previous Frame')
+            hold(axPrevOverlay, 'off')
+        end
     elseif (ct~=0)&(cc=='<')&( CurrentFrame-10) > 1
+        export_fig(axOverlay,[DropboxFolder, filesep,Prefix, filesep, 'TempDivImage', filesep, 'TempCorrectDivTimesPrevImage', num2str(CurrentFrame),'.png'],...
+            '-a1', '-png');
         CurrentFrame=CurrentFrame-10;
+        if isfile([DropboxFolder, filesep,Prefix,  filesep, 'TempDivImage', filesep, 'TempCorrectDivTimesPrevImage', num2str(CurrentFrame-1),'.png'])
+             PrevHisOverlay = imread([DropboxFolder, filesep,Prefix, filesep, 'TempDivImage', filesep, 'TempCorrectDivTimesPrevImage', num2str(CurrentFrame-1),'.png']);
+            if isempty(axPrevOverlay.Children)
+
+                hisPrevImageHandle = imshow(PrevHisOverlay,'Border','Tight','Parent', axPrevOverlay);
+            else
+                hisPrevImageHandle.CData = PrevHisOverlay;
+            end
+
+            set(prevOverlay,'Name',(['Frame: ',num2str(CurrentFrame-1),'/',num2str(nFrames),...
+                '. Current nc: ',num2str(CurrentNC)]));
+            title('Previous Frame')
+            hold(axPrevOverlay, 'off')
+        end
         %Move nc
     elseif (ct~=0)&(cc=='m')&(CurrentNC<14) & ~isnan(ncs(CurrentNC+1-8))
         NCTest = [];
@@ -515,6 +585,10 @@ while (cc~='x')
     elseif (ct~=0)&(cc=='9')
         keyboard;
     end
+    
+   
+    
+    
 end
 
 NCTest = [];
@@ -760,6 +834,11 @@ end
 [schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses);
 
 %% 
+try 
+    if exist([DropboxFolder, filesep,Prefix, filesep, 'TempDivImage'], 'dir')
+        rmdir([DropboxFolder, filesep,Prefix, filesep, 'TempDivImage'], 's')
+    end
+end
 save([DropboxFolder,filesep,Prefix,filesep,'GridDivision.mat'],'GridDivision');
 disp('GridDivision.mat saved.');
 FilePrefix = [Prefix, '_'];
@@ -770,4 +849,4 @@ else
     save([DropboxFolder, filesep, FilePrefix(1:end-1), filesep, FilePrefix(1:end-1), '_lin.mat'], 'schnitzcells', '-v7.3', '-nocompression')
 end
 save2([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], Ellipses); 
-
+close all

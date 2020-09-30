@@ -2,7 +2,7 @@ function PlotNuclearFluoProfilesAP(Prefix, varargin)
 % PlotNuclearFluoProfilesAP.m
 % author: Gabriella Martini
 % date created: 9/26/20
-% date last modified: 9/26/20
+% date last modified: 9/29/20
 
 nuclear_cycles = [12, 13, 14];
 min_nuc_count = 5;
@@ -77,7 +77,7 @@ end
 %% 
 
 for nc=nuclear_cycles
-    
+    load([DropboxFolder,filesep,Prefix,filesep,'MeanAPposNC', num2str(nc),'_FramesNC.mat']);
     load([DropboxFolder,filesep,Prefix,filesep,'MeanFluoAPNC', num2str(nc),'_FramesNC.mat']);
     load([DropboxFolder,filesep,Prefix,filesep,'StdFluoAPNC',num2str(nc),'_FramesNC.mat']);
     load([DropboxFolder,filesep,Prefix,filesep,'NumNucAPNC',num2str(nc),'_FramesNC.mat']);
@@ -120,9 +120,9 @@ for nc=nuclear_cycles
            FrameProfAx.Children(2).YNegativeDelta = .1*ones(1, length(APbins));
         else
            FrameProfAx.Children(1).YData = MeanFluoAP(i, use_idx);
-           FrameProfAx.Children(1).XData = APbins(use_idx);
+           FrameProfAx.Children(1).XData = MeanAP(i, use_idx);
            FrameProfAx.Children(2).YData = MeanFluoAP(i, use_idx);
-           FrameProfAx.Children(2).XData = APbins(use_idx);
+           FrameProfAx.Children(2).XData = MeanAP(i, use_idx);
            FrameProfAx.Children(2).YPositiveDelta = StdFluoAP(i, use_idx)./NumNucAP(i, use_idx);
            FrameProfAx.Children(2).YNegativeDelta  = StdFluoAP(i, use_idx)./NumNucAP(i, use_idx);
             
@@ -221,18 +221,18 @@ for nc=nuclear_cycles
            FrameProfAx.Children(2).YNegativeDelta = .1*ones(1, length(APbins));
         else
            FrameProfAx.Children(1).YData = DiffMeanFluoAP(i, use_idx);
-           FrameProfAx.Children(1).XData = APbins(use_idx);
+           FrameProfAx.Children(1).XData = MeanAP(i, use_idx);
            FrameProfAx.Children(2).YData = DiffMeanFluoAP(i, use_idx);
-           FrameProfAx.Children(2).XData = APbins(use_idx);
+           FrameProfAx.Children(2).XData = MeanAP(i, use_idx);
            FrameProfAx.Children(2).YPositiveDelta = DiffStdErrorAP(i, use_idx);
            FrameProfAx.Children(2).YNegativeDelta  = DiffStdErrorAP(i, use_idx);
             
         end
            
-        try
+        %try
             title(FrameProfAx, {Prefix_label,...
                 ['Nuclear Cycle ', num2str(nc), ', Frame: ',num2str(i), ', NC Time: ',num2str(NCTimes(i)), ' min' ]})
-        end
+        %end
         if sum(use_idx) == 0  
             continue 
         end
@@ -292,6 +292,7 @@ for nc=nuclear_cycles
     end
     
     try
+        load([DropboxFolder,filesep,Prefix,filesep,'MeanAPposNC', num2str(nc),'_timesSinceAnaphase.mat']);
         load([DropboxFolder,filesep,Prefix,filesep,'MeanFluoAPNC', num2str(nc),'_timesSinceAnaphase.mat']);
         MeanFluoAPV2 = MeanFluoAP;
         load([DropboxFolder,filesep,Prefix,filesep,'StdFluoAPNC',num2str(nc),'__timesSinceAnaphase.mat']);
@@ -338,9 +339,9 @@ for nc=nuclear_cycles
            FrameProfAx.Children(2).YNegativeDelta = .1*ones(1, length(APbins));
         else
            FrameProfAx.Children(1).YData = MeanFluoAP(i, use_idx);
-           FrameProfAx.Children(1).XData = APbins(use_idx);
+           FrameProfAx.Children(1).XData = MeanAP(i, use_idx);
            FrameProfAx.Children(2).YData = MeanFluoAP(i, use_idx);
-           FrameProfAx.Children(2).XData = APbins(use_idx);
+           FrameProfAx.Children(2).XData = MeanAP(i, use_idx);
            FrameProfAx.Children(2).YPositiveDelta = StdFluoAP(i, use_idx)./NumNucAP(i, use_idx);
            FrameProfAx.Children(2).YNegativeDelta  = StdFluoAP(i, use_idx)./NumNucAP(i, use_idx);
             
@@ -438,9 +439,9 @@ for nc=nuclear_cycles
            FrameProfAx.Children(2).YNegativeDelta = .1*ones(1, length(APbins));
         else
            FrameProfAx.Children(1).YData = DiffMeanFluoAP(i, use_idx);
-           FrameProfAx.Children(1).XData = APbins(use_idx);
+           FrameProfAx.Children(1).XData = MeanAP(i, use_idx);
            FrameProfAx.Children(2).YData = DiffMeanFluoAP(i, use_idx);
-           FrameProfAx.Children(2).XData = APbins(use_idx);
+           FrameProfAx.Children(2).XData = MeanAP(i, use_idx);
            FrameProfAx.Children(2).YPositiveDelta = DiffStdErrorAP(i, use_idx);
            FrameProfAx.Children(2).YNegativeDelta  = DiffStdErrorAP(i, use_idx);
             
@@ -513,7 +514,7 @@ end
 
 
 
-
+load([DropboxFolder,filesep,Prefix,filesep,'MeanAPpos.mat']);
 load([DropboxFolder,filesep,Prefix,filesep,'MeanFluoAP.mat']);
 load([DropboxFolder,filesep,Prefix,filesep,'StdFluoAP.mat']);
 load([DropboxFolder,filesep,Prefix,filesep,'NumNucAP.mat']);

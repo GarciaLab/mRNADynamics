@@ -328,10 +328,10 @@ cntState.processImageMatrices(movieMat);
     Prefix, xSize, ySize, hisMat, ElapsedTime,...
           anaphaseInMins, ncFrames);
 
-tb = axtoolbar(overlayAxes);
-tb.Visible = 'off';
-tb2 = axtoolbar(snipAxes);
-tb2.Visible = 'off';
+% tb = axtoolbar(overlayAxes);
+% tb.Visible = 'off';
+% tb2 = axtoolbar(snipAxes);
+% tb2.Visible = 'off';
 
 
       %% 

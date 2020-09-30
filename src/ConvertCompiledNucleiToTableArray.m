@@ -53,12 +53,12 @@ numNuclei = size(CompiledNuclei, 2);
 fns = fieldnames(CompiledNuclei);
 
 varnames =  { 'Prefix','NucleusID', 'Frame', 'FrameNC','FrameAnaphase', 'Time', 'TimeNC','timeSinceAnaphase', 'FrameCount', 'xPos',...
-    'yPos', 'Radius', 'cellno', 'nc', 'MeanAP', 'MedianAP', 'APbin','APbinIdx',...
+    'yPos', 'Radius', 'cellno', 'nc', 'APPos', 'MeanAP', 'MedianAP', 'APbin','APbinIdx', 'APbinIdxV2',...
     'MeanDV', 'MedianDV', 'ncStart', 'Fluo', 'FrameApproved'};
 
  
 vartypes = { 'string','int64', 'int64', 'int64', 'int64','double', 'double', 'double', 'int64', 'int64',...
-    'int64', 'double', 'int64', 'int64', 'double', 'double','double','int64',...
+    'int64', 'double', 'int64', 'int64','double', 'double', 'double','double','int64', 'int64',...
     'double', 'double','int64', 'double', 'int64'};
 FluoTimeStrings = {};
 FluoZStrings = {};
@@ -137,10 +137,12 @@ AllyPos = zeros( totalSamples,1, 'uint16');
 AllRadius = zeros(totalSamples,1, 'double');
 Allcellno = zeros(totalSamples,1, 'uint16');
 Allnc = zeros(totalSamples,1, 'uint16');
+AllAPPos = zeros(totalSamples,1, 'double');
 AllMeanAP = zeros(totalSamples,1, 'double');
 AllMedianAP = zeros(totalSamples,1, 'double');
 AllAPbin = zeros(totalSamples,1, 'double');
 AllAPbinIdx = zeros(totalSamples,1, 'uint8');
+AllAPbinIdxV2 = zeros(totalSamples,1, 'uint8');
 AllMeanDV = zeros(totalSamples,1, 'double');
 AllMedianDV = zeros(totalSamples,1, 'double');
 AllncStart = zeros(totalSamples,1, 'uint16');
@@ -211,12 +213,12 @@ while n <= numNuclei
         AllRadius(sample) = CompiledNuclei(n).Radius(f);
         Allcellno(sample) = CompiledNuclei(n).cellno(f);
         Allnc(sample) = nc;
-        
+        AllAPPos(sample) = CompiledNuclei(n).APpos(f);
         AllMeanAP(sample) = MeanAP;
         AllMedianAP(sample) = MedianAP;
         AllAPbin(sample) = APbin;
         AllAPbinIdx(sample) = APbinIdx;
-        
+        AllAPbinIdxV2(sample) = ceil(AllAPPos(sample)/APResolution);
         
         AllMeanDV(sample) = MeanDV;
         AllMedianDV(sample) = MedianDV;
@@ -252,13 +254,13 @@ close(h)
 try
     CompiledNucleiTable = table(AllPrefixes, AllNucleusID, AllFrame, AllFrameNC, AllFrameAnaphase,...
         AllTime, AllTimeNC, AlltimeSinceAnaphase, AllFrameCount, AllxPos, AllyPos, AllRadius,...
-        Allcellno, Allnc, AllMeanAP, AllMedianAP, AllAPbin, AllAPbinIdx, AllMeanDV, AllMedianDV,...
+        Allcellno, Allnc, AllAPPos, AllMeanAP, AllMedianAP, AllAPbin, AllAPbinIdx, AllAPbinIdxV2, AllMeanDV, AllMedianDV,...
         AllncStart, AllFluo, AllFrameApproved, AllFluoTimeTraces, AllFluoZTraces, AllFluoFrameApproved, AllFlags);
 catch
     AlltimeSinceAnaphase = AlltimeSinceAnaphase.';
     CompiledNucleiTable = table(AllPrefixes, AllNucleusID, AllFrame, AllFrameNC, AllFrameAnaphase,...
         AllTime, AllTimeNC, AlltimeSinceAnaphase, AllFrameCount, AllxPos, AllyPos, AllRadius,...
-        Allcellno, Allnc, AllMeanAP, AllMedianAP, AllAPbin, AllAPbinIdx, AllMeanDV, AllMedianDV,...
+        Allcellno, Allnc, AllAPPos, AllMeanAP, AllMedianAP, AllAPbin, AllAPbinIdx,  AllAPbinIdxV2,AllMeanDV, AllMedianDV,...
         AllncStart, AllFluo, AllFrameApproved, AllFluoTimeTraces, AllFluoZTraces, AllFluoFrameApproved, AllFlags);%,...
 end
 %'VariableNames', varnames);

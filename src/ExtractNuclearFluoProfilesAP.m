@@ -127,7 +127,7 @@ for nc=nuclear_cycles
     end
     %%
     numFrames = max(cnt.FrameNC)+1;
-
+    MeanAP = NaN(numFrames, numBins);
     MeanFluoAP = NaN(numFrames, numBins);
     StdFluoAP = NaN(numFrames, numBins);
     NumNucAP = zeros(numFrames, numBins);
@@ -135,25 +135,29 @@ for nc=nuclear_cycles
     DiffStdErrorAP = NaN(numFrames, numBins);
     APbins = 0:APResolution:1;
     NCFrames = unique(cnt.FrameNC);
-    NCTimes = [];
+    NCTimes = zeros(1, length(NCFrames));
     for i=1:length(NCFrames)
         NCTimes(i) =  mean(cnt.TimeNC(cnt.FrameNC == NCFrames(i)));
     end
+    NCTimes = NCTimes - min(NCTimes);
     for i = 1:length(NCFrames)
         f = NCFrames(i);
         t = NCTimes(i);
-        for APbin = min(cnt.APbinIdx):max(cnt.APbinIdx)
+        for APbin = min(cnt.APbinIdxV2):max(cnt.APbinIdxV2)
             
-            sub_table = cnt((cnt.FrameNC == f) & (cnt.APbinIdx == APbin), :);
+            sub_table = cnt((cnt.FrameNC == f) & (cnt.APbinIdxV2 == APbin), :);
             if (height(sub_table) < 5)
                 continue 
             end
             if (height(sub_table) >= 10) & (quantile_cutoff > 0)
                 cutoff = quantile(sub_table.Fluo, quantile_cutoff);
                 fluoVector = sub_table.Fluo(sub_table.Fluo >= cutoff);
+                APPosVector = sub_table.APPos(sub_table.Fluo >= cutoff);
             else
                 fluoVector = sub_table.Fluo;
+                APPosVector = sub_table.APPos;
             end
+            MeanAP(i, APbin) = mean(APPosVector);
             MeanFluo = mean(fluoVector);
             StdFluo = std(fluoVector);
             MeanFluoAP(i, APbin) = MeanFluo;
@@ -176,7 +180,8 @@ for nc=nuclear_cycles
 % 
 
  
-
+    save([DropboxFolder,filesep,Prefix,filesep,'MeanAPPosNC', num2str(nc),'_FramesNC.mat'],...
+            'MeanAP');
     save([DropboxFolder,filesep,Prefix,filesep,'MeanFluoAPNC', num2str(nc),'_FramesNC.mat'],...
             'MeanFluoAP');
 
@@ -224,6 +229,7 @@ for nc=nuclear_cycles
     cnt.BinnedTimeSinceAnaphase = BinnedTimeSinceAnaphase.';
     NCTimes = unique(BinnedNCtimesSinceAnaphase);
     numTimes = length(NCTimes);
+    MeanAP = NaN(numTimes, numBins);
     MeanFluoAP = NaN(numTimes, numBins);
     StdFluoAP = NaN(numTimes, numBins);
     NumNucAP = zeros(numTimes, numBins);
@@ -234,17 +240,20 @@ for nc=nuclear_cycles
     %NCTimes = 
     for i = 1:numTimes
         t = NCTimes(i);
-        for APbin = min(cnt.APbinIdx):max(cnt.APbinIdx)
-            sub_table = cnt((cnt.BinnedTimeSinceAnaphase == t) & (cnt.APbinIdx == APbin), :);
+        for APbin = min(cnt.APbinIdxV2):max(cnt.APbinIdxV2)
+            sub_table = cnt((cnt.BinnedTimeSinceAnaphase == t) & (cnt.APbinIdxV2 == APbin), :);
             if height(sub_table) < 5
                 continue
             end
             if (height(sub_table) >= 10) & (quantile_cutoff > 0)
                 cutoff = quantile(sub_table.Fluo, quantile_cutoff);
                 fluoVector = sub_table.Fluo(sub_table.Fluo >= cutoff);
+                APPosVector = sub_table.APPos(sub_table.Fluo >= cutoff);
             else
                 fluoVector = sub_table.Fluo;
+                APPosVector = sub_table.APPos;
             end
+            MeanAP(i, APbin) = mean(APPosVector);
             MeanFluo = mean(fluoVector);
             StdFluo = std(fluoVector);
             MeanFluoAP(i, APbin) = MeanFluo;
@@ -265,7 +274,8 @@ for nc=nuclear_cycles
     end
 
 
-
+    save([DropboxFolder,filesep,Prefix,filesep,'MeanAPPosNC', num2str(nc),'_timesSinceAnaphase.mat'],...
+            'MeanAP');
     save([DropboxFolder,filesep,Prefix,filesep,'MeanFluoAPNC', num2str(nc),'_timesSinceAnaphase.mat'],...
             'MeanFluoAP');
 
@@ -322,7 +332,7 @@ disp(['Compiled Nuclei Table new row count after Flag 7 filter: ', num2str(heigh
 
 %%
 
-
+MeanAP = NaN(numFrames, numBins);
 MeanFluoAP = NaN(numFrames, numBins);
 StdFluoAP = NaN(numFrames, numBins);
 NumNucAP = zeros(numFrames, numBins);
@@ -330,25 +340,28 @@ DiffMeanFluoAP = NaN(numFrames, numBins);
 DiffStdErrorAP = NaN(numFrames, numBins);
 Frames = unique(cnt.Frame);
 numFrames = length(Frames);
-Times = [];
+Times = zeros(1, numFrames);
 for i=1:length(Frames)
     Times(i) =  mean(cnt.Time(cnt.Frame == Frames(i)));
 end
 for i = 1:length(Frames)
     f = Frames(i);
 
-    for APbin = min(cnt.APbinIdx):max(cnt.APbinIdx)
+    for APbin = min(cnt.APbinIdxV2):max(cnt.APbinIdxV2)
 
-        sub_table = cnt((cnt.Frame == f) & (cnt.APbinIdx == APbin), :);
+        sub_table = cnt((cnt.Frame == f) & (cnt.APbinIdxV2 == APbin), :);
         if (height(sub_table) < 5)
             continue 
         end
         if (height(sub_table) >= 10) & (quantile_cutoff > 0)
             cutoff = quantile(sub_table.Fluo, quantile_cutoff);
             fluoVector = sub_table.Fluo(sub_table.Fluo >= cutoff);
+            APPosVector = sub_table.APPos(sub_table.Fluo >= cutoff);
         else
             fluoVector = sub_table.Fluo;
+            APPosVector = sub_table.APPos;
         end
+        MeanAP(i, APbin) = mean(APPosVector);
         MeanFluo = mean(fluoVector);
         StdFluo = std(fluoVector);
         MeanFluoAP(i, APbin) = MeanFluo;
@@ -371,7 +384,8 @@ end
 % 
 
 
-
+save([DropboxFolder,filesep,Prefix,filesep,'MeanAPPos.mat'],...
+        'MeanAP');
 save([DropboxFolder,filesep,Prefix,filesep,'MeanFluoAP.mat'],...
         'MeanFluoAP');
 

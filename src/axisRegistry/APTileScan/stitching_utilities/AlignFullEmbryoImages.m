@@ -219,7 +219,7 @@ if MatchFilePresent
 
     C_mid = gather(normxcorr2(gpuArray(im1_mid), gpuArray(im2_mid)));
     [MaxRow_mid, MaxColumn_mid] = find(ismember(C_mid, max(C_mid(:)))); 
-    C_surf= normxcorr2(im1_surf, im2_surf);
+    %C_surf= normxcorr2(im1_surf, im2_surf);
     C_surf = gather(normxcorr2(gpuArray(im1_surf), gpuArray(im2_surf)));
     [MaxRow_surf, MaxColumn_surf] = find(ismember(C_surf, max(C_surf(:)))); 
 
@@ -380,7 +380,7 @@ if MatchFilePresent
             
         end
 
-        C_surf_post= normxcorr2(im1_surf_post, im2_surf);
+        %C_surf_post= normxcorr2(im1_surf_post, im2_surf);
         C_surf_post = gather(normxcorr2(gpuArray(im1_surf_post), gpuArray(im2_surf)));
         [MaxRow_surf_post, MaxColumn_surf_post] = find(ismember(C_surf_post, max(C_surf_post(:)))); 
         RowMinsTemp = [1, MaxRow_surf-(size(im1_surf, 1)-1),  MaxRow_surf_post-(size(im1_surf_post, 1)-1)];
