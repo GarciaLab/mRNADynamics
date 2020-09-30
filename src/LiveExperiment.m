@@ -90,6 +90,13 @@ classdef LiveExperiment
         
         MS2CodePath = '';
         
+        %% Added by GM 9/29/20
+        
+        Temp_set = 0;
+        Temp_obs = 0;
+        
+        %%
+        
         
         
     end
@@ -172,7 +179,7 @@ classdef LiveExperiment
             
             [~, this.experimentType, this.experimentAxis, ~, ~, this.APResolution,...
                 Channel1, Channel2,~, ~,  ~, ~, ~,...
-                ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, this.DVResolution]...
+                ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, this.DVResolution, this.Temp_set, this.Temp_obs]...
                 = getExperimentDataFromMovieDatabase(this.Prefix, movieDatabase, this.userResultsFolder);
             
             this.Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
