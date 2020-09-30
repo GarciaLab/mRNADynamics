@@ -24,6 +24,8 @@ classdef LiveExperiment
     
     properties (Access = private)
         
+        preLoadMovie = false;
+        
     end
     
     properties (Hidden)
@@ -104,10 +106,14 @@ classdef LiveExperiment
         
         %%Constructors
         
-        function this = LiveExperiment(Prefix)
+        function this = LiveExperiment(Prefix, preLoadMovie)
             %livemRNAExperiment Construct an instance of this class
             
             this.Prefix = Prefix;
+            
+            if nargin > 1
+                this.preLoadMovie = preLoadMovie;
+            end
             
             [this.userRawFolder, this.userProcFolder, this.userResultsFolder,...
                 this.MS2CodePath, this.userPreFolder,...
@@ -266,12 +272,11 @@ classdef LiveExperiment
                 FrameInfo_movie = tempInfo.FrameInfo;
                 preTifDir = dir([this.preFolder, '*_ch0*.tif']);
             end
-            loadFramesIndividually = true;
-            
+                        
             %just return an empty array if we can't load the movie.
             %leave the handling to the caller, presumably by enabling
             %sequential file loading.
-            if ~haveSufficientMemory(preTifDir) || loadFramesIndividually
+            if ~haveSufficientMemory(preTifDir) || ~this.preLoadMovie
                 out = [];
                 return;
             end

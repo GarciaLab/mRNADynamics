@@ -35,7 +35,7 @@ disp(['Running TrackmRNADynamics on ', varargin{1}, '...']);
 Prefix = varargin{1};
 liveExperiment = LiveExperiment(Prefix);
 
-[app, retrack, optionalResults, displayFigures] =...
+[app, retrack, optionalResults, displayFigures, trackByProximity] =...
     parseTrackmRNADynamicsArguments(varargin{:});
 
 
@@ -75,7 +75,7 @@ SearchRadiusMicrons = 3; % Search radius in um
 SearchRadius = ceil(SearchRadiusMicrons / PixelSize_um);
 
 % Check if we have tracked the lineages of the nuclei
-if exist([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'file')
+if ~trackByProximity && exist([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'file')
     UseHistone = true;
     
     % Load the nuclei segmentation information
@@ -88,8 +88,10 @@ else
     UseHistone = false;
     schnitzcells = [];
     Ellipses = [];
-    warning('Warning: No nuclei lineage tracking found. Proceeding with tracking particles only.')
+    warning('Warning: No nuclei lineage tracking found. Proceeding with tracking particles by proximity.')
 end
+
+
 
 validateExperimentTypeSupported(ExperimentType);
 

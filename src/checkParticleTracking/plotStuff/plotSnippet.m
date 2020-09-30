@@ -1,23 +1,23 @@
-function [CurrentSnippet, snipImageHandle] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
+function [CurrentSnippet, snipImageHandle] = plotSnippet(snippetFigAxes,...
+    rawDataAxes, gaussianAxes, xTrace, ...
     cptState, ExperimentType, snippet_size, xSize, ... 
     ySize, SnippetEdge, CurrentSnippet, snipImageHandle, pixelSize)
 
 scale = 10; %magnification of snippet
 
     if  ~isempty(xTrace) && ~isempty(cptState.CurrentZIndex)
-        % Get the snippet and the mask, and overlay them
-        % (MT, 2018-02-12): lattice data could use this, changed CurrentChannel to coatChannel
+
         xSpot = cptState.getCurrentXDoG();
         ySpot = cptState.getCurrentYDoG();
 
         if isfield(cptState.getCurrentParticleFit(), 'snippet_size') && ~isempty(cptState.getCurrentParticleFit().snippet_size)
             
             snippet_size = double(cptState.getCurrentParticleFit().snippet_size);
-            % (MT, 2018-02-12): Hacky fix to get this to run with lattice data -
-            % FIX LATER
+
         elseif strcmpi(ExperimentType,'lattice')
             snippet_size = 13; %pixels
         end
+        
         snippet_size = snippet_size(1);
         CurrentSnippet = double(cptState.ImageMat(max(1,ySpot-snippet_size):min(ySize,ySpot+snippet_size),...
             max(1,xSpot-snippet_size):min(xSize,xSpot+snippet_size)));
