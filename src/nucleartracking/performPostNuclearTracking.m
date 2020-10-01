@@ -58,6 +58,8 @@ end
 
 [Ellipses, schnitzcells] = addStrayEllipsesToSchnitzcells(Ellipses, schnitzcells);
 
+[schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses);
+
 save2(ellipsesFile, Ellipses);
 save2(schnitzcellsFile, schnitzcells);
 
@@ -66,6 +68,11 @@ save2(schnitzcellsFile, schnitzcells);
 if ~postTrackingSettings.noStitch
     [schnitzcells, Ellipses] = StitchSchnitzv3(Prefix, nWorkers);
 end
+
+% [schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses);
+
+save2(ellipsesFile, Ellipses);
+save2(schnitzcellsFile, schnitzcells);
 
 %making copies for validation later on
 ellipsesOld = Ellipses;
@@ -120,9 +127,9 @@ schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells,...
 ellipsesSizeUnchanged(ellipsesOld, Ellipses);
 schnitzcellsSizeUnchanged(schnitzcellsOld, schnitzcells);
 
-%perform some quality control
-schnitzcells = filterSchnitz(schnitzcells,...
-    [liveExperiment.yDim, liveExperiment.xDim]);
+% %perform some quality control
+% schnitzcells = filterSchnitz(schnitzcells,...
+%     [liveExperiment.yDim, liveExperiment.xDim]);
 
 
 

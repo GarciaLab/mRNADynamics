@@ -44,7 +44,7 @@ for j=1:length(schnitzcells)
 end
 
 Original_schnitzcells = schnitzcells; % save the original state before running this script
-save([DropboxFolder,filesep,Prefix '_PreStitched.mat'],'Original_schnitzcells');
+% save([DropboxFolder,filesep,Prefix '_PreStitched.mat'],'Original_schnitzcells');
 
 nSchnitz = length(schnitzcells);
 %% Make sure the originial schintzcells struct is good:
@@ -56,6 +56,7 @@ for OGSchnitz = 1:length(schnitzcells)
     assert(length(schnitzcells(OGSchnitz).cenx) == FrameLength);
     assert(length(schnitzcells(OGSchnitz).ceny) == FrameLength);
     assert(length(schnitzcells(OGSchnitz).len) == FrameLength);
+    assert(length(schnitzcells(OGSchnitz).cellno) == FrameLength);
 end
 % disp('schnitzcells struct is good entering stitching')
 
@@ -140,6 +141,7 @@ for OGSchnitz = 1:length(schnitzcells)
     assert(length(schnitzcells(OGSchnitz).cenx) == FrameLength);
     assert(length(schnitzcells(OGSchnitz).ceny) == FrameLength);
     assert(length(schnitzcells(OGSchnitz).len) == FrameLength);
+    assert(length(schnitzcells(OGSchnitz).cellno) == FrameLength);
 end
 % disp('length of schnitzcells fields is consistent after stitching')
 
