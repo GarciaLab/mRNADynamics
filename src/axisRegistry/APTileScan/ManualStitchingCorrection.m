@@ -99,11 +99,11 @@ TileSelected = 0;
 Changed = 0;
 %Overlay the zoom in and zoom out images
 while (cc~='x' && cc~='q')
-    imm2 = imstitchTileColor(temp_array);
+    imm2 = imstitchTile(temp_array);
 
     %imshow(APImage,DisplayRange)
     %imshow(imm2, 'Parent', axesTemp)
-    hImage = image( imm2, 'Parent', axesTemp );
+    hImage = imagesc( imm2, 'Parent', axesTemp );
     axis(axesTemp, 'image')
     set(gca,'xtick',[],'ytick',[],'xlabel',[],'ylabel',[]);
     %axis image

@@ -1,7 +1,7 @@
 function EmbryoTileStitch(Prefix, ID, varargin)
 % author: Gabriella Martini
 % date: 12/30/19
-% last modified: 12/31/19
+% last modified: 7/26/20
 % Function takes full embryo images taken as tile scans on the Leica SP8
 % and stitches them into tifs to be used for defining the AP axis
 % and indentifying AP position. 
@@ -22,38 +22,62 @@ ID = [upper(ID(1)), ID(2:end)];
 
 FullyAutomate = false;
 StitchManually = false;
-
+selectRegions = false;
+manualStitchOrder = false;
+useSurfStitching = false;
+manualSeeding = false;
 if ~isempty(varargin)
     x = 1;
     while x <= length(varargin{1})
         switch varargin{1}{x}
-            case{'NIterations'}
-                NIterations = varargin{1}{x+1};
-                x = x + 1;
-                fprintf('Number of Iterations: %d\n', NIterations);
             case{'FullyAutomate'}
                 FullyAutomate = true;
-                fprintf('Stiarginching fully automated.\n')
+                fprintf('Stitching fully automated.\n')
             case {'StitchManually'}
                 StitchManually = true;
                 fprintf('Stitching to be performed manually.\n')
-            case {'MaxStep'}
-                MaxStep = varargin{1}{x+1};
+            case {'MaxDeltaR'}
+                MaxDeltaR = varargin{1}{x+1};
                 x = x+1;
-                fprintf('Max Step Size to be used in stitching loop: %d\n', MaxStep)
-            case{'MaxOverlap'}
-                MaxOverlap = varargin{1}{x+1};
+                fprintf('Max change in row overlap to be used in stitching loop: %d\n', MaxDeltaR)
+            case{'MaxDeltaC'}
+                MaxDeltaC = varargin{1}{x+1};
                 x = x+1;
-                fprintf('Max overlap between adjacent tiles to be used in stitching loop: %d\n', MaxOverlap)
+                fprintf('Max change in column overlap to be used in stitching loop: %d\n', MaxDeltaC)
+            case{'manualStitchOrder'}
+                manualStitchOrder = true;
+            case{'selectStitchingRegions'}
+                selectRegions=true;
+            case{'useSurfStitchingInfo'}
+                useSurfStitching=true;
+            case{'manualSeeding'}
+                manualSeeding=true;
+            otherwise
+                error(['Flag "', varargin{1}{x},'" not valid'])
         end
         x = x +1;
     end
 end
 
+
+
 if StitchManually && FullyAutomate
     error(['EmbryoTileStitch cannot be run with both "StitchManually"',...
         'and "FullyAutomate" being true.']);
 end
+
+varargin2 = {};
+if manualStitchOrder
+    varargin2{length(varargin2) + 1} = 'manualStitchOrder';
+end
+if selectRegions
+    varargin2{length(varargin2) + 1} = 'selectStitchingRegions';
+end
+if manualSeeding
+    varargin2{length(varargin2) + 1} = 'manualSeeding';
+end
+
+
 if ~exist('ID', 'var')
     prompt = ['Enter an "ID" for stitching.',...
         ' The standard inputs "Mid" and "Surf" will stitch the',...
@@ -66,18 +90,15 @@ if ~exist('ID', 'var')
         ID = upper(ID);
     end
 end
-if ~exist('NIterations', 'var') && ~StitchManually
-    disp('Using default value of NIterations=100.')
-    NIterations = 100;
+if ~exist('MaxDeltaR', 'var') && ~StitchManually
+    disp('Using default value of MaxDeltaR=100.')
+    MaxDeltaR = 100;
 end
-if ~exist('MaxStep', 'var') && ~StitchManually
-    disp('Using default value of MaxStep=2.')
-    MaxStep = 2;
+if ~exist('MaxDeltaC', 'var') && ~StitchManually
+    disp('Using default value of MaxDeltaC=100.')
+    MaxDeltaC = 100;
 end
-if ~exist('MaxOverlap', 'var') && ~StitchManually
-    disp('Using default value of MaxOverlap=200.')
-    MaxOverlap = 500;
-end
+
 
 %% Get the relevant folders for this data set
 
@@ -95,32 +116,21 @@ EmbryoName=Prefix(Dashes(3)+1:end);
 %% Generate Stitching Information
 
 % Generate Initial Tile Array from Metadata files and raw data
-NewTileArrayFromMetadata(Prefix, ID);
-
-% Get user input to improve initial seed for tile stitching
-if ~FullyAutomate
-    ManualStitchingCorrection(Prefix, ID);
-end
+% NewTileArrayFromMetadata(Prefix, ID);
+% 
+% % Get user input to improve initial seed for tile stitching
+% if ~FullyAutomate
+%     ManualStitchingCorrection(Prefix, ID);
+% end
 
 % Finalize Tile Array Stitching Positions using FindStitchingPositions
 if ~StitchManually
-
-    tile_array = FindStitchingPositions(Prefix, ID, MaxStep, MaxOverlap, NIterations);
-    close all
-    imshow(imstitchTile(tile_array))
-    if ~FullyAutomate
-        prompt = ['Do you want to adjust the existing tiling and try stitching again (y/n)?'];
-        keepFitting = input(prompt,'s');
-        while keepFitting=='y'
-            ManualStitchingCorrection(Prefix, ID);
-            tile_array = FindStitchingPositions(Prefix, ID, MaxStep, MaxOverlap, NIterations);
-            close all
-            imshow(imstitchTile(tile_array))
-            prompt = ['Do you want to adjust the existing tiling and try stitching again (y/n)?'];
-            keepFitting = input(prompt,'s');
-        end
+    if length(varargin2) > 0
+        tile_array = OptimizeStitching(Prefix, ID, MaxDeltaR, MaxDeltaC, varargin2);
+    else
+        tile_array = OptimizeStitching(Prefix, ID, MaxDeltaR, MaxDeltaC);
     end
-            
+    imagesc(imstitchTile(tile_array))       
 end
 
 end
