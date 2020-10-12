@@ -54,11 +54,11 @@ end
 %%
 
 %we'll make sure cellnos and ellipses correspond well.
-[Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+% [Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
 
 [Ellipses, schnitzcells] = addStrayEllipsesToSchnitzcells(Ellipses, schnitzcells);
 
-[schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses);
+% [schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses);
 
 save2(ellipsesFile, Ellipses);
 save2(schnitzcellsFile, schnitzcells);
@@ -69,7 +69,7 @@ if ~postTrackingSettings.noStitch
     [schnitzcells, Ellipses] = StitchSchnitzv3(Prefix, nWorkers);
 end
 
-% [schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses);
+[schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses);
 
 save2(ellipsesFile, Ellipses);
 save2(schnitzcellsFile, schnitzcells);

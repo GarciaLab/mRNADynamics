@@ -156,8 +156,10 @@ schnitzcells(SchnitzToKillIndices) = [];
 %% Save everything and break schnitzs at mitosis
 Stitched_before_breakup = schnitzcells;
 % save([DropboxFolder,filesep,Prefix '_PreBroken.mat'],'Stitched_before_breakup');
-[Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+% [Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+[schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses);
 [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
+[schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses);
 save2([DropboxFolder,filesep,Prefix '_lin.mat'],schnitzcells);
 save2([DropboxFolder,filesep,'Ellipses.mat'],Ellipses);
 
