@@ -1,7 +1,7 @@
 function CompileNuclearProteinFlexFluo(Prefix, varargin)
 % date created: 9/25/20
 % author: Gabriella Martini
-% date last modified: 9/25/20
+% date last modified: 10/7/20
 
 
 %This code gives me the input
@@ -316,9 +316,15 @@ for i=1:length(schnitzcells)
             
             CompiledNuclei(k).APpos = double(schnitzcells(i).APpos(FrameFilter));
             CompiledNuclei(k).DVpos = double(schnitzcells(i).DVpos(FrameFilter));
-            CompiledNuclei(k).timeSinceAnaphase = double(schnitzcells(i).timeSinceAnaphase(FrameFilter));
-            CompiledNuclei(k).anaphaseFrame=schnitzcells(i).anaphaseFrame;
-            CompiledNuclei(k).inferredAnaphaseFrame=schnitzcells(i).inferredAnaphaseFrame;
+            if isfield(schnitzcells, 'anaphaseFrame')
+                CompiledNuclei(k).timeSinceAnaphase = double(schnitzcells(i).timeSinceAnaphase(FrameFilter));
+                CompiledNuclei(k).anaphaseFrame=schnitzcells(i).anaphaseFrame;
+                CompiledNuclei(k).inferredAnaphaseFrame=schnitzcells(i).inferredAnaphaseFrame;
+            else
+                CompiledNuclei(k).timeSinceAnaphase = NaN;
+                CompiledNuclei(k).anaphaseFrame=NaN;
+                CompiledNuclei(k).inferredAnaphaseFrame=false;
+            end
             for j=1:length(radii)
                 FluoLabel = FluoLabels{j};
                 for l=1:length(methods)
