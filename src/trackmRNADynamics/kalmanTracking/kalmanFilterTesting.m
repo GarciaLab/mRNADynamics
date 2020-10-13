@@ -3,55 +3,19 @@
 clear 
 close all
 
-% specfiy Prefix to use
-Prefix = '2019-03-04-Dl_Venus_snaBAC_MCPmCherry_Leica_Zoom2_7uW_14uW_02';
+load("C:\Users\nlamm\Dropbox (Personal)\DynamicsResults\2019-03-04-Dl_Venus_snaBAC_MCPmCherry_Leica_Zoom2_7uW_14uW_02\ParticlesFull.mat")
 
-% extract key exp characteristics
-thisExperiment = liveExperiment(Prefix);
-DropboxFolder = thisExperiment.userResultsFolder;
-
-% load particles
-[Particles, ~] = getParticles(thisExperiment);
-
-% frame info
-FrameInfo = getFrameInfo(thisExperiment);
-
-% find and extract lon tracts of continuos detections
-minLen = 20;
-longTrackCell = {};
-trackLenVec = [];
-iter = 1;
-for p = 1:length(Particles)
-  Frames = Particles(p).Frame;
-  posArray = NaN(length(Frames),2);
-  if length(Frames)>=minLen
-    posArray(:,1) = Particles(p).xPos;
-    posArray(:,2) = Particles(p).yPos;
-    % look for jumps
-    dF = diff(Frames);
-    jumpIndices = find([2 dF(1:end-1) 2]>1);
-    % find long runs
-    longRunFT = diff(jumpIndices)>minLen;
-    if any(longRunFT)
-      lrStarts = jumpIndices([longRunFT false]);
-      lrStops = jumpIndices([false longRunFT])-1;
-      for j = 1:length(lrStarts)
-        longTrackCell{iter} = posArray(lrStarts(j):lrStops(j),:);
-        trackLenVec(iter) = lrStops(j) - lrStarts(j) + 1;
-        iter = iter + 1;
-      end
-    end    
-  end
-end
-
+SimParticles = ParticlesFull.SimParticles{1};
+Particles = ParticlesFull.FullParticles{1};
 %% 
 
 close all
-test_id = 27; 
-trackLen = trackLenVec(test_id);
+test_id = 128; 
 filterSize = 1;
+
 % extract position data
-posData = longTrackCell{test_id};
+posData = [Particles(test_id).xPos' Particles(test_id).yPos'];
+trackLen = size(posData,1);
 % set random ininital guess at param values
 % n0 = rand(1,4);
 smoothed_z = [imgaussfilt(posData(:,1),filterSize), imgaussfilt(posData(:,2),filterSize)];
@@ -61,20 +25,21 @@ mean1 = mean(smoothed_z);
 mean2 = mean(diffs);
 % 
 % Q = mean(sum((smoothed_z-mean1).^2) / (trackLen-1))/10;
-R = mean(sum((diffs-mean2).^2) / (trackLen-1));
-Q = 1e-5;
+MeasurementNoise = mean(sqrt(mean(diffs.^2)));%mean(sum((diffs-mean2).^2) / (trackLen-1));
+MotionNoise = repelem(MeasurementNoise,3)*5e-3;
+InitNoise = repelem(MeasurementNoise,3);
 noiseVec = [[R R R] [Q Q Q] R];
 timePoints = 1:trackLen;
-[pdTrack, ctTrack,pdTrackSE,kF] = kFilterFwd(posData(1:end-5,:),noiseVec,timePoints);
+[pdTrack, ctTrack,pdTrackSE,kF] = kFilterFwd(posData(1:end-5,:),InitNoise,MotionNoise,MeasurementNoise,timePoints);
 
 figure;
 hold on
-errorbar(pdTrack(end-4:end,1),pdTrack(end-4:end,2),sqrt(pdTrackSE(end-4:end,1)),'both','-o')
+errorbar(pdTrack(end-4:end,1),pdTrack(end-4:end,2),sqrt(pdTrackSE(end-4:end,1)),'both','-x')
 % plot(pdTrack(end-4:end,1),pdTrack(end-4:end,2),'-o')
 % plot(pdTrack(:,1),pdTrack(:,2),'-o')
 plot(ctTrack(:,1),ctTrack(:,2))
-plot(posData(:,1),posData(:,2),'-','Color','k')
-plot(posData(end-5:end,1),posData(end-5:end,2),'-o')
+plot(posData(:,1),posData(:,2),'-x','Color','k')
+plot(posData(end-5:end,1),posData(end-5:end,2),'-o','Color','k')
 
 % axis([0.95*min(pdTrack(:,1)) 1.05*max(pdTrack(:,1)) 0.95*min(pdTrack(:,2)) 1.05*max(pdTrack(:,2))])
 

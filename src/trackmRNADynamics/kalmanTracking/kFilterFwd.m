@@ -1,9 +1,9 @@
-function [pdTrack,ctTrack,pdTrackSE,kalmanFilter ] = kFilterFwd(posData,NoiseParams,timePoints)
+function [pdTrack,ctTrack,pdTrackSE,kalmanFilter ] = kFilterFwd(posData,InitError,MotionNoise,MeasurementNoise,timePoints)
 
 
   % initialize particle filter
   kalmanFilter =  configureKalmanFilter('ConstantAcceleration', ...
-            posData(1,:), NoiseParams(5:7), NoiseParams(2:4),NoiseParams(1));
+            posData(1,:), InitError, MotionNoise,MeasurementNoise);
 
 
   trackLen = size(posData,1);
