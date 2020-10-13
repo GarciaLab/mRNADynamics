@@ -1,9 +1,10 @@
+
 function [ExpandedSpaceTolerance,...
     NoBulkShift, retrack, nWorkers, track,...
     noBreak, noStitch, fish,...
-    markandfind, intFlag, chooseHis, mixedPolaritySegmentation,...
+    markandfind, intFlag, chooseHis, mixedPolarity,...
     min_rad_um, max_rad_um, sigmaK_um, mu, nIterSnakes,...
-    doAdjustNuclearContours, radiusScale, doNotRetrack]...
+    doAdjustNuclearContours, radiusScale, doNotRetrack, useMultithresh]...
     = DetermineTrackNucleiOptions(varargin)
 %
 %DETERMINETRACKNUCLEIOPTIONS Processes varargin for TrackNuclei,
@@ -25,10 +26,12 @@ fish = false;
 markandfind =  false;
 intFlag = false;
 chooseHis = false;
-mixedPolaritySegmentation = false;
+mixedPolarity = false;
 doAdjustNuclearContours = false;
 radiusScale = 1.0;
 doNotRetrack = false;
+useMultithresh=false;
+
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'ExpandedSpaceTolerance')
@@ -39,9 +42,11 @@ for i = 1:length(varargin)
         radiusScale = varargin{i+1};
     elseif strcmpi(varargin{i}, 'retrack')
         retrack = true;
-     elseif strcmpi(varargin{i}, 'doNotRetrack')
+    elseif strcmpi(varargin{i}, 'doNotRetrack')
         retrack = false;
         doNotRetrack = true;
+    elseif strcmpi(varargin{i}, 'useMultithresh')
+        useMultithresh=true;
     elseif strcmpi(varargin{i}, 'nWorkers')
         nWorkers = varargin{i+1};
     elseif strcmpi(varargin{i}, 'noTrack')
@@ -55,17 +60,16 @@ for i = 1:length(varargin)
     elseif strcmpi(varargin{i}, 'mu')
         mu = varargin{i+1};
     elseif strcmpi(varargin{i}, 'nIterSnakes')
-        nIterSnakes = varargin{i+1};        
+        nIterSnakes = varargin{i+1};
     elseif strcmpi(varargin{i}, 'noBreak')
         noBreak = true;
-     elseif strcmpi(varargin{i}, 'adjustNuclearContours') ||...
-             strcmpi(varargin{i}, 'adjustNuclearBoundaries')
+    elseif strcmpi(varargin{i}, 'adjustNuclearContours') ||...
+            strcmpi(varargin{i}, 'adjustNuclearBoundaries')
         doAdjustNuclearContours = true;
     elseif strcmpi(varargin{i}, 'chooseHis')
         chooseHis = true;
-    elseif strcmpi(varargin{i}, 'mixedPolarity')...
-            || strcmpi(varargin{i}, 'mixedPolaritySegmentation')
-        mixedPolaritySegmentation = varargin{i+1};
+    elseif strcmpi(varargin{i}, 'mixedPolarity')
+        mixedPolarity = varargin{i+1};
     elseif strcmpi(varargin{i}, 'noStitch')
         noStitch = true;
     elseif strcmpi(varargin{i}, 'markandfind') || strcmpi(varargin{i}, 'fish')
