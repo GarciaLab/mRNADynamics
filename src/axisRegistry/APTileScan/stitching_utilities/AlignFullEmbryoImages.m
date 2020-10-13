@@ -178,7 +178,7 @@ if MatchFilePresent
         matchStack(:, :, z) = LIFMatch{1}{imagesIndex, 1};
         z = z + 1;
     end
-    FullStackMaxProj = max(matchStack, [], 3);
+    FullStackMaxProj = max(matchStack(:,:,(MatchNSlices-ceil(MatchNSlices/2)):MatchNSlices), [], 3);
     MidMatchMaxProj = max(matchStack(:,:,(MatchNSlices-4):MatchNSlices), [], 3);
     SurfMatchMaxProj = max(matchStack(:,:,1:5), [], 3);
     try 
@@ -201,18 +201,21 @@ if MatchFilePresent
     
     MidMatchRot = imrotate(MidMatchMaxProj, match_stack_angle);
     SurfMatchRot = imrotate(SurfMatchMaxProj, match_stack_angle);
+    FullMatchRot = imrotate(FullStackMaxProj, match_stack_angle);
     
     ZoomRatio = PixelSize(1)/PixelSize_matchstack(1);
     
     if ZoomRatio <= 1
         im1_mid = imresize(MidMatchRot, 1/ZoomRatio);
         im1_surf = imresize(SurfMatchRot, 1/ZoomRatio);
+        im1_full = imresize(FullMatchRot, 1/ZoomRatio);
         im2_mid = MidImageNoPadding;
         im2_surf = SurfImageNoPadding;
     else
         %Enlarge the zoomed out image so we can do the cross-correlation
         im1_mid = MidMatchRot;
         im1_surf = SurfMatchRot;
+        im1_full = FullMatchRot;
         im2_mid = imresize(MidImageNoPadding, ZoomRatio);
         im2_surf = imresize(SurfImageNoPadding, ZoomRatio);
     end
@@ -344,7 +347,7 @@ if MatchFilePresent
             PostMatchStack(:, :, z) = LIFPostMatch{1}{imagesIndex, 1};
             z = z + 1;
         end
-        FullPostStackMaxProj = max(PostMatchStack, [], 3);
+        FullPostStackMaxProj = max(PostMatchStack(:,:,(PostMatchNSlices-ceil(PostMatchNSlices/2)):PostMatchNSlices), [], 3);
         MidPostMatchMaxProj = max(PostMatchStack(:,:,(PostMatchNSlices-4):PostMatchNSlices), [], 3);
         SurfPostMatchMaxProj = max(PostMatchStack(:,:,1:4), [], 3);
         try 
@@ -367,16 +370,19 @@ if MatchFilePresent
 
         MidPostMatchRot = imrotate(MidPostMatchMaxProj, post_match_angle);
         SurfPostMatchRot = imrotate(SurfPostMatchMaxProj, post_match_angle);
+        FullPostMatchRot = imrotate(FullPostStackMaxProj, post_match_angle);
 
         PostZoomRatio = PixelSize(1)/PixelSize_matchstack(1);
 
         if PostZoomRatio <= 1
             im1_mid_post = imresize(MidPostMatchRot, 1/ZoomRatio);
             im1_surf_post = imresize(SurfPostMatchRot, 1/ZoomRatio);
+            im1_full_post = imresize(FullPostMatchRot, 1/ZoomRatio);
         else
             %Enlarge the zoomed out image so we can do the cross-correlation
             im1_mid_post = MidPostMatchRot;
             im1_surf_post = SurfPostMatchRot;
+            im1_full_post = FullPostMatchRot;
             
         end
 
@@ -391,9 +397,9 @@ if MatchFilePresent
             MakeNewSurf = false;
             MidEmbryoImageV2 = im2_surf;
             MidEmbryoImageV2(RowMinsTemp(2):RowMaxsTemp(2), ColumnMinsTemp(2):ColumnMaxsTemp(2)) = ...
-                MidEmbryoImageV2(RowMinsTemp(2):RowMaxsTemp(2), ColumnMinsTemp(2):ColumnMaxsTemp(2)) + im1_mid;
+                max(MidEmbryoImageV2(RowMinsTemp(2):RowMaxsTemp(2), ColumnMinsTemp(2):ColumnMaxsTemp(2)),im1_full);
             MidEmbryoImageV2(RowMinsTemp(3):RowMaxsTemp(3), ColumnMinsTemp(3):ColumnMaxsTemp(3)) = ...
-                MidEmbryoImageV2(RowMinsTemp(3):RowMaxsTemp(3), ColumnMinsTemp(3):ColumnMaxsTemp(3)) + im1_mid_post;
+                max(MidEmbryoImageV2(RowMinsTemp(3):RowMaxsTemp(3), ColumnMinsTemp(3):ColumnMaxsTemp(3)),im1_full_post);
         else
             MakeNewSurf = true;
             RowMinsAdj = RowMinsTemp- min(RowMinsTemp) + 1;
@@ -403,11 +409,11 @@ if MatchFilePresent
             
             MidEmbryoImageV2 = zeros(max(RowMaxsAdj), max(ColumnMaxsAdj), 'uint16');
             MidEmbryoImageV2(RowMinsAdj(1):RowMaxsAdj(1), ColumnMinsAdj(1):ColumnMaxsAdj(1)) = ...
-                MidEmbryoImageV2(RowMinsAdj(1):RowMaxsAdj(1), ColumnMinsAdj(1):ColumnMaxsAdj(1)) + im2_surf;
+               max( MidEmbryoImageV2(RowMinsAdj(1):RowMaxsAdj(1), ColumnMinsAdj(1):ColumnMaxsAdj(1)), im2_surf);
             MidEmbryoImageV2(RowMinsAdj(2):RowMaxsAdj(2), ColumnMinsAdj(2):ColumnMaxsAdj(2)) = ...
-                MidEmbryoImageV2(RowMinsAdj(2):RowMaxsAdj(2), ColumnMinsAdj(2):ColumnMaxsAdj(2)) + im1_mid;
+                max(MidEmbryoImageV2(RowMinsAdj(2):RowMaxsAdj(2), ColumnMinsAdj(2):ColumnMaxsAdj(2)),im1_full);
             MidEmbryoImageV2(RowMinsAdj(3):RowMaxsAdj(3), ColumnMinsAdj(3):ColumnMaxsAdj(3)) = ...
-                MidEmbryoImageV2(RowMinsAdj(3):RowMaxsAdj(3), ColumnMinsAdj(3):ColumnMaxsAdj(3)) + im1_mid_post;
+                max(MidEmbryoImageV2(RowMinsAdj(3):RowMaxsAdj(3), ColumnMinsAdj(3):ColumnMaxsAdj(3)), im1_full_post);
         end
         
         if MakeNewSurf

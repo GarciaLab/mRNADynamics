@@ -155,7 +155,8 @@ for nc=9:14
             
             FrameApproved = CompiledNuclei(NCID).FrameApproved;
             OriginalUnapprovedFrames = sum(~FrameApproved);
-            Times = CompiledNuclei(NCID).timeSinceAnaphase;
+            AllFrameTimes = vertcat(FrameInfo.Time)/60;
+            Times = [FrameInfo(CompiledNuclei(NCID).Frames).Time]/60;
             NucleusFluoDeltas = diff(Fluos);
             TimeDeltas = diff(Times);
             for j=1:length(NucleusFluoDeltas)
