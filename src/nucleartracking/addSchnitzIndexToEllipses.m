@@ -30,11 +30,10 @@ for frame = 1:length(Ellipses)
                 
                 assert(schnitzIndex <= length(schnitzcells));               
                 Ellipses{frame}(ellipseIndex, 9) = uint16(schnitzIndex);
-%                 schnitzcells(schnitzIndex).cellno(schnitzcells(...
-%                     schnitzIndex).frames == frame) = uint16(ellipseIndex);
+                schnitzcells(schnitzIndex).cellno(schnitzcells(...
+                    schnitzIndex).frames == frame) = uint16(ellipseIndex);
             else
                 Ellipses{frame}(ellipseIndex, 9) = 0;
-                
             end
         end
         

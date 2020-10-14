@@ -1,8 +1,7 @@
 function exportTifStacks(AllImages, imagingModality, NChannels, NFrames, NSlices,...
-  Prefix, moviePrecision, hisPrecision, nuclearGUI, ProjectionType, Channels, ReferenceHist)
+  Prefix, moviePrecision, hisPrecision,...
+  nuclearGUI, ProjectionType, Channels, ReferenceHist, skipNuclearProjection)
 
-  % extract metadata from FrameInfo
-%   NSeries = length(AllImages);
   
   NSeries = length(NFrames);
   
@@ -81,7 +80,7 @@ function exportTifStacks(AllImages, imagingModality, NChannels, NFrames, NSlices
       end
   end
   
-  if ~nuclearGUI 
+  if ~nuclearGUI && ~skipNuclearProjection
     saveNuclearProjection(hisMat, [PreProcFolder, filesep, Prefix, '-His.tif']);
   end
 
