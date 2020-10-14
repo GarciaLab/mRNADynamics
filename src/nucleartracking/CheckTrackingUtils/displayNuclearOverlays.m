@@ -1,7 +1,7 @@
 function [OverlayFig, overlayAxes, ImageHandle] = ...
     displayNuclearOverlays(OverlayFig,overlayAxes,...
     ImageHandle, cntState,ImageHisMat)
-
+hasInputChannels = ~isempty(cntState.liveExperiment.inputChannels);
 hisImage = ImageHisMat(:, :, cntState.CurrentFrame);
 numFrames = length(cntState.Ellipses);
 ApprovedNuclei = [cntState.schnitzcells.Approved];
@@ -12,22 +12,20 @@ if length(overlayAxes.Children) > 1
     delete(overlayAxes.Children(1:end-1))
 end
 if cntState.UseHistoneOverlay
-    if isempty(cntState.DisplayRange)
-        HisOverlayImageMat=cat(3,mat2gray(hisImage),mat2gray(cntState.MaxImageMat),zeros(size(cntState.MaxImageMat)));
+    if hasInputChannels
+        if isempty(cntState.DisplayRange)
+            HisOverlayImageMat=cat(3,mat2gray(hisImage),mat2gray(cntState.MaxImageMat),zeros(size(cntState.MaxImageMat)));
+        else
+            HisOverlayImageMat=cat(3,mat2gray(hisImage,double(cntState.DisplayRange)),mat2gray(cntState.MaxImageMat),zeros(size(cntState.MaxImageMat)));
+        end
     else
-        HisOverlayImageMat=cat(3,mat2gray(hisImage,double(cntState.DisplayRange)),mat2gray(cntState.MaxImageMat),zeros(size(cntState.MaxImageMat)));
+        if isempty(cntState.DisplayRange)
+            HisOverlayImageMat=cat(3,mat2gray(hisImage),zeros(size(hisImage)),zeros(size(hisImage)));
+        else
+            HisOverlayImageMat=cat(3,mat2gray(hisImage,double(cntState.DisplayRange)),zeros(size(hisImage)),zeros(size(hisImage)));
+        end
     end
-%     for i=1:cntState.numNuclei()
-% 
-%         frame_idx = find(cntState.schnitzcells(i).frames == cntState.CurrentFrame, 1);
-%         if ~isempty(frame_idx)
-%             HisOverlayImageMat = insertText(HisOverlayImageMat,...
-%                 [cntState.schnitzcells(i).cenx(frame_idx),cntState.schnitzcells(i).ceny(frame_idx)],...
-%                 [num2str(i)],'FontSize',14 ,'TextColor','white', 'BoxOpacity', 0);
-%         end
-%         
-%     end
-    
+
     ImageHandle.CData = HisOverlayImageMat;
 else
     ImageHandle.CData = cntState.MaxImageMat;

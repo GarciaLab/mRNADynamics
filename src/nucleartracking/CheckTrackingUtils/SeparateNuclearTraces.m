@@ -71,7 +71,7 @@ if isfield(schnitzcells,'timeSinceAnaphase')
     time = [FrameInfo.Time]/60; %frame times in minutes 
     ncTimes = time(ncFrames);
     if isfield(schnitzcells, 'anaphaseFrame')
-        if ~isempty(NewSchnitzCells(CurrentNucleus).anaphaseFrame)
+        if ~isempty(NewSchnitzCells(CurrentNucleus).anaphaseFrame(NewSchnitzCells(CurrentNucleus).anaphaseFrame > 0))
             NewSchnitzCells(CurrentNucleus).timeSinceAnaphase = time(NewSchnitzCells(CurrentNucleus).frames) -time(NewSchnitzCells(CurrentNucleus).anaphaseFrame);
         else
             NewSchnitzCells(CurrentNucleus).timeSinceAnaphase = time(NewSchnitzCells(CurrentNucleus).frames) - ncTimes(NewSchnitzCells(CurrentNucleus).cycle-8);
@@ -112,31 +112,32 @@ if isfield(schnitzcells, 'frames')
     NewSchnitzCells(CurrentNucleus+1).frames = schnitzcells(CurrentNucleus).frames(~FrameFilter);
 end
 if isfield(schnitzcells, 'cenx')
-NewSchnitzCells(CurrentNucleus+1).cenx = schnitzcells(CurrentNucleus).cenx(~FrameFilter);
+    NewSchnitzCells(CurrentNucleus+1).cenx = schnitzcells(CurrentNucleus).cenx(~FrameFilter);
 end
 if isfield(schnitzcells, 'ceny')
-NewSchnitzCells(CurrentNucleus+1).ceny = schnitzcells(CurrentNucleus).ceny(~FrameFilter);
+    NewSchnitzCells(CurrentNucleus+1).ceny = schnitzcells(CurrentNucleus).ceny(~FrameFilter);
 end
 if isfield(schnitzcells, 'len')
-NewSchnitzCells(CurrentNucleus+1).len = schnitzcells(CurrentNucleus).len(~FrameFilter);
+    NewSchnitzCells(CurrentNucleus+1).len = schnitzcells(CurrentNucleus).len(~FrameFilter);
 end
 if isfield(schnitzcells, 'cellno')
-NewSchnitzCells(CurrentNucleus+1).cellno = schnitzcells(CurrentNucleus).cellno(~FrameFilter);
+    NewSchnitzCells(CurrentNucleus+1).cellno = schnitzcells(CurrentNucleus).cellno(~FrameFilter);
 end
 if isfield(schnitzcells, 'AlreadyUsed')
-NewSchnitzCells(CurrentNucleus+1).AlreadyUsed= schnitzcells(CurrentNucleus).AlreadyUsed;
+    NewSchnitzCells(CurrentNucleus+1).AlreadyUsed= schnitzcells(CurrentNucleus).AlreadyUsed;
 end
 if isfield(schnitzcells, 'ExtendedIntoFutureAlready')
-NewSchnitzCells(CurrentNucleus+1).ExtendedIntoFutureAlready= schnitzcells(CurrentNucleus).ExtendedIntoFutureAlready;
+    NewSchnitzCells(CurrentNucleus+1).ExtendedIntoFutureAlready= schnitzcells(CurrentNucleus).ExtendedIntoFutureAlready;
 end
 if isfield(schnitzcells, 'StitchedTo')
-NewSchnitzCells(CurrentNucleus+1).StitchedTo= schnitzcells(CurrentNucleus).StitchedTo;
+    NewSchnitzCells(CurrentNucleus+1).StitchedTo= schnitzcells(CurrentNucleus).StitchedTo;
 end
 if isfield(schnitzcells, 'StitchedFrom')
-NewSchnitzCells(CurrentNucleus+1).StitchedFrom= schnitzcells(CurrentNucleus).StitchedFrom;
+    NewSchnitzCells(CurrentNucleus+1).StitchedFrom= schnitzcells(CurrentNucleus).StitchedFrom;
 end
-
-NewSchnitzCells(CurrentNucleus+1).Fluo = schnitzcells(CurrentNucleus).Fluo(~FrameFilter, :);
+if isfield(schnitzcells, 'Fluo')
+    NewSchnitzCells(CurrentNucleus+1).Fluo = schnitzcells(CurrentNucleus).Fluo(~FrameFilter, :);
+end
 for i = 1:length(FluoVars)
     FluoVar = FluoVars{i};
     NewSchnitzCells(CurrentNucleus+1).(FluoVar) = schnitzcells(CurrentNucleus).(FluoVar)(~FrameFilter, :);
@@ -180,29 +181,14 @@ if isfield(schnitzcells,'DVpos')
     NewSchnitzCells(CurrentNucleus+1).DVpos = schnitzcells(CurrentNucleus).DVpos(~FrameFilter);
 end
 if isfield(schnitzcells, 'Approved')
-NewSchnitzCells(CurrentNucleus+1).Approved=schnitzcells(CurrentNucleus).Approved;
+    NewSchnitzCells(CurrentNucleus+1).Approved=schnitzcells(CurrentNucleus).Approved;
 end
 if isfield(schnitzcells, 'Checked')
-NewSchnitzCells(CurrentNucleus+1).Checked=0;
+    NewSchnitzCells(CurrentNucleus+1).Checked=0;
 end
 if isfield(schnitzcells, 'Flag')
-NewSchnitzCells(CurrentNucleus+1).Flag=0;
+    NewSchnitzCells(CurrentNucleus+1).Flag=0;
 end
-%NewSchnitzCells(CurrentNucleus+1).Nucleus=[];
-
-
-% NewParticles(CurrentParticle).Frame=NewParticles(CurrentParticle).Frame(FrameFilter);
-% NewParticles(CurrentParticle).Index=NewParticles(CurrentParticle).Index(FrameFilter);
-% NewParticles(CurrentParticle).Approved=0;
-% NewParticles(CurrentParticle).FrameApproved=NewParticles(CurrentParticle).FrameApproved(FrameFilter);
-% 
-% 
-% %Move the information to the new particle
-% NewParticles(CurrentParticle+1).Frame=Particles(CurrentParticle).Frame(~FrameFilter);
-% NewParticles(CurrentParticle+1).Index=Particles(CurrentParticle).Index(~FrameFilter);
-% NewParticles(CurrentParticle+1).Approved=0;
-% NewParticles(CurrentParticle+1).FrameApproved=Particles(CurrentParticle).FrameApproved(~FrameFilter);
-% NewParticles(CurrentParticle+1).Nucleus=[];
 
 
 schnitzcells=NewSchnitzCells;

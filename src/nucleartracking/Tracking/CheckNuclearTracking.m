@@ -391,25 +391,15 @@ while (currentCharacter ~= 'x')
         plotNuclearTrace(traceFig, traceFigAxes,traceHandles, cntState,...
         anaphaseInMins, ElapsedTime,...
         ncFrames,Prefix);
-    
-    [zFig, zFigAxes, zProfileHandles, zTraceHandles] = plotNuclearZFigures(...
-        zFig, zFigAxes, zProfileHandles, zTraceHandles,...
-        cntState);
+    if ~isempty(cntState.liveExperiment.inputChannels)
+        [zFig, zFigAxes, zProfileHandles, zTraceHandles] = plotNuclearZFigures(...
+            zFig, zFigAxes, zProfileHandles, zTraceHandles,...
+            cntState);
+        set(0, 'CurrentFigure', zFig);
+    end
+
 
     
-%%
-% %AR- disabled until it's fast enough to be useful.
-% %too slow at present.
-% 
-%     % PLOT Z SLICE RELATED FIGURES
-%     plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType,...
-%         xTrace, cptState, plotTraceSettings, fish};
-%     if exist('MaxZProfile', 'var')
-%         plotzvars = [plotzvars, MaxZProfile];
-%     end
-%    MaxZProfile = plotZFigures(plotzvars{:});
-%%
-    set(0, 'CurrentFigure', zFig);
     set(0, 'CurrentFigure', traceFig);
     set(0, 'CurrentFigure', snipFig);
     
