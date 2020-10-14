@@ -59,7 +59,11 @@ if length(unique([schnitzcells(OriginalNucleus).frames;schnitzcells(ClickedNucle
         ncTimes = time(ncFrames);
         if isfield(schnitzcells, 'anaphaseFrame')
             if ~isempty(schnitzcells(OriginalNucleus).anaphaseFrame)
-                schnitzcells(OriginalNucleus).timeSinceAnaphase = time(schnitzcells(OriginalNucleus).frames) - time(schnitzcells(OriginalNucleus).anaphaseFrame);
+                if ~isempty(schnitzcells(OriginalNucleus).anaphaseFrame(find(schnitzcells(OriginalNucleus).anaphaseFrame > 0)))
+                    schnitzcells(OriginalNucleus).timeSinceAnaphase = time(schnitzcells(OriginalNucleus).frames) - time(schnitzcells(OriginalNucleus).anaphaseFrame);
+                else
+                    schnitzcells(OriginalNucleus).timeSinceAnaphase = time(schnitzcells(OriginalNucleus).frames) - ncTimes(schnitzcells(OriginalNucleus).cycle-8);
+                end
             else
                  schnitzcells(OriginalNucleus).timeSinceAnaphase = time(schnitzcells(OriginalNucleus).frames) - ncTimes(schnitzcells(OriginalNucleus).cycle-8);
             end

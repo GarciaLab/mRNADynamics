@@ -107,45 +107,49 @@ classdef CNTState < handle
             for i=1:length(schnitzcells(this.CurrentNucleus).frames)
 
                 Frame(i)=schnitzcells(this.CurrentNucleus).frames(i);
-                MaxFluo(i) = max(schnitzcells(this.CurrentNucleus).Fluo(i,:));
-                if ~isnan(MaxFluo(i))
-                    MaxZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == max(schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
-                else
-                    MaxFluo(i) = 0;
-                    MaxZ(i) = 1;
-                end
-                MedFluo(i) = median(schnitzcells(this.CurrentNucleus).Fluo(i,2:this.ZSlices-1));
-                if ~isnan(MedFluo(i))
-                    MedZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == median(schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
-                else
-                    MaxFluo(i) = 0;
-                    MaxZ(i) = 1;
-                end
-                    
-                MidMedFluo(i) = median(schnitzcells(this.CurrentNucleus).Fluo(i,max(2, MaxZ(i)-5):min(this.ZSlices-1, MaxZ(i)+5)));
-                if ~isempty(find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1))
-                    MidMedZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1);
-                else
-                    SubFluos = schnitzcells(this.CurrentNucleus).Fluo(i,max(2, MaxZ(i)-5):min(this.ZSlices-1, MaxZ(i)+5));
-                    SubFluos = sort(SubFluos(SubFluos > MidMedFluo(i)));
-                    if ~isempty(SubFluos)
-                        MidMedFluo(i) = SubFluos(1);
+                if ~isempty(liveExperiment.inputChannels)
+                    MaxFluo(i) = max(schnitzcells(this.CurrentNucleus).Fluo(i,:));
+                    if ~isnan(MaxFluo(i))
+                        MaxZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == max(schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
+                    else
+                        MaxFluo(i) = 0;
+                        MaxZ(i) = 1;
+                    end
+                    MedFluo(i) = median(schnitzcells(this.CurrentNucleus).Fluo(i,2:this.ZSlices-1));
+                    if ~isnan(MedFluo(i))
+                        MedZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == median(schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
+                    else
+                        MaxFluo(i) = 0;
+                        MaxZ(i) = 1;
+                    end
+
+                    MidMedFluo(i) = median(schnitzcells(this.CurrentNucleus).Fluo(i,max(2, MaxZ(i)-5):min(this.ZSlices-1, MaxZ(i)+5)));
+                    if ~isempty(find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1))
                         MidMedZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1);
                     else
-                        MidMedFluo(i) = 0;
-                        MidMedZ(i) = 1;
+                        SubFluos = schnitzcells(this.CurrentNucleus).Fluo(i,max(2, MaxZ(i)-5):min(this.ZSlices-1, MaxZ(i)+5));
+                        SubFluos = sort(SubFluos(SubFluos > MidMedFluo(i)));
+                        if ~isempty(SubFluos)
+                            MidMedFluo(i) = SubFluos(1);
+                            MidMedZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1);
+                        else
+                            MidMedFluo(i) = 0;
+                            MidMedZ(i) = 1;
+                        end
                     end
                 end
 
             end
             this.CurrentZ = MidMedZ(find(Frame == this.CurrentFrame, 1));
             this.Frames = Frame;
-            this.MaxFluo = MaxFluo;
-            this.MedFluo = MedFluo;
-            this.MidMedFluo = MidMedFluo;
-            this.MaxZ = MaxZ;
-            this.MedZ = MedZ;
-            this.MidMedZ = MidMedZ;
+            if ~isempty(liveExperiment.inputChannels)
+                this.MaxFluo = MaxFluo;
+                this.MedFluo = MedFluo;
+                this.MidMedFluo = MidMedFluo;
+                this.MaxZ = MaxZ;
+                this.MedZ = MedZ;
+                this.MidMedZ = MidMedZ;
+            end
             %this.CurrentZ = round(this.ZSlices / 2);
             
             this.CurrentNucleus = 1;
@@ -310,54 +314,56 @@ classdef CNTState < handle
         function processImageMatrices(this, movieMat)
             
             fr_idx = find(this.Frames == this.CurrentFrame);
-            maxz = this.MaxZ(fr_idx);
-            medz = this.MedZ(fr_idx);
-            midmedz = this.MidMedZ(fr_idx);
+            if ~isempty(this.liveExperiment.inputChannels)
+                maxz = this.MaxZ(fr_idx);
+                medz = this.MedZ(fr_idx);
+                midmedz = this.MidMedZ(fr_idx);
             
 
-            if ~isempty(movieMat)
-                if ~isempty(midmedz)
-                    this.ImageMat = movieMat(:, :, midmedz,...
-                        this.CurrentFrame, this.CurrentChannel);
+                if ~isempty(movieMat)
+                    if ~isempty(midmedz)
+                        this.ImageMat = movieMat(:, :, midmedz,...
+                            this.CurrentFrame, this.CurrentChannel);
+                    else
+                        this.ImageMat = zeros(size(movieMat, 1), size(movieMat, 2), 'uint8');
+                    end
+                    if ~isempty(maxz)
+                        this.MaxImageMat = movieMat(:, :, maxz,...
+                            this.CurrentFrame, this.CurrentChannel);
+                    else
+                        this.MaxImageMat = zeros(size(movieMat, 1), size(movieMat, 2), 'uint8');
+                    end
+                    if ~isempty(medz)
+                        this.MedImageMat = movieMat(:, :, medz,...
+                            this.CurrentFrame, this.CurrentChannel);
+                    else
+                        this.MedImageMat = zeros(size(movieMat, 1), size(movieMat, 2), 'uint8');
+                    end
                 else
-                    this.ImageMat = zeros(size(movieMat, 1), size(movieMat, 2), 'uint8');
-                end
-                if ~isempty(maxz)
-                    this.MaxImageMat = movieMat(:, :, maxz,...
-                        this.CurrentFrame, this.CurrentChannel);
-                else
-                    this.MaxImageMat = zeros(size(movieMat, 1), size(movieMat, 2), 'uint8');
-                end
-                if ~isempty(medz)
-                    this.MedImageMat = movieMat(:, :, medz,...
-                        this.CurrentFrame, this.CurrentChannel);
-                else
-                    this.MedImageMat = zeros(size(movieMat, 1), size(movieMat, 2), 'uint8');
-                end
-            else
-                if ~isempty(midmedz)
-                    this.ImageMat = getMovieSlice(this.liveExperiment,...
-                        this.CurrentFrame, this.CurrentChannel, midmedz);
-                else
-                    dummyMat = getMovieSlice(this.liveExperiment,...
-                        this.CurrentFrame, this.CurrentChannel, 1);
-                    this.ImageMat = zeros(size(dummyMat, 1), size(dummyMat, 2), 'uint8');
-                end
-                if ~isempty(maxz)
-                    this.MaxImageMat = getMovieSlice(this.liveExperiment,...
-                        this.CurrentFrame, this.CurrentChannel, maxz);
-                else
-                    dummyMat = getMovieSlice(this.liveExperiment,...
-                        this.CurrentFrame, this.CurrentChannel, 1);
-                    this.MaxImageMat = zeros(size(dummyMat, 1), size(dummyMat, 2), 'uint8');
-                end
-                if ~isempty(medz)
-                    this.MedImageMat = getMovieSlice(this.liveExperiment,...
-                        this.CurrentFrame, this.CurrentChannel, medz);
-                else
-                    dummyMat = getMovieSlice(this.liveExperiment,...
-                        this.CurrentFrame, this.CurrentChannel, 1);
-                    this.MedImageMat = zeros(size(dummyMat, 1), size(dummyMat, 2), 'uint8');
+                    if ~isempty(midmedz)
+                        this.ImageMat = getMovieSlice(this.liveExperiment,...
+                            this.CurrentFrame, this.CurrentChannel, midmedz);
+                    else
+                        dummyMat = getMovieSlice(this.liveExperiment,...
+                            this.CurrentFrame, this.CurrentChannel, 1);
+                        this.ImageMat = zeros(size(dummyMat, 1), size(dummyMat, 2), 'uint8');
+                    end
+                    if ~isempty(maxz)
+                        this.MaxImageMat = getMovieSlice(this.liveExperiment,...
+                            this.CurrentFrame, this.CurrentChannel, maxz);
+                    else
+                        dummyMat = getMovieSlice(this.liveExperiment,...
+                            this.CurrentFrame, this.CurrentChannel, 1);
+                        this.MaxImageMat = zeros(size(dummyMat, 1), size(dummyMat, 2), 'uint8');
+                    end
+                    if ~isempty(medz)
+                        this.MedImageMat = getMovieSlice(this.liveExperiment,...
+                            this.CurrentFrame, this.CurrentChannel, medz);
+                    else
+                        dummyMat = getMovieSlice(this.liveExperiment,...
+                            this.CurrentFrame, this.CurrentChannel, 1);
+                        this.MedImageMat = zeros(size(dummyMat, 1), size(dummyMat, 2), 'uint8');
+                    end
                 end
             end
  
@@ -371,54 +377,60 @@ classdef CNTState < handle
         % NOT SURE WHAT THESE & and y INPUTS ARE
         function updateTraceInfo(this)
             Frame = [];
-            MaxFluo = [];
-            MaxZ = [];
-            MedFluo = [];
-            MedZ = [];
-            MidMedFluo = [];
-            MidMedZ = [];
+            if ~isempty(this.liveExperiment.inputChannels)
+                MaxFluo = [];
+                MaxZ = [];
+                MedFluo = [];
+                MedZ = [];
+                MidMedFluo = [];
+                MidMedZ = [];
+            end
             for i=1:length(this.schnitzcells(this.CurrentNucleus).frames) 
                 Frame(i)=this.schnitzcells(this.CurrentNucleus).frames(i);
-                MaxFluo(i) = max(this.schnitzcells(this.CurrentNucleus).Fluo(i,2:this.ZSlices-1));
-                if ~isnan(MaxFluo(i))
-                    MaxZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == max(this.schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
-                else
-                    MaxFluo(i) = 0;
-                    MaxZ(i) = 1;
-                end
-                
-                MedFluo(i) = median(this.schnitzcells(this.CurrentNucleus).Fluo(i,2:this.ZSlices-1));
-                if ~isnan(MedFluo(i))
-                    MedZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == median(this.schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
-                else
-                    MedFluo(i) = 0;
-                    MedZ(i) = 1;
-                end
-                MidMedFluo(i) = median(this.schnitzcells(this.CurrentNucleus).Fluo(i,max(2, MaxZ(i)-5):min(this.ZSlices-1, MaxZ(i)+5)));
-                if ~isempty(find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1))
-                    MidMedZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1);
-                else
-                    SubFluos = this.schnitzcells(this.CurrentNucleus).Fluo(i,max(2, MaxZ(i)-5):min(this.ZSlices-1, MaxZ(i)+5));
-                    SubFluos = sort(SubFluos(SubFluos > MidMedFluo(i)));
-                    if ~isempty(SubFluos)
-                        MidMedFluo(i) = SubFluos(1);
+                if ~isempty(this.liveExperiment.inputChannels)
+                    MaxFluo(i) = max(this.schnitzcells(this.CurrentNucleus).Fluo(i,2:this.ZSlices-1));
+                    if ~isnan(MaxFluo(i))
+                        MaxZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == max(this.schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
+                    else
+                        MaxFluo(i) = 0;
+                        MaxZ(i) = 1;
+                    end
+
+                    MedFluo(i) = median(this.schnitzcells(this.CurrentNucleus).Fluo(i,2:this.ZSlices-1));
+                    if ~isnan(MedFluo(i))
+                        MedZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == median(this.schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
+                    else
+                        MedFluo(i) = 0;
+                        MedZ(i) = 1;
+                    end
+                    MidMedFluo(i) = median(this.schnitzcells(this.CurrentNucleus).Fluo(i,max(2, MaxZ(i)-5):min(this.ZSlices-1, MaxZ(i)+5)));
+                    if ~isempty(find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1))
                         MidMedZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1);
                     else
-                       MidMedFluo(i) = 0;
-                       MidMedZ(i) = 1;
+                        SubFluos = this.schnitzcells(this.CurrentNucleus).Fluo(i,max(2, MaxZ(i)-5):min(this.ZSlices-1, MaxZ(i)+5));
+                        SubFluos = sort(SubFluos(SubFluos > MidMedFluo(i)));
+                        if ~isempty(SubFluos)
+                            MidMedFluo(i) = SubFluos(1);
+                            MidMedZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == MidMedFluo(i), 1);
+                        else
+                           MidMedFluo(i) = 0;
+                           MidMedZ(i) = 1;
+                        end
                     end
-                end
 
+                end
             end
-            this.CurrentZ = MidMedZ(find(Frame == this.CurrentFrame, 1));
-            this.Frames = Frame;
-            this.MaxFluo = MaxFluo;
-            this.MedFluo = MedFluo;
-            this.MidMedFluo = MidMedFluo;
-            this.MaxZ = MaxZ;
-            this.MedZ = MedZ;
-            this.MidMedZ = MidMedZ;
             
+            this.Frames = Frame;
+            if ~isempty(this.liveExperiment.inputChannels)
+                this.CurrentZ = MidMedZ(find(Frame == this.CurrentFrame, 1));
+                this.MaxFluo = MaxFluo;
+                this.MedFluo = MedFluo;
+                this.MidMedFluo = MidMedFluo;
+                this.MaxZ = MaxZ;
+                this.MedZ = MedZ;
+                this.MidMedZ = MidMedZ;
+            end
         end
         
         function updateCurrentNucleusCellNo(this)
