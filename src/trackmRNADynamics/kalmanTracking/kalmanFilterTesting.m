@@ -1,8 +1,11 @@
-% Script to experiment with procedures for estimating optimal kalman filter
-% parameters for particle tracking
+% Script to experiment with procedures for using kalman filtering to:
+% (1) predict and link particle fracgments
+% (2) apply backward smoothing to initial trajectories to obtain estimate
+% of particle position between observations
 clear 
 close all
 
+% Load data
 load("C:\Users\nlamm\Dropbox (Personal)\DynamicsResults\2019-03-04-Dl_Venus_snaBAC_MCPmCherry_Leica_Zoom2_7uW_14uW_02\ParticlesFull.mat")
 
 SimParticles = ParticlesFull.SimParticles{1};
@@ -13,33 +16,29 @@ close all
 test_id = 128; 
 filterSize = 1;
 
-% extract position data
-posData = [Particles(test_id).xPos' Particles(test_id).yPos'];
-trackLen = size(posData,1);
-% set random ininital guess at param values
-% n0 = rand(1,4);
-smoothed_z = [imgaussfilt(posData(:,1),filterSize), imgaussfilt(posData(:,2),filterSize)];
-diffs = posData-smoothed_z;
+% extract position data 
+frameVec = Particles(test_id).Frame;
+framesFull = frameVec(1):frameVec(end);
+posData = NaN(length(framesFull),2);
+posData(ismember(framesFull,frameVec),:) = [Particles(test_id).xPos' Particles(test_id).yPos'];
 
-mean1 = mean(smoothed_z);
-mean2 = mean(diffs);
-% 
-% Q = mean(sum((smoothed_z-mean1).^2) / (trackLen-1))/10;
-MeasurementNoise = mean(sqrt(mean(diffs.^2)));%mean(sum((diffs-mean2).^2) / (trackLen-1));
-MotionNoise = repelem(MeasurementNoise,3)*5e-3;
-InitNoise = repelem(MeasurementNoise,3);
-noiseVec = [[R R R] [Q Q Q] R];
-timePoints = 1:trackLen;
-[pdTrack, ctTrack,pdTrackSE,kF] = kFilterFwd(posData(1:end-5,:),InitNoise,MotionNoise,MeasurementNoise,timePoints);
+% set noise parameters
+MeasurementNoise = 1;
+MotionNoise = MeasurementNoise*5e-3; % NL: this seems to work
+InitNoise = MeasurementNoise;
+
+% call forward filtering function
+tic
+KFTrack = kalmanFilterFwd(posData,InitNoise,MotionNoise,MeasurementNoise);
+KFTrack = kalmanFilterBkd(KFTrack);
+toc
 
 figure;
 hold on
-errorbar(pdTrack(end-4:end,1),pdTrack(end-4:end,2),sqrt(pdTrackSE(end-4:end,1)),'both','-x')
-% plot(pdTrack(end-4:end,1),pdTrack(end-4:end,2),'-o')
-% plot(pdTrack(:,1),pdTrack(:,2),'-o')
-plot(ctTrack(:,1),ctTrack(:,2))
+errorbar(KFTrack.priorTrack(:,1),KFTrack.priorTrack(:,2),sqrt(KFTrack.priorTrackSE(:,1)),'both','o-')
+errorbar(KFTrack.smoothedTrack(:,1),KFTrack.smoothedTrack(:,2),sqrt(KFTrack.smoothedTrackSE(:,1)),'both','-')
+
 plot(posData(:,1),posData(:,2),'-x','Color','k')
-plot(posData(end-5:end,1),posData(end-5:end,2),'-o','Color','k')
 
 % axis([0.95*min(pdTrack(:,1)) 1.05*max(pdTrack(:,1)) 0.95*min(pdTrack(:,2)) 1.05*max(pdTrack(:,2))])
 
