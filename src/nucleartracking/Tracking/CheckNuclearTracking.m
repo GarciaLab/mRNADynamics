@@ -342,20 +342,9 @@ cntState.processImageMatrices(movieMat);
 set(0, 'CurrentFigure', OverlayFig);
 
 frameChangeKeyInput = NuclearFrameChangeEventHandler(cntState);
-%zSliceChangeKeyInput = NuclearZSliceChangeEventHandler(cntState);
 nuclearChangeKeyInput = NuclearChangeEventHandler(cntState);
-%channelSwitchKeyInput = ChannelSwitchEventHandler(cptState, numSpotChannels, cptState.UseHistoneOverlay);
-%zoomParticleToggleKeyInput = ZoomParticleToggleEventHandler(cptState);
-%zoomAnywhereKeyInput = ZoomAnywhereEventHandler(cptState);
-%histoneContrastKeyInput = HistoneContrastChangeEventHandler(cptState);
-%addSpotKeyInput = AddSpotEventHandler(cptState, Prefix);
-%deleteSpotKeyInput = DeleteSpotEventHandler(cptState);
-%ellipsesKeyInput = NuclearEllipsesEventHandler(cntState);
 tracesKeyInput = NuclearTracesEventHandler(cntState, FrameInfo, ncFrames);
-%nuclearTrackingKeyInput = NuclearTrackingEventHandler(cptState);
 generalKeyInput = GeneralNuclearEventHandler(cntState, DataFolder, DropboxFolder, FilePrefix);
-
-% Create the approved field if it does not exist
 
 
 currentCharacter = 1;
@@ -408,9 +397,7 @@ while (currentCharacter ~= 'x')
     currentCharacter = getUserKeyInput(OverlayFig);
     
     frameChangeKeyInput(currentCharacter);
-    %zSliceChangeKeyInput(currentCharacter);
     nuclearChangeKeyInput(currentCharacter);
-    %ellipsesKeyInput(currentCharacter);
     tracesKeyInput(currentCharacter);
     generalKeyInput(currentCharacter);
     
