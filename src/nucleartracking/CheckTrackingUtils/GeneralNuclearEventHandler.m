@@ -32,7 +32,7 @@ function keyInputHandler = GeneralNuclearEventHandler(cntState, DataFolder, Drop
 %             
 %         elseif cc == '0' %Debugging mode
 %             keyboard;
-        %end
+        end
     end
 
     keyInputHandler = @keyInput;
