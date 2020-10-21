@@ -1,18 +1,9 @@
-function tracks = predictParticleTrackLocations(tracks)
+function particleTracks = predictParticleTrackLocations(particleTracks)
 
-        for k = 1:length(tracks)
-            
-            bbox = tracks(k).bbox;
-            
+        for k = 1:length(particleTracks)
+                      
             % Predict the current location of the track.           
-            predictedState = predict(tracks(k).kalmanFilter);
-            
-            predictedCentroid = predictedState(1:2);
-            
-            % Shift the bounding box so that its center is at
-            % the predicted location.
-            predictedCentroid = int32(predictedCentroid);% - bbox(3:4) / 2;
-            tracks(k).bbox = predictedCentroid;%[predictedCentroid, bbox(3:4)];
+            predict(particleTracks(k).kalmanFilter);                       
             
         end
     end

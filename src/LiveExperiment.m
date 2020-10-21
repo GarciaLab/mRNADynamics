@@ -191,7 +191,11 @@ classdef LiveExperiment
             this.nc13 = this.anaphaseFrames(5);
             this.nc14 = this.anaphaseFrames(6);
             
-            evalc('[~, this.fileMode] = DetermineFileMode(this.rawFolder)');    %Using evalc to supress displays to the command window from the function DetermineFileMode
+            try % NL: adding this for ease of use on laptops etc may not have raw data folders
+                evalc('[~, this.fileMode] = DetermineFileMode(this.rawFolder)');    %Using evalc to supress displays to the command window from the function DetermineFileMode
+            catch
+                this.fileMode = NaN;
+            end
             
             this.rerunParticleTrackingFlag = exist([this.resultsFolder, 'rerunParticleTracking.mat'] , 'file');
             

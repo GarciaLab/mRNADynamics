@@ -1,22 +1,26 @@
 function [assignments, unassignedTracks, unassignedDetections] = ...
-    makeParticleTrackAssignment(tracks, measurements)
+                  makeParticleTrackAssignment(particleTracks, measurements,...
+                  maxCost,NewSpotNuclei,maxUnobservedFrames)
 
-  nTracks = length(tracks);
+  nTracks = length(particleTracks);
   nDetections = size(measurements, 1);
 
   % Compute the cost of assigning each detection to each track.
 
-  cost = zeros(nTracks, nDetections);
+  costArray = zeros(nTracks, nDetections);
+  
   % NL: This returns the negative of  the log likelihood, with 
   % trajectories modeled as multidimensional Gaussian process
+  extantNuclei = [particleTracks.Nucleus];
+  cappedParticles = [particleTracks.consecutiveInvisibleCount]>=maxUnobservedFrames;
   for k = 1:nTracks
-      cost(k, :) = distance(tracks(k).kalmanFilter, measurements);
+      costArray(k, :) = distance(particleTracks(k).kalmanFilter, measurements);
+      costArray(k, NewSpotNuclei~=extantNuclei(k)) = Inf; % forbid matches between spots from different nuclei
   end
-
-  %AR- i don't know how to properly adjust
-  %this number.
-  costOfNonAssignment = -log(1e-3);%nanmin([prctile(min(cost),95) 20]);
+  costArray(cappedParticles,:) = Inf;
+  
+  % perform pairwise matching
   [assignments, unassignedTracks, unassignedDetections] = ...
-      assignDetectionsToTracks(cost, costOfNonAssignment);
+                        assignDetectionsToTracks(costArray, 0.5*maxCost);
 
 end

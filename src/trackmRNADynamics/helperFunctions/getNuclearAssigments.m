@@ -1,6 +1,7 @@
 function [NewSpotNuclei, NewSpotDistances] = getNuclearAssigments(NewSpotsX,NewSpotsY,...
-              schnitzcells,CurrentFrame,UseHistone,ForceVec)
+              schnitzcells,CurrentFrame,UseHistone)
 if UseHistone     
+  
   ExtantNucleiX = [];
   ExtantNucleiY = [];
   ncIDVec = [];
@@ -16,16 +17,13 @@ if UseHistone
   for i = 1:length(NewSpotsX)            
     NucleusDistMat(i,:) = vecnorm([NewSpotsX(i) NewSpotsY(i)]  - [ExtantNucleiX' ExtantNucleiY'],2,2);
   end
+  
   % assign spots to nearest neighbors
   [NewSpotDistances, minIndices] = min(NucleusDistMat,[],2); % note that I'm not enforcing unique assignment at this stage. Will do this later on in the process
   NewSpotNuclei = ncIDVec(minIndices); 
-  % revise indices with forced nuclear assignments
-  ForceIndices = find(~isnan(ForceVec));
-  for i = ForceIndices
-    NewSpotNuclei(i) = ForceVec(i);
-    NewSpotDistances(i) = NucleusDistMat(i,ncIDVec==ForceVec(i));
-  end
+  
 else
+  
   NewSpotNuclei = ones(size(NewSpotsX)); % if no nucleus info, then we set all ID values to dummy val
   NewSpotDistances = zeros(size(NewSpotsX));
 end

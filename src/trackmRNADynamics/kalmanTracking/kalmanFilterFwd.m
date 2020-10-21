@@ -7,6 +7,7 @@ function KFTrack =...
   elseif strcmp(KFTrack.kfType,'ConstantAcceleration')
     nt = 3;
   end
+  
   % initialize particle filter
   KFTrack.kalmanFilter =  configureKalmanFilter(KFTrack.kfType, ...
             posData(1,:), repelem(InitError,nt), repelem(MotionNoise,nt), MeasurementNoise);               
