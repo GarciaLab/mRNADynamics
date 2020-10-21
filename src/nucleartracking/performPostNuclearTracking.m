@@ -56,9 +56,10 @@ end
 %we'll make sure cellnos and ellipses correspond well.
 % [Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
 
+[schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses);
+
 [Ellipses, schnitzcells] = addStrayEllipsesToSchnitzcells(Ellipses, schnitzcells);
 
-% [schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses);
 
 save2(ellipsesFile, Ellipses);
 save2(schnitzcellsFile, schnitzcells);

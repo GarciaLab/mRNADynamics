@@ -108,6 +108,26 @@ title(path(backslashes(length(backslashes))+1:length(path)-4),'Interpreter','non
 standardizeFigure(ax, [], 'red');
 
 
+% make struct with results
+SiteResults = struct('TF',[],'orientation',[],'position',[],'score',[]);
+for site = 1:length(values)
+    SiteResults(site).TF = tf{site};
+    SiteResults(site).score = values(site);
+    if ismember(site,siteIndices)
+        SiteResults(site).orientation = 'forward';
+        SiteResults(site).position = location(siteIndices==site);
+    elseif ismember(site,complementSiteIndices)
+        SiteResults(site).orientation = 'reverse'; 
+        SiteResults(site).position = complementLocation(complementSiteIndices==site);
+    end
+end
+fileName = [path(1:length(path)-4),'.mat'];
+save(fileName, 'SiteResults')
+
+
+
+
+
 figure(2); % Sites versus Position
 clf
 hold on
