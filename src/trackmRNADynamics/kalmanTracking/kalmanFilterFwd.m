@@ -1,16 +1,15 @@
-function KFTrack =...
-                kalmanFilterFwd(posData,InitError,MotionNoise,MeasurementNoise) 
+function KFTrack = kalmanFilterFwd(posData,kalmanOptions) 
   
-  KFTrack.kfType = 'ConstantVelocity';
-  if strcmp(KFTrack.kfType,'ConstantVelocity')
+  KFTrack.type = kalmanOptions.type;
+  if strcmp(KFTrack.type,'ConstantVelocity')
     nt = 2;
-  elseif strcmp(KFTrack.kfType,'ConstantAcceleration')
+  elseif strcmp(KFTrack.type,'ConstantAcceleration')
     nt = 3;
   end
   
-  % initialize particle filter
-  KFTrack.kalmanFilter =  configureKalmanFilter(KFTrack.kfType, ...
-            posData(1,:), repelem(InitError,nt), repelem(MotionNoise,nt), MeasurementNoise);               
+  % initialize particle filter 
+  KFTrack.kalmanFilter =  configureKalmanFilter(kalmanOptions.type, ...
+            posData(1,:), kalmanOptions.InitialError, kalmanOptions.MotionNoise, kalmanOptions.MeasurementNoise);               
            
   % get size 
   nDims = size(posData,2);
@@ -24,8 +23,11 @@ function KFTrack =...
   KFTrack.posteriorCovariance = NaN(nt*nDims,nt*nDims,nSteps);
   
   % set posterior values to initial values  
-  KFTrack.posteriorState(1,:) = [posData(1,1) repelem(0,nt-1) posData(1,2) repelem(0,nt-1)]; 
-  KFTrack.posteriorCovariance(:,:,1) = diag(repelem(InitError,nt*nDims));  
+  for i = 1:nDims
+      ind = (i-1)*nt+1;
+      KFTrack.posteriorState(1,ind:ind+nt-1) = [posData(1,i) repelem(0,nt-1)]; 
+  end
+  KFTrack.posteriorCovariance(:,:,1) = diag(repelem(kalmanOptions.InitialError,nDims));  
   
   for k = 2:nSteps    
     % predict

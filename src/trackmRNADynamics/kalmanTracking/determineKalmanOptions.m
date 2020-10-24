@@ -7,6 +7,6 @@ function kalmanOptions = determineKalmanOptions(liveExperiment,kfType)
     end
     kalmanOptions.type = kfType;
     % NL: these parameters generally work pretty well
-    kalmanOptions.MeasurementNoise = 0.1/liveExperiment.pixelSize_um;
-    kalmanOptions.MotionNoise = repelem(kalmanOptions.MeasurementNoise,nDims)*5e-3; % NL: this seems to work well
+    kalmanOptions.MeasurementNoise = 0.1/liveExperiment.pixelSize_um; 
+    kalmanOptions.MotionNoise = repelem(kalmanOptions.MeasurementNoise,nDims);%e-3; % NL: this seems to work well
     kalmanOptions.InitialError = repelem(kalmanOptions.MeasurementNoise,nDims);

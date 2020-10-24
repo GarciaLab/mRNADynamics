@@ -1,4 +1,4 @@
-    function particleTracks = updateUnassignedParticleTracks(particleTracks, unassignedTracks)
+    function particleTracks = updateUnassignedParticleTracks(particleTracks, unassignedTracks)  
         for i = 1:length(unassignedTracks)
             ind = unassignedTracks(i);
             particleTracks(ind).age = particleTracks(ind).age + 1;

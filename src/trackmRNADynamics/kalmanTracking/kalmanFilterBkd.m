@@ -1,10 +1,8 @@
 function KFTrack = kalmanFilterBkd(KFTrack)
       
-
-  KFTrack.kfType = 'ConstantVelocity';
-  if strcmp(KFTrack.kfType,'ConstantVelocity')
+  if strcmp(KFTrack.type,'ConstantVelocity')
     nt = 2;
-  elseif strcmp(KFTrack.kfType,'ConstantAcceleration')
+  elseif strcmp(KFTrack.type,'ConstantAcceleration')
     nt = 3;
   end
   
