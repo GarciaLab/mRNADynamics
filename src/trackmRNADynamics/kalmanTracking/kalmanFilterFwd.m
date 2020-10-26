@@ -16,6 +16,8 @@ function KFTrack = kalmanFilterFwd(posData,kalmanOptions)
   nSteps = size(posData,1);
   
   % initialize arrays  
+  KFTrack.logL = NaN(nSteps,1);
+  
   KFTrack.priorState = NaN(nSteps,nt*nDims);
   KFTrack.priorCovariance = NaN(nt*nDims,nt*nDims,nSteps);
     
@@ -33,8 +35,9 @@ function KFTrack = kalmanFilterFwd(posData,kalmanOptions)
     % predict
     [~,KFTrack.priorState(k,:),KFTrack.priorCovariance(:,:,k)] = predict(KFTrack.kalmanFilter);
     
-    % correct
-    if all(~isnan(posData(k,:)))      
+    % update
+    if all(~isnan(posData(k,:))) 
+       KFTrack.logL(k) = -distance(KFTrack.kalmanFilter,posData(k,:));
        [~,KFTrack.posteriorState(k,:),KFTrack.posteriorCovariance(:,:,k)] = correct(KFTrack.kalmanFilter,posData(k,:));               
     else
       KFTrack.posteriorCovariance(:,:,k) = KFTrack.priorCovariance(:,:,k);

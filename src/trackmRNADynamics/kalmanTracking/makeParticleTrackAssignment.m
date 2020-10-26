@@ -1,15 +1,16 @@
 function [assignments, unassignedTracks, unassignedDetections] = ...
                   makeParticleTrackAssignment(particleTracks, measurements,...
-                  maxCost,NewSpotNuclei,maxUnobservedFrames, activeSpotIndices,...
+                  maxCost,NewSpotNuclei, activeSpotIndices,...
                   activeParticleIndices, earlyFlags) 
   
   % NL: This returns the negative of  the log likelihood, with 
   % trajectories modeled as multidimensional Gaussian process
   particleNuclei = [particleTracks.Nucleus];  
-  cappedParticles = [particleTracks.consecutiveInvisibleCount]>=maxUnobservedFrames;
-      
+  cappedParticles = [particleTracks.cappedFlag];
+  duplicateParticles = [particleTracks.duplicateFlag];     
+  
   mappedParticles = ismember(1:length(particleTracks),activeParticleIndices); 
-  eligibleParticles = ~cappedParticles & ~mappedParticles & ~earlyFlags;
+  eligibleParticles = ~cappedParticles & ~mappedParticles & ~earlyFlags & ~duplicateParticles;
   mappedDetectionIDs = activeSpotIndices(~isnan(activeParticleIndices));
   mappedParticleIDs = activeParticleIndices(~isnan(activeParticleIndices));
 
