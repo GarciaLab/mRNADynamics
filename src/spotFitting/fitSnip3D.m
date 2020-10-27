@@ -1,25 +1,8 @@
 function spotsFrame= fitSnip3D(spotsFrame, spotChannel,...
-    spotIndex, frame, Prefix,~, ~, nSpots, imStack)
-
-%%
-
-if ischar(Prefix)
-    liveExperiment = LiveExperiment(Prefix);
-else
-    liveExperiment = Prefix;
-end
+                             spotIndex, frame, liveExperiment, nSpots, imStack)
 
 FrameInfo = getFrameInfo(liveExperiment);
 preFolder = liveExperiment.preFolder;
-
-if nargin < 9
-    movieMat = getMovieMat(liveExperiment);
-    if ~isempty(movieMat)
-        imStack = movieMat(:, :, :, frame, spotChannel);
-    else
-        imStack = getMovieFrame(liveExperiment, frame, spotChannel);
-    end
-end
 
 % extract basic fit parameters
 spot = spotsFrame.Fits(spotIndex);

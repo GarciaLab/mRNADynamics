@@ -3,14 +3,10 @@ function Spots = fit3DGaussiansToAllSpots(Prefix, nSpots, varargin)
 
 cleanupObj = onCleanup(@myCleanupFun);
 
-optionalResults = '';
-
 segmentSpots = false;
 displayFigures = false;
 nWorkers = 8;
 keepPool = true;
-dogs = [];
-saveType = '.tif';
 save_flag = true;
 
 for i = 1:length(varargin)
@@ -23,44 +19,35 @@ for i = 1:length(varargin)
         %if the caller is segmentSpots
        
         Spots = varargin{i+1};
-        segmentSpots = true;
-    elseif strcmpi(varargin{i}, 'optionalResults')
-        optionalResults = varargin{i+1};
+        segmentSpots = true;  
     elseif strcmpi(varargin{i}, 'noSave')
         save_flag = false;
     elseif strcmpi(varargin{i}, 'nWorkers')
         nWorkers = varargin{i+1};
     elseif strcmpi(varargin{i}, 'keepPool')
-        keepPool = true;
-    elseif strcmpi(varargin{i}, 'dogs')
-        dogs = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'saveAsMat') | strcmpi(varargin{i}, '.mat')
-        saveType = '.mat';
+        keepPool = true;  
     end
 end
 
-
 disp(['Fitting 3D Gaussians to: ', Prefix]);
 
+% generate liveExperiment object
 liveExperiment = LiveExperiment(Prefix);
 
-[~,ProcPath,DropboxFolder,~, PreProcPath,...
-    ~, Prefix, ~,Channel1,Channel2,~, Channel3, spotChannels] = readMovieDatabase(Prefix, optionalResults);
-
+% get mat containing raw image data
 movieMat = getMovieMat(liveExperiment);
-DataFolder=[DropboxFolder,filesep,Prefix];
+
+% create dircetory
+DataFolder=[liveExperiment.resultsFolder,filesep,Prefix];
 
 if ~segmentSpots
     Spots = getSpots(liveExperiment);
 end
-
-FrameInfo = getFrameInfo(liveExperiment);
-
 startParallelPool(nWorkers, displayFigures, keepPool);
 
 
 %%
-for ch = spotChannels
+for ch = liveExperiment.spotChannels
     
     waitbarFigure = waitbar(0, ['Fitting 3D Gaussians: Channel ', num2str(ch)]);
     
@@ -83,8 +70,7 @@ for ch = spotChannels
     numFrames = length(SpotsCh);
     
     % iterate through frames
-%     parfor frame = 1:numFrames
-    parfor frame = 1:numFrames %frames
+    for frame = 1:numFrames %frames
         
         SpotsFr = SpotsCh(frame);
         
@@ -95,9 +81,9 @@ for ch = spotChannels
         end
         
         nSpotsPerFrame = length(SpotsFr.Fits);
-       for spot = 1:nSpotsPerFrame
+        for spot = 1:nSpotsPerFrame
             SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame,...
-                liveExperiment, PreProcPath, FrameInfo, nSpots, imStack);
+                liveExperiment, nSpots, imStack);
         end
         SpotsCh(frame) = SpotsFr;
         send(q, frame); %update the waitbar
@@ -105,7 +91,9 @@ for ch = spotChannels
     
     if iscell(Spots) && length(Spots) > 1
         Spots{ch} = SpotsCh;
-    else Spots = SpotsCh; end
+    else
+        Spots = SpotsCh; 
+    end
     
 end
 
