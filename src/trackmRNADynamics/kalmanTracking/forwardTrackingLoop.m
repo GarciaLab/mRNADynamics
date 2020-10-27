@@ -3,7 +3,7 @@ function [forwardTracks, trackingInfo] = forwardTrackingLoop(forwardTracks, trac
           
     % Get the positions of ALL spots (approved and disapproved)
     [NewSpotsX, NewSpotsY, NewSpotsZ, NewSpotsFluo] = SpotsXYZ(Spots{Channel}(CurrentFrame));
-
+  
     % adjust Z position variable for stage movements
     NewSpotsZAdjusted = NewSpotsZ - trackingInfo.zPosStage(CurrentFrame);
     SpotMeasurements = [NewSpotsX', NewSpotsY', NewSpotsZAdjusted'];

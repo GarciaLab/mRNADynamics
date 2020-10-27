@@ -23,8 +23,8 @@ if ~isempty(Spots.Fits)
         if ~useGauss3DCentroid
             brightestZ = spotsFrame.brightestZ;
             brightestZIndex = spotsFrame.z == brightestZ;
-            x(frame)=double(spotsFrame.xDoG(brightestZIndex));
-            y(frame)=double(spotsFrame.yDoG(brightestZIndex));
+            x(frame)=double(spotsFrame.xFit(brightestZIndex));
+            y(frame)=double(spotsFrame.yFit(brightestZIndex));
             f(frame)=double(spotsFrame.FixedAreaIntensity(brightestZIndex));
             z(frame)=double(brightestZ);            
         else
