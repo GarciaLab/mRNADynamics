@@ -1,4 +1,4 @@
-function kalmanOptions = determineKalmanOptions(liveExperiment,trackingInfo,Spots)
+function kalmanOptions = determineKalmanOptions(liveExperiment,trackingInfo, Spots)
     
     if strcmp(trackingInfo.kfType,'ConstantVelocity')
       nDims = 2;

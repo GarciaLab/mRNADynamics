@@ -1,7 +1,7 @@
 function [assignments, unassignedTracks, unassignedDetections, costArray] = ...
                   makeParticleTrackAssignment(particleTracks, measurements,...
                   maxCost,NewSpotNuclei, activeSpotIndices,...
-                  activeParticleIndices, earlyFlags) 
+                  activeParticleIndices, earlyFlags, trackingOptions) 
   
   % NL: This returns the negative of  the log likelihood, with 
   % trajectories modeled as multidimensional Gaussian process
@@ -37,7 +37,7 @@ function [assignments, unassignedTracks, unassignedDetections, costArray] = ...
       for k = 1:length(particleIDs)
           costArray(k, :) = distance(particleTracks(particleIDs(k)).kalmanFilter, measurements(detectionIDs,:));          
       end      
-      
+            
       % perform pairwise matching
       [assignmentsTemp, unassignedTracksTemp, unassignedDetectionsTemp] = ...
                             assignDetectionsToTracks(costArray, 0.5*maxCost);

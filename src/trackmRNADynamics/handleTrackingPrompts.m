@@ -1,7 +1,8 @@
 function retrack =  handleTrackingPrompts(liveExperiment,Spots,retrack)
 
   if retrack && ~liveExperiment.hasParticlesFile
-    error('No Particles structure found. Re-run without "retrack" option')  
+    error('No Particles structure found. Re-run without "retrack" option') 
+    
   % prompt user if old Particles structure exists, but retracking not specified  
   elseif ~retrack && liveExperiment.hasParticlesFile
     retrack_str = input('Particles structure detected. Do you want to perform retracking? (y/n)','s');
@@ -16,7 +17,8 @@ function retrack =  handleTrackingPrompts(liveExperiment,Spots,retrack)
         newSpotsFlag = newSpotsFlag + sum(1*SpotFilter{Ch}(:)==2);
       end
       if newSpotsFlag > 0
-        reset_spots_str = input(['Particles will be overwritten. Do you wish to overwrite ' num2str(newSpotsFlag) ' manually added spot(s)? (y/n)'],'s');
+        reset_spots_str = input(['Particles will be overwritten. Do you wish to overwrite ' ...
+              num2str(newSpotsFlag) ' manually added spot(s)? (y/n)'],'s');
         if strcmpi(reset_spots_str,'y')
           disp('removing user-added spots...')        
           for Ch = 1:length(SpotFilter)
@@ -29,6 +31,7 @@ function retrack =  handleTrackingPrompts(liveExperiment,Spots,retrack)
           save([liveExperiment.resultsFolder 'Spots.mat'],'Spots')
         end
       end
+      
     elseif strcmpi(retrack_str,'y')    
       retrack = true;
     end
