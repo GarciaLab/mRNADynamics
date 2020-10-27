@@ -1,6 +1,6 @@
 function particleTracks = makeNewTracks(particleTracks, measurements,...
                                        unassignedDetections, kalmanOptions,...
-                                       CurrentFrame, zOrig, NewSpotNuclei)
+                                       CurrentFrame, zOrig, NewSpotNuclei, trackingInfo)
            
     % get specs for unassigned particles
     measurements = measurements(unassignedDetections, :);
@@ -12,7 +12,7 @@ function particleTracks = makeNewTracks(particleTracks, measurements,...
         % Create a Kalman filter object            
 
         kalmanFilter = configureKalmanFilter(kalmanOptions.type, ...
-            measurement, kalmanOptions.InitialError, kalmanOptions.MotionNoise,  kalmanOptions.MeasurementNoise);
+            measurement(trackingInfo.trackingIndices), kalmanOptions.InitialError, kalmanOptions.MotionNoise,  kalmanOptions.MeasurementNoise);
 
         % Create a new track.
         newTrack = struct(...

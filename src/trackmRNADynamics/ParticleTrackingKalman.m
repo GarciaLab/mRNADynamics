@@ -5,195 +5,106 @@ function Particles = ParticleTrackingKalman(Spots, liveExperiment, ...
   % get experiment type  
   FrameInfo = getFrameInfo(liveExperiment);
   schnitzcells = getSchnitzcells(liveExperiment);
+  
   % reset histone option to 0 if we have no nucleus data
   useHistone = useHistone && ~isempty(schnitzcells);
+  
   % process key tracking options
   % Set max spots per nucleus per frame, can be different between channels
   trackingInfo = parseTrackingOptions(liveExperiment, Spots, useHistone);
   
   % get vector indicating stage position in Z
   zPosStage = [FrameInfo.zPosition]*1e6 / FrameInfo(1).ZStep;    
-        
+  trackingInfo.zPosStage = zPosStage;
+  
   % load particles and link info if we're retracking
   Particles = cell(1,trackingInfo.NCh);  
   
   % Extract vector indicating nuclear cleavage cycle for each frame  
-  ncVec = [FrameInfo.nc];  
-  nFrames = length(ncVec);
+  trackingInfo.ncVec = [FrameInfo.nc];  
+%   trackingInfo.nFrames = length(ncVec);
   
   for Channel = 1:trackingInfo.NCh        
     
     % determine kalman filter characteristics
-    kalmanOptions = determineKalmanOptions(liveExperiment,trackingInfo.kfType);       
-          
-    %% %%%%%%%%%%%%%% Stage 1: Forward tracking %%%%%%%%%%%%%%%%%%%%%%%%%%%
-    wb = waitbar(0,['Performing tracking stage 1 (channel ' num2str(Channel) ')']);
+    kalmanOptions = determineKalmanOptions(liveExperiment,trackingInfo, Spots{Channel});       
+    
+    %% %%%%%%%%%%%%%% Stage 0: Calibrate matching cost %%%%%%%%%%%%%%%%%%%%           
+    % Determine number of detections per frame
+%     nDetections = zeros(1,length(Spots{Channel}));
+%     for f = 1:length(Spots{Channel})
+%       nDetections(f) = length(Spots{Channel}(f).Fits);
+%     end
+%     [maxN, maxF] = max(nDetections);
+%     maxF = 30;
+%     testTracks = initializeParticleTracks();
+%     for CurrentFrame = 1:maxF+1       
+% 
+%         [testTracks, trackingInfo] = forwardTrackingLoop(testTracks, trackingInfo, ...
+%             kalmanOptions, Spots, Channel, CurrentFrame, schnitzcells, CurrentFrame==maxF+1);  
+%                                   
+%     end        
+    %% %%%%%%%%%%%%%% Stage 1: Forward tracking %%%%%%%%%%%%%%%%%%%%%%%%%%%           
+    
     % initialize tracking structure
     forwardTracks = initializeParticleTracks();
     
-    % particle ID counter
-    for CurrentFrame = 1:nFrames
-      waitbar(CurrentFrame/nFrames,wb);
-      
-      % Get the positions of ALL spots (approved and disapproved)
-      [NewSpotsX, NewSpotsY, NewSpotsZ] = SpotsXYZ(Spots{Channel}(CurrentFrame));
-      
-      % Check if we're at the start of a new nuclear cycle
-      continuedNCFlag = true;
-      if CurrentFrame > 1
-        continuedNCFlag = ncVec(CurrentFrame-1)==ncVec(CurrentFrame);
-      end
-      
-      % adjust Z position variable for stage movements
-      NewSpotsZAdjusted = NewSpotsZ - zPosStage(CurrentFrame);
-      SpotMeasurements = [NewSpotsX', NewSpotsY', NewSpotsZAdjusted'];
-      
-      % if we have nucleus info, assign each spot to a nucleus
-      [NewSpotNuclei, ~] = getNuclearAssigments(NewSpotsX,NewSpotsY,...
-              schnitzcells,CurrentFrame,useHistone);
-         
-      % predict positions of extant particles
-      forwardTracks = predictParticleTrackLocations(forwardTracks);
-      
-      earlyFlags = false(size(forwardTracks));
-      
-      % Perform cost-based matching
-      [assignments, unassignedTracks, unassignedDetections] = ...
-                  makeParticleTrackAssignment(forwardTracks, SpotMeasurements, ...
-                  continuedNCFlag*trackingInfo.matchCostMax(Channel), NewSpotNuclei,...
-                  [], [], earlyFlags);
-                                
-      % make new entries for spots that were not assigned to existing
-      % particles
-      forwardTracks = makeNewTracks(forwardTracks, SpotMeasurements,...
-                                       unassignedDetections, kalmanOptions,...
-                                       CurrentFrame, NewSpotsZ, NewSpotNuclei);
-       
-      % update existing tracks that had no match this frame
-      forwardTracks = updateUnassignedParticleTracks(forwardTracks, unassignedTracks,...
-                trackingInfo.maxUnobservedFrames(Channel));          
-                
-      % update tracks that matched with a new particle
-      forwardTracks = updateAssignedParticleTracks(...
-                              forwardTracks, assignments, SpotMeasurements, CurrentFrame,...
-                              NewSpotsZ);     
+    % track fraction of unassigned detections over time
+    trackingInfo.fractionUnassigned = NaN(1,trackingInfo.nFrames);
+    
+    wb = waitbar(0,['Stage 1: Forward particle linking (channel ' num2str(Channel) ')']);
+    % iterate throug frames
+    for CurrentFrame = 1:trackingInfo.nFrames
+        waitbar(CurrentFrame/trackingInfo.nFrames,wb);
 
-      % lastly, identify and "Cap" cases where there are too many tracks
-      % per nucleus
-      forwardTracks = cleanUpTracks(forwardTracks, trackingInfo.spotsPerNucleus(Channel), ~continuedNCFlag||CurrentFrame==nFrames);   
+        forwardTracks = forwardTrackingLoop(forwardTracks, trackingInfo, ...
+            kalmanOptions, Spots, Channel, CurrentFrame, schnitzcells, 0);  
                                   
     end
     close(wb);
+    
     %% %%%%%%%%%%%%%% Stage 2: Backwards tracking %%%%%%%%%%%%%%%%%%%%%%%%%
-    wb = waitbar(0,['Performing tracking stage 2 (channel ' num2str(Channel) ')']);
+    wb = waitbar(0,['Stage 2: Backwards particle linking (channel ' num2str(Channel) ')']);
     % generate array to track  active status of all particles through time
-    activeArray = zeros(nFrames,length(forwardTracks));
+    trackingInfo.activeArray = zeros(trackingInfo.nFrames,length(forwardTracks));
     for p = 1:length(forwardTracks)
-        activeArray(forwardTracks(p).Frame,p) = 1;
+        trackingInfo.activeArray(forwardTracks(p).Frame,p) = 1;
     end
     % generate array with spot indices 
-    indexArray = NaN(nFrames,length(forwardTracks));
+    trackingInfo.indexArray = NaN(trackingInfo.nFrames,length(forwardTracks));
     for p = 1:length(forwardTracks)
-        indexArray(forwardTracks(p).Frame,p) = forwardTracks(p).Index;
+        trackingInfo.indexArray(forwardTracks(p).Frame,p) = forwardTracks(p).Index;
     end    
     % generate array to store assignment info 
-    assignmentArray = NaN(size(indexArray));
+    trackingInfo.assignmentArray = NaN(size(trackingInfo.indexArray));
       
     % initialize tracking structure
     backwardTracks = initializeParticleTracks();
     
     % get list of the first detection frames for each track
-    firstFrameVec = [forwardTracks.firstFrame];
+    trackingInfo.firstFrameVec = [forwardTracks.firstFrame];
     
     % particle ID counter
-    for CurrentFrame = nFrames:-1:1
-      waitbar((nFrames-CurrentFrame+1)/nFrames,wb);
-      
-      % Get the positions of ALL spots (approved and disapproved)
-      [NewSpotsX, NewSpotsY, NewSpotsZ] = SpotsXYZ(Spots{Channel}(CurrentFrame));
-      
-      % get list of foward tracks that ended in this frame
-      activeArrayIndices = find(activeArray(CurrentFrame,:)==1);
-      activeSpotIndices = indexArray(CurrentFrame,activeArrayIndices);
-      activeParticleIndices = assignmentArray(CurrentFrame,activeArrayIndices);
-      assignedParticles = assignmentArray(CurrentFrame,:);
-      
-      % Check if we're at the start of a new nuclear cycle
-      continuedNCFlag = true;
-      if CurrentFrame < nFrames
-        continuedNCFlag = ncVec(CurrentFrame+1)==ncVec(CurrentFrame);
-      end
-          
-      % adjust Z position variable for stage movements
-      NewSpotsZAdjusted = NewSpotsZ - zPosStage(CurrentFrame);
-      SpotMeasurements = [NewSpotsX', NewSpotsY', NewSpotsZAdjusted'];
-      
-      % if we have nucleus info, assign each spot to a nucleus      
-      [NewSpotNuclei, ~] = getNuclearAssigments(NewSpotsX,NewSpotsY,...
-              schnitzcells,CurrentFrame,useHistone);
-         
-      % predict positions of extant particles
-      backwardTracks = predictParticleTrackLocations(backwardTracks);
-   
-      % get list of tracks that have upcoming assigned aprticles
-      ffVec = NaN(size(backwardTracks));
-      for p = 1:length(ffVec)
-          ffVec(p) = min(firstFrameVec(assignedParticles==p));
-      end
-      earlyFlags = ffVec<CurrentFrame;
-      % Perform cost-based matching
-      [assignments, unassignedTracks, unassignedDetections] = ...
-                  makeParticleTrackAssignment(backwardTracks, SpotMeasurements, ...
-                  continuedNCFlag*trackingInfo.matchCostMax(Channel), NewSpotNuclei,...
-                  activeSpotIndices, activeParticleIndices,earlyFlags);
-                      
-      % update mapping vec     
-      if ~isempty(assignments)
-        for i = 1:size(assignments,1)          
-            colIndex = indexArray(CurrentFrame,:)==assignments(i,2);
-            if all(isnan(assignmentArray(:,colIndex)))
-                assignmentArray(:,colIndex) = assignments(i,1);
-            end
-        end     
-      end
-      newIndVec = length(backwardTracks)+1:length(backwardTracks)+length(unassignedDetections);
-      for i = 1:length(unassignedDetections)    
-          colIndex = indexArray(CurrentFrame,:)==unassignedDetections(i);         
-          assignmentArray(:,colIndex) = newIndVec(i);
-      end
-      
-      % make new entries for spots that were not assigned to existing
-      % particles      
-      backwardTracks = makeNewTracks(backwardTracks, SpotMeasurements,...
-                                       unassignedDetections, kalmanOptions,...
-                                       CurrentFrame, NewSpotsZ, NewSpotNuclei);
-       
-      % update existing tracks that had no match this frame
-      backwardTracks = updateUnassignedParticleTracks(backwardTracks, unassignedTracks, ...
-              trackingInfo.maxUnobservedFrames(Channel));          
-                
-      % update tracks that matched with a new particle
-      backwardTracks = updateAssignedParticleTracks(...
-                              backwardTracks, assignments, SpotMeasurements, CurrentFrame,...
-                              NewSpotsZ);   
-      
-                            
-     % lastly, identify and "Cap" cases where there are too many tracks
-      % per nucleus
-      backwardTracks = cleanUpTracks(backwardTracks, trackingInfo.spotsPerNucleus(Channel), ~continuedNCFlag||CurrentFrame==1);  
+    for CurrentFrame = trackingInfo.nFrames:-1:1
+        waitbar((trackingInfo.nFrames-CurrentFrame+1)/trackingInfo.nFrames,wb);
+
+        [backwardTracks, trackingInfo] = backwardTrackingLoop(backwardTracks, trackingInfo, ...
+            kalmanOptions, Spots, Channel, CurrentFrame, schnitzcells);
       
     end
     close(wb);
     
     % remove particle tracks that were flagged as duplicates
     backwardTracks = backwardTracks(~[backwardTracks.duplicateFlag]);
+    
     %% %%%%%%%%%%%%% Step 3: Infer particle trajectory %%%%%%%%%%%%%%%%%%%%
-    ParticlesTemp = struct;
+    wb = waitbar(0,['Stage 3: Performing path prediction (channel ' num2str(Channel) ')']);
+    ParticlesTemp = initializeParticles();
     for b = 1:length(backwardTracks)        
-      
+        waitbar(b/length(backwardTracks),wb);
         [frameVec, frameOrder] = sort(backwardTracks(b).Frame);
         
-        %%%%% Add fields to Particles structure %%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%%%% Add  standard fields to Particles structure %%%%%%%%%%%%%%%%%
         ParticlesTemp(b).Frame = frameVec;
         ParticlesTemp(b).Index = backwardTracks(b).Index(frameOrder);
         ParticlesTemp(b).xPos = backwardTracks(b).MeasurementVec(frameOrder,1);
@@ -204,24 +115,11 @@ function Particles = ParticleTrackingKalman(Spots, liveExperiment, ...
         ParticlesTemp(b).firstFrame = backwardTracks(b).firstFrame;
         ParticlesTemp(b).lastFrame = backwardTracks(b).lastFrame;
         
-        %%%% Infer particle position %%%%%%%%%
-        framesFull = frameVec(1):frameVec(end);
-        posData = NaN(length(framesFull), size(backwardTracks(b).MeasurementVec,2));
-        posData(ismember(framesFull,frameVec),:) = backwardTracks(b).MeasurementVec(frameOrder,:);       
-
-        % call forward filtering function        
-        KFTrack = kalmanFilterFwd(posData,kalmanOptions);
-        KFTrack = kalmanFilterBkd(KFTrack);        
-        
-        % Add inferred position info to structure
-        ParticlesTemp(b).logL = KFTrack.logL;
-        ParticlesTemp(b).xPosInf = KFTrack.smoothedTrack(:,1);
-        ParticlesTemp(b).yPosInf = KFTrack.smoothedTrack(:,2);
-        ParticlesTemp(b).zPosDetrendedInf = KFTrack.smoothedTrack(:,3);
-        ParticlesTemp(b).zPosInf = KFTrack.smoothedTrack(:,3) + zPosStage(framesFull);
-        ParticlesTemp(b).xPosSEInf = sqrt(KFTrack.smoothedTrackSE(:,1));
-        ParticlesTemp(b).yPosSEInf = sqrt(KFTrack.smoothedTrackSE(:,2));
-        ParticlesTemp(b).zPosSEInf = sqrt(KFTrack.smoothedTrackSE(:,3));        
-    end
+        % make particle path predictions
+        ParticlesTemp(b) = pathPrediction(ParticlesTemp(b), backwardTracks(b), trackingInfo, kalmanOptions);
+             
+    end    
     Particles{Channel} = ParticlesTemp;
+    
+    close(wb);
   end

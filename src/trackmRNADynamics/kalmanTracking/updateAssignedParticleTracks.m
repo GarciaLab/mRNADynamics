@@ -1,6 +1,6 @@
     function particleTracks = updateAssignedParticleTracks(...
                               particleTracks, assignments, measurements, CurrentFrame,...
-                              zOrig)
+                              zOrig, trackingInfo)
         
         numAssignedTracks = 0;
         if size(assignments, 2)==2
@@ -17,7 +17,7 @@
             % using the new detection. This modifies
             % the current kalmanFilter object
             % in memory. 
-            correct(particleTracks(trackIdx).kalmanFilter, measurement);          
+            correct(particleTracks(trackIdx).kalmanFilter, measurement(trackingInfo.trackingIndices));          
             
             % Update track's age.
             particleTracks(trackIdx).age = particleTracks(trackIdx).age + 1;  
@@ -28,12 +28,6 @@
             particleTracks(trackIdx).MeasurementVec(end + 1,:) = measurement;
             particleTracks(trackIdx).zPos(end + 1) = zOrig(detectionIdx);
             
-%             if size(particleTracks(trackIdx).MeasurementVec,1)>1
-%               if abs(particleTracks(trackIdx).MeasurementVec(end-1,1)-particleTracks(trackIdx).MeasurementVec(end,1)) > 20 && ...
-%                   particleTracks(trackIdx).Frame(end-1)-particleTracks(trackIdx).Frame(end)==1
-%                   error('wtf')
-%               end
-%             end
             % Update visibility.
             particleTracks(trackIdx).totalVisibleCount = ...
                 particleTracks(trackIdx).totalVisibleCount + 1;

@@ -8,8 +8,9 @@ function KFTrack = kalmanFilterFwd(posData,kalmanOptions)
   end
   
   % initialize particle filter 
+  firstObsIndex = find(~isnan(posData(:,1)),1);
   KFTrack.kalmanFilter =  configureKalmanFilter(kalmanOptions.type, ...
-            posData(1,:), kalmanOptions.InitialError, kalmanOptions.MotionNoise, kalmanOptions.MeasurementNoise);               
+            posData(firstObsIndex,:), kalmanOptions.InitialError, kalmanOptions.MotionNoise, kalmanOptions.MeasurementNoise);               
            
   % get size 
   nDims = size(posData,2);
@@ -27,11 +28,11 @@ function KFTrack = kalmanFilterFwd(posData,kalmanOptions)
   % set posterior values to initial values  
   for i = 1:nDims
       ind = (i-1)*nt+1;
-      KFTrack.posteriorState(1,ind:ind+nt-1) = [posData(1,i) repelem(0,nt-1)]; 
+      KFTrack.posteriorState(firstObsIndex,ind:ind+nt-1) = [posData(firstObsIndex,i) repelem(0,nt-1)]; 
   end
-  KFTrack.posteriorCovariance(:,:,1) = diag(repelem(kalmanOptions.InitialError,nDims));  
+  KFTrack.posteriorCovariance(:,:,firstObsIndex) = diag(repelem(kalmanOptions.InitialError,nDims));  
   
-  for k = 2:nSteps    
+  for k = firstObsIndex+1:nSteps    
     % predict
     [~,KFTrack.priorState(k,:),KFTrack.priorCovariance(:,:,k)] = predict(KFTrack.kalmanFilter);
     
