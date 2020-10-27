@@ -1,5 +1,12 @@
-function [Particles, trackingOptions] = ParticleTrackingKalman(Spots, liveExperiment, trackingOptions)
-         
+function [Particles, trackingOptions, SpotFilter] = ParticleTrackingKalman(Spots, liveExperiment, trackingOptions)
+        
+  % generate spot filter if necessary
+  if trackingOptions.retrack
+      [~, SpotFilter] = getParticles(liveExperiment);
+  else
+      SpotFilter = createSpotFilter(Spots);
+  end
+
   % get experiment type  
   FrameInfo = getFrameInfo(liveExperiment);
   schnitzcells = getSchnitzcells(liveExperiment); % this will be empty and ignored if no nucleus info    

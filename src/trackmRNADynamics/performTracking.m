@@ -38,7 +38,7 @@ trackingOptions.useHistone = trackingOptions.useHistone && liveExperiment.hasSch
 trackingOptions = parseTrackingOptions(Spots, liveExperiment, trackingOptions);
 
 % Perform main tracking
-[Particles, trackingOptions] = ParticleTrackingKalman(Spots, liveExperiment, trackingOptions);
+[Particles, trackingOptions, SpotFilter] = ParticleTrackingKalman(Spots, liveExperiment, trackingOptions);
 
 
 % Add QC flags
@@ -48,7 +48,7 @@ trackingOptions = parseTrackingOptions(Spots, liveExperiment, trackingOptions);
 % save
 disp('Saving...')
 save([liveExperiment.resultsFolder, filesep, 'trackingOptions.mat'],'trackingOptions')
-save([liveExperiment.resultsFolder, filesep, 'Particles.mat'],'Particles');
+save([liveExperiment.resultsFolder, filesep, 'Particles.mat'],'Particles','SpotFilter');
 
 disp('Done.')
 end
