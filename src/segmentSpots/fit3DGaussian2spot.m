@@ -1,6 +1,7 @@
 function [GaussParams1, GaussParams2, offset, GaussIntegralVector, centroid_mean, GaussSE1, GaussSE2, offsetSE,...
     GaussIntegralSEVector, centroid_se]...
-        = fit3DGaussian2spot(snip3D,PixelSize, varargin)
+        = fit3DGaussian2spot(snip3D,PixelSize,zStep,varargin)
+      
     % INPUT ARGUMENTS:
     % snip3D: 3D array containing spot to fit. Should contain only one spot
     % PixelSize: size of pixels (in nm)
@@ -14,69 +15,97 @@ function [GaussParams1, GaussParams2, offset, GaussIntegralVector, centroid_mean
     % GaussFit: 1 x 11 vector of inferred parameter values
     % Parameter identity is as follows: 
     %        (1) amplitude of gaussian (spot 1)    
-    %        (2-4) y,x,and z center positions (spot 1)    
-    %        (5-7) y,x,and z sigma values (spot 1)  
-    %        (8) amplitude of gaussian (spot 1)
-    %        (9-11) dy, dx, and dz distances from spot 1 to spot 2
-    %        (12-14) y,x,and z sigma values (spot 2)  
-    %        (15) inferred background offset    
+    %        (2-3) xy,and z sigma values (both spots) 
+    %        (4-6) y,x,and z center positions (spot 1)         
+    %        (7) amplitude of gaussian (spot 2)
+    %        (8-10) y,x,and z center positions (spot 2)        
+    %        (11) inferred background offset            
     
-    sigma_guess = 200/PixelSize;
+    %% %%%%%% initialize inference params and define bounds %%%%%%%%%%%%%%%
+    fitInfo = struct;
+    
+    % initial ballbark estimate for spot size
+    sigmaXY_guess = 200/PixelSize;
+    sigmaZ_guess = 300/zStep;
+    
     % define initial parameters
     xDim = size(snip3D,1);
     yDim = size(snip3D,2);
     zDim = size(snip3D,3);
+    
     % initialize parameters
-    initial_parameters =[max(snip3D(:)), floor(yDim/2)-1,floor(xDim/2)-1, floor(zDim/2)-1,sigma_guess,sigma_guess...
-        ,.1,ceil(yDim/2)+1,ceil(xDim/2)+1, ceil(zDim/2)+1,1,1,prctile(snip3D(:),10)];
+    fitInfo.initial_parameters =[...
+        max(snip3D(:)), ... % Spot 1 amplitude
+        sigmaXY_guess, sigmaZ_guess,... % Spot dimensions
+        yDim/2-sigmaXY_guess,xDim/2-sigmaXY_guess, zDim/2-sigmaZ_guess,... % Spot 1 position
+        max(snip3D(:)),... % Spot 2 amplitude
+        yDim/2+sigmaXY_guess,xDim/2+sigmaXY_guess, zDim/2+sigmaZ_guess,... % Spot 2 position
+        mean(snip3D(:)/2)]; % background fluorescence 
     
     % initialize upper and lower parameter bounds
-    upperBoundVector = [3*max(snip3D(:)),yDim,xDim,zDim,3*sigma_guess,3*sigma_guess,...
-              3*max(snip3D(:)),yDim,xDim,zDim,3*sigma_guess,3*sigma_guess,...
-              Inf];
-    lowerBoundVector = [0,1,1,1,.5,.5,0,1,1,1,.1,.1,0];
+    fitInfo.upperBoundVector = [...
+        10*max(snip3D(:)), ... % Spot 1 amplitude
+        5*sigmaXY_guess, 5*sigmaZ_guess,... % Spot dimensions
+        yDim, xDim, zDim,... % Spot 1 position
+        10*max(snip3D(:)),... % Spot 2 amplitude
+        yDim, xDim, zDim,... % Spot 2 position
+        max(snip3D(:))]; % background fluorescence 
+      
+    fitInfo.lowerBoundVector = [...
+        0, ... % Spot 1 amplitude
+        .25*sigmaXY_guess, .25*sigmaZ_guess,... % Spot dimensions
+        1, 1, 1,... % Spot 1 position
+        0,... % Spot 2 amplitude
+        1, 1, 1,... % Spot 2 position
+        0]; % background fluorescence    
     
-    % check for additional arguments
-    for i = 1:(numel(varargin)-1)  
-        if ischar(varargin{i})
-            eval([varargin{i} '= varargin{i+1};']);        
-        end
-    end
        
     % define objective function
-    dimensionVector = [yDim, xDim, zDim];        
-    double3DObjective = @(params) simulate3DGaussSymmetric(dimensionVector, params(1:6))...
-        + simulate3DGaussSymmetric(dimensionVector, params(7:12)) ...
-        + params(end) - double(snip3D);     
+    fitInfo.dimensionVector = [yDim, xDim, zDim];    
+    
+    %% %%%%%%%%%%%%%%%%%%%%%%%%%%% perform fit %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    fitInfo.spot1ParamIndices = 1:6;
+    fitInfo.spot2ParamIndices = [7 2:3 8:10];
+    double3DObjective = @(params) simulate3DGaussSymmetric(fitInfo.dimensionVector, params(fitInfo.spot1ParamIndices))...
+        + simulate3DGaussSymmetric(fitInfo.dimensionVector, params(fitInfo.spot2ParamIndices)) ...
+        + params(end) - double(snip3D);           
+    
     % attempt to fit
     options.Display = 'off';
     [GaussFit, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(double3DObjective,...
-        initial_parameters,lowerBoundVector,upperBoundVector,options);
+        fitInfo.initial_parameters,fitInfo.lowerBoundVector,fitInfo.upperBoundVector,options);
+      
     % store parameters
-    GaussParams1 = GaussFit(1:6);
-    GaussParams2 = GaussFit(7:12);        
-    offset = GaussFit(end);
+    fitInfo.Gauss1Params = GaussFit(fitInfo.spot1ParamIndices);
+    fitInfo.Gauss2Params = GaussFit(fitInfo.spot2ParamIndices);
+    fitInfo.offset = GaussFit(end);
+    
+    %% %%%%%%%%%%%%%%%%%%%%%% estimate uncertainty %%%%%%%%%%%%%%%%%%%%%%%%
     
     % estimate error in integral calculations numeriucally
-    FitCI = nlparci(GaussFit,residual,'jacobian',jacobian);
-    FitCI(FitCI<0) = 0;
+    FitCI = nlparci(GaussFit, residual, 'jacobian', jacobian);
+    FitCI(FitCI<0) = 0; % Meh?
     FitDeltas = diff(FitCI')' / 2 / 1.96;
     paramValues = normrnd(0,1,size(FitDeltas,1),100).*FitDeltas + GaussFit';
     paramValues(paramValues<0) = realmin;
     
-    covarianceMatrix = @(params) [params(5),    0,    0;
-                          0,    params(5),    0;
-                          0,    0,     params(6)];    
-    gaussIntegral = @(params) params(1)*(2*pi)^1.5 *sqrt(det(covarianceMatrix(params)));    
+    % de
+    covarianceMatrix = @(params) [params(2),    0,    0;
+                                  0,    params(2),    0;
+                                  0,    0,     params(3)];    
+                                
+    gaussIntegral = @(params) params(1)*(2*pi)^1.5 * sqrt(det(covarianceMatrix(params)));    
     gaussIntegralVector1 = NaN(1,100);
     gaussIntegralVector = NaN(1,100);    
     centroidPositionVector = NaN(100,3); 
+    
     for i = 1:size(paramValues,2)
         gaussIntegralVector1(i) = gaussIntegral(paramValues(1:6,i));
         gaussIntegralVector(i) = gaussIntegral(paramValues(7:12,i));        
         centroidPositionVector(i,:) = gaussIntegralVector1(i)*paramValues(2:4,i) + ...
             gaussIntegralVector1(i)*paramValues(8:10,i);
     end
+    
     % extract values to report
     GaussIntegral1 = nanmean(gaussIntegralVector1);
     GaussIntegralSE1 = nanstd(gaussIntegralVector1);
@@ -89,6 +118,7 @@ function [GaussParams1, GaussParams2, offset, GaussIntegralVector, centroid_mean
     offsetSE = FitDeltas(end,:);
     centroid_mean = nanmean(centroidPositionVector);
     centroid_se = nanstd(centroidPositionVector);
+    
     % combine for simplicity
     GaussIntegralVector = [GaussIntegral1 GaussIntegral2 GaussIntegralTot];
     GaussIntegralSEVector = [GaussIntegralSE1 GaussIntegralSE2 GaussIntegralSETot];

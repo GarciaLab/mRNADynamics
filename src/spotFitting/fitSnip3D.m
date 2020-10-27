@@ -2,7 +2,6 @@ function spotsFrame= fitSnip3D(spotsFrame, spotChannel,...
                              spotIndex, frame, liveExperiment, nSpots, imStack)
 
 FrameInfo = getFrameInfo(liveExperiment);
-preFolder = liveExperiment.preFolder;
 
 % extract basic fit parameters
 spot = spotsFrame.Fits(spotIndex);
@@ -10,7 +9,7 @@ xSize = FrameInfo(1).PixelsPerLine;
 ySize = FrameInfo(1).LinesPerFrame;
 pixelSize_nm = FrameInfo(1).PixelSize*1000; %nm
 zStep_nm = FrameInfo(1).ZStep*1000; %nm
-zMax = FrameInfo(1).NumberSlices+2;
+zMax = FrameInfo(1).NumberSlices+1;
 snipDepth = uint8(ceil(2500/zStep_nm));
 
 % NL: Need to make this independent of 2D fit info 
@@ -25,48 +24,33 @@ else
 end
 snippet_size = uint16(snippet_size(1));
 
-
-zBot = max([1,brightestZPlane - snipDepth]);
+%% %%%%%%%%%%%%%%%%%%%%%% generate 3D snip %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+zBot = max([2,brightestZPlane - snipDepth]);
 zTop = min([zMax, brightestZPlane + snipDepth]);
 zRange = zBot:zTop;
 xRange = max([1,xSpot-snippet_size]):min([xSize,xSpot+snippet_size]);
 yRange = max([1,ySpot-snippet_size]):min([ySize,ySpot+snippet_size]);
-snip3D = NaN(numel(yRange),numel(xRange),numel(zBot:zTop));
 
-%%
-
-if exist('imStack', 'var') && ~isempty(imStack)
-    
-  snip3D = imStack(yRange, xRange);
+snip3D = imStack(yRange, xRange, zRange);
   
-else
-    
-    n = 1;
-    for z = zRange    
-        
-        FullSlice=imread([preFolder, filesep,liveExperiment.Prefix,'_',iIndex(frame,3)...
-            ,'_z' iIndex(z,2) '_ch' iIndex(spotChannel,2) '.tif']);
-        
-        snip3D(:,:,n) = double(FullSlice(yRange,xRange)); 
-        n = n + 1;
-        
-    end
-    
-end
 
-%%
+
+%% %%%%%%%%%%%%%%%%%%%%%% perform fitting %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% get stack origins
 xMin = single(min(xRange));
 yMin = single(min(yRange));
 zMin = single(min(zRange));
+
 % disable two-spot fits for now
 if nSpots == 2
     warning('two spot fitting not currently supported. Performing single spot fit')
     nSpots = 1;
 end
-if nSpots == 2
+if true
     [GaussParams1, GaussParams2, offset, GaussIntegralVector, centroid_mean,...
         GaussSE1, GaussSE2, offsetSE, GaussIntegralSEVector, centroid_se] = ...
-        fit3DGaussian2spot(snip3D,pixelSize_nm);
+        fit3DGaussian2spot(snip3D, pixelSize_nm, zStep_nm);
     
     % spot 1 position
     spotsFrame.Fits(spotIndex).Spot1Fits3D = single(GaussParams1);

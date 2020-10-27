@@ -45,8 +45,11 @@ if ~segmentSpots
 end
 startParallelPool(nWorkers, displayFigures, keepPool);
 
+%% %%%%%%%%%%%%%%%%%%%%% Clean up Spots Structure %%%%%%%%%%%%%%%%%%%%%%%%%
+% NL: implement this once I know which fields I'm adding
 
-%%
+
+%% %%%%%%%%%%%%%%%%%%%%% Perform 3D fits to all spots %%%%%%%%%%%%%%%%%%%%%
 for ch = liveExperiment.spotChannels
     
     waitbarFigure = waitbar(0, ['Fitting 3D Gaussians: Channel ', num2str(ch)]);
