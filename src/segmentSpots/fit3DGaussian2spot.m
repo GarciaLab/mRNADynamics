@@ -1,5 +1,5 @@
-function [GaussParams1, GaussParams2, offset, GaussIntegralVector, centroid_mean, GaussSE1, GaussSE2, offsetSE,...
-    GaussIntegralSEVector, centroid_se]...
+function [GaussParams1, GaussParams2, offset, GaussIntegralVector, spotCentroid, GaussSE1, GaussSE2, offsetSE,...
+    GaussIntegralSEVector, spotCentroidSE]...
         = fit3DGaussian2spot(snip3D,PixelSize,zStep,varargin)
       
     % INPUT ARGUMENTS:
@@ -25,8 +25,12 @@ function [GaussParams1, GaussParams2, offset, GaussIntegralVector, centroid_mean
     fitInfo = struct;
     
     % initial ballbark estimate for spot size
-    sigmaXY_guess = 200/PixelSize;
+    sigmaXY_guess = 100/PixelSize;
     sigmaZ_guess = 300/zStep;
+        
+    % set size of nerighborhood to integrate for raw integral
+    fitInfo.sigmaXY_int = 230 / PixelSize;
+    fitInfo.sigmaZ_int = 620 / zStep;
     
     % define initial parameters
     xDim = size(snip3D,1);
@@ -82,44 +86,65 @@ function [GaussParams1, GaussParams2, offset, GaussIntegralVector, centroid_mean
     
     %% %%%%%%%%%%%%%%%%%%%%%% estimate uncertainty %%%%%%%%%%%%%%%%%%%%%%%%
     
-    % estimate error in integral calculations numeriucally
-    FitCI = nlparci(GaussFit, residual, 'jacobian', jacobian);
-    FitCI(FitCI<0) = 0; % Meh?
+    % estimate error in integral calculations numeriucally...this is faster
+    % than doing it symbolically in matlab
+    FitCI = nlparci(GaussFit, residual, 'jacobian', jacobian);    
     FitDeltas = diff(FitCI')' / 2 / 1.96;
-    paramValues = normrnd(0,1,size(FitDeltas,1),100).*FitDeltas + GaussFit';
+    nSamples = 100;
+    paramValues = normrnd(0,1,size(FitDeltas,1),nSamples).*FitDeltas + GaussFit';
     paramValues(paramValues<0) = realmin;
     
-    % de
-    covarianceMatrix = @(params) [params(2),    0,    0;
-                                  0,    params(2),    0;
-                                  0,    0,     params(3)];    
+    % define helper functions for integral calculation
+    covarianceMatrix = @(params) [params(2)^2,    0,    0;
+                                  0,      params(2)^2,    0;
+                                  0,    0,        params(3)^2];    
                                 
     gaussIntegral = @(params) params(1)*(2*pi)^1.5 * sqrt(det(covarianceMatrix(params)));    
-    gaussIntegralVector1 = NaN(1,100);
-    gaussIntegralVector = NaN(1,100);    
-    centroidPositionVector = NaN(100,3); 
+    gaussIntegralSpot1 = NaN(1,nSamples);
+    gaussIntegralSpot2 = NaN(1,nSamples);    
+    gaussIntegralTotal = NaN(1,nSamples);    
+    positionVectorSpot1 = NaN(nSamples,3); 
+    positionVectorSpot2 = NaN(nSamples,3); 
+    centroidPositionVector = NaN(nSamples,3); 
     
     for i = 1:size(paramValues,2)
-        gaussIntegralVector1(i) = gaussIntegral(paramValues(1:6,i));
-        gaussIntegralVector(i) = gaussIntegral(paramValues(7:12,i));        
-        centroidPositionVector(i,:) = gaussIntegralVector1(i)*paramValues(2:4,i) + ...
-            gaussIntegralVector1(i)*paramValues(8:10,i);
+        gaussIntegralSpot1(i) = gaussIntegral(paramValues(fitInfo.spot1ParamIndices,i));
+        gaussIntegralSpot2(i) = gaussIntegral(paramValues(fitInfo.spot2ParamIndices,i));  
+        
+        gaussIntegralTotal(i) = gaussIntegralSpot1(i) + gaussIntegralSpot2(i);
+        
+        positionVectorSpot1(i,:) = paramValues(fitInfo.spot1ParamIndices(4:6),i);
+        positionVectorSpot2(i,:) = paramValues(fitInfo.spot2ParamIndices(4:6),i);
+        
+        centroidPositionVector(i,:) = (gaussIntegralSpot1(i)*positionVectorSpot1(i,:) + ...
+                                       gaussIntegralSpot2(i)*positionVectorSpot2(i,:))/...
+                                       gaussIntegralTotal(i);
     end
     
     % extract values to report
-    GaussIntegral1 = nanmean(gaussIntegralVector1);
-    GaussIntegralSE1 = nanstd(gaussIntegralVector1);
-    GaussIntegral2 = nanmean(gaussIntegralVector);
-    GaussIntegralSE2 = nanstd(gaussIntegralVector);
-    GaussIntegralTot = GaussIntegral1 + GaussIntegral2;
-    GaussIntegralSETot = sqrt(GaussIntegralSE1^2 + GaussIntegralSE2^2);
-    GaussSE1 = FitDeltas(1:6,:);
-    GaussSE2 = FitDeltas(7:12,:);
-    offsetSE = FitDeltas(end,:);
-    centroid_mean = nanmean(centroidPositionVector);
-    centroid_se = nanstd(centroidPositionVector);
+    fitInfo.GaussIntegral1 = mean(gaussIntegralSpot1);
+    fitInfo.GaussIntegralSE1 = std(gaussIntegralSpot1);
+    fitInfo.GaussIntegral2 = mean(gaussIntegralSpot2);
+    fitInfo.GaussIntegralSE2 = std(gaussIntegralSpot2);
+    fitInfo.GaussIntegralTot = mean(gaussIntegralTotal);
+    fitInfo.GaussIntegralSETot = std(gaussIntegralTotal);
+
+    fitInfo.Spot1Pos = mean(positionVectorSpot1);
+    fitInfo.Spot1PosSE = std(positionVectorSpot1);
+    fitInfo.Spot2Pos = mean(positionVectorSpot2);
+    fitInfo.Spot2PosSE = std(positionVectorSpot2);
+    fitInfo.spotCentroid = mean(centroidPositionVector);
+    fitInfo.spotCentroidSE = std(centroidPositionVector);
     
     % combine for simplicity
     GaussIntegralVector = [GaussIntegral1 GaussIntegral2 GaussIntegralTot];
     GaussIntegralSEVector = [GaussIntegralSE1 GaussIntegralSE2 GaussIntegralSETot];
+    
+    % calculate raw integral
+    intMask = simulate3DGaussSymmetric(fitInfo.dimensionVector, [1 fitInfo.sigmaXY_int fitInfo.sigmaZ_int fitInfo.spotCentroid]);
+    intMask = intMask / sum(intMask(:));
+    [intSorted,~] = sort(intMask(:),'descend');
+    cutoffVal = intSorted(find(cumsum(intSorted)>0.997,1));
+    intMask = intMask >= cutoffVal;    
+    fitInfo.GaussIntegralRaw = (sum(intMask(:).*double(snip3D(:))) - sum(GaussFit(end).*intMask(:)));
 end
