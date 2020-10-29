@@ -39,10 +39,14 @@ for i = 1:length(varargin)
     end
 end
 
+if ~any([nSpots==1, nSpots==2])
+    error('Second argument must be the number of spots to fit and must equal 1 or 2')
+end
+
 
 disp(['Fitting 3D Gaussians to: ', Prefix]);
 
-liveExperiment = LiveExperiment(Prefix, 'preLoadMovie');
+liveExperiment = LiveExperiment(Prefix);
 
 [~,~,DropboxFolder,~, PreProcPath,...
     ~, Prefix, ~,~,~,~, ~, spotChannels] = readMovieDatabase(Prefix, optionalResults);
@@ -83,8 +87,8 @@ for ch = spotChannels
     numFrames = length(SpotsCh);
     
     % iterate through frames
-    %     parfor frame = 1:numFrames
-    for frame = 1:numFrames %frames
+%         for frame = 1:numFrames
+    parfor frame = 1:numFrames %frames
         
         SpotsFr = SpotsCh(frame);
         

@@ -55,6 +55,7 @@ snip3D = NaN(numel(yRange),numel(xRange),numel(zBot:zTop));
 if exist('imStack', 'var') && ~isempty(imStack)
     
     snip3D = imStack(yRange, xRange, :);
+    snip3D = snip3D(:, :, zRange);
     
 else
     
@@ -119,6 +120,7 @@ if nSpots == 2
     
     % single spot fit
 elseif nSpots == 1
+
     [GaussFit, FitDeltas, GaussIntegral, GaussIntegralSE,...
         GaussIntegralRaw,isSymmetricPositiveDefinite,integrationDims]  = ...
         fit3DGaussianRho(snip3D,[pixelSize_nm zStep_nm]);
@@ -152,6 +154,8 @@ end
 end
 
 function displayFigs(snip3D, GaussFit)
+
+close all;
 
 [xMesh, yMesh, zMesh] = meshgrid(1:size(snip3D,1),1:size(snip3D,2),1:size(snip3D,3));
 f1 = figure;
@@ -230,6 +234,6 @@ ylabel(axesxzRaw,'z-axis')
 
 zlim([0, m]);
 
-pause(.1);
+% waitforbuttonpress;
 
 end
