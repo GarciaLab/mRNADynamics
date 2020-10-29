@@ -197,7 +197,7 @@ fig = uifigure('Position', [100, 100, dim(1), dim(2)], 'Name', 'Choose Histone C
 set(fig,'KeyPressFcn',@keycall)
 imgAxis = uiaxes(fig, 'Position', [20, 20, dim(1) - 20, dim(2) * 0.5]);
 hisPrecision = 'uint8';
-blank = zeros(yDim, xDim, hisPrecision);
+blank = zeros(yDim, xDim*4, hisPrecision);
 himage = imshow(blank, [], 'Parent', imgAxis);
 
 if numFrames > 1
