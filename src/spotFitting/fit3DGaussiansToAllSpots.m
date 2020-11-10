@@ -21,7 +21,7 @@ for i = 1:length(varargin)
         %in the future, this should just be
         %replaced with a call to dbstack to check
         %if the caller is segmentSpots
-       
+        
         Spots = varargin{i+1};
         segmentSpots = true;
     elseif strcmpi(varargin{i}, 'optionalResults')
@@ -39,13 +39,17 @@ for i = 1:length(varargin)
     end
 end
 
+if ~any([nSpots==1, nSpots==2])
+    error('Second argument must be the number of spots to fit and must equal 1 or 2')
+end
+
 
 disp(['Fitting 3D Gaussians to: ', Prefix]);
 
 liveExperiment = LiveExperiment(Prefix);
 
-[~,ProcPath,DropboxFolder,~, PreProcPath,...
-    ~, Prefix, ~,Channel1,Channel2,~, Channel3, spotChannels] = readMovieDatabase(Prefix, optionalResults);
+[~,~,DropboxFolder,~, PreProcPath,...
+    ~, Prefix, ~,~,~,~, ~, spotChannels] = readMovieDatabase(Prefix, optionalResults);
 
 movieMat = getMovieMat(liveExperiment);
 DataFolder=[DropboxFolder,filesep,Prefix];
@@ -83,7 +87,7 @@ for ch = spotChannels
     numFrames = length(SpotsCh);
     
     % iterate through frames
-%     parfor frame = 1:numFrames
+%         for frame = 1:numFrames
     parfor frame = 1:numFrames %frames
         
         SpotsFr = SpotsCh(frame);
@@ -95,9 +99,12 @@ for ch = spotChannels
         end
         
         nSpotsPerFrame = length(SpotsFr.Fits);
-       for spot = 1:nSpotsPerFrame
+        for spot = 1:nSpotsPerFrame
             SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame,...
-                liveExperiment, PreProcPath, FrameInfo, nSpots, imStack);
+                liveExperiment, PreProcPath, FrameInfo, nSpots, imStack, displayFigures);
+%             fitSnip3DArchive(SpotsFr, ch, spot, frame, Prefix,...
+%                 PreProcPath, liveExperiment.procFolder, FrameInfo, dogs, displayFigures, saveType)
+
         end
         SpotsCh(frame) = SpotsFr;
         send(q, frame); %update the waitbar
