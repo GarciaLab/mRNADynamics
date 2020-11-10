@@ -24,6 +24,7 @@ defaultArea = 109; %109 pixels is the default area when the pixels are assumed t
 
 warning('off', 'MATLAB:rankDeficientMatrix'); %suppress the spline fitting warnings
 
+% loop over particle frames
 for i=1:length(Particles(CurrentParticle).Frame)
     
     Frame(i)=Particles(CurrentParticle).Frame(i);
@@ -100,6 +101,7 @@ if doSpline
         end
 
         try
+            % fit the offset trace to a spline
             optFit = adaptiveSplineFit(double(Frame),double(Offset),nBreaks);
             OffsetFit=ppval(optFit,double(Frame));
 
@@ -154,6 +156,8 @@ if exist('OffsetError', 'var')
     
     %For the Integral, we just use the area of the snippet, which is a
     %constant for all time points.
+    % OffsetError has units of per pixel so we need to multiply it by the
+    % spot integration area
     if isfield(spot, 'intArea') && ~isempty(spot.intArea)
         intArea = double(spot.intArea(1));
         plotTraceSettings.ErrorIntegral = OffsetError*sqrt(2)*intArea;
