@@ -314,7 +314,8 @@ blankImage = []; % dummy, to enable calling CTPState for this later
 
 cntState.processImageMatrices(movieMat);
     
-  
+[cntState.schnitzcells, cntState.CurrentNucleus] =...
+    orderNuclei(cntState.numNuclei, cntState.schnitzcells, cntState.CurrentNucleus);
         %% 
     
 
