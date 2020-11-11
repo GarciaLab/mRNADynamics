@@ -21,7 +21,8 @@ function keyInputHandler = NuclearChangeEventHandler(cntState)
             cntState.DisplayRange = [];
         
         elseif cc == 'r'
-            cntState.schnitzcells = orderNuclei(cntState.numNuclei, cntState.schnitzcells);
+            [cntState.schnitzcells, cntState.CurrentNucleus] =...
+                orderNuclei(cntState.numNuclei, cntState.schnitzcells, cntState.CurrentNucleus);
         
         elseif cc == 'p'
             % Identify a Nucleus.
