@@ -109,14 +109,14 @@ for ch = liveExperiment.spotChannels
                 imStack = movieMatCh(:, :, :,frame);   
                 preSpots(frame) = spotFittingLoop(SpotsCh(frame).Fits(preIndexVec(preFrameVec==frame)), liveExperiment, imStack, []);
                 % update waitbar
-                send(q, i); %update the waitbar
+                send(q, frame); %update the waitbar
             end
         else
             parfor frame = preFrameIndex(1:10)%numSamples
                 imStack = getMovieFrame(liveExperiment, frame, ch);
                 preSpots(frame) = spotFittingLoop(SpotsCh(frame).Fits(preIndexVec(preFrameVec==frame)), liveExperiment, imStack, []);
                 % update waitbar
-                send(q, i); %update the waitbar
+                send(q, frame); %update the waitbar
             end
         end
         % extract parameters
