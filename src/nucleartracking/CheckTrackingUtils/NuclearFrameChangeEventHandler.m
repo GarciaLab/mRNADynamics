@@ -35,13 +35,13 @@ function keyInputHandler = NuclearFrameChangeEventHandler(cntState)
             cntState.DisplayRange = [];
 
         elseif (cc == ':') & (cntState.CurrentFrame < cntState.numValidFrames())
-            % Move to the next skipped frame within the particle
+            % Move to the next skipped frame within the schnitz cell
             cntState.PreviousFrame = cntState.CurrentFrame;
             cntState.CurrentFrame = nextNuclearUnapprovedFrame(cntState.schnitzcells, ...
                 cntState.CurrentNucleus, cntState.CurrentFrame);
         
         elseif (cc == ';') & (cntState.CurrentFrame > 1)
-            % Move to the previous skipped frame within the particle
+            % Move to the previous skipped frame within the schnitz cell
             cntState.PreviousFrame = cntState.CurrentFrame;
             cntState.CurrentFrame = previousNuclearUnapprovedFrame(cntState.schnitzcells, ...
                 cntState.CurrentNucleus, cntState.CurrentFrame);

@@ -30,8 +30,8 @@ function keyInputHandler = GeneralNuclearEventHandler(cntState, DataFolder, Drop
 %             
 %             disp('decreased spot contrast');
 %             
-        elseif cc == '0' %Debugging mode
-            keyboard;
+%         elseif cc == '0' %Debugging mode
+%             keyboard;
         end
     end
 
