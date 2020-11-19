@@ -1,4 +1,4 @@
-function  fitInfo = fit3DGaussian2spot(snip3D,PixelSize,zStep,spotDims)
+function  fitInfo = fit3DGaussian2spotV1(snip3D,PixelSize,zStep,varargin)
       
     % INPUT ARGUMENTS:
     % snip3D: 3D array containing spot to fit. Should contain only one spot
@@ -17,24 +17,21 @@ function  fitInfo = fit3DGaussian2spot(snip3D,PixelSize,zStep,spotDims)
     %        (11-14) inferred background gradient            
     
     %% %%%%%% initialize inference params and define bounds %%%%%%%%%%%%%%%
-    fitInfo = struct;    
-    fitInfo.spotInfo = ~isempty(spotDims);
-
-    % initial ballbark estimate for spot size
-    if fitInfo.spotInfo
-        sigmaXY_guess = spotDims.sigmaXY;
-        sigmaXY_guess_se = spotDims.sigmaXYSE;
-        sigmaZ_guess = spotDims.sigmaZ;
-        sigmaZ_guess_se = spotDims.sigmaZSE;
-    else  
-        % NL: these numbers reflect averages from a sample population of spots
-        % In future, could be worthwhile performing some kind of hierarchical
-        % fit to estimate population-wide PSFs
-        sigmaXY_guess = 200/PixelSize;
-        sigmaXY_guess_se = 100/PixelSize;
-        sigmaZ_guess = 450/zStep;
-        sigmaZ_guess_se = 225/zStep;
+    fitInfo = struct;
+    fitInfo.fixedSpotDims = ~isempty(varargin);
+    if ~isempty(varargin)
+        spotDims = varargin{1};
     end
+        
+    % initial ballbark estimate for spot size
+    % NL: these numbers reflect averages from a sample population of spots
+    % In future, could be worthwhile performing some kind of hierarchical
+    % fit to estimate population-wide PSFs
+    sigmaXY_guess = 200/PixelSize;
+    sigmaXY_guess_se = 40/PixelSize;
+    sigmaZ_guess = 450/zStep;
+    sigmaZ_guess_se = 175/zStep;
+    
     % set size of nerighborhood to integrate for raw integral
     fitInfo.sigmaXY_int = 230 / PixelSize;
     fitInfo.sigmaZ_int = 620 / zStep;
@@ -82,19 +79,30 @@ function  fitInfo = fit3DGaussian2spot(snip3D,PixelSize,zStep,spotDims)
     %% %%%%%%%%%%%%%%%%%%%%%%%%%%% perform fit %%%%%%%%%%%%%%%%%%%%%%%%%%%%
     fitInfo.spot1ParamIndices = 1:6;
     fitInfo.spot2ParamIndices = [7 2:3 8:10];
-
-    include_vec = true(1,14);        
-
-    double3DObjective = @(params) simulate3DGaussSymmetric(fitInfo.dimensionVector, params(fitInfo.spot1ParamIndices))...
-                                + simulate3DGaussSymmetric(fitInfo.dimensionVector, params(fitInfo.spot2ParamIndices)) ...
-                                + makeOffsetSnip(params) - double(snip3D);               
+    if ~fitInfo.fixedSpotDims 
+        include_vec = true(1,14);        
         
+        double3DObjective = @(params) simulate3DGaussSymmetric(fitInfo.dimensionVector, params(fitInfo.spot1ParamIndices))...
+                                    + simulate3DGaussSymmetric(fitInfo.dimensionVector, params(fitInfo.spot2ParamIndices)) ...
+                                    + makeOffsetSnip(params) - double(snip3D);           
+    else
+        include_vec = ~ismember(1:14,2:3);        
+        
+        double3DObjective = @(params) simulate3DGaussSymmetric(fitInfo.dimensionVector, [params(1) spotDims params(2:4)])...
+                                    + simulate3DGaussSymmetric(fitInfo.dimensionVector, [params(5) spotDims params(6:8)]) ...
+                                    + makeOffsetSnip([0 0 params]) - double(snip3D); 
+    end
+    
+    
     % attempt to fit
     options.Display = 'off';
     [GaussFit, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(double3DObjective,...
-        fitInfo.initial_parameters,fitInfo.lowerBoundVector,fitInfo.upperBoundVector,options);
+        fitInfo.initial_parameters(include_vec),fitInfo.lowerBoundVector(include_vec),fitInfo.upperBoundVector(include_vec),options);
     
     % store parameters
+    if fitInfo.fixedSpotDims         
+        GaussFit = [GaussFit(1) spotDims GaussFit(2:end)];
+    end
     fitInfo.RawFitParams = GaussFit;    
     fitInfo.Gauss1Params = GaussFit(fitInfo.spot1ParamIndices);
     fitInfo.Gauss2Params = GaussFit(fitInfo.spot2ParamIndices);    
@@ -105,7 +113,9 @@ function  fitInfo = fit3DGaussian2spot(snip3D,PixelSize,zStep,spotDims)
     % than doing it symbolically in matlab
     FitCI = nlparci(GaussFit(include_vec), residual, 'jacobian', jacobian);      
     FitDeltas = diff(FitCI') / 2 / 1.96;
-
+    if fitInfo.fixedSpotDims       
+        FitDeltas = [FitDeltas(1) 0 0 FitDeltas(2:end)];
+    end
     fitInfo.RawFitSE = FitDeltas;
     gaussIntegral = @(params) params(1).*(2*pi).^1.5 .* params(2).^2.*params(3);  
     
@@ -119,7 +129,7 @@ function  fitInfo = fit3DGaussian2spot(snip3D,PixelSize,zStep,spotDims)
     fitInfo.GaussIntegralSE2 = gaussIntegralError(GaussFit(fitInfo.spot2ParamIndices),FitDeltas(fitInfo.spot2ParamIndices));
     fitInfo.GaussIntegralTot = fitInfo.GaussIntegral1 + fitInfo.GaussIntegral2;
     fitInfo.GaussIntegralSETot = sqrt(fitInfo.GaussIntegralSE1^2 + fitInfo.GaussIntegralSE2^2); % NL: it's likely that these two quantities are correlated, so addinin in quadrature is dubious
-
+  
     fitInfo.Spot1Pos = GaussFit(4:6);
     fitInfo.Spot1PosSE = FitDeltas(4:6);
     fitInfo.Spot2Pos = GaussFit(8:10);

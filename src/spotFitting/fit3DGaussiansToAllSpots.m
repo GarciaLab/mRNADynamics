@@ -1,4 +1,4 @@
-function Spots = fit3DGaussiansToAllSpots(Prefix, nSpots, varargin)
+function Spots = fit3DGaussiansToAllSpots(Prefix, varargin)
 %%
 
 cleanupObj = onCleanup(@myCleanupFun);
@@ -35,7 +35,9 @@ disp(['Fitting 3D Gaussians to: ', Prefix]);
 liveExperiment = LiveExperiment(Prefix);
 
 % get mat containing raw image data
+disp('Loading image files...')
 movieMat = getMovieMat(liveExperiment);
+disp('Done')
 
 % create dircetory
 DataFolder=[liveExperiment.resultsFolder,filesep,Prefix];
@@ -47,21 +49,15 @@ startParallelPool(nWorkers, displayFigures, keepPool);
 
 %% %%%%%%%%%%%%%%%%%%%%% Clean up Spots Structure %%%%%%%%%%%%%%%%%%%%%%%%%
 % NL: implement this once I know which fields I'm adding
-
+% error('pause here')
 
 %% %%%%%%%%%%%%%%%%%%%%% Perform 3D fits to all spots %%%%%%%%%%%%%%%%%%%%%
-for ch = liveExperiment.spotChannels
-    
-    waitbarFigure = waitbar(0, ['Fitting 3D Gaussians: Channel ', num2str(ch)]);
-    
-    q = parallel.pool.DataQueue;
-    afterEach(q, @nUpdateWaitbar);
-    p = 1;
+for ch = liveExperiment.spotChannels       
     
     if iscell(Spots)
         SpotsCh = Spots{ch};
     else
-        SpotsCh = Spots;
+        SpotsCh =  Spots;
     end
     
     if ~isempty(movieMat)
@@ -72,32 +68,102 @@ for ch = liveExperiment.spotChannels
     
     numFrames = length(SpotsCh);
     
-    % iterate through frames
-    for frame = 1:numFrames %frames
-        
-        SpotsFr = SpotsCh(frame);
-        
-        if ~isempty(movieMatCh)
-            imStack = movieMatCh(:, :, :, frame);
-        else
-            imStack = getMovieFrame(liveExperiment, frame, ch);
+    % iterate through spots and pull basic indexing info and fluorescence
+    % stats
+    frameRefVec = [];
+    indexRefVec = [];
+    spotFluoVec = [];
+    for frame = 1:numFrames   
+        for ind = 1:length(SpotsCh(frame).Fits)
+            frameRefVec(end+1) = frame;
+            indexRefVec(end+1) = ind;
+            zIndex = SpotsCh(frame).Fits(ind).brightestZ==SpotsCh(frame).Fits(ind).z;
+            spotFluoVec(end+1) = SpotsCh(frame).Fits(ind).FixedAreaIntensity(zIndex);
         end
-        
-        nSpotsPerFrame = length(SpotsFr.Fits);
-        for spot = 1:nSpotsPerFrame
-            SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame,...
-                liveExperiment, nSpots, imStack);
-        end
-        SpotsCh(frame) = SpotsFr;
-        send(q, frame); %update the waitbar
     end
     
+    % identify spots falling into the 3rd quartile
+    q31 = prctile(spotFluoVec,50);
+    q32 = prctile(spotFluoVec,75);
+    q3Indices = find(spotFluoVec<=q32&spotFluoVec>q31);        
+    
+    % perform preliminary fitting to estimate spotPSF dims
+    preSpots = struct('Fits',[]);
+    spotDims = [];
+    if length(q3Indices) >= 50
+        % randomly select indices to use
+        preIndices = randsample(q3Indices,min([250 length(q3Indices)]),false);
+        % get unique list of frames
+        preFrameVec = frameRefVec(preIndices);
+        preIndexVec = indexRefVec(preIndices);
+        preFrameIndex = unique(preFrameVec);
+                
+        waitbarFigure = waitbar(0, ['Performing initial fits to estimate PSF dimensions ', num2str(ch)]);
+    
+        q = parallel.pool.DataQueue;
+        afterEach(q, @nUpdateWaitbarPre);
+        p = 1;
+        
+        if ~isempty(movieMatCh)
+            parfor frame = preFrameIndex(1:2)%numSamples
+                imStack = movieMatCh(:, :, :,frame);   
+                preSpots(frame) = spotFittingLoop(SpotsCh(frame).Fits(preIndexVec(preFrameVec==frame)), liveExperiment, imStack, []);
+                % update waitbar
+                send(q, i); %update the waitbar
+            end
+        else
+            parfor frame = preFrameIndex(1:10)%numSamples
+                imStack = getMovieFrame(liveExperiment, frame, ch);
+                preSpots(frame) = spotFittingLoop(SpotsCh(frame).Fits(preIndexVec(preFrameVec==frame)), liveExperiment, imStack, []);
+                % update waitbar
+                send(q, i); %update the waitbar
+            end
+        end
+        % extract parameters
+        spotParamMat = [];
+        preFits = [preSpots.Fits];
+        for i = 1:length(preFits)                        
+            spotParamMat = vertcat(spotParamMat, preFits(i).SpotFitInfo3D.RawFitParams);            
+        end
+
+        % calculate average inferred spot dimensions
+        spotDims.sigmaXY = mean(spotParamMat(:,2));
+        spotDims.sigmaXYSE = min([.5*spotDims.sigmaXY std(spotParamMat(:,2))]);
+        spotDims.sigmaZ = mean(spotParamMat(:,3));
+        spotDims.sigmaZSE = min([.5*spotDims.sigmaZ std(spotParamMat(:,3))]);
+               
+    end
+    
+    waitbarFigure = waitbar(0, ['Fitting 3D Gaussians: Channel ', num2str(ch)]);
+    
+    q = parallel.pool.DataQueue;
+    afterEach(q, @nUpdateWaitbar);
+    p = 1;
+    
+    % iterate through all spots    
+    if ~isempty(movieMatCh)
+        parfor frame = 1:numFrames %frames                
+            imStack = movieMatCh(:, :, :, frame);
+            
+            SpotsCh(frame) = spotFittingLoop(SpotsCh(frame).Fits, liveExperiment, imStack, spotDims);
+
+            send(q, frame); %update the waitbar
+        end
+    else
+        parfor frame = 1:numFrames %frames                
+            imStack = getMovieFrame(liveExperiment, frame, ch);
+            
+            SpotsCh(frame) = spotFittingLoop(SpotsCh(frame).Fits, liveExperiment, imStack, spotDims);
+
+            send(q, frame); %update the waitbar
+        end
+    end
     if iscell(Spots) && length(Spots) > 1
         Spots{ch} = SpotsCh;
     else
         Spots = SpotsCh; 
     end
-    
+     
 end
 
 if iscell(Spots) && length(Spots) < 2
@@ -116,10 +182,15 @@ if save_flag
     try close(waitbarFigure); end
     
 end
+    
+function nUpdateWaitbarPre(~)
+    try waitbar(p/numSamples, waitbarFigure); end
+    p = p + 1;
+end
 
-    function nUpdateWaitbar(~)
-        try waitbar(p/numFrames, waitbarFigure); end
-        p = p + 1;
-    end
+function nUpdateWaitbar(~)
+    try waitbar(p/numFrames, waitbarFigure); end
+    p = p + 1;
+end
 
 end

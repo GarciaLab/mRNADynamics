@@ -205,9 +205,9 @@ end
 
 % fit3D = 0;
 % warning('NL:skipping 3D fits for now')
-if fit3D > 0
+if fit3D 
     disp('Fitting 3D Gaussians...')
-    fit3DGaussiansToAllSpots(Prefix, fit3D,...
+    fit3DGaussiansToAllSpots(Prefix,...
         'segmentSpots', Spots, 'nWorkers', nWorkers, saveType);
     disp('3D Gaussian fitting completed.')
 end
