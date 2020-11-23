@@ -51,7 +51,7 @@ classdef CNTState < handle
         inputChannel % replaces coatChannel in CPTState
         
 
-
+        ReorderOrientation
 
         
         DisplayRange
@@ -96,6 +96,8 @@ classdef CNTState < handle
             this.PreviousNucleus = 1;
             this.CurrentNucleusCellNo = 1;
             this.lastNucleus = 0;
+            
+            this.ReorderOrientation = 1;
             
             Frame = [];
             MaxFluo = [];

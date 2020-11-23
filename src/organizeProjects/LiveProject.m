@@ -20,6 +20,9 @@ classdef LiveProject
         anaphaseFramesAnnotated = [];
         
         
+        
+        
+        
     end
     
     properties (Hidden = true)

@@ -60,12 +60,21 @@ for i=1:yDim
     end
 end
 
-APbinID=0:APResolution:1;
+APbins = 0:APResolution:1;
+APbinIDs=1:length(APbins);
 APPosBinImage=zeros(size(APPosImage));
-for i=1:(length(APbinID)-1)
-    FilteredMask=(APbinID(i)<=APPosImage)&(APbinID(i+1)>APPosImage);
-    APPosBinImage=APPosBinImage+FilteredMask*i;
+for i=APbinIDs(1:end-1)
+    if i < APbinIDs(end-1)
+        FilteredMask=(APbins(i)<=APPosImage)&(APbins(i+1)>APPosImage);
+        APPosBinImage=APPosBinImage+FilteredMask*i;
+    else
+        FilteredMask=(APbins(i)<=APPosImage);
+        APPosBinImage=APPosBinImage+FilteredMask*i;
+    end
+        
 end
+
+APPosBinImage3D = repmat(APPosBinImage, 1, 1, zDim);
 
 MinAPbin = min(min(APPosBinImage));
 MaxAPbin = max(max(APPosBinImage));
@@ -92,21 +101,47 @@ end
 
 histoneStack = double(getMovieFrame(liveExperiment, cytoplasmFrames(1), histoneChannel));
 histoneMaxProj = max(histoneStack, [], 3);
-[MinRow, MaxRow, MinColumn, MaxColumn] = SelectCytoplasmRegion(histoneMaxProj);
+CytoplasmRegionOutfile = [DropboxFolder, filesep, Prefix, filesep, 'CytoplasmRegionBoundaries.mat'];
+if isfile(CytoplasmRegionOutfile)
+    load(CytoplasmRegionOutfile);
+else
+    [MinRow, MaxRow, MinColumn, MaxColumn] = SelectCytoplasmRegion(histoneMaxProj);
+    save(CytoplasmRegionOutfile, 'MinRow', 'MaxRow', 'MinColumn', 'MaxColumn');
+end
+
 
 % Load cytoplasmFrame info 
 load([DropboxFolder, filesep, Prefix, filesep, 'cytoplasmFrames.mat']);
+
+ncs = [liveExperiment.nc9, liveExperiment.nc10, liveExperiment.nc11,...
+    liveExperiment.nc12, liveExperiment.nc13, liveExperiment.nc14, NFrames];
+
+
 %% 
 
 NuclearCount = zeros(NFrames, zDim);
+UseImagesForCalculation = zeros(NFrames, zDim);
 MeanCytoplasmFluo = zeros(NFrames, zDim);
 StdCytoplasmFluo = zeros(NFrames, zDim);
 PixelCountCytoplasmFluo = zeros(NFrames, zDim);
-APCytoplasmFluo = zeros(NFrames, length(APbinID), zDim);
-APStdCytoplasmFluo = zeros(NFrames, length(APbinID), zDim);
-APPixelCountCytoplasmFluo = zeros(NFrames, length(APbinID), zDim);
-
+APCytoplasmFluo = zeros(NFrames, length(APbinIDs), zDim);
+APStdCytoplasmFluo = zeros(NFrames, length(APbinIDs), zDim);
+APPixelCountCytoplasmFluo = zeros(NFrames, length(APbinIDs), zDim);
+MeanCytoplasm3DFluo = zeros(NFrames);
+StdCytoplasm3DFluo = zeros(NFrames);
+PixelCountCytoplasm3DFluo = zeros(NFrames);
+APCytoplasm3DFluo = zeros(NFrames, length(APbinIDs));
+APStdCytoplasm3DFluo = zeros(NFrames, length(APbinIDs));
+APPixelCountCytoplasm3DFluo = zeros(NFrames, length(APbinIDs));
+MeanCytoplasmFluoWithNuclearMin = zeros(NFrames);
+StdCytoplasmFluoWithNuclearMin = zeros(NFrames);
+PixelCountCytoplasmFluoWithNuclearMin = zeros(NFrames);
+APCytoplasmFluoWithNuclearMin = zeros(NFrames, length(APbinIDs));
+APStdCytoplasmFluoWithNuclearMin = zeros(NFrames, length(APbinIDs));
+APPixelCountCytoplasmFluoWithNuclearMin = zeros(NFrames, length(APbinIDs));
+Cytoplasm3DMasks = zeros(NFrames, yDim, xDim,zDim);
 waitbarFigure = waitbar(0, 'Segmenting cytoplasm');
+
 for i = 1:length(inputChannels)
     ChN = inputChannels(i);
     for idx=1:length(cytoplasmFrames)
@@ -130,6 +165,7 @@ for i = 1:length(inputChannels)
         end
         
         probStack = dogStack/max(max(max(dogStack)));
+  
         for z=2:(1+zDim)
             nucleiImage = probStack(:,:,z);
             nucleiMask = zeros(size(nucleiImage));
@@ -150,30 +186,110 @@ for i = 1:length(inputChannels)
             if MaxColumn < xDim
                 CytoplasmMask(:,MaxColumn+1:end) = 0;
             end
+            Cytoplasm3DMasks(CurrentFrame, :,:,z-1) = CytoplasmMask;
             CytoplasmImage = imStack(:,:,z);
-            CytoplasmImage(CytoplasmMask == 0) = 0;
-            CytoplasmFluoVector = CytoplasmImage(find(CytoplasmMask > 0)).';
+            CytoplasmFluoVector = CytoplasmImage((CytoplasmMask > 0)).';
             MeanCytoplasmFluo(CurrentFrame, z-1) = mean(CytoplasmFluoVector);
             StdCytoplasmFluo(CurrentFrame, z-1) = std(CytoplasmFluoVector);
             PixelCountCytoplasmFluo(CurrentFrame, z-1) = length(CytoplasmFluoVector);
+            
+            
             for APbin=MinAPbin:MaxAPbin
                 CytoplasmImage = imStack(:,:,z);
-                CytoplasmImage((CytoplasmMask == 0) | (APPosBinImage ~= APbin)) = 0;
-                CytoplasmFluoVector = CytoplasmImage(find((CytoplasmMask > 0) & (APPosBinImage == APbin))).';
+                CytoplasmFluoVector = CytoplasmImage(((CytoplasmMask > 0) & (APPosBinImage == APbin))).';
                 APCytoplasmFluo(CurrentFrame, APbin, z-1) = mean(CytoplasmFluoVector);
-                StdCytoplasmFluo(CurrentFrame, APbin, z-1) = std(CytoplasmFluoVector);
-                PixelCountCytoplasmFluo(CurrentFrame, APbin, z-1) = length(CytoplasmFluoVector);
+                APStdCytoplasmFluo(CurrentFrame, APbin, z-1) = std(CytoplasmFluoVector);
+                APPixelCountCytoplasmFluo(CurrentFrame, APbin, z-1) = length(CytoplasmFluoVector);
+                
             end
         end
+        CytoplasmStack = imStack(:,:,2:zDim+1);
+        Cytoplasm3DFluoVector = CytoplasmStack(Cytoplasm3DMasks(CurrentFrame, :,:,:)  > 0).';
+        MeanCytoplasm3DFluo(CurrentFrame) = mean(Cytoplasm3DFluoVector);
+        StdCytoplasm3DFluo(CurrentFrame) = std(Cytoplasm3DFluoVector);
+        PixelCountCytoplasm3DFluo(CurrentFrame) = length(Cytoplasm3DFluoVector);
+        for APbin=MinAPbin:MaxAPbin
+            CytoplasmStack = imStack(:,:,2:zDim+1);
+            CytoplasmFluoVector = CytoplasmStack((squeeze(Cytoplasm3DMasks(CurrentFrame, :,:,:))  > 0) & (APPosBinImage3D == APbin)).';
+            APCytoplasm3DFluo(CurrentFrame, APbin) = mean(CytoplasmFluoVector);
+            APStdCytoplasm3DFluo(CurrentFrame, APbin) = std(CytoplasmFluoVector);
+            APPixelCountCytoplasm3DFluo(CurrentFrame, APbin) = length(CytoplasmFluoVector);
+        end
         
+       
         
-        
-    end   
+    end  
+    for nc_idx = find(ncs(1:6) > 0)
+        NC = nc_idx + 8;
+        MaxCycleNuclearCount = max(max(NuclearCount(ncs(nc_idx):(ncs(nc_idx+1)-1),:)));
 
+        for frame=ncs(nc_idx):(ncs(nc_idx+1)-1)
+            UseImagesForCalculation(frame,:) = NuclearCount(frame,:) >= .5*MaxCycleNuclearCount;
+        end
+    end
+    for idx=1:length(cytoplasmFrames)
+        CurrentFrame=cytoplasmFrames(idx);
+        try waitbar(idx/length(cytoplasmFrames), waitbarFigure); catch; end
+        if sum(UseImagesForCalculation(CurrentFrame,:) == 0)
+            continue 
+        end
+        
+        % GM: added the uint16 conversion 
+
+        imStack = double(getMovieFrame(liveExperiment, CurrentFrame, ChN));
+        probStackFile = [DogOutputFolder, 'prob', Prefix, '_',...
+            iIndex(CurrentFrame, 3),...
+            '_ch', iIndex(histoneChannel, 2)];
+        
+        if exist([probStackFile, '.mat'], 'file')
+            dogStack = load([probStackFile,'.mat'], 'dogStack');
+            dogStack = dogStack.dogStack;
+        elseif exist([probStackFile, '.tif'], 'file')
+            dogStack = imreadStack2([probStackFile, '.tif'], yDim,...
+                xDim, zDim);
+        else
+            error('Cannot find any dogs in the ProcessedData folder. Are they missing or incorrectly named?')
+        end
+        
+        probStack = dogStack/max(max(max(dogStack)));
+       
+        CytoplasmStack = imStack(:,:,2:zDim+1);
+        Cyto3DMaskV2 = zeros(size(squeeze(Cytoplasm3DMasks(CurrentFrame,:,:,:))));
+        Cyto3DMaskV2(squeeze(Cytoplasm3DMasks(CurrentFrame, :,:,:)) > 0) = 1;
+        Cyto3DMaskV2(:,:,UseImagesForCalculation(CurrentFrame,:)==0) = 0;
+        Cytoplasm3DFluoVector = CytoplasmStack(Cyto3DMaskV2 > 0).';
+        MeanCytoplasmFluoWithNuclearMin(CurrentFrame) = mean(Cytoplasm3DFluoVector);
+        StdCytoplasmFluoWithNuclearMin(CurrentFrame) = std(Cytoplasm3DFluoVector);
+        PixelCountCytoplasmFluoWithNuclearMin(CurrentFrame) = length(Cytoplasm3DFluoVector);
+        for APbin=MinAPbin:MaxAPbin
+            CytoplasmStack = imStack(:,:,2:zDim+1);
+            Cyto3DMaskV2 = zeros(size(squeeze(Cytoplasm3DMasks(CurrentFrame,:,:,:))));
+            Cyto3DMaskV2((squeeze(Cytoplasm3DMasks(CurrentFrame, :,:,:)) > 0) & (APPosBinImage3D ~= APbin)) = 1;
+            Cyto3DMaskV2(:,:,UseImagesForCalculation(CurrentFrame,:)==0) = 0;
+            CytoplasmFluoVector = CytoplasmStack((Cyto3DMaskV2 > 0)).';
+            APCytoplasmFluoWithNuclearMin(CurrentFrame, APbin) = mean(CytoplasmFluoVector);
+            APStdCytoplasmFluoWithNuclearMin(CurrentFrame, APbin) = std(CytoplasmFluoVector);
+            APPixelCountCytoplasmFluoWithNuclearMin(CurrentFrame, APbin) = length(CytoplasmFluoVector);
+        end
+        
+       
+        
+    end  
 end
+
+
+
+
 
 %% 
 
 outfile = [DropboxFolder, filesep, Prefix, filesep, 'CytoplasmFluorescence.mat'];
 save(outfile, 'NuclearCount', 'MeanCytoplasmFluo', 'StdCytoplasmFluo', 'PixelCountCytoplasmFluo',...
-    'APCytoplasmFluo','APStdCytoplasmFluo','APPixelCountCytoplasmFluo');
+    'APCytoplasmFluo','APStdCytoplasmFluo','APPixelCountCytoplasmFluo',...
+    'MeanCytoplasm3DFluo', 'StdCytoplasm3DFluo', 'PixelCountCytoplasm3DFluo',...
+    'APCytoplasm3DFluo','APStdCytoplasm3DFluo','APPixelCountCytoplasm3DFluo',...
+    'MeanCytoplasmFluoWithNuclearMin', 'StdCytoplasmFluoWithNuclearMin',...
+    'PixelCountCytoplasmFluoWithNuclearMin', 'APCytoplasmFluoWithNuclearMin',...
+    'APStdCytoplasmFluoWithNuclearMin','APPixelCountCytoplasmFluoWithNuclearMin' );
+
+

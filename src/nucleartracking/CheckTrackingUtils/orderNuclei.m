@@ -1,4 +1,4 @@
-function [schnitzcells, CurrentNucleus] = orderNuclei(numNuclei, schnitzcells, CurrentNucleus)
+function [schnitzcells, CurrentNucleus] = orderNuclei(numNuclei, schnitzcells, CurrentNucleus, ReorderOrientation)
 %ORDERPARTICLES Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -10,6 +10,9 @@ for i=1:numNuclei
     schnitz_params(i, 1)=schnitzcells(i).frames(1);
     schnitz_params(i, 2) = schnitzcells(i).cenx(1);
     schnitz_params(i, 3) = schnitzcells(i).ceny(1);
+end
+if ReorderOrientation == 0
+    schnitz_params(:,2) = -1*schnitz_params(:,2);
 end
 [~,Permutations]=sortrows(schnitz_params);
 schnitzcells=schnitzcells(Permutations);
