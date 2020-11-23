@@ -1,5 +1,6 @@
-function [CurrentParticle, CurrentFrame, ManualZFlag] = toNearestParticle(Spots, ...
-    Particles, CurrentFrame, CurrentChannelIndex, UseHistoneOverlay, schnitzcells, ConnectPosition)
+function [Particles, CurrentParticle,CurrentFrame, ManualZFlag] =...
+    changeParticleAssociatedWithNucleus(Spots, Particles, PreviousParticle,...
+    CurrentFrame, CurrentChannelIndex, UseHistoneOverlay, schnitzcells, ConnectPosition)
 %TONEARESTPARTICLE Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -20,5 +21,10 @@ if (floor(ParticleOutput)>0)&(ParticleOutput<=numParticles)
     
 end
 
-end
+Particles{CurrentChannelIndex}(CurrentParticle).Nucleus = Particles{CurrentChannelIndex}(PreviousParticle).Nucleus;
+Particles{CurrentChannelIndex}(PreviousParticle).Nucleus = [];
+Particles{CurrentChannelIndex}(PreviousParticle).Approved = 0;
 
+
+
+end
