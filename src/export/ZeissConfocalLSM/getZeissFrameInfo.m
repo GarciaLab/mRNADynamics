@@ -31,7 +31,7 @@ function [FrameInfo,AllLSMImages,NSlices, NPlanes, NFrames,Frame_Times,NChannels
       % Reduce the number of frames by one
       NFrames(LSMIndex) = NFrames(LSMIndex) - 1;
       % Reduce the number of planes by NChannels*NSlices
-      NPlanes(LSMIndex) = NPlanes(LSMIndex) - NChannels(LSMIndex) * NSlices(LSMIndex);
+      NPlanes(LSMIndex) = NPlanes(LSMIndex) - NChannels * NSlices(LSMIndex);
     end
 
     NDigits = getNDigits(NFrames, LSMIndex);

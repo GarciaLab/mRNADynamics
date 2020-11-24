@@ -139,8 +139,10 @@ classdef LiveProject
                 
         end
         
-        function customApprovedExperiments = getCustomApprovedExperiments(Project,customApprovalFlag)
-            customApprovedExperiments = getProjectPrefixes(Project, 'customApproved', customApprovalFlag);
+        function customApprovedExperiments = getCustomApprovedExperiments(this, customApprovalFlag)
+            
+            customApprovedExperiments = getProjectPrefixes(this.Project, 'customApproved', customApprovalFlag);
+            
         end
         
     end
