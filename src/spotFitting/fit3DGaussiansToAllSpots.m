@@ -8,6 +8,7 @@ displayFigures = false;
 nWorkers = 8;
 keepPool = true;
 save_flag = true;
+% nSpots = 2;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'displayFigures')
@@ -26,6 +27,8 @@ for i = 1:length(varargin)
         nWorkers = varargin{i+1};
     elseif strcmpi(varargin{i}, 'keepPool')
         keepPool = true;  
+%     elseif strcmpi(varargin{i}, 'fitSingleGaussian')
+%         nSpots = 1;
     end
 end
 
@@ -40,7 +43,7 @@ movieMat = getMovieMat(liveExperiment);
 disp('Done')
 
 % create dircetory
-DataFolder=[liveExperiment.resultsFolder,filesep,Prefix];
+DataFolder=[liveExperiment.resultsFolder,filesep];
 
 if ~segmentSpots
     Spots = getSpots(liveExperiment);
@@ -67,6 +70,15 @@ for ch = liveExperiment.spotChannels
     end
     
     numFrames = length(SpotsCh);
+    
+    % determine whether to expect 1 or 2 spots per locus
+    % if this is TF cluster data, 1. For all transcription spots we assume
+    % 2    
+    inputChannels = liveExperiment.inputChannels;  
+    nSpots = 2;
+    if any(inputChannels==ch)
+        nSpots = 1;
+    end
     
     % iterate through spots and pull basic indexing info and fluorescence
     % stats
@@ -105,20 +117,23 @@ for ch = liveExperiment.spotChannels
         p = 1;
         
         if ~isempty(movieMatCh)
-            parfor frame = preFrameIndex(1:2)%numSamples
+            parfor frameIndex = 1:length(preFrameIndex)
+                frame = preFrameIndex(frameIndex);
                 imStack = movieMatCh(:, :, :,frame);   
-                preSpots(frame) = spotFittingLoop(SpotsCh(frame).Fits(preIndexVec(preFrameVec==frame)), liveExperiment, imStack, []);
+                preSpots(frameIndex) = spotFittingLoop(SpotsCh(frame).Fits(preIndexVec(preFrameVec==frame)), liveExperiment, imStack, [], nSpots);
                 % update waitbar
                 send(q, frame); %update the waitbar
             end
         else
-            parfor frame = preFrameIndex(1:10)%numSamples
+            parfor frameIndex = 1:length(preFrameIndex)
+                frame = preFrameIndex(frameIndex);
                 imStack = getMovieFrame(liveExperiment, frame, ch);
-                preSpots(frame) = spotFittingLoop(SpotsCh(frame).Fits(preIndexVec(preFrameVec==frame)), liveExperiment, imStack, []);
+                preSpots(frameIndex) = spotFittingLoop(SpotsCh(frame).Fits(preIndexVec(preFrameVec==frame)), liveExperiment, imStack, [], nSpots);
                 % update waitbar
                 send(q, frame); %update the waitbar
             end
         end
+        
         % extract parameters
         spotParamMat = [];
         preFits = [preSpots.Fits];
@@ -145,7 +160,7 @@ for ch = liveExperiment.spotChannels
         parfor frame = 1:numFrames %frames                
             imStack = movieMatCh(:, :, :, frame);
             
-            SpotsCh(frame) = spotFittingLoop(SpotsCh(frame).Fits, liveExperiment, imStack, spotDims);
+            SpotsCh(frame) = spotFittingLoop(SpotsCh(frame).Fits, liveExperiment, imStack, spotDims, nSpots);
 
             send(q, frame); %update the waitbar
         end
@@ -153,7 +168,7 @@ for ch = liveExperiment.spotChannels
         parfor frame = 1:numFrames %frames                
             imStack = getMovieFrame(liveExperiment, frame, ch);
             
-            SpotsCh(frame) = spotFittingLoop(SpotsCh(frame).Fits, liveExperiment, imStack, spotDims);
+            SpotsCh(frame) = spotFittingLoop(SpotsCh(frame).Fits, liveExperiment, imStack, spotDims, nSpots);
 
             send(q, frame); %update the waitbar
         end

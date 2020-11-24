@@ -13,7 +13,7 @@ classdef LiveExperiment
         Channels = {};
         spotChannels = [];
         inputChannels = [];
-        nuclearChannels = {};
+        nuclearChannels = [];
         
         isUnhealthy = false;
         
@@ -181,6 +181,8 @@ classdef LiveExperiment
             this.inputChannels = find(contains(this.Channels, 'input', 'IgnoreCase', true));
             
             this.spotChannels = getCoatChannel(Channel1, Channel2, Channel3);
+            
+            this.nuclearChannels = find(contains(this.Channels, 'nuclear', 'IgnoreCase', true));
             
             this.anaphaseFrames = retrieveAnaphaseFrames(this.Prefix, this.userResultsFolder);
             

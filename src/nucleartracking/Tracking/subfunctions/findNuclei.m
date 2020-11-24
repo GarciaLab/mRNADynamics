@@ -53,13 +53,11 @@ end
 %%
 
 if nargin > 5
-<<<<<<< HEAD
-    targetNumber = varargin{1}; % coarse estimate of the number of nuclei that should be found.
-=======
+
     if isnumeric(varargin{1})
         targetNumber = varargin{1}; % coarse estimate of the number of nuclei that should be found.
     end
->>>>>>> master
+
 end
 
 

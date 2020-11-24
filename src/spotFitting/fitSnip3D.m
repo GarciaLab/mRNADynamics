@@ -1,4 +1,4 @@
-function [spotsFrame, fitInfo] = fitSnip3D(spotsFrame, spotIndex, liveExperiment, imStack, spotDims)
+function [spotsFrame, fitInfo] = fitSnip3D(spotsFrame, spotIndex, liveExperiment, imStack, spotDims, nSpots)
 
 FrameInfo = getFrameInfo(liveExperiment);
 
@@ -41,7 +41,7 @@ yMin = single(min(yRange));
 zMin = single(min(zRange));
 
 % Perform fits
-fitInfo = fit3DGaussian2spot(snip3D, pixelSize_nm, zStep_nm, spotDims);
+fitInfo = fit3DGaussians(snip3D, pixelSize_nm, zStep_nm, spotDims, nSpots);
 
 % add fit info
 spotsFrame.Fits(spotIndex).SpotFitInfo3D = fitInfo;%single(GaussParams1);
