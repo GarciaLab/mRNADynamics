@@ -82,9 +82,8 @@ for ch = spotChannels
     
     numFrames = length(SpotsCh);
     
-    % iterate through frames
-%     parfor frame = 1:numFrames
-    parfor frame = 1:numFrames %frames
+    for frame = 1:numFrames
+%     parfor frame = 1:numFrames %frames
         
         SpotsFr = SpotsCh(frame);
         

@@ -1,4 +1,4 @@
-function SpotsFr = fitSnip3D(SpotsFr, spotChannel, spot, frame, Prefix, PreProcPath, ProcPath, FrameInfo, dogs, displayFigures, saveType)
+function SpotsFr = fitSnip3DArchive(SpotsFr, spotChannel, spot, frame, Prefix, PreProcPath, ProcPath, FrameInfo, dogs, displayFigures, saveType)
 
 
 s = SpotsFr.Fits(spot);
