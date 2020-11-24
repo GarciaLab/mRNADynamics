@@ -20,8 +20,8 @@ function [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrame
   NFrames = NPlanes./NSlices/NChannels;
 
   %MT 2020-09-29: modification to process Modular Enhancer 45uW data, which
-  %was taken with a fixed number of time frames (2)
-  if NSeries == 1 && NFrames == 2
+  %was taken with a fixed number of time frames (1 or 2)
+  if NSeries == 1 && (NFrames == 2 || NFrames == 1)
        %NFrames stays the same
       disp('Keeping the last frame of the only series in this dataset.')
   else
