@@ -1,7 +1,7 @@
 function [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest,...
     keepTifs, generateTifStacks, nuclearGUI,...
     skipExtraction, rootFolder, zslicesPadding,...
-    dataType,exportNuclearProjections, exportMovieFiles, ignoreCh3, shouldTrackNuclei]...
+    dataType, skipNuclearProjection]...
     ...
     = exportDataForLivemRNA_processInputParameters(varargin)
 
@@ -24,6 +24,7 @@ dataType = '';
 exportNuclearProjections = true;
 exportMovieFiles = true;
 ignoreCh3 = false;
+skipNuclearProjection = true;
 
 k=1;
 while k<=length(varargin)
@@ -40,28 +41,30 @@ while k<=length(varargin)
         keepTifs = true;
     elseif strcmpi(varargin{k}, 'generateTifs')
         generateTifStacks = true;
-     elseif strcmpi(varargin{k}, 'dataType')
+    elseif strcmpi(varargin{k}, 'dataType')
         dataType = varargin{k+1};
     elseif strcmpi(varargin{k}, 'nuclearGUI')
         nuclearGUI = varargin{k+1};
-         elseif strcmpi(varargin{k}, 'ignoreCh3')
+    elseif strcmpi(varargin{k}, 'ignoreCh3')
         ignoreCh3 = true;
     elseif strcmpi(varargin{k}, 'skipExtraction')
         skipExtraction = true;
     elseif strcmpi(varargin{k}, 'rootFolder')
         rootFolder = varargin{k+1};
-      elseif strcmpi(varargin{k}, 'shouldTrackNuclei')
+    elseif strcmpi(varargin{k}, 'shouldTrackNuclei')
         shouldTrackNuclei = varargin{k+1};
     elseif strcmpi(varargin{k}, 'zslicesPadding')
         zslicesPadding = true;
- 
-   elseif strcmpi(varargin{k}, 'exportNuclearProjections')
+        
+    elseif strcmpi(varargin{k}, 'exportNuclearProjections')
         exportNuclearProjections= varargin{k+1};
+    elseif strcmpi(varargin{k}, 'skipNuclearProjection')
+        skipNuclearProjection = true;
     elseif strcmpi(varargin{k}, 'exportMovieFiles')
         exportMovieFiles = varargin{k+1};
     else
         %prefix can only go in first position
-        if k == 1 && isempty(rootFolder) 
+        if k == 1 && isempty(rootFolder)
             Prefix = varargin{k};
             disp(['ExportDataForLivemRNA using prefix: ', Prefix]);
         end

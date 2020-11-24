@@ -237,18 +237,18 @@ if ~NoAP
         end
         
         %Check that the surface and midsaggital images have the same zoom
-        midDirectory=dir([fullEmbryoPath,'*mid*.',FileMode(1:3)]);
-        if strcmp(FileMode, 'DSPIN')            %CS20170912
-            midDirectory=dir([fullEmbryoPath,'*surf*']);
-        end
-        ImageTempMid=bfopen([fullEmbryoPath,midDirectory(end).name]);
+        midDirectory=dir([fullEmbryoPath,filesep,'*mid*.',FileMode(1:3)]);
+
+        ImageTempMid=bfopen([fullEmbryoPath,filesep,midDirectory(end).name]);
         MetaFullEmbryoMid= ImageTempMid{:, 4};
         
         %This if for BioFormats backwards compatibility
+        % Note 7/27/20: This is returning NaN so the check below doesn't
+        % actually do anything. 
         if ~isempty(str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0)))
-            PixelSizeFullEmbryoMid=str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0));
-        else
             PixelSizeFullEmbryoMid=str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0).value);
+        else
+            PixelSizeFullEmbryoMid=str2double(MetaFullEmbryoMid.getPixelsPhysicalSizeX(0));
         end
         
         
