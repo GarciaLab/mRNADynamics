@@ -3,25 +3,29 @@ function FrameInfo = recordFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta
 %initialize frameinfo. this is important for xyz movies that don't have a
 %time dimension. 
 
-    FrameInfo(1).LinesPerFrame = str2double(LIFMeta.getPixelsSizeY(0));
-    FrameInfo(1).PixelsPerLine = str2double(LIFMeta.getPixelsSizeX(0));
-    FrameInfo(1).NumberSlices = min(NSlices);    
-    FrameInfo(1).FileMode = 'LIFExport';
-    FrameInfo(1).Time = 0;
-    if ~isempty(str2double(LIFMeta.getPixelsPhysicalSizeX(0))) &...
-            ~isnan(str2double(LIFMeta.getPixelsPhysicalSizeX(0)))
-        FrameInfo(1).PixelSize = str2double(LIFMeta.getPixelsPhysicalSizeX(0));
-        FrameInfo(1).ZStep = str2double(LIFMeta.getPixelsPhysicalSizeZ(0));
-    else
-        try
-            FrameInfo(1).PixelSize = str2double(LIFMeta.getPixelsPhysicalSizeX(0).value);
-            FrameInfo(1).ZStep = str2double(LIFMeta.getPixelsPhysicalSizeZ(0).value);
-        catch %no idea man
-            FrameInfo(1).PixelSize = str2double(LIFMeta.getPixelsPhysicalSizeX(1).value);
-            FrameInfo(1).ZStep = str2double(LIFMeta.getPixelsPhysicalSizeZ(1).value);
-        end
-    end
-
+  FrameInfo(1).LinesPerFrame = str2double(LIFMeta.getPixelsSizeY(0));
+  FrameInfo(1).PixelsPerLine = str2double(LIFMeta.getPixelsSizeX(0));
+  FrameInfo(1).NumberSlices = min(NSlices);    
+  FrameInfo(1).FileMode = 'LIFExport';
+  FrameInfo(1).Time = 0;
+  FrameInfo(1).Series = 1;
+  if ~isempty(str2double(LIFMeta.getPixelsPhysicalSizeX(0))) &...
+          ~isnan(str2double(LIFMeta.getPixelsPhysicalSizeX(0)))
+      FrameInfo(1).PixelSize = str2double(LIFMeta.getPixelsPhysicalSizeX(0));
+      FrameInfo(1).ZStep = str2double(LIFMeta.getPixelsPhysicalSizeZ(0));
+  else
+      try
+          FrameInfo(1).PixelSize = str2double(LIFMeta.getPixelsPhysicalSizeX(0).value);
+          FrameInfo(1).ZStep = str2double(LIFMeta.getPixelsPhysicalSizeZ(0).value);
+      catch %no idea man
+          FrameInfo(1).PixelSize = str2double(LIFMeta.getPixelsPhysicalSizeX(1).value);
+          FrameInfo(1).ZStep = str2double(LIFMeta.getPixelsPhysicalSizeZ(1).value);
+      end
+  end
+  if ~isempty(zPosition)
+    FrameInfo(1).zPosition = zPosition(1);
+  end
+  
   for i = 2:sum(NFrames)
       
     FrameInfo(i).LinesPerFrame = str2double(LIFMeta.getPixelsSizeY(0));
@@ -44,11 +48,10 @@ function FrameInfo = recordFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta
         end
     end
 
-    %currently only correctly records frameinfo for data from the Bateman lab Leica
-    try
-      FrameInfo(i).zPosition = zPosition(i);
-    catch
-%       warning('didn''t record zgalvo in frameinfo- getframeinfo')
+    seriesIndex = find(cumsum(NFrames)>=i,1);
+    FrameInfo(i).Series = seriesIndex;
+    if ~isempty(zPosition)        
+        FrameInfo(i).zPosition = zPosition(seriesIndex);
     end
     
   end

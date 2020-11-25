@@ -22,6 +22,14 @@ function [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices, NSeries
       frameIndex = frameIndex + 1;
     
     end
+       
+    %Grab the z-galvo position by parsing the XML metadata
+    xmltext = fileread([XMLFolder,filesep,seriesXML(series).name]);
+    expressionobj = '(?<=" ZPosition=").*?(?=")';
+    possiblePositions = regexp(xmltext, expressionobj, 'match'); 
+    if length(possiblePositions{1})>=1
+        zPosition(series) = str2double(possiblePositions{1}); %AR- this is sometimes the right element.
+    end    
     
   end
   
