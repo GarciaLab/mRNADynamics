@@ -53,6 +53,7 @@ classdef LiveExperiment
         hasMovieMatFile = false;
         hasHisMatFile = false;
         hasEllipsesFile = false;
+        hasFrameInfoFile = false;
         
         hasChannelsFile = false;
         hasAnaphaseFile = false;
@@ -146,6 +147,7 @@ classdef LiveExperiment
             
             this.project = '';
                         
+            this.hasFrameInfoFile = exist([this.resultsFolder, 'FrameInfo.mat'] , 'file');
             this.hasCompiledParticlesFile = exist([this.resultsFolder, 'CompiledParticles.mat'] , 'file');
             this.hasSchnitzcellsFile = exist([this.resultsFolder,this.Prefix, '_lin.mat'] , 'file');
             this.hasSpotsFile = exist([this.resultsFolder, 'Spots.mat'] , 'file');
@@ -238,7 +240,7 @@ classdef LiveExperiment
         
         
         
-        function out = getMovieMat(this)
+        function out = getMovieMat(this,loadFramesIndividually)
             
             %we're going to check if this is a new prefix by verifying the
             %exact equality of frame times in frameinfo. i don't think
@@ -257,13 +259,16 @@ classdef LiveExperiment
                 FrameInfo_movie = tempInfo.FrameInfo;
                 preTifDir = dir([this.preFolder, '*_ch0*.tif']);
             end
-            loadFramesIndividually = true;
+%             loadFramesIndividually = true;
             
             %just return an empty array if we can't load the movie.
             %leave the handling to the caller, presumably by enabling
             %sequential file loading.
-
-            if ~haveSufficientMemory(preTifDir) || loadFramesIndividually
+            loadIndFlag = false;
+            if exist('loadFramesIndividually','var')
+                loadIndFlag = loadFramesIndividually;
+            end
+            if ~haveSufficientMemory(preTifDir) || loadIndFlag
 
                 out = [];
                 return;

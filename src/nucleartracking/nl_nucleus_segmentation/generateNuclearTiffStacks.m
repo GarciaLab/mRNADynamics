@@ -7,7 +7,7 @@ liveExperiment = LiveExperiment(Prefix);
 % make output director
 nucleusStackDir = [liveExperiment.preFolder filesep 'nucleusStacks' filesep];
 mkdir(nucleusStackDir);
-nucleusProbDir = [liveExperiment.preFolder filesep 'nucleusProbabilityMaps' filesep];
+nucleusProbDir = [liveExperiment.procFolder filesep 'nucleusProbabilityMaps' filesep];
 mkdir(nucleusProbDir);
 
 % load reference histogram for generating fake histone channel
