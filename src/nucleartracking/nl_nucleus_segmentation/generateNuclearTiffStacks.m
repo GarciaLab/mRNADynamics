@@ -1,5 +1,5 @@
 
-function Projection = generateNuclearTiffStacks(Prefix)
+function generateNuclearTiffStacks(Prefix)
 
 % get basic project info 
 liveExperiment = LiveExperiment(Prefix);
