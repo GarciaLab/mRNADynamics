@@ -10,9 +10,8 @@ mkdir(nucleusStackDir);
 nucleusProbDir = [liveExperiment.procFolder filesep 'nucleusProbabilityMaps' filesep];
 mkdir(nucleusProbDir);
 
-% load reference histogram for generating fake histone channel
-% load('ReferenceHist.mat', 'ReferenceHist');
-% Ellipses = getEllipses(liveExperiment);
+% Initialize structure to store info about nc masks
+nucleusInfo = struct;
 
 % get nucleus channels
 NuclearChannels = liveExperiment.nuclearChannels;
@@ -45,7 +44,8 @@ for i = 1:length(framesToUseRaw)-1
     framesToUse = [framesToUse framesToUseRaw(i):timeIncrement:framesToUseRaw(i+1)-1];
 end
 framesToUse(end+1) = length(FrameInfo);  
-   
+originalFileNames = cell(size(framesToUse));
+
 parfor frameIndex = 1:length(framesToUse)
     
     imStackFrame = zeros(FrameInfo(1).LinesPerFrame,FrameInfo(1).PixelsPerLine,FrameInfo(1).NumberSlices+2,length(NuclearChannels));
@@ -104,7 +104,10 @@ parfor frameIndex = 1:length(framesToUse)
     for i = 2:size(imStack,3)
         imwrite(imStack(:,:,i),[nucleusStackDir outName],'WriteMode','append');   
     end
-    
+    originalFileNames{frameIndex} = outName;
 end
-%      
 
+% save structure for future use
+nucleusInfo.originalFrames = framesToUse;
+nucleusInfo.originalFileNames = originalFileNames;
+save([nucleusProbDir 'nucleusInfo.mat'], 'nucleusInfo')

@@ -2,12 +2,20 @@ function [Particles, trackingOptions] = addQCFlags(Particles, liveExperiment, tr
 
   disp('Adding QC fields...')
   % Iterate over all channels and generate additional QC flags
-  % I'm employing a tiered system. Especially egregious cases will be flagge
-  % with 2's and will be excluded absent user in put ("opt-in"). Less severe
-  % cases will be flaged with 1's and left in unless user removes ("opt-out")
+  
+  FrameInfo = getFrameInfo(liveExperiment);
+  
+  %%% load nucleus probability maps if they exist
+  nucleusProbDirFinal = [liveExperiment.procFolder 'nucleusProbabilityMapsFull' filesep];
+  probFiles = dir([nucleusProbDirFinal '*.tif']);
+  hasProbFiles = length(probFiles) == length(FrameInfo);
+  
+  if hasProbFiles
+      disp('Incorporating nucleus probabilities...')
+      Particles = addNucleusProbabilities(liveExperiment, trackingOptions, FrameInfo, Particles);      
+  end
   
   % basic frame info
-  FrameInfo = getFrameInfo(liveExperiment);    
   Time = [FrameInfo.Time]; 
 
   %%% flag spots that occur too early after start of nuclar cycle 
@@ -21,11 +29,16 @@ function [Particles, trackingOptions] = addQCFlags(Particles, liveExperiment, tr
   
   % Iterate through channels
   for Channel = 1:trackingOptions.NCh
+    
     if ~trackingOptions.useHistone
       trackingOptions.SpotlogLThreshold(Channel) = prctile(vertcat(Particles{Channel}.logL),99);
       trackingOptions.TracelogLThreshold(Channel) = prctile([Particles{Channel}.logLMean],99);
     end
+    
     for p = 1:length(Particles{Channel})      
+      
+      %%% flag particles that appear to be outside of nuclear envelope
+      Particles{Channel}(p).NucleusBoundaryFlags = Particles{Channel}(p).nucleusProbability < 0.5;
       
       %%% flag expecially unlikely points according to the motion model
       Particles{Channel}(p).SpotlogLFlags = Particles{Channel}(p).logL(Particles{Channel}(p).obsFrameFilter) < ...
@@ -38,9 +51,10 @@ function [Particles, trackingOptions] = addQCFlags(Particles, liveExperiment, tr
       Particles{Channel}(p).earlyFlags = int8(1*(Time(Particles{Channel}(p).Frame)-ncStart)<=...
                     trackingOptions.earlyThresh & hasNCStart(ncIndex==nc));
 
-      %%% automatically disapprove of frames with at least one "2" flag
+      %%% automatically disapprove of frames 
       Particles{Channel}(p).FrameApproved = Particles{Channel}(p).FrameApproved & ...
-        ~Particles{Channel}(p).SpotlogLFlags & ~Particles{Channel}(p).earlyFlags;                   
+        ~Particles{Channel}(p).SpotlogLFlags & ~Particles{Channel}(p).earlyFlags & ...
+        ~Particles{Channel}(p).NucleusBoundaryFlags;                   
 
     end 
     

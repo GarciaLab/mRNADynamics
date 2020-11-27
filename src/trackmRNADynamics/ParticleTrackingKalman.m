@@ -19,7 +19,16 @@ function [Particles, trackingOptions, SpotFilter] = ParticleTrackingKalman(Spots
   Particles = cell(1,trackingOptions.NCh);  
   
   % Extract vector indicating nuclear cleavage cycle for each frame  
-  trackingOptions.ncVec = [FrameInfo.nc];  
+  if isfield(FrameInfo,'nc')
+      trackingOptions.ncVec = [FrameInfo.nc];  
+  else
+      refVec = 9:14;
+      trackingOptions.ncVec = NaN(size(FrameInfo));
+      aFrames = liveExperiment.anaphaseFrames;
+      for frame = 1:length(FrameInfo)
+          trackingOptions.ncVec(frame) = refVec(find(frame>aFrames,1,'last'));
+      end
+  end
   
   for Channel = 1:trackingOptions.NCh        
     
@@ -107,12 +116,12 @@ function [Particles, trackingOptions, SpotFilter] = ParticleTrackingKalman(Spots
         ParticlesTemp(b).xPos = backwardTracks(b).MeasurementVec(frameOrder,1);
         ParticlesTemp(b).yPos = backwardTracks(b).MeasurementVec(frameOrder,2);
         ParticlesTemp(b).zPosDetrended = backwardTracks(b).MeasurementVec(frameOrder,3);
-        ParticlesTemp(b).zPos = backwardTracks(b).zPos(frameOrder);
+        ParticlesTemp(b).zPos = backwardTracks(b).zPos(frameOrder)';
         ParticlesTemp(b).Nucleus = backwardTracks(b).Nucleus;
         ParticlesTemp(b).FirstFrame = backwardTracks(b).firstFrame;
         ParticlesTemp(b).LastFrame = backwardTracks(b).lastFrame;
         ParticlesTemp(b).Approved = 0;
-        ParticlesTemp(b).FrameApproved = zeros(size(ParticlesTemp(b).Frame));
+        ParticlesTemp(b).FrameApproved = true(size(ParticlesTemp(b).Frame));
         
         % make particle path predictions
         ParticlesTemp(b) = pathPrediction(ParticlesTemp(b), backwardTracks(b), trackingOptions, kalmanOptions);
