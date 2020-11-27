@@ -1,4 +1,4 @@
-function keyInputHandler = DeleteSpotEventHandler(cptState,Prefix)
+function keyInputHandler = DeleteSpotEventHandler(cptState)
 
     function switchedParticlesFlag = doDeleteSpot(shouldQueryUser)
         
@@ -9,8 +9,9 @@ function keyInputHandler = DeleteSpotEventHandler(cptState,Prefix)
         disp(['Removing frame ', num2str(cptState.CurrentFrame),...
             ' from particle ' num2str(cptState.CurrentParticle)])
         
-        cptState =...            
-            removeSpot(cptState, shouldQueryUser,Prefix);
+        cptState =...
+            ...
+            removeSpot(cptState, shouldQueryUser);
         
 
         

@@ -60,7 +60,6 @@ for i=1:length(varargin)
     elseif strcmpi(varargin{i}, 'sistermode')
         SisterMode = true;
     elseif strcmpi(varargin{i}, 'preLoad')
-        warning('NL:preLoad option is currently not supported')
         preStructs = varargin{i+1};
     elseif strcmpi(varargin{i}, 'optionalResults')
         optionalResults = varargin{i+1};

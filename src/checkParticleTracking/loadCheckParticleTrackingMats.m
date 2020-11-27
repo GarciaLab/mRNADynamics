@@ -1,11 +1,9 @@
 % This function loads Particles.mat, Spots.mat and FrameInfo.mat into
 % the corresponding workspace variables.
-function [ParticleStitchInfo, Particles, SpotFilter, Spots,...
-  FrameInfo, schnitzcells, Spots3D] = loadCheckParticleTrackingMats(DataFolder, PreProcPath, FilePrefix)
+function [Particles, SpotFilter, Spots, FrameInfo, schnitzcells, Spots3D] = loadCheckParticleTrackingMats(DataFolder, PreProcPath, FilePrefix)
 
 disp('Loading Particles.mat...')
 load([DataFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter')
-load([DataFolder, filesep, 'ParticleStitchInfo.mat'], 'ParticleStitchInfo')
 disp('Particles.mat loaded')
 
 schnitzcells = [];
@@ -33,10 +31,7 @@ if exist([DataFolder, filesep, 'SpotsMinimal.mat'], 'file')
 else
     load([DataFolder, filesep, 'Spots.mat'], 'Spots')
 end
-% NL: added for backwards compatibility
-if ~iscell(Spots)
-  Spots = {Spots};
-end
+
 if exist([DataFolder, filesep, 'Spots3D.mat'], 'file')
     load([DataFolder, filesep, 'Spots3D.mat'], 'Spots3D');
 end

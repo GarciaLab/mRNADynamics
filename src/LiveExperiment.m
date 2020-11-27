@@ -13,7 +13,7 @@ classdef LiveExperiment
         Channels = {};
         spotChannels = [];
         inputChannels = [];
-        nuclearChannels = [];
+        nuclearChannels = {};
         
         isUnhealthy = false;
         
@@ -23,6 +23,8 @@ classdef LiveExperiment
     end
     
     properties (Access = private)
+        
+        preLoadMovie = false;
         
     end
     
@@ -47,13 +49,12 @@ classdef LiveExperiment
         hasCompiledParticlesFile = false;
         hasSchnitzcellsFile = false;
         hasSpotsFile = false;
-        hasParticlesFile = false;        
+        hasParticlesFile = false;
         hasDoGs = false;
         hasRawStacks = false;
         hasMovieMatFile = false;
         hasHisMatFile = false;
         hasEllipsesFile = false;
-        hasFrameInfoFile = false;
         
         hasChannelsFile = false;
         hasAnaphaseFile = false;
@@ -89,7 +90,14 @@ classdef LiveExperiment
         
         MS2CodePath = '';
         
-        rerunParticleTrackingFlag = false;
+        %% Added by GM 9/29/20
+        
+        Temp_set = 0;
+        Temp_obs = 0;
+        
+        %%
+        
+        
         
     end
     
@@ -98,10 +106,14 @@ classdef LiveExperiment
         
         %%Constructors
         
-        function this = LiveExperiment(Prefix)
+        function this = LiveExperiment(Prefix, preLoadMovie)
             %livemRNAExperiment Construct an instance of this class
             
             this.Prefix = Prefix;
+            
+            if nargin > 1
+                this.preLoadMovie = preLoadMovie;
+            end
             
             [this.userRawFolder, this.userProcFolder, this.userResultsFolder,...
                 this.MS2CodePath, this.userPreFolder,...
@@ -137,24 +149,27 @@ classdef LiveExperiment
             this.MLFolder = [this.userResultsFolder, filesep, 'training_data_and_classifiers', filesep];
             
             
-            isUnhealthyFile = [this.userResultsFolder,filesep,this.Prefix,filesep, 'isUnhealthy.mat'];
-            if exist(isUnhealthyFile, 'file')
-                load(isUnhealthyFile, 'isUnhealthy');
-            else, isUnhealthy = NaN;
+            try
+                isUnhealthyFile = [this.userResultsFolder,filesep,this.Prefix,filesep, 'isUnhealthy.mat'];
+                if exist(isUnhealthyFile, 'file')
+                    load(isUnhealthyFile, 'isUnhealthy');
+                else, isUnhealthy = NaN;
+                end
+                this.isUnhealthy = isUnhealthy;
+            catch        
+                %not important for most things if this fails. 
             end
             
-            this.isUnhealthy = isUnhealthy;
             
             this.project = '';
-                        
-            this.hasFrameInfoFile = exist([this.resultsFolder, 'FrameInfo.mat'] , 'file');
+            
             this.hasCompiledParticlesFile = exist([this.resultsFolder, 'CompiledParticles.mat'] , 'file');
             this.hasSchnitzcellsFile = exist([this.resultsFolder,this.Prefix, '_lin.mat'] , 'file');
             this.hasSpotsFile = exist([this.resultsFolder, 'Spots.mat'] , 'file');
             this.hasParticlesFile = exist([this.resultsFolder, 'Particles.mat'] , 'file');
             this.hasEllipsesFile = exist([this.resultsFolder, 'Ellipses.mat'] , 'file');
-            this.hasChannelsFile = exist([this.resultsFolder, 'Channels.mat'] , 'file');
-            this.hasAnaphaseFile = exist([this.resultsFolder, 'anaphaseFrames.mat'] , 'file');
+            this.hasChannelsFile =exist([this.resultsFolder, 'Channels.mat'] , 'file');
+            this.hasAnaphaseFile=exist([this.resultsFolder, 'anaphaseFrames.mat'] , 'file');
             
             this.hasDoGs = exist([this.procFolder, 'dogs'], 'dir');
             
@@ -164,7 +179,7 @@ classdef LiveExperiment
             
             [~, this.experimentType, this.experimentAxis, ~, ~, this.APResolution,...
                 Channel1, Channel2,~, ~,  ~, ~, ~,...
-                ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, this.DVResolution]...
+                ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, this.DVResolution, this.Temp_set, this.Temp_obs]...
                 = getExperimentDataFromMovieDatabase(this.Prefix, movieDatabase, this.userResultsFolder);
             
             this.Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
@@ -184,8 +199,6 @@ classdef LiveExperiment
             
             this.spotChannels = getCoatChannel(Channel1, Channel2, Channel3);
             
-            this.nuclearChannels = find(contains(this.Channels, 'nuclear', 'IgnoreCase', true));
-            
             this.anaphaseFrames = retrieveAnaphaseFrames(this.Prefix, this.userResultsFolder);
             
             this.nc9 = this.anaphaseFrames(1);
@@ -195,13 +208,12 @@ classdef LiveExperiment
             this.nc13 = this.anaphaseFrames(5);
             this.nc14 = this.anaphaseFrames(6);
             
-            try % NL: adding this for ease of use on laptops etc may not have raw data folders
+            try
                 evalc('[~, this.fileMode] = DetermineFileMode(this.rawFolder)');    %Using evalc to supress displays to the command window from the function DetermineFileMode
             catch
-                this.fileMode = NaN;
+                %let's not do anything and let the caller handle this
+                %exception. 
             end
-            
-            this.rerunParticleTrackingFlag = exist([this.resultsFolder, 'rerunParticleTracking.mat'] , 'file');
             
         end
         
@@ -240,36 +252,31 @@ classdef LiveExperiment
         
         
         
-        function out = getMovieMat(this,loadFramesIndividually)
+        function out = getMovieMat(this)
             
             %we're going to check if this is a new prefix by verifying the
             %exact equality of frame times in frameinfo. i don't think
             %these should ever be precisely identical in different movies
             persistent FrameInfo_movie;
+            persistent movieMat;
+            
             tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
             
             isNewMovie = isempty(FrameInfo_movie) ||...
-                any(~ismember([tempInfo.FrameInfo.Time],[FrameInfo_movie.Time]))||...
-                any(~ismember([FrameInfo_movie.Time],[tempInfo.FrameInfo.Time]));
+                length([tempInfo.FrameInfo.Time]) ~= length([FrameInfo_movie.Time]) || ...
+                any([tempInfo.FrameInfo.Time] ~= [FrameInfo_movie.Time]) ||...
+                size(movieMat, 4) ~= this.nFrames;
             
             persistent preTifDir;
-            if isempty(preTifDir) ||...
-                    ~isequal( length(preTifDir), this.nFrames) ||...
-                    isNewMovie
+            if isempty(preTifDir) || isNewMovie
                 FrameInfo_movie = tempInfo.FrameInfo;
                 preTifDir = dir([this.preFolder, '*_ch0*.tif']);
             end
-%             loadFramesIndividually = true;
-            
+                        
             %just return an empty array if we can't load the movie.
             %leave the handling to the caller, presumably by enabling
             %sequential file loading.
-            loadIndFlag = false;
-            if exist('loadFramesIndividually','var')
-                loadIndFlag = loadFramesIndividually;
-            end
-            if ~haveSufficientMemory(preTifDir) || loadIndFlag
-
+            if ~haveSufficientMemory(preTifDir) || ~this.preLoadMovie
                 out = [];
                 return;
             end
@@ -289,13 +296,10 @@ classdef LiveExperiment
                 string({preTifDir.name}), '_z'));
             
             
-            persistent movieMat;
             %load movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames) or if the old FrameInfo doesn't match
             %the new FrameInfo
-            if isempty(movieMat) ||...
-                    ~isequal( size(movieMat, 4), this.nFrames) ||...
-                    isNewMovie
+            if isempty(movieMat) || isNewMovie
                 
                 if haveTifStacks
                     movieMat = makeMovieMatFromTifStacks(this, preTifDir, channelsToRead);
@@ -313,8 +317,11 @@ classdef LiveExperiment
             end
             out = movieMat;
             
+            %let's reduce the memory footprint of the movie if we can
+%             if max(movieMat(:)) < 255
+%                 movieMat = uint8(movieMat);
+%             end
             movieMat = double(movieMat);
-
             
         end
         
@@ -369,25 +376,22 @@ classdef LiveExperiment
                 haveHisTifStack = false;
             end
             
-            %just return an empty array if we can't load the movie.
-            %leave the handling to the caller, presumably by enabling
-            %sequential file loading.
-            if ~haveSufficientMemory(dir(hisFile))
-                out = [];
-                return;
-            end
-            
+                       
             persistent hisMat;
             persistent FrameInfo_His;
             tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
-
+            
+            isNewMovie = isempty(FrameInfo_His) ||...
+                size([tempInfo.FrameInfo.Time],2) ~= size([FrameInfo_His.Time],2) || ...
+                any([tempInfo.FrameInfo.Time] ~= [FrameInfo_His.Time]) ||...
+                size(hisMat, 3) ~= this.nFrames;
+            
+            
             %load histone movie only if it hasn't been loaded or if we've switched
             %Prefixes (determined by num frames)
-            if isempty(hisMat) || ~isequal( size(hisMat, 3), this.nFrames) ||...
-                    isempty(FrameInfo_His) ||...
-                    any([tempInfo.FrameInfo.Time] ~= [FrameInfo_His.Time])
+            if isempty(hisMat) || isNewMovie
                 
-                FrameInfo_His = tempInfo.FrameInfo; 
+                FrameInfo_His = tempInfo.FrameInfo;
                 
                 if haveHisTifStack
                     %load in sequential tif stacks
@@ -409,7 +413,6 @@ classdef LiveExperiment
             end
             out = hisMat;
             
-
             %let's reduce the memory footprint of the movie if we can
 %             if max(hisMat(:)) < 255
 %                 hisMat = uint8(hisMat);
@@ -530,49 +533,13 @@ classdef LiveExperiment
                 load(spotsFile, 'Spots');
             end
             
-        end        
+        end
         
         function [Particles, SpotFilter] = getParticles(this)
             
             particlesFile = [this.resultsFolder, 'Particles.mat'];
             if this.hasParticlesFile
                 load(particlesFile, 'Particles', 'SpotFilter');
-            end
-            
-        end               
-        
-        function ParticlesFull = getParticlesFull(this)
-            
-            particlesFile = [this.resultsFolder, 'ParticlesFull.mat'];
-            if this.hasParticlesFile
-                ParticlesFull = load(particlesFile);
-            end
-            
-        end
-        
-        function SimParticles = getSimParticles(this)
-            
-            particlesFile = [this.resultsFolder, 'ParticlesFull.mat'];
-            if this.hasParticlesFile
-                load(particlesFile,'SimParticles');
-            end
-            
-        end
-        
-        function ParticleStitchInfo = getParticleStitchInfo(this)
-            
-            particleStitchFile = [this.resultsFolder, 'ParticleStitchInfo.mat'];
-            if this.hasParticlesFile
-                load(particleStitchFile, 'ParticleStitchInfo');
-            end
-            
-        end
-        
-        function globalMotionModel = getGlobalMotionModel(this)
-            
-            particleMotionFile = [this.resultsFolder, 'globalMotionModel.mat'];
-            if this.hasParticlesFile
-                load(particleMotionFile, 'globalMotionModel');
             end
             
         end

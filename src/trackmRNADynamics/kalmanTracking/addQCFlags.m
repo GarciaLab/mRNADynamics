@@ -1,8 +1,7 @@
 function [Particles, trackingOptions] = addQCFlags(Particles, liveExperiment, trackingOptions)
 
-  disp('Adding QC fields...')
-  % Iterate over all channels and generate additional QC flags
-  
+  startParallelPool(8, 0, 1);
+  % Iterate over all channels and generate additional QC flags  
   FrameInfo = getFrameInfo(liveExperiment);
   
   %%% load nucleus probability maps if they exist
@@ -25,8 +24,7 @@ function [Particles, trackingOptions] = addQCFlags(Particles, liveExperiment, tr
   
   %%% set default thresholds used to flag unlikely points and traces
   trackingOptions.SpotlogLThreshold = repelem(-trackingOptions.matchCostDefault,trackingOptions.NCh);
-  trackingOptions.TracelogLThreshold = repelem(-0.75*trackingOptions.matchCostDefault,trackingOptions.NCh);
-  
+  trackingOptions.TracelogLThreshold = repelem(-0.75*trackingOptions.matchCostDefault,trackingOptions.NCh);   disp('Adding QC fields...')
   % Iterate through channels
   for Channel = 1:trackingOptions.NCh
     

@@ -1,11 +1,8 @@
 function keyInputHandler = FrameChangeEventHandler(cptState)
  
     function keyInput(cc)
-        CC = cptState.CurrentChannelIndex;
-        CP = cptState.CurrentParticle;
-        
-        numValidFrames = length({cptState.Spots{CC}.Fits}); %check handle of spots is updated when is needed down the road
-        
+        numValidFrames = length({cptState.Spots{cptState.CurrentChannelIndex}.Fits}); %check handle of spots is updated when is needed down the road
+
         if cc == '.' %Move forward one frame
             cptState.PreviousFrame = cptState.CurrentFrame;
             [cptState.CurrentFrame, cptState.ManualZFlag] = changeFrame(cptState.CurrentFrame + 1, numValidFrames);
@@ -39,28 +36,23 @@ function keyInputHandler = FrameChangeEventHandler(cptState)
         elseif (cc == '''') & (cptState.CurrentFrame < cptState.numValidFrames())
             % Move to the next skipped frame within the particle
             cptState.PreviousFrame = cptState.CurrentFrame;
-            cptState.CurrentFrame = nextSkippedFrame(cptState.Particles, CC, ...
-                CP, cptState.CurrentFrame);
+            cptState.CurrentFrame = nextSkippedFrame(cptState.Particles, cptState.CurrentChannelIndex, ...
+                cptState.CurrentParticle, cptState.CurrentFrame);
         
         elseif (cc == ';') & (cptState.CurrentFrame > 1)
             % Move to the previous skipped frame within the particle
             cptState.PreviousFrame = cptState.CurrentFrame;
-            cptState.CurrentFrame = previousSkippedFrame(cptState.Particles, CC, ...
-                CP, cptState.CurrentFrame);
+            cptState.CurrentFrame = previousSkippedFrame(cptState.Particles, cptState.CurrentChannelIndex, ...
+                cptState.CurrentParticle, cptState.CurrentFrame);
         
         elseif cc == 'e'
             % Approve/Disapprove a frame within a trace
-            FrameFilter = cptState.Particles{CC}(CP).Frame == cptState.CurrentFrame;
-            cptState.Particles{CC}(CP).FrameApproved(FrameFilter) = ...                
-                ~cptState.Particles{CC}(CP).FrameApproved(...
-                FrameFilter);
-            if cptState.Particles{CC}(CP).FrameApproved(FrameFilter)  
-              for v = 1:length(cptState.qcFlagFields)
-                if cptState.Particles{CC}(CP).(cptState.qcFlagFields{v})(FrameFilter) >= 1
-                  cptState.Particles{CC}(CP).(cptState.qcFlagFields{v})(FrameFilter) = 0;
-                end              
-              end
-            end           
+            cptState.Particles{cptState.CurrentChannel}...
+                (cptState.CurrentParticle).FrameApproved(cptState.Particles{cptState.CurrentChannel}...
+                (cptState.CurrentParticle).Frame == cptState.CurrentFrame) = ...
+                ...
+                ~cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).FrameApproved(...
+                cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Frame == cptState.CurrentFrame);
         end
     end
 

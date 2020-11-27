@@ -46,7 +46,9 @@ function KFTrack = kalmanFilterFwd(posData,kalmanOptions)
     end            
   end
   % add approximate logL for first entry 
-  KFTrack.logL(firstObsIndex) = KFTrack.logL(firstObsIndex+1);
+  if length(KFTrack.logL) >= firstObsIndex+1
+      KFTrack.logL(firstObsIndex) = KFTrack.logL(firstObsIndex+1);
+  end
   
   dimVec = 1:nt:nDims*nt;
   

@@ -1,43 +1,36 @@
-function [Particles, schnitzcells] = redoTracking(...
-    NChannels, cptState, DataFolder, FilePrefix, DropboxFolder)
-  
-  % [Particles, schnitzcells] = redoTracking(...
-  %             NChannels, cptState, DataFolder, FilePrefix, DropboxFolder)
-  % 
-  % DESCRIPTION
-  % Saves changes and calls TrackmRNADynamics with retracking option
-  %
-  % PARAMETERS
-  % NChannels: number of channe;s
-  % cptState: object that keeps track of current particle characteristics
-  % DataFolder: string of data path
-  % FilePrefix: [Prefix, '_'];
-  % DropboxFolder: Directory containing pipeline output sets
-  %
-  % OPTIONS
-  % N/A
-  %
-  % OUTPUT
-  % useHistone
-  % searchRadiusMicrons
-  % retrack
-  % displayFigures
-  %
-  %
-  % Author (contact): Meghan Turner (meghan_turner@berkeley.edu)
-  % Created: 6/30/2020
-  % Last Updated: N/A
+function [Particles, schnitzcells] = redoTracking(DataFolder, ...
+    UseHistoneOverlay, FrameInfo, DropboxFolder, FilePrefix, schnitzcells, ...
+    Particles, NChannels, CurrentChannel, numParticles)
+%REDOTRACKING Summary of this function goes here
+%   Detailed explanation goes here
 
-  Answer=lower(input('Are you sure you want to redo the tracking?  (y/n) ','s'));
-  if Answer=='y'
-  %     warning('HG: Not clear that this feature will work with the multiple channels')
+Answer=lower(input('Are you sure you want to redo the tracking?  (y/n) ','s'));
+if Answer=='y'
+    warning('HG: Not clear that this feature will work with the multiple channels')
 
-      %We need to save the data
-      saveChanges(NChannels, cptState, DataFolder, FilePrefix, DropboxFolder);
+    %We need to save the data
+    save([DataFolder,filesep,'FrameInfo.mat'],'FrameInfo')
+    if UseHistoneOverlay
+        save([DataFolder,filesep,'Particles.mat'],'Particles', '-v7.3')
+        save([DropboxFolder,filesep,FilePrefix(1:end-1),filesep,FilePrefix(1:end-1),'_lin.mat'],'schnitzcells', '-v7.3')
+    else
+        save([DataFolder,filesep,'Particles.mat'],'Particles', '-v7.3')
+    end
+    disp('Particles saved.')
+    if NChannels==1
+        Particles=Particles{1};
+    end
 
-      disp('Calling TrackmRNADynamics...')
-      [Particles,schnitzcells]=TrackmRNADynamics(FilePrefix(1:end-1),'retrack'); % Presumably we want this to be a retrack call
-
-  end
+    [Particles,schnitzcells]=TrackmRNADynamics(FilePrefix(1:end-1));
+    if NChannels==1
+        Particles={Particles};
+    end
+    %Check the FrameApproved field
+    for i=1:numParticles
+        if isempty(Particles{CurrentChannel}(i).FrameApproved)
+            Particles{CurrentChannel}(i).FrameApproved=true(size(Particles{CurrentChannel}(i).Frame));
+        end
+    end
+end
 end
 
