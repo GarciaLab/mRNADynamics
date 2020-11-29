@@ -65,14 +65,15 @@ if isempty(plotTraceSettings.ErrorIntegral)
     plotTraceSettings.ErrorIntegral3 = 0;
 end
 
+lgd_str = {'mRNA (2D 1 slice)'};
 if cptState.plot3DGauss
-    amp1 = plotTraceSettings.AmpIntegral3;
-    amp2 = plotTraceSettings.AmpIntegralGauss3D;
-    
+    amp1 = plotTraceSettings.AmpIntegral;
+    amp2 = plotTraceSettings.gauss3DIntensity;    
+    lgd_str(end+1) = {'mRNA (3D gaussian integral)'};
     error1aux = plotTraceSettings.ErrorIntegral3;
     error1 = ones(length(amp1(approvedParticleFrames)),1)'*error1aux;
     
-    error2 = plotTraceSettings.ErrorIntegralGauss3D(approvedParticleFrames);
+    error2 = plotTraceSettings.gauss3DIntensitySE(approvedParticleFrames);
     
     if cptState.lineFitted
         to = -cptState.Coefficients(2) / cptState.Coefficients(1); % minutes
@@ -83,7 +84,7 @@ if cptState.plot3DGauss
 else
     amp1 = plotTraceSettings.AmpIntegral;
     amp2 = plotTraceSettings.AmpIntegral3;
-    
+    lgd_str(end+1) = 'mRNA (2D multi-slice)';
     error1aux = plotTraceSettings.ErrorIntegral;
     error1 = ones(length(amp1(approvedParticleFrames)),1)'.*error1aux';
 
@@ -121,7 +122,11 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFr
         xlim(traceFigAxes,[min(traceFigTimeAxis),max(traceFigTimeAxis)]+[-1,1]);
         setPlotsVisible(traceFigAxes);
     end
-    traceFigYLimits = [0, max(plotTraceSettings.AmpIntegralGauss3D)*1.1];
+    if cptState.plot3DGauss
+        traceFigYLimits = [0, max(plotTraceSettings.gauss3DIntensity)*1.1];
+    else
+        traceFigYLimits = [0, max(plotTraceSettings.AmpIntegral3)*1.1];
+    end
     
     % plotting all anaphase time points as vertical lines
     for i = 1:length(anaphase)
@@ -176,7 +181,7 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFr
       plot(traceFigAxes,traceFigTimeAxis(~approvedParticleFrames),plotTraceSettings.AmpIntegral(~approvedParticleFrames),'.r')
       hold(traceFigAxes,'off')
     
-    if strcmpi(ExperimentType, 'inputoutput')
+    if strcmpi(ExperimentType, 'inputoutput')        
         yyaxis(traceFigAxes,'right')
         %now we'll plot the input protein intensity on the right-hand axis.
         if ~isfield(cptState.schnitzcells, 'Fluo')
@@ -188,11 +193,15 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFr
             if ~isempty(proteinFluo)
                 set(proteinLine, 'XData', cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).frames,...
                     'YData', max(proteinFluo,[],2));
+                lgd_str(end+1) = {'protein'};
             else
                 warning('protein fluo empty. maybe rerun integrateschnitzfluo?');
             end
         end
     end
+    
+    % NL: adding this because confused about previous legend settings
+    legend(traceFigAxes,lgd_str{:})
     
     % creating axis title
     numParticles = length(cptState.Particles{cptState.CurrentChannelIndex});

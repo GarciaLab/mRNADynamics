@@ -115,7 +115,7 @@ classdef CPTState < handle
             this.nameSuffix = '';
             
             this.nWorkers = nWorkers;
-            this.plot3DGauss = plot3DGauss;
+            this.plot3DGauss = isfield(Spots{this.CurrentChannelIndex}(1).Fits,'GaussIntensity3DRaw');
             
             this.projectionMode = projectionMode;
         end

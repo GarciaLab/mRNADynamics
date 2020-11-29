@@ -9,8 +9,9 @@ function [Frame, AmpGaussian,Offset, ErrorGauss,optFit,FitType,...
 plotTraceSettings.ErrorIntegral = NaN;
 plotTraceSettings.ErrorIntegral3 = NaN;
 plotTraceSettings.backGround3 = NaN;
-plotTraceSettings.AmpIntegralGauss3D = NaN;
-plotTraceSettings.ErrorIntegralGauss3D = NaN;
+plotTraceSettings.gauss3DIntensity = NaN;
+plotTraceSettings.gauss3DIntensityRaw = NaN;
+plotTraceSettings.gauss3DIntensitySE = NaN;
 
 doSpline = ~noSpline;
 
@@ -51,12 +52,15 @@ for i=1:length(Particles(CurrentParticle).Frame)
     catch
         plotTraceSettings.AmpIntegral3(i)= NaN;
     end
-    try
-        plotTraceSettings.AmpIntegralGauss3D(i)=...
-            double(spot.gauss3DIntensityRaw);
-    catch
-        plotTraceSettings.AmpIntegralGauss3D(i)= NaN;
-    end
+    plotTraceSettings.gauss3DIntensity(i) = double(spot.gauss3DIntensity);
+    plotTraceSettings.gauss3DIntensityRaw(i) = double(spot.GaussIntensity3DRaw);
+    plotTraceSettings.gauss3DIntensitySE(i) = double(spot.gauss3DIntensitySE);
+%     try
+%         plotTraceSettings.AmpIntegralGauss3D(i)=...
+%             double(spot.gauss3DIntensityRaw);
+%     catch
+%         plotTraceSettings.AmpIntegralGauss3D(i)= NaN;
+%     end
     if isfield(spot, 'gauss3DIntensitySE')
         try
             plotTraceSettings.ErrorIntegralGauss3D(i) = double(spot.gauss3DIntensitySE);

@@ -1,6 +1,6 @@
 function [OverlayFig, overlayAxes, snippetFigAxes, rawDataAxes,...
     gaussianAxes, traceFig, traceFigAxes, zProfileFigAxes,...
-    zTraceAxes, HisOverlayFig,HisOverlayFigAxes, multiFig]...
+    zTraceAxes, HisOverlayFig,HisOverlayFigAxes, multiFig,qualityControlFig]...
     ...
     = checkParticleTracking_drawGUI(UseHistoneOverlay,...
     fish, plot3DGauss, ExperimentType, multiView, xSize, ySize)
@@ -9,6 +9,7 @@ function [OverlayFig, overlayAxes, snippetFigAxes, rawDataAxes,...
 
 OverlayFig = figure;
 traceFig = figure;
+qualityControlFig = figure;
 multiFig = [];
 HisOverlayFig = [];
 HisOverlayFigAxes = [];
@@ -16,7 +17,6 @@ traceFigAxes = [];
 zTraceAxes = [];
 rawDataAxes = [];
 gaussianAxes = [];
-
 
 
 if UseHistoneOverlay
@@ -98,6 +98,7 @@ if ~fish
     set(OverlayFig, 'units', 'normalized', 'OuterPosition', [0,1-overlayDim(2), overlayDim(1), overlayDim(2)]);
     %set(OverlayFig, 'units', 'normalized', 'position', [0,1-overlayDim(2), overlayDim(1), overlayDim(2)]);
     set(traceFig, 'units', 'normalized', 'position', [overlayDim(1)+0.05, 0.6, .3 .3])
+    set(qualityControlFig, 'units', 'normalized', 'position', [overlayDim(1)+0.25, 0.6, .2 .2])
     %set(overlayAxes, 'units', 'normalized', 'position', [-.25 .06 .9 .9])
     %set(traceFigAxes, 'units', 'normalized', 'position', [.48 .17 .48 .63])
     set(snipFig, 'units', 'normalized', 'position', [0.355, 0.15, 3 * (.2 / 2), .33 / 2]);

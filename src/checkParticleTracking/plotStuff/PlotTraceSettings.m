@@ -13,6 +13,10 @@ classdef PlotTraceSettings < handle
         ErrorIntegralGauss3D
         
         Spots3D
+        
+        gauss3DIntensity
+        gauss3DIntensitySE
+        gauss3DIntensityRaw
     end
     
     methods
