@@ -1,4 +1,4 @@
-function [sortByFrame, sortByLength, ForCompileAll, SpeedMode, SisterMode, ...
+function [sortByFrame, sortByLength, sortByFlags, ForCompileAll, SpeedMode, SisterMode, ...
     ncRange, projectionMode, plot3DGauss, NC, ...
     startNC, endNC, optionalResults, nWorkers, fish,...
     noHisOverlay, multiView, preStructs, preMovie] = determineCheckParticleTrackingOptions(varargin)
@@ -43,6 +43,8 @@ for i=1:length(varargin)
         sortByFrame=false;
     elseif strcmpi(varargin{i},'sortByLength')
         sortByLength=true;
+    elseif strcmpi(varargin{i},'sortByFlags')
+        sortByFlags=true;
     elseif strcmpi(varargin{i},'nWorkers')
         nWorkers = varargin{i+1};
     elseif strcmpi(varargin{i},'preMovie')

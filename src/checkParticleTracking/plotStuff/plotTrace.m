@@ -68,8 +68,7 @@ end
 lgd_str = {'mRNA (2D 1 slice)'};
 if cptState.plot3DGauss
     amp1 = plotTraceSettings.AmpIntegral;
-    amp2 = plotTraceSettings.gauss3DIntensity;    
-    lgd_str(end+1) = {'mRNA (3D gaussian integral)'};
+    amp2 = plotTraceSettings.gauss3DIntensity;        
     error1aux = plotTraceSettings.ErrorIntegral3;
     error1 = ones(length(amp1(approvedParticleFrames)),1)'*error1aux;
     
@@ -83,8 +82,7 @@ if cptState.plot3DGauss
     end
 else
     amp1 = plotTraceSettings.AmpIntegral;
-    amp2 = plotTraceSettings.AmpIntegral3;
-    lgd_str(end+1) = 'mRNA (2D multi-slice)';
+    amp2 = plotTraceSettings.AmpIntegral3;    
     error1aux = plotTraceSettings.ErrorIntegral;
     error1 = ones(length(amp1(approvedParticleFrames)),1)'.*error1aux';
 
@@ -192,16 +190,12 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFr
             proteinFluo = cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).Fluo;
             if ~isempty(proteinFluo)
                 set(proteinLine, 'XData', cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).frames,...
-                    'YData', max(proteinFluo,[],2));
-                lgd_str(end+1) = {'protein'};
+                    'YData', max(proteinFluo,[],2));                
             else
                 warning('protein fluo empty. maybe rerun integrateschnitzfluo?');
             end
         end
-    end
-    
-    % NL: adding this because confused about previous legend settings
-    legend(traceFigAxes,lgd_str{:})
+    end 
     
     % creating axis title
     numParticles = length(cptState.Particles{cptState.CurrentChannelIndex});

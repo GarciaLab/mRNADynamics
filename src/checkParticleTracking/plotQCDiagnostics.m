@@ -1,26 +1,48 @@
-function qcAxes = plotQCDiagnostics(qcAxes)
+function qcAxes = plotQCDiagnostics(qcAxes, cptState)
 
-    inputScores = rand(1,6).*10.*rand(1,6);
-    nInputs = length(inputScores);
-    inputIndex = 1:nInputs;
+    if ~isempty(cptState)
+        particle = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle);
 
-    labelCell = {'parameter1','parameter2','parameter3','parameter4','parameter5','parameter6'};
+        inputScores = particle.qcScoreArray(particle.Frame==cptState.CurrentFrame,:);
+        if isempty(inputScores)
+          inputScores = zeros(1,size(particle.qcScoreArray,2));
+        end
 
-    inputScores(end+1) = inputScores(1);
-    logLthresh = ones(size(inputScores));
+        nInputs = length(inputScores);
+        inputIndex = 1:nInputs;
 
-    % calculate angles
-    inputAngleIncrement = 2*pi/nInputs;
-    inputAngles = (inputIndex-1)*inputAngleIncrement;
-    inputAngles(end+1) = inputAngles(1);
+        labelCell = cptState.trackingOptions.qcFieldNames;
 
-    set(0,'CurrentFigure', qcAxes)
+        inputScores(end+1) = inputScores(1);
+        logLthresh = particle.qcThreshVec;
+        logLthresh(end+1) = logLthresh(1);
+        inputScores = inputScores./logLthresh;
 
-    polarplot(inputAngles, logLthresh)
-    hold on
-    polarplot(inputAngles, inputScores)
+        % calculate angles
+        inputAngleIncrement = 2*pi/nInputs;
+        inputAngles = (inputIndex-1)*inputAngleIncrement;
+        inputAngles(end+1) = inputAngles(1);
 
-    pax = gca;
-    pax.ThetaAxisUnits = 'radians';
-    thetaticks(inputAngles(1:end-1))
-    thetaticklabels(labelCell)
+        set(0,'CurrentFigure', qcAxes)
+        title('Parameter QC breakdown')
+        polarplot(inputAngles, ones(size(logLthresh)))
+        hold on
+        polarplot(inputAngles, inputScores)
+
+        pax = gca;
+        pax.ThetaAxisUnits = 'radians';
+        thetaticks(inputAngles(1:end-1))
+        thetaticklabels(labelCell)
+
+        hold off
+    else
+        nInputs = 5;
+        inputIndex = 1:nInputs;
+        inputAngleIncrement = 2*pi/nInputs;
+        inputAngles = (inputIndex-1)*inputAngleIncrement;
+        inputAngles(end+1) = inputAngles(1);
+        
+        set(0,'CurrentFigure', qcAxes)
+        title('Parameter QC breakdown')
+        polarplot(inputAngles, ones(size(inputAngles)))
+    end

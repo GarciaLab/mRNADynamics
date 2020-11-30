@@ -544,6 +544,15 @@ classdef LiveExperiment
             
         end
         
+        function trackingOptions = getTrackingOptions(this)
+            
+            trackingOptionsFile = [this.resultsFolder, 'trackingOptions.mat'];
+            if this.hasParticlesFile
+                load(trackingOptionsFile, 'trackingOptions');
+            end
+            
+        end
+        
         function APDetection = getAPDetection(this)
             
             APDetectionFile = [this.resultsFolder, 'APDetection.mat'];

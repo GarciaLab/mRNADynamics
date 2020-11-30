@@ -5,6 +5,7 @@ classdef CPTState < handle
         
         Spots
         Particles
+        trackingOptions
         SpotFilter
         schnitzcells
         FrameInfo
@@ -67,6 +68,7 @@ classdef CPTState < handle
             this.liveExperiment = liveExperiment;
             this.Spots = Spots;
             this.Particles = Particles;
+            this.trackingOptions = getTrackingOptions(liveExperiment);
             this.SpotFilter = SpotFilter;
             this.schnitzcells = schnitzcells;
             this.FrameInfo = FrameInfo;

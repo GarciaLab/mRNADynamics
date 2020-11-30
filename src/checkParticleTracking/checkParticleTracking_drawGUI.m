@@ -37,7 +37,7 @@ if ~fish
     yyaxis(traceFigAxes,'left')
     % creating legend
     if plot3DGauss
-        str1 = '3-slice mRNA';
+        str1 = '1-slice mRNA';
         str2 = '3D-Gaussian fit mRNA';
     else
         str1 = '1-slice mRNA';
@@ -57,6 +57,8 @@ if ~fish
         traceFigAxes.YAxis(2).Visible = 'off';
         traceLeg = legend(traceFigAxes,[e1, e2], str1,str2, 'AutoUpdate', 'off', 'HandleVisibility', 'off');
     end
+    % initialize QC figure
+    qualityControlFig = plotQCDiagnostics(qualityControlFig,[]);
 end
 
 zFig = figure;
@@ -98,11 +100,11 @@ if ~fish
     set(OverlayFig, 'units', 'normalized', 'OuterPosition', [0,1-overlayDim(2), overlayDim(1), overlayDim(2)]);
     %set(OverlayFig, 'units', 'normalized', 'position', [0,1-overlayDim(2), overlayDim(1), overlayDim(2)]);
     set(traceFig, 'units', 'normalized', 'position', [overlayDim(1)+0.05, 0.6, .3 .3])
-    set(qualityControlFig, 'units', 'normalized', 'position', [overlayDim(1)+0.25, 0.6, .2 .2])
+    set(qualityControlFig, 'units', 'normalized', 'position', [.78, 0.15, .2 .2])
     %set(overlayAxes, 'units', 'normalized', 'position', [-.25 .06 .9 .9])
     %set(traceFigAxes, 'units', 'normalized', 'position', [.48 .17 .48 .63])
-    set(snipFig, 'units', 'normalized', 'position', [0.355, 0.15, 3 * (.2 / 2), .33 / 2]);
-    set(zFig, 'units', 'normalized', 'position', [0.67, 0.15, .2, .33 / 2]);
+    set(snipFig, 'units', 'normalized', 'position', [0.22, 0.15, 3 * (.2 / 2), .33 / 2]);
+    set(zFig, 'units', 'normalized', 'position', [0.5, 0.15, .2, .33 / 2]);
 else
     set(snipFig, 'units', 'normalized', 'position', [0.355, 0.05, 3 * (.2 / 2), .33 / 2]);
     set(zFig, 'units', 'normalized', 'position', [0.67, 0.05, .2, .33 / 2]);
