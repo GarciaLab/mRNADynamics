@@ -544,6 +544,12 @@ classdef LiveExperiment
             particlesFile = [this.resultsFolder, 'Particles.mat'];
             if this.hasParticlesFile
                 load(particlesFile, 'Particles', 'SpotFilter');
+                if ~iscell(Particles)
+                    Particles = {Particles};
+                end
+                if ~iscell(SpotFilter)
+                    SpotFilter = {SpotFilter};
+                end
             end
             
         end

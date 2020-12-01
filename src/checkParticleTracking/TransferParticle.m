@@ -18,6 +18,7 @@ Particles(end+1).Frame=CurrentFrame;
 Particles(end).Index=IndexOutput;
 Particles(end).Approved=false;
 Particles(end).FrameApproved=true;
+Particles(end).ManuallyReviewed=true;
 
  %HG + AR: We deleted this because we don't assign xPos and yPos for the
  %Particles that are detected in the first place.%AR 8/16/2018- reinstated

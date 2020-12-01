@@ -1,14 +1,14 @@
-function [Particles, SpotFilter] = performTracking(Prefix,useHistone,varargin)
+function [Particles, SpotFilter] = performTracking(Prefix,varargin)
 close all force
 
 % initialize structure to store tracking options
 trackingOptions = struct;   
 
 % Process user options
-[~,trackingOptions.retrack,trackingOptions.noRetrack,trackingOptions.displayFigures] = ...
+[trackingOptions.useHistone, trackingOptions.retrack,trackingOptions.noRetrack,trackingOptions.displayFigures] = ...
                                 determinePerformTrackingOptions(varargin);
                            
-trackingOptions.useHistone = useHistone; 
+% trackingOptions.useHistone = useHistone; 
 
 % Get all the required data for this Prefix
 liveExperiment = LiveExperiment(Prefix);
@@ -39,7 +39,6 @@ trackingOptions = parseTrackingOptions(Spots, liveExperiment, trackingOptions);
 
 % Perform main tracking
 [Particles, trackingOptions, SpotFilter] = ParticleTrackingKalman(Spots, liveExperiment, trackingOptions);
-
 
 % Add QC flags
 [Particles, trackingOptions] = addQCFlags(Particles, liveExperiment, trackingOptions);

@@ -4,7 +4,7 @@ function Particles=JoinParticleTraces(OriginalParticle,ClickedParticle,Particles
 %Particles structure accordingly
 
 %Transfer the information to the original particle
-vectorFields = {'xPos','yPos','zPos','zPosDetrended','FrameApproved','Index'};
+vectorFields = {'xPos','yPos','zPos','zPosDetrended','FrameApproved','Index','ManuallyApproved'};
 [Particles(OriginalParticle).Frame, sortOrder] = sort([Particles(OriginalParticle).Frame,Particles(ClickedParticle).Frame]);
 % generate logical vector for ease of indexing
 newFrameFlags = ismember(Particles(OriginalParticle).Frame,Particles(ClickedParticle).Frame);
@@ -53,9 +53,6 @@ trackingStruct.MeasurementVec(:,end+1) = FluoVec./trackingOptions.kalmanOptions.
 Particles(OriginalParticle) = pathPrediction(Particles(OriginalParticle), trackingStruct, trackingOptions, trackingOptions.kalmanOptions);
 
 % update QC info
-Particles(OriginalParticle).logL = nansum(Particles(OriginalParticle).logLDistance(:,1:3),2);
-Particles(OriginalParticle).logLMean = nanmean(Particles(OriginalParticle).logL);
-
 qcVariables = {'NucleusBoundaryFlags', 'SpotlogLFlags', 'earlyFlags'};
 for q = 1:length(qcVariables)
     qcVec = false(size(newFrameFlags));
@@ -74,4 +71,7 @@ ncProbs = Inf(size(newFrameFlags));
 ncProbs(~newFrameFlags) = Particles(OriginalParticle).nucleusProbability;
 Particles(OriginalParticle).nucleusProbability = ncProbs;
 
+% add stable ID
+Particles(OriginalParticle).StableParticleID = [round(nansum(Particles(OriginalParticle).xPos),2),...
+        round(nansum(Particles(OriginalParticle).yPos),2), length(Particles(OriginalParticle).Frame)];
 end

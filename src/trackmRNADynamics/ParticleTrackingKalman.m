@@ -11,6 +11,11 @@ function [Particles, trackingOptions, SpotFilter] = ParticleTrackingKalman(Spots
   FrameInfo = getFrameInfo(liveExperiment);
   schnitzcells = getSchnitzcells(liveExperiment); % this will be empty and ignored if no nucleus info    
   
+  % load old particles if we're retracking
+  if trackingOptions.retrack
+      OldParticles = getParticles(liveExperiment);      
+  end
+  
   % get vector indicating stage position in Z
   zPosStage = [FrameInfo.zPosition]*1e6 / FrameInfo(1).ZStep;    
   trackingOptions.zPosStage = zPosStage;
@@ -31,7 +36,9 @@ function [Particles, trackingOptions, SpotFilter] = ParticleTrackingKalman(Spots
   end
   
   for Channel = 1:trackingOptions.NCh        
-    
+    if trackingOptions.retrack
+        ParticleRefArray = vertcat(OldParticles{Channel}.StableParticleID);
+    end
     % determine kalman filter characteristics
     kalmanOptions = determineKalmanOptions(liveExperiment,trackingOptions,Spots{Channel});       
     
@@ -104,6 +111,7 @@ function [Particles, trackingOptions, SpotFilter] = ParticleTrackingKalman(Spots
     backwardTracks = backwardTracks(~[backwardTracks.duplicateFlag]);
     
     %% %%%%%%%%%%%%% Step 3: Infer particle trajectory %%%%%%%%%%%%%%%%%%%%
+    
     wb = waitbar(0,['Stage 3: Performing path prediction (channel ' num2str(Channel) ')']);
     ParticlesTemp = initializeParticles();
     for b = 1:length(backwardTracks)        
@@ -123,10 +131,20 @@ function [Particles, trackingOptions, SpotFilter] = ParticleTrackingKalman(Spots
         ParticlesTemp(b).Approved = 0;
         ParticlesTemp(b).FrameApproved = true(size(ParticlesTemp(b).Frame));
         ParticlesTemp(b).ManuallyReviewed = false(size(ParticlesTemp(b).Frame));
-        
+        ParticlesTemp(b).StableParticleID = [round(nansum(ParticlesTemp(b).xPos),2), round(nansum(ParticlesTemp(b).yPos),2), length(ParticlesTemp(b).Frame)];
         % make particle path predictions
         ParticlesTemp(b) = pathPrediction(ParticlesTemp(b), backwardTracks(b), trackingOptions, kalmanOptions);
-             
+        % reference against previous particles if we're retracking
+        if trackingOptions.retrack
+            refVec = all(ParticleRefArray==ParticlesTemp(b).StableParticleID,2);
+            if sum(refVec) == 1
+                ParticlesTemp(b).ManuallyReviewed = OldParticles{Channel}(refVec).ManuallyReviewed;
+                ParticlesTemp(b).FrameApproved(ParticlesTemp(b).ManuallyReviewed==1)...
+                  = OldParticles{Channel}(refVec).FrameApproved(ParticlesTemp(b).ManuallyReviewed==1);
+            else
+                error('this should not happen')
+            end
+        end
     end    
     Particles{Channel} = ParticlesTemp;
     kalmanOptions.Channel = Channel;

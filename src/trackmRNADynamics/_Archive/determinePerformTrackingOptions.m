@@ -25,14 +25,14 @@ function [useHistone,retrack,noRetrack,displayFigures] = ...
 % Last Updated: N/A
 
 % Default options
-useHistone = false;
+useHistone = true;
 retrack = false;
 displayFigures = false;
 noRetrack = false;
 
 for i= 1:length(options)
-    if strcmpi(options{i}, 'useHistone')
-        useHistone = true;
+    if strcmpi(options{i}, 'ignoreHistone')
+        useHistone = false;
     elseif strcmpi(options{i}, 'retrack')
         retrack = true;
     elseif strcmpi(options{i}, 'noRetrack')

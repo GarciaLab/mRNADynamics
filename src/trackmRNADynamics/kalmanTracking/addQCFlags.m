@@ -8,35 +8,9 @@ function [Particles, trackingOptions] = addQCFlags(Particles, liveExperiment, tr
   % Iterate over all channels and generate additional QC flags  
   FrameInfo = getFrameInfo(liveExperiment);
   
-  %%% load nucleus probability maps if they exist
-  nucleusProbDirRaw = [liveExperiment.procFolder 'nucleusProbabilityMaps' filesep];
-  nucleusProbDirFinal = [liveExperiment.procFolder 'nucleusProbabilityMapsFull' filesep];
-  probFiles = dir([nucleusProbDirFinal '*.tif']);
-  probFilesRaw = dir([nucleusProbDirRaw '*.tif']);
-  hasFullProbFiles = length(probFiles) == length(FrameInfo);
-  
-  if hasFullProbFiles
-      disp('Incorporating nucleus probabilities...')
-      Particles = addNucleusProbabilities(liveExperiment, trackingOptions, FrameInfo, Particles);      
-  else
-      if exist([nucleusProbDirRaw 'nucleusInfo.mat'], 'file')
-          load([nucleusProbDirRaw 'nucleusInfo.mat'], 'nucleusInfo')
-          if length(nucleusInfo.originalFileNames) == length(probFilesRaw)
-              compileNuclearTiffStacks(liveExperiment.Prefix);
-              disp('Incorporating nucleus probabilities...')
-              Particles = addNucleusProbabilities(liveExperiment, trackingOptions, FrameInfo, Particles);      
-          end
-      else
-          warning('No nucleus probabilities found. Nucleus boundaries will not be used to assess particle quality.')
-          for Channel = 1:trackingOptions.NCh
-              for  p = 1:length(Particles{Channel})
-                  Particles{Channel}(p).nucleusProbability = ones(size(Particles{Channel}(p).Frame));
-              end
-          end
-      end
-  end
+  % incorporate probabilities from ML nucleus segmentation if info exists
+  Particles = getNucleusProbabilities(liveExperiment,Particles,FrameInfo,trackingOptions);
     
-  
   % basic frame info
   Time = [FrameInfo.Time]; 
 
@@ -54,13 +28,7 @@ function [Particles, trackingOptions] = addQCFlags(Particles, liveExperiment, tr
   
   disp('Adding QC fields...')
   % Iterate through channels
-  for Channel = 1:trackingOptions.NCh
-    
-    % calcualte average likelihood quantities
-%     for p = 1:length(Particles{Channel})
-%         Particles{Channel}(p).logL = nansum(Particles{Channel}(p).logLDistance(:,logLIndices),2);
-%         Particles{Channel}(p).logLMean = nanmean(Particles{Channel}(p).logL);
-%     end
+  for Channel = 1:trackingOptions.NCh    
     
 %     if true%~trackingOptions.useHistone
     trackingOptions.SpotlogLThreshold(Channel) = 75;%prctile(-vertcat(Particles{Channel}.logL),99);
@@ -90,13 +58,15 @@ function [Particles, trackingOptions] = addQCFlags(Particles, liveExperiment, tr
           Particles{Channel}(p).earlyFlags = int8(1*(Time(Particles{Channel}(p).Frame)-ncStart)<=...
                         trackingOptions.earlyThresh & hasNCStart(ncIndex==nc));
 
-          %%% automatically disapprove of frames   
-          Particles{Channel}(p).FrameApproved = Particles{Channel}(p).FrameApproved & ...
-            ~Particles{Channel}(p).SpotlogLFlags' & ~Particles{Channel}(p).earlyFlags & ...
-            ~Particles{Channel}(p).NucleusBoundaryFlags;                   
+          %%% automatically disapprove of frames. Exclude things that have
+          %%% been manually reviewed
+          UpdateFlags = ~Particles{Channel}(p).ManuallyReviewed;
+          Particles{Channel}(p).FrameApproved(UpdateFlags) = ... Particles{Channel}(p).FrameApproved(UpdateFlags) & ...
+            ~Particles{Channel}(p).SpotlogLFlags(UpdateFlags)' & ~Particles{Channel}(p).earlyFlags(UpdateFlags) & ...
+            ~Particles{Channel}(p).NucleusBoundaryFlags(UpdateFlags);                   
 
           %%% calculatemean number of disapproved frames
-          Particles{Channel}(p).FlaggedFraction = mean(~Particles{Channel}(p).FrameApproved);
+          Particles{Channel}(p).FlaggedFraction = mean(~Particles{Channel}(p).FrameApproved&~Particles{Channel}(p).ManuallyReviewed);
 
           %%% geenrate array to use for QC plot
           timeDeltaVec = 2*trackingOptions.earlyThresh - (Time(Particles{Channel}(p).Frame)'-ncStart);
