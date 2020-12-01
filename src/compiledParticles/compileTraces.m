@@ -12,7 +12,7 @@ function [Particles, CompiledParticles, ncFilter, ncFilterID] =...
 %   Detailed explanation goes here
 
 liveExperiment = LiveExperiment(Prefix);
-
+trackingOptions = getTrackingOptions(liveExperiment); 
 FrameInfo = getFrameInfo(liveExperiment);
 
 anaphaseFrames = liveExperiment.anaphaseFrames';
@@ -46,9 +46,12 @@ for ChN=1:NChannels
                     end
                 end
             end
-            
+            % remove frames that are not approved
+            if any(~Particles{ChN}(i).FrameApproved) && isfield(Particles{ChN},'logL')
+                Particles{ChN}(i) = filterParticleTraces(Particles{ChN}(i), trackingOptions);
+            end
             %Which frames were approved manually?
-            FrameFilter=Particles{ChN}(i).FrameApproved;
+            FrameFilter=Particles{ChN}(i).FrameApproved; %NL: this is obsolete for new projects, but leaving for compatibility
             %What is the first frame that was found, regardless of the column
             %condition?
             FirstFrame=Particles{ChN}(i).Frame(min(find(Particles{ChN}(i).FrameApproved)));
@@ -125,6 +128,20 @@ for ChN=1:NChannels
                 %CompiledParticles{ChN}(k).DVpos=Particles{ChN}(i).DVpos(FrameFilter);
                 CompiledParticles{ChN}(k).FrameApproved = Particles{ChN}(i).FrameApproved;
                 
+                % add predicted particle path info if it exits
+                if isfield(Particles{ChN},'xPosInf')
+                    CompiledParticles{ChN}(k).xPosInf = Particles{ChN}(i).xPosInf;
+                    CompiledParticles{ChN}(k).xPosSEInf = Particles{ChN}(i).xPosSEInf;
+                    CompiledParticles{ChN}(k).yPosInf = Particles{ChN}(i).yPosInf;
+                    CompiledParticles{ChN}(k).yPosSEInf = Particles{ChN}(i).yPosSEInf;
+                    if isfield(Particles{ChN},'zPosInf')
+                        CompiledParticles{ChN}(k).zPosInf = Particles{ChN}(i).zPosInf;
+                        CompiledParticles{ChN}(k).zPosSEInf = Particles{ChN}(i).zPosSEInf;
+                    end
+                    if isfield(Particles{ChN},'zPosDetrendedInf')
+                        CompiledParticles{ChN}(k).zPosDetrendedInf = Particles{ChN}(i).zPosDetrendedInf;
+                    end
+                end
                 if strcmpi(ExperimentAxis,'AP') && fullEmbryoExists
                     CompiledParticles{ChN}(k).APpos=Particles{ChN}(i).APpos(FrameFilter);
                     
@@ -181,30 +198,46 @@ for ChN=1:NChannels
                     CompiledParticles{ChN}(k).fittedSlope = [];
                     CompiledParticles{ChN}(k).fittedTon = [];
                 end
-                
-                %Extract position info and general Gauss3D fit info
-                try
-                    [~,gx_vec,gy_vec,gz_vec,g_fits_cell,f3_vec,f3_raw_vec]=...
-                        getGauss3DFitInfo(k,CompiledParticles{ChN},Spots{ChN});
-                    threeDFlag = ~all(isnan(gx_vec));
+                             
+                % add 3D info if it exists
+                if isfield(Particles{ChN},'xPos3D')
+                    CompiledParticles{ChN}(k).xPosGauss3D = Particles{ChN}(i).xPos3D;
+                    CompiledParticles{ChN}(k).yPosGauss3D = Particles{ChN}(i).yPos3D;
+                    CompiledParticles{ChN}(k).zPosGauss3D = Particles{ChN}(i).zPos3D;
+                    if isfield(Particles{ChN},'zPosDetrended3D')
+                        CompiledParticles{ChN}(k).zPosDetrendedGauss3D = Particles{ChN}(i).zPosDetrended3D;
+                    end
+                    % add fluorescence
+                    GaussIntensity3DRaw = NaN(size(Particles{ChN}(i).Frame));
+                    GaussIntensity3D = NaN(size(Particles{ChN}(i).Frame));
+                    fitInfoCell = cell(size(Particles{ChN}(i).Frame));
+                    for f = 1:length(Particles{ChN}(i).Frame)
+                        spot = SpotsCh(Particles{ChN}(i).Frame(f)).Fits(Particles{ChN}(i).Index(f));
+                        
+                        GaussIntensity3DRaw(f) = spot.GaussIntensity3DRaw;
+                        GaussIntensity3D(f) = spot.gauss3DIntensity;                
+                        fitInfoCell{f} = spot.SpotFitInfo3D;
+                    end
                     
-                catch
                     
-                    warning('Didn''t have complete Gauss 3D info');
-                    threeDFlag = false;
+                    CompiledParticles{ChN}(k).Fluo3DGauss = GaussIntensity3D;
+                    CompiledParticles{ChN}(k).Fluo3DRaw = GaussIntensity3DRaw;                    
+                    CompiledParticles{ChN}(k).SpotFitInfo3D = fitInfoCell;
                     
-                end
-                
-                threeDFlag = false; %setting this to false until gaussian fits are fixed
-                
-                if threeDFlag
-                    CompiledParticles{ChN}(k).xPosGauss3D = gx_vec;
-                    CompiledParticles{ChN}(k).yPosGauss3D = gy_vec;
-                    CompiledParticles{ChN}(k).zPosGauss3D = gz_vec;
-                    CompiledParticles{ChN}(k).Fluo3DGauss = f3_vec;
-                    CompiledParticles{ChN}(k).Fluo3DRaw = f3_raw_vec;
-                    CompiledParticles{ChN}(k).zPosGauss3D = gz_vec;
-                    CompiledParticles{ChN}(k).fitParamsGauss3D = g_fits_cell;
+                    % add inferred path info if it exists
+                    if isfield(Particles{ChN},'xPosInf3D')
+                        CompiledParticles{ChN}(k).xPosInf3D = Particles{ChN}(i).xPosInf3D;
+                        CompiledParticles{ChN}(k).xPosSEInf3D = Particles{ChN}(i).xPosSEInf3D;
+                        CompiledParticles{ChN}(k).yPosInf3D = Particles{ChN}(i).yPosInf3D;
+                        CompiledParticles{ChN}(k).yPosSEInf3D = Particles{ChN}(i).yPosSEInf3D;
+                        if isfield(Particles{ChN},'zPosInf3D')
+                            CompiledParticles{ChN}(k).zPosInf3D = Particles{ChN}(i).zPosInf3D;
+                            CompiledParticles{ChN}(k).zPosSEInf3D = Particles{ChN}(i).zPosSEInf3D;
+                        end
+                        if isfield(Particles{ChN},'zPosDetrendedInf3D')
+                            CompiledParticles{ChN}(k).zPosDetrendedInf3D = Particles{ChN}(i).zPosDetrendedInf3D;
+                        end
+                    end
                 end
                 %Extract information from Spots about fluorescence and background
                 plotTraceSettings = PlotTraceSettings();
