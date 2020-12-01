@@ -34,22 +34,27 @@ end
 
 h = waitbar(0,'Compiling traces');
 for ChN=1:NChannels
+    if ~isfield(Particles{ChN},'FrameApproved')
+        for m=1:length(Particles{ChN})
+            Particles{ChN}(m).FrameApproved=true(size(Particles{NCh}(m).Frame));
+        end
+    end            
     k=1;
     for i=1:length(Particles{ChN})
         try waitbar(i/length(Particles{ChN}),h); end
         if (Particles{ChN}(i).Approved==1)
-            
-            for NCh=1:NChannels
-                if ~isfield(Particles{NCh},'FrameApproved')
-                    for m=1:length(Particles{NCh})
-                        Particles{NCh}(m).FrameApproved=true(size(Particles{NCh}(m).Frame));
-                    end
-                end
+                        
+            if ~iscell(Spots)
+                SpotsCh = Spots;
+            else
+                SpotsCh = Spots{ChN};
             end
             % remove frames that are not approved
+            FrameFilterOrig = Particles{ChN}(i).FrameApproved;
             if any(~Particles{ChN}(i).FrameApproved) && isfield(Particles{ChN},'logL')
-                Particles{ChN}(i) = filterParticleTraces(Particles{ChN}(i), trackingOptions);
+                Particles{ChN}(i) = filterParticleTraces(Particles{ChN}(i), trackingOptions, SpotsCh);
             end
+            
             %Which frames were approved manually?
             FrameFilter=Particles{ChN}(i).FrameApproved; %NL: this is obsolete for new projects, but leaving for compatibility
             %What is the first frame that was found, regardless of the column
@@ -115,14 +120,13 @@ for ChN=1:NChannels
                     CompiledParticles{ChN}(k).zPosDetrended=Particles{ChN}(i).zPosDetrended(FrameFilter);
                 end
                 % add QC info
-                CompiledParticles{ChN}(k).ncDistFlags = Particles{ChN}(i).ncDistFlags(FrameFilter);
-                CompiledParticles{ChN}(k).distShiftFlags = Particles{ChN}(i).distShiftFlags(FrameFilter);
-                CompiledParticles{ChN}(k).distShiftVec = Particles{ChN}(i).distShiftVec(FrameFilter);
-                CompiledParticles{ChN}(k).fragmentFlags = Particles{ChN}(i).fragmentFlags(FrameFilter);
-                CompiledParticles{ChN}(k).earlyFlags = Particles{ChN}(i).earlyFlags(FrameFilter);
+%                 CompiledParticles{ChN}(k).ncDistFlags = Particles{ChN}(i).ncDistFlags(FrameFilter);
+%                 CompiledParticles{ChN}(k).distShiftFlags = Particles{ChN}(i).distShiftFlags(FrameFilter);
+%                 CompiledParticles{ChN}(k).distShiftVec = Particles{ChN}(i).distShiftVec(FrameFilter);
+%                 CompiledParticles{ChN}(k).fragmentFlags = Particles{ChN}(i).fragmentFlags(FrameFilter);
+%                 CompiledParticles{ChN}(k).earlyFlags = Particles{ChN}(i).earlyFlags(FrameFilter);
 %                 CompiledParticles{ChN}(k).flagsPerFrame = Particles{ChN}(i).flagsPerFrame(FrameFilter); 
-                CompiledParticles{ChN}(k).NucleusDist = Particles{ChN}(i).NucleusDist(FrameFilter);
-                CompiledParticles{ChN}(k).numNeighbors = Particles{ChN}(i).numNeighbors(FrameFilter);
+%                 CompiledParticles{ChN}(k).NucleusDist = Particles{ChN}(i).NucleusDist(FrameFilter);                
                 
                 %(MT, 2018-02-11) Hacky fix to get lattice to run - FIX LATER
                 %CompiledParticles{ChN}(k).DVpos=Particles{ChN}(i).DVpos(FrameFilter);
@@ -134,6 +138,12 @@ for ChN=1:NChannels
                     CompiledParticles{ChN}(k).xPosSEInf = Particles{ChN}(i).xPosSEInf;
                     CompiledParticles{ChN}(k).yPosInf = Particles{ChN}(i).yPosInf;
                     CompiledParticles{ChN}(k).yPosSEInf = Particles{ChN}(i).yPosSEInf;
+                    
+                    CompiledParticles{ChN}(k).nucleusProbability = Particles{ChN}(i).nucleusProbability(FrameFilter);
+                    CompiledParticles{ChN}(k).particleLikelihood = Particles{ChN}(i).logL(FrameFilter);
+                    CompiledParticles{ChN}(k).framesFull = Particles{ChN}(i).framesFull;%(FrameFilter);
+                
+                
                     if isfield(Particles{ChN},'zPosInf')
                         CompiledParticles{ChN}(k).zPosInf = Particles{ChN}(i).zPosInf;
                         CompiledParticles{ChN}(k).zPosSEInf = Particles{ChN}(i).zPosSEInf;
@@ -198,7 +208,7 @@ for ChN=1:NChannels
                     CompiledParticles{ChN}(k).fittedSlope = [];
                     CompiledParticles{ChN}(k).fittedTon = [];
                 end
-                             
+
                 % add 3D info if it exists
                 if isfield(Particles{ChN},'xPos3D')
                     CompiledParticles{ChN}(k).xPosGauss3D = Particles{ChN}(i).xPos3D;
@@ -218,8 +228,7 @@ for ChN=1:NChannels
                         GaussIntensity3D(f) = spot.gauss3DIntensity;                
                         fitInfoCell{f} = spot.SpotFitInfo3D;
                     end
-                    
-                    
+                                       
                     CompiledParticles{ChN}(k).Fluo3DGauss = GaussIntensity3D;
                     CompiledParticles{ChN}(k).Fluo3DRaw = GaussIntensity3DRaw;                    
                     CompiledParticles{ChN}(k).SpotFitInfo3D = fitInfoCell;
@@ -244,21 +253,23 @@ for ChN=1:NChannels
                 
                 [Frame, AmpGaussian, Off, ErrorGauss, optFit1, FitType,...
                     AmpDog, AmpDogMax, ampdog3, ampdog3Max]...
-                    = GetParticleTrace(k,CompiledParticles{ChN},Spots{ChN}, plotTraceSettings, false);
-                CompiledParticles{ChN}(k).Fluo = plotTraceSettings.AmpIntegral;
-                CompiledParticles{ChN}(k).Fluo3 = plotTraceSettings.AmpIntegral3;
-                CompiledParticles{ChN}(k).FluoGauss= AmpGaussian;
-                CompiledParticles{ChN}(k).Off=Off;
+                    = GetParticleTrace(k,CompiledParticles{ChN},SpotsCh, plotTraceSettings, false);
+                  
+                FrameFilter2 = ismember(Frame,CompiledParticles{ChN}(k).Frame);
+                CompiledParticles{ChN}(k).Fluo = plotTraceSettings.AmpIntegral(FrameFilter2);
+                CompiledParticles{ChN}(k).Fluo3 = plotTraceSettings.AmpIntegral3(FrameFilter2);
+                CompiledParticles{ChN}(k).FluoGauss= AmpGaussian(FrameFilter2);
+                CompiledParticles{ChN}(k).Off=Off(FrameFilter2);
                 CompiledParticles{ChN}(k).FluoError = plotTraceSettings.ErrorIntegral(1); % SEANCHANGED
                 CompiledParticles{ChN}(k).optFit1=optFit1;
                 CompiledParticles{ChN}(k).FitType=FitType;
-                CompiledParticles{ChN}(k).FluoDog = AmpDog;
-                CompiledParticles{ChN}(k).FluoDogMax = AmpDogMax;
-                ampIntegralGauss3DAux = plotTraceSettings.AmpIntegralGauss3D;
-                CompiledParticles{ChN}(k).FluoGauss3D = ampIntegralGauss3DAux';
-                CompiledParticles{ChN}(k).FluoGauss3DError = plotTraceSettings.ErrorIntegralGauss3D;
-                CompiledParticles{ChN}(k).ampdog3 = ampdog3;
-                CompiledParticles{ChN}(k).ampdog3Max = ampdog3Max;
+                CompiledParticles{ChN}(k).FluoDog = AmpDog(FrameFilter2);
+                CompiledParticles{ChN}(k).FluoDogMax = AmpDogMax(FrameFilter2);
+%                 ampIntegralGauss3DAux = plotTraceSettings.AmpIntegralGauss3D;
+%                 CompiledParticles{ChN}(k).FluoGauss3D = ampIntegralGauss3DAux';
+%                 CompiledParticles{ChN}(k).FluoGauss3DError = plotTraceSettings.ErrorIntegralGauss3D;
+%                 CompiledParticles{ChN}(k).ampdog3 = ampdog3;
+%                 CompiledParticles{ChN}(k).ampdog3Max = ampdog3Max;
                 
                 
                 

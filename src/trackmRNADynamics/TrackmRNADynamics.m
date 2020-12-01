@@ -33,21 +33,10 @@ function Particles = TrackmRNADynamics(Prefix, varargin)
 disp(['Running TrackmRNADynamics on ', Prefix, '...']);
 
 liveExperiment = LiveExperiment(Prefix);
-makeTrackingFigures = true;
-
-% [app, retrack, optionalResults, displayFigures] =...
-%     parseTrackmRNADynamicsArguments(varargin{:});
-
+% makeTrackingFigures = true;
 
 DropboxFolder = liveExperiment.userResultsFolder;
-PreProcPath = liveExperiment.userPreFolder;
-
 ExperimentType = liveExperiment.experimentType;
-
-Channels = liveExperiment.Channels;
-% Channel1 = Channels{1};
-% Channel2 = Channels{2};
-% Channel3 = Channels{3};
 
 anaphaseFrames = liveExperiment.anaphaseFrames';
 nc9 = anaphaseFrames(1);
@@ -63,33 +52,18 @@ OutputFolder = [DropboxFolder, filesep, Prefix];
 % Load the information about this image
 % Check if we have FrameInfo otherwise try to get the information straight
 % from the file.
-[FrameInfo, PixelSize_um] = loadFrameInfo(OutputFolder, PreProcPath, Prefix);
-
-% Check if we have tracked the lineages of the nuclei
-if exist([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'file')
-    useHistone = true;
-else
-    useHistone = false;
-    warning('Warning: No nuclei lineage tracking found. Proceeding with tracking particles only.')
-end
+FrameInfo= getFrameInfo(liveExperiment);
 
 validateExperimentTypeSupported(ExperimentType);
 
-% Particles = loadParticlesAndSelectForRetracking(OutputFolder, NCh, retrack);
-% 
-% Spots = loadSpotsAndCreateSpotFilter(DropboxFolder, Prefix, NCh);
-
-% if displayFigures
-%     [ParticlesFig, particlesAxes, NucleiFig, nucAxes] = generateTrackingFigures(app, useHistone);
-% else
-%     ParticlesFig = []; particlesAxes = []; NucleiFig = []; nucAxes = [];
-% end
-
-[Particles, SpotFilter] = performTracking(Prefix, useHistone,varargin{1:end}); 
-
 mkdir([OutputFolder, filesep]);
-save([OutputFolder, filesep, 'Particles.mat'], 'Particles','SpotFilter');
-
 createFieldNCAndSaveFrameInfo(FrameInfo, OutputFolder, nc9, nc10, nc11, nc12, nc13, nc14);
+
+[Particles, ~] = performTracking(Prefix,varargin{1:end}); 
+
+
+% save([OutputFolder, filesep, 'Particles.mat'], 'Particles','SpotFilter');
+
+
 
 end
