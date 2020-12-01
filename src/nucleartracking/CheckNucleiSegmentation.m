@@ -227,7 +227,7 @@ while (currentCharacter~='x')
     end
     
     PlotHandle = cell(NCentroids, 1);
-    ellipseFrame = Ellipses{CurrentFrame};
+    ellipseFrame = double(Ellipses{CurrentFrame});
     for k=1:NCentroids
         n = k;
 %         PlotHandle{k} = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
@@ -254,8 +254,10 @@ while (currentCharacter~='x')
             if schnitzInd ~= 0
 %                 set(PlotHandle{k}, 'StripeColor', clrmp(schnitzInd, :),...
 %                     'Color', clrmp(schnitzInd, :),'Linewidth', 1);
+                try
                  set(PlotHandle{k},...
                     'Color', clrmp(schnitzInd, :),'Linewidth', 1);
+                end
             else
 %                 set(PlotHandle{k}, 'StripeColor', 'w', 'Color', 'w','Linewidth', 1);
                 set(PlotHandle{k}, 'Color', 'w','Linewidth', 1);
