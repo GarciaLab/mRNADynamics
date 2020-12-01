@@ -6,11 +6,11 @@ function saveChanges(NChannels, cptState, DataFolder, FilePrefix, DropboxFolder)
     schnitzcells = cptState.schnitzcells;
 
 % If we only have one channel bring Particles back to the legacy format without any cells
-if NChannels == 1
-    Particles = Particles{1};
-    Spots = Spots{1};
-    SpotFilter = SpotFilter{1};
-end
+% if NChannels == 1
+Particles = Particles{1};
+Spots = Spots{1};
+SpotFilter = SpotFilter{1};
+% end
 
 save([DataFolder, filesep, 'FrameInfo.mat'], 'FrameInfo', '-v6')
 save([DataFolder, filesep, 'Particles.mat'], 'Particles', 'SpotFilter', '-v6')

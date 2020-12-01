@@ -122,6 +122,7 @@ function [Particles, trackingOptions, SpotFilter] = ParticleTrackingKalman(Spots
         ParticlesTemp(b).LastFrame = backwardTracks(b).lastFrame;
         ParticlesTemp(b).Approved = 0;
         ParticlesTemp(b).FrameApproved = true(size(ParticlesTemp(b).Frame));
+        ParticlesTemp(b).ManuallyReviewed = false(size(ParticlesTemp(b).Frame));
         
         % make particle path predictions
         ParticlesTemp(b) = pathPrediction(ParticlesTemp(b), backwardTracks(b), trackingOptions, kalmanOptions);

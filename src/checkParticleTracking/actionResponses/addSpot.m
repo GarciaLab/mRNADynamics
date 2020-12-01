@@ -123,15 +123,13 @@ else
                 else
                     Spots{CurrentChannel}(CurrentFrame).Fits = Fits;
                 end
+                
                 %%
-                if plot3DGauss
-                    nSpots = 1;
+                if isfield(Spots{CurrentChannel}(CurrentFrame).Fits,'SpotFitInfo3D')
+                    nSpots = 2;
                     Spots{CurrentChannel}(CurrentFrame) =...
                         ...
-                        fitSnip3D(...
-                        ...
-                        Spots{CurrentChannel}(CurrentFrame), CurrentChannel, SpotsIndex, CurrentFrame,...
-                        Prefix, liveExperiment.preFolder, getFrameInfo(liveExperiment), nSpots, imStack, false);
+                        fitSnip3D(Spots{CurrentChannel}(CurrentFrame), SpotsIndex, liveExperiment, imStack, [], nSpots);
                 end
                 %%
                 %Add this to SpotFilter, which tells the code that this spot is
@@ -151,7 +149,7 @@ else
                     [SpotFilter{CurrentChannel},Particles{CurrentChannel}]=...
                         TransferParticle(Spots{CurrentChannel},...
                         SpotFilter{CurrentChannel},Particles{CurrentChannel},...
-                        CurrentFrame,SpotsIndex);
+                        CurrentFrame,SpotsIndex,FrameInfo);
                 catch
                     warning('failed to add spot for unknown reason.')
                     return;
@@ -163,7 +161,7 @@ else
                 if ~GlobalZoomMode
                     Particles{CurrentChannel}=...
                         JoinParticleTraces(CurrentParticle,...
-                        numParticles,Particles{CurrentChannel});
+                        numParticles,Particles{CurrentChannel},liveExperiment,Spots{CurrentChannel});
                 else
                     CurrentParticle = length(Particles{CurrentChannel});
                     Particles = addNucleusToParticle(Particles, CurrentFrame, ...

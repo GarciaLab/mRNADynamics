@@ -330,6 +330,11 @@ classdef CPTState < handle
         function updateCurrentParticleIndex(this)
             this.CurrentParticleIndex = this.getCurrentParticleIndex();
         end
+        
+        function updateManualReviewStatus(this)
+            this.Particles{this.CurrentChannelIndex}(this.CurrentParticle).ManuallyReviewed(...
+              this.Particles{this.CurrentChannelIndex}(this.CurrentParticle).Frame==this.CurrentFrame) = 1;
+        end
     end
 end
 

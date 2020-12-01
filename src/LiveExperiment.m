@@ -13,7 +13,7 @@ classdef LiveExperiment
         Channels = {};
         spotChannels = [];
         inputChannels = [];
-        nuclearChannels = {};
+        nuclearChannels = [];
         
         isUnhealthy = false;
         
@@ -47,6 +47,7 @@ classdef LiveExperiment
         userExperimentsFolder = '';
         
         hasCompiledParticlesFile = false;
+        hasFrameInfoFile = false;
         hasSchnitzcellsFile = false;
         hasSpotsFile = false;
         hasParticlesFile = false;
@@ -164,6 +165,7 @@ classdef LiveExperiment
             this.project = '';
             
             this.hasCompiledParticlesFile = exist([this.resultsFolder, 'CompiledParticles.mat'] , 'file');
+            this.hasFrameInfoFile = exist([this.resultsFolder, 'FrameInfo.mat'] , 'file');
             this.hasSchnitzcellsFile = exist([this.resultsFolder,this.Prefix, '_lin.mat'] , 'file');
             this.hasSpotsFile = exist([this.resultsFolder, 'Spots.mat'] , 'file');
             this.hasParticlesFile = exist([this.resultsFolder, 'Particles.mat'] , 'file');
@@ -196,6 +198,8 @@ classdef LiveExperiment
             
             
             this.inputChannels = find(contains(this.Channels, 'input', 'IgnoreCase', true));
+            
+            this.nuclearChannels = find(contains(this.Channels, 'nuclear', 'IgnoreCase', true));
             
             this.spotChannels = getCoatChannel(Channel1, Channel2, Channel3);
             

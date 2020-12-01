@@ -14,16 +14,16 @@ function [Particles] = sortParticles(Sort, sortByLength, sortByFlags, NChannels,
           sortIndex(i) = length(Particles{ChN}(i).Frame);
           direction = 'descend';
         elseif sortByFlags
-          sortIndex(i) = Particles{ChN}(i).FlaggedFraction;
+          sortIndex(i) = 1-Particles{ChN}(i).FlaggedFraction;
           sortIndex2(i) = Particles{ChN}(i).Frame(1);
-          direction = 'descend';
+          direction = 'ascend';
         else %Otherwise, sort by first frame as normal
           sortIndex(i) = Particles{ChN}(i).Frame(1);
         end
 
       end
 
-      [~, Permutations] = sort([sortIndex sortIndex2], direction);
+      [~, Permutations] = sortrows([sortIndex sortIndex2], direction);
       Particles{ChN} = Particles{ChN}(Permutations);
     end
 

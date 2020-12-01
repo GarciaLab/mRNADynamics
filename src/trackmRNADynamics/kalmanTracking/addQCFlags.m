@@ -9,14 +9,33 @@ function [Particles, trackingOptions] = addQCFlags(Particles, liveExperiment, tr
   FrameInfo = getFrameInfo(liveExperiment);
   
   %%% load nucleus probability maps if they exist
+  nucleusProbDirRaw = [liveExperiment.procFolder 'nucleusProbabilityMaps' filesep];
   nucleusProbDirFinal = [liveExperiment.procFolder 'nucleusProbabilityMapsFull' filesep];
   probFiles = dir([nucleusProbDirFinal '*.tif']);
-  hasProbFiles = length(probFiles) == length(FrameInfo);
+  probFilesRaw = dir([nucleusProbDirRaw '*.tif']);
+  hasFullProbFiles = length(probFiles) == length(FrameInfo);
   
-  if hasProbFiles
+  if hasFullProbFiles
       disp('Incorporating nucleus probabilities...')
       Particles = addNucleusProbabilities(liveExperiment, trackingOptions, FrameInfo, Particles);      
+  else
+      if exist([nucleusProbDirRaw 'nucleusInfo.mat'], 'file')
+          load([nucleusProbDirRaw 'nucleusInfo.mat'], 'nucleusInfo')
+          if length(nucleusInfo.originalFileNames) == length(probFilesRaw)
+              compileNuclearTiffStacks(liveExperiment.Prefix);
+              disp('Incorporating nucleus probabilities...')
+              Particles = addNucleusProbabilities(liveExperiment, trackingOptions, FrameInfo, Particles);      
+          end
+      else
+          warning('No nucleus probabilities found. Nucleus boundaries will not be used to assess particle quality.')
+          for Channel = 1:trackingOptions.NCh
+              for  p = 1:length(Particles{Channel})
+                  Particles{Channel}(p).nucleusProbability = ones(size(Particles{Channel}(p).Frame));
+              end
+          end
+      end
   end
+    
   
   % basic frame info
   Time = [FrameInfo.Time]; 
@@ -31,58 +50,64 @@ function [Particles, trackingOptions] = addQCFlags(Particles, liveExperiment, tr
   trackingOptions.SpotlogLThreshholdSingle = trackingOptions.SpotlogLThreshold/length(logLIndices);
   trackingOptions.TracelogLThreshold = repelem(-0.75*trackingOptions.matchCostDefault,trackingOptions.NCh);   
   trackingOptions.qcFieldNames = {'xPos','yPos','zPos','nucleusMask','earlyflag'};
+  trackingOptions.nucleusProbThresh = 0.40; %NL: we can afford to be a little generous here
   
   disp('Adding QC fields...')
   % Iterate through channels
   for Channel = 1:trackingOptions.NCh
     
     % calcualte average likelihood quantities
-    for p = 1:length(Particles{Channel})
-        Particles{Channel}(p).logL = nansum(Particles{Channel}(p).logLDistance(:,logLIndices),2);
-        Particles{Channel}(p).logLMean = nanmean(Particles{Channel}(p).logL);
-    end
+%     for p = 1:length(Particles{Channel})
+%         Particles{Channel}(p).logL = nansum(Particles{Channel}(p).logLDistance(:,logLIndices),2);
+%         Particles{Channel}(p).logLMean = nanmean(Particles{Channel}(p).logL);
+%     end
     
-    if true%~trackingOptions.useHistone
-      trackingOptions.SpotlogLThreshold(Channel) = prctile(vertcat(Particles{Channel}.logL),99);
-      trackingOptions.SpotlogLThresholdSingle(Channel) = trackingOptions.SpotlogLThreshold(Channel)/length(logLIndices);
-      trackingOptions.TracelogLThreshold(Channel) = prctile([Particles{Channel}.logLMean],99);
-    end
+%     if true%~trackingOptions.useHistone
+    trackingOptions.SpotlogLThreshold(Channel) = 75;%prctile(-vertcat(Particles{Channel}.logL),99);
+    trackingOptions.SpotlogLThresholdSingle(Channel) = trackingOptions.SpotlogLThreshold(Channel)/length(logLIndices);
+    trackingOptions.TracelogLThreshold(Channel) = prctile(-[Particles{Channel}.logLMean],99);
+%     end
     
-    for p = 1:length(Particles{Channel})      
-      
-      %%% flag particles that appear to be outside of nuclear envelope
-      Particles{Channel}(p).NucleusBoundaryFlags = Particles{Channel}(p).nucleusProbability < 0.5;
-      
-      %%% flag expecially unlikely points according to the motion model
-      Particles{Channel}(p).SpotlogLFlags = Particles{Channel}(p).logL(Particles{Channel}(p).obsFrameFilter) > ...
-                                                                           trackingOptions.SpotlogLThreshold(Channel);
-      Particles{Channel}(p).TracelogLFlag = Particles{Channel}(p).logLMean > trackingOptions.TracelogLThreshold(Channel);
-      
-      %%% flag early points
-      nc = trackingOptions.ncVec(Particles{Channel}(p).Frame(1));
-      ncStart = Time(find(trackingOptions.ncVec==nc,1));     
-              
-      Particles{Channel}(p).earlyFlags = int8(1*(Time(Particles{Channel}(p).Frame)-ncStart)<=...
-                    trackingOptions.earlyThresh & hasNCStart(ncIndex==nc));
+      for p = 1:length(Particles{Channel})      
 
-      %%% automatically disapprove of frames   
-      Particles{Channel}(p).FrameApproved = Particles{Channel}(p).FrameApproved & ...
-        ~Particles{Channel}(p).SpotlogLFlags' & ~Particles{Channel}(p).earlyFlags & ...
-        ~Particles{Channel}(p).NucleusBoundaryFlags;                   
-      
-      %%% calculatemean number of disapproved frames
-      Particles{Channel}(p).FlaggedFraction = mean(~Particles{Channel}(p).FrameApproved);
-      
-      %%% geenrate array to use for QC plot
-      timeDeltaVec = 2*trackingOptions.earlyThresh - Time(Particles{Channel}(p).Frame)';
-      timeDeltaVec(timeDeltaVec<0) = 0;
-      Particles{Channel}(p).qcScoreArray = [Particles{Channel}(p).logLDistance(Particles{Channel}(p).obsFrameFilter,logLIndices)...
-                                            -log(Particles{Channel}(p).nucleusProbability)'...
-                                            timeDeltaVec*hasNCStart(ncIndex==nc)];   
-                                          
-      Particles{Channel}(p).qcThreshVec = [repelem(trackingOptions.SpotlogLThresholdSingle(Channel),length(logLIndices)),-log(.5),trackingOptions.earlyThresh];
+          %%% flag particles that appear to be outside of nuclear envelope
+          Particles{Channel}(p).NucleusBoundaryFlags = Particles{Channel}(p).nucleusProbability < trackingOptions.nucleusProbThresh;
 
-    end 
+          %%% flag expecially unlikely points according to the motion model
+          nFrames = length(Particles{Channel}(p).Frame);
+          Particles{Channel}(p).SpotlogLFlags = (-Particles{Channel}(p).logL(Particles{Channel}(p).obsFrameFilter)) > ...
+                                                                               trackingOptions.SpotlogLThreshold(Channel);
+
+          Particles{Channel}(p).SpotlogLFlags = Particles{Channel}(p).SpotlogLFlags&(nFrames>2);
+
+          Particles{Channel}(p).TracelogLFlag = (-Particles{Channel}(p).logLMean) > trackingOptions.TracelogLThreshold(Channel);
+          Particles{Channel}(p).TracelogLFlag = Particles{Channel}(p).TracelogLFlag&&(nFrames>2);
+
+          %%% flag early points
+          nc = trackingOptions.ncVec(Particles{Channel}(p).Frame(1));
+          ncStart = Time(find(trackingOptions.ncVec==nc,1));     
+
+          Particles{Channel}(p).earlyFlags = int8(1*(Time(Particles{Channel}(p).Frame)-ncStart)<=...
+                        trackingOptions.earlyThresh & hasNCStart(ncIndex==nc));
+
+          %%% automatically disapprove of frames   
+          Particles{Channel}(p).FrameApproved = Particles{Channel}(p).FrameApproved & ...
+            ~Particles{Channel}(p).SpotlogLFlags' & ~Particles{Channel}(p).earlyFlags & ...
+            ~Particles{Channel}(p).NucleusBoundaryFlags;                   
+
+          %%% calculatemean number of disapproved frames
+          Particles{Channel}(p).FlaggedFraction = mean(~Particles{Channel}(p).FrameApproved);
+
+          %%% geenrate array to use for QC plot
+          timeDeltaVec = 2*trackingOptions.earlyThresh - (Time(Particles{Channel}(p).Frame)'-ncStart);
+          timeDeltaVec(timeDeltaVec<0) = 0;
+          Particles{Channel}(p).qcScoreArray = [-Particles{Channel}(p).logLArray(Particles{Channel}(p).obsFrameFilter,logLIndices)...
+                                                1-Particles{Channel}(p).nucleusProbability'...
+                                                timeDeltaVec*hasNCStart(ncIndex==nc)];   
+          Particles{Channel}(p).qcScoreArray(isnan(Particles{Channel}(p).qcScoreArray)) = 0;                                  
+          Particles{Channel}(p).qcThreshVec = [repelem(trackingOptions.SpotlogLThresholdSingle(Channel),length(logLIndices)),1-trackingOptions.nucleusProbThresh,trackingOptions.earlyThresh];
+
+      end 
     
     
   end

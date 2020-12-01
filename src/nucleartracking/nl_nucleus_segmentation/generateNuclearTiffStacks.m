@@ -1,6 +1,9 @@
 
 function generateNuclearTiffStacks(Prefix)
 
+% initialize parpool
+startParallelPool(8, 0, 1);
+  
 % get basic project info 
 liveExperiment = LiveExperiment(Prefix);
 
@@ -46,6 +49,7 @@ end
 framesToUse(end+1) = length(FrameInfo);  
 originalFileNames = cell(size(framesToUse));
 
+disp('Generating tif stacks for nucleus segmentation...')
 parfor frameIndex = 1:length(framesToUse)
     
     imStackFrame = zeros(FrameInfo(1).LinesPerFrame,FrameInfo(1).PixelsPerLine,FrameInfo(1).NumberSlices+2,length(NuclearChannels));
@@ -111,3 +115,5 @@ end
 nucleusInfo.originalFrames = framesToUse;
 nucleusInfo.originalFileNames = originalFileNames;
 save([nucleusProbDir 'nucleusInfo.mat'], 'nucleusInfo')
+
+disp('Done.')

@@ -16,8 +16,8 @@ function [backwardTracks, trackingInfo] = backwardTrackingLoop(backwardTracks, t
     [NewSpotNuclei, NucleusDistances] = getNuclearAssigments(NewSpotsX,NewSpotsY,...
             schnitzcells, CurrentFrame, trackingInfo.useHistone);
 
-    if kalmanOptions.useNuclei
-      SpotMeasurements = [SpotMeasurements NucleusDistances];
+    if false % NL: leave out nucleus info for now...
+        SpotMeasurements = [SpotMeasurements NucleusDistances];
     end                
 
     % initialize to proper dimensions if empty

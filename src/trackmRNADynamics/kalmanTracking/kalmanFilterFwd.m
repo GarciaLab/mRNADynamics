@@ -18,12 +18,14 @@ function KFTrack = kalmanFilterFwd(posData,kalmanOptions)
   
   % initialize arrays  
   KFTrack.logL = NaN(nSteps,1);
+  KFTrack.logLArray = NaN(size(posData));
   
   KFTrack.priorState = NaN(nSteps,nt*nDims);
   KFTrack.priorCovariance = NaN(nt*nDims,nt*nDims,nSteps);
     
   KFTrack.posteriorState = NaN(nSteps,nt*nDims);  
   KFTrack.posteriorCovariance = NaN(nt*nDims,nt*nDims,nSteps);
+  
   
   % set posterior values to initial values  
   for i = 1:nDims
@@ -39,16 +41,17 @@ function KFTrack = kalmanFilterFwd(posData,kalmanOptions)
     % update
     if all(~isnan(posData(k,:))) 
        KFTrack.logL(k) = -distance(KFTrack.kalmanFilter,posData(k,:));
+       KFTrack.logLArray(k,:) = calculateIndividualProbs(KFTrack,posData(k,:)');
        [~,KFTrack.posteriorState(k,:),KFTrack.posteriorCovariance(:,:,k)] = correct(KFTrack.kalmanFilter,posData(k,:));               
     else
       KFTrack.posteriorCovariance(:,:,k) = KFTrack.priorCovariance(:,:,k);
       KFTrack.posteriorState(k,:) = KFTrack.priorState(k,:);         
     end            
   end
-  % add approximate logL for first entry 
-  if length(KFTrack.logL) >= firstObsIndex+1
-      KFTrack.logL(firstObsIndex) = KFTrack.logL(firstObsIndex+1);
-  end
+%   % add approximate logL for first entry 
+%   if length(KFTrack.logL) >= firstObsIndex+1
+%       KFTrack.logL(firstObsIndex) = KFTrack.logL(firstObsIndex+1);
+%   end
   
   dimVec = 1:nt:nDims*nt;
   

@@ -52,9 +52,11 @@ for i=1:length(Particles(CurrentParticle).Frame)
     catch
         plotTraceSettings.AmpIntegral3(i)= NaN;
     end
-    plotTraceSettings.gauss3DIntensity(i) = double(spot.gauss3DIntensity);
-    plotTraceSettings.gauss3DIntensityRaw(i) = double(spot.GaussIntensity3DRaw);
-    plotTraceSettings.gauss3DIntensitySE(i) = double(spot.gauss3DIntensitySE);
+    if isfield(spot,'gauss3DIntensity')
+        plotTraceSettings.gauss3DIntensity(i) = double(spot.gauss3DIntensity);
+        plotTraceSettings.gauss3DIntensityRaw(i) = double(spot.GaussIntensity3DRaw);
+        plotTraceSettings.gauss3DIntensitySE(i) = double(spot.gauss3DIntensitySE);
+    end
 %     try
 %         plotTraceSettings.AmpIntegralGauss3D(i)=...
 %             double(spot.gauss3DIntensityRaw);

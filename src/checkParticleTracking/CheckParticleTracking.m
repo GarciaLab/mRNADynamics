@@ -357,7 +357,7 @@ end
 plotTraceSettings = PlotTraceSettings();
 
 %% Main loop - start
-while (currentCharacter ~= 'x')
+while (currentCharacter ~= 'x')        
     
     cptState.coatChannel = getCoatChannel(Channel1, Channel2, Channel3);
    
@@ -381,6 +381,8 @@ while (currentCharacter ~= 'x')
     %Pull out the right particle if it exists in this frame
     cptState.updateCurrentParticleIndex();
 
+    cptState.updateManualReviewStatus();
+    
     %This is the position of the current particle
     [xTrace, yTrace] = cptState.getXYTraces(x, y);
     

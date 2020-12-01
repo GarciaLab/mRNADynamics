@@ -85,7 +85,11 @@ nameSuffix = ['_ch', iIndex(channelIndex, 2)];
 
 movieMat = getMovieMat(liveExperiment);
 
-movieMatCh = double(movieMat(:, :, :, :, channelIndex));
+if ~isempty(movieMat)
+    movieMatCh = double(movieMat(:, :, :, :, channelIndex));
+else
+    movieMatCh = zeros(0,0,0,lastFrame);
+end
 
 yDim = liveExperiment.yDim;
 xDim = liveExperiment.xDim;
@@ -105,27 +109,29 @@ zDim = liveExperiment.zDim;
 % end
 
    
-    if autoThresh
-        if ~filterMovieFlag
-            Threshold = determineThreshold(Prefix,...
-                channelIndex,  'numFrames', lastFrame, 'firstFrame', initialFrame);
-            display(['Threshold: ', num2str(Threshold)])
-        else
-            Threshold = determineThreshold(Prefix,...
-                channelIndex, 'noSave', 'numFrames', lastFrame);
-        end
+if autoThresh
+    if ~filterMovieFlag
+        Threshold = determineThreshold(Prefix,...
+            channelIndex,  'numFrames', lastFrame, 'firstFrame', initialFrame);
+        display(['Threshold: ', num2str(Threshold)])
+    else
+        Threshold = determineThreshold(Prefix,...
+            channelIndex, 'noSave', 'numFrames', lastFrame);
     end
-    
-    display(['Spot intensity threshold: ', num2str(Threshold)])
-        
-isZPadded = size(movieMat, 3) ~= zSize;
+end
+
+display(['Spot intensity threshold: ', num2str(Threshold)])        
 
 q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
 parfor currentFrame = initialFrame:lastFrame
-    
-    imStack = movieMatCh(:, :, :, currentFrame);
+    if ~isempty(movieMat)
+        imStack = movieMatCh(:, :, :, currentFrame);        
+    else
+        imStack = getMovieFrame(liveExperiment, currentFrame, channelIndex);        
+    end
+    isZPadded = size(imStack, 3) ~= zSize;
 %     if shouldMaskNuclei
 %         ellipseFrame = Ellipses{currentFrame};
 %     end
