@@ -50,7 +50,12 @@ end
 trackingStruct.MeasurementVec(:,end+1) = FluoVec./trackingOptions.kalmanOptions.fluoFactor;
 
 % make particle path predictions
-Particles(OriginalParticle) = pathPrediction(Particles(OriginalParticle), trackingStruct, trackingOptions, trackingOptions.kalmanOptions);
+Particles(OriginalParticle) = pathPrediction(Particles(OriginalParticle), trackingStruct, trackingOptions, trackingOptions.kalmanOptions,0);
+
+% add 3D info
+if trackingOptions.has3DInfo
+    Particles(OriginalParticle) = add3DTrackingInfo(Particles(OriginalParticle), Spots, trackingOptions, trackingOptions.kalmanOptions);
+end
 
 % update QC info
 qcVariables = {'NucleusBoundaryFlags', 'SpotlogLFlags', 'earlyFlags'};

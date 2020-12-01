@@ -125,7 +125,7 @@ else
                 end
                 
                 %%
-                if isfield(Spots{CurrentChannel}(CurrentFrame).Fits,'SpotFitInfo3D')
+                if isfield(Particles{CurrentChannel},'xPos3D')
                     nSpots = 2;
                     Spots{CurrentChannel}(CurrentFrame) =...
                         ...

@@ -19,6 +19,7 @@ function  fitInfo = fit3DGaussians(snip3D,PixelSize,zStep,spotDims,nSpots)
     %% %%%%%% initialize inference params and define bounds %%%%%%%%%%%%%%%
     fitInfo = struct;    
     fitInfo.spotInfoFlag = ~isempty(spotDims);
+    fitInfo.spotDims = spotDims;
     fitInfo.twoSpotFlag = nSpots==2;
     % initial ballbark estimate for spot size
     if fitInfo.spotInfoFlag
@@ -97,6 +98,7 @@ function  fitInfo = fit3DGaussians(snip3D,PixelSize,zStep,spotDims,nSpots)
         spot3DObjective = @(params) simulate3DGaussSymmetric(fitInfo.dimensionVector, params(fitInfo.spot1ParamIndices))...                                    
                                     + makeOffsetSnip(params) - double(snip3D);     
     end 
+    
     % update initialization and bound fields
     fitInfo.initial_parameters = fitInfo.initial_parameters(include_vec);
     fitInfo.upperBoundVector = fitInfo.upperBoundVector(include_vec);

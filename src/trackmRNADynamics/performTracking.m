@@ -5,7 +5,8 @@ close all force
 trackingOptions = struct;   
 
 % Process user options
-[trackingOptions.useHistone, trackingOptions.retrack,trackingOptions.noRetrack,trackingOptions.displayFigures] = ...
+[trackingOptions.useHistone, trackingOptions.retrack,trackingOptions.noRetrack,...
+ trackingOptions.displayFigures, trackingOptions.use3DInfo] = ...
                                 determinePerformTrackingOptions(varargin);
                            
 % trackingOptions.useHistone = useHistone; 
@@ -22,6 +23,8 @@ end
 if ~iscell(Spots)% NL: added for backwards compatibility
   Spots = {Spots};
 end
+trackingOptions.has3DInfo =  isfield(Spots{1}(1).Fits,'GaussPos3D');
+trackingOptions.use3DInfo = trackingOptions.use3DInfo && trackingOptions.has3DInfo;
 
 % handle tracking/retracking options that require user input
 if trackingOptions.noRetrack && trackingOptions.retrack

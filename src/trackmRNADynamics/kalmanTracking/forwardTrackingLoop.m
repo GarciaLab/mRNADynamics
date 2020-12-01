@@ -1,11 +1,11 @@
-function [forwardTracks, trackingInfo] = forwardTrackingLoop(forwardTracks, trackingInfo, ...
+function [forwardTracks, trackingOptions] = forwardTrackingLoop(forwardTracks, trackingOptions, ...
             kalmanOptions, Spots, Channel, CurrentFrame, schnitzcells, calibrateCost)
           
     % Get the positions of ALL spots (approved and disapproved)
-    [NewSpotsX, NewSpotsY, NewSpotsZ, NewSpotsFluo] = SpotsXYZ(Spots{Channel}(CurrentFrame));
+    [NewSpotsX, NewSpotsY, NewSpotsZ, NewSpotsFluo] = SpotsXYZ(Spots{Channel}(CurrentFrame),trackingOptions.use3DInfo);
   
     % adjust Z position variable for stage movements
-    NewSpotsZAdjusted = NewSpotsZ - trackingInfo.zPosStage(CurrentFrame);
+    NewSpotsZAdjusted = NewSpotsZ - trackingOptions.zPosStage(CurrentFrame);
     SpotMeasurements = [NewSpotsX', NewSpotsY', NewSpotsZAdjusted'];
 
     % rescale Fluorescence values
@@ -14,7 +14,7 @@ function [forwardTracks, trackingInfo] = forwardTrackingLoop(forwardTracks, trac
 
     % if we have nucleus info, assign each spot to a nucleus
     [NewSpotNuclei, NucleusDistances] = getNuclearAssigments(NewSpotsX,NewSpotsY,...
-            schnitzcells,CurrentFrame,trackingInfo.useHistone);
+            schnitzcells,CurrentFrame,trackingOptions.useHistone);
 
     if kalmanOptions.useNuclei
       SpotMeasurements = [SpotMeasurements NucleusDistances];
@@ -29,7 +29,7 @@ function [forwardTracks, trackingInfo] = forwardTrackingLoop(forwardTracks, trac
     % Check if we're at the start of a new nuclear cycle
     continuedNCFlag = true;
     if CurrentFrame > 1
-      continuedNCFlag = trackingInfo.ncVec(CurrentFrame-1)==trackingInfo.ncVec(CurrentFrame);
+      continuedNCFlag = trackingOptions.ncVec(CurrentFrame-1)==trackingOptions.ncVec(CurrentFrame);
     end                        
 
     % predict positions of extant particles
@@ -40,7 +40,7 @@ function [forwardTracks, trackingInfo] = forwardTrackingLoop(forwardTracks, trac
     if false % NL: this chunk is meant to guess an optimal linking cost...not working well yet
         
         [assignments, unassignedTracks, unassignedDetections, costArray] = ...
-                    makeParticleTrackAssignment(forwardTracks, SpotMeasurements(:,trackingInfo.trackingIndices), ...
+                    makeParticleTrackAssignment(forwardTracks, SpotMeasurements(:,trackingOptions.trackingIndices), ...
                     100, NewSpotNuclei,...
                     [], [], earlyFlags);
                   
@@ -54,13 +54,13 @@ function [forwardTracks, trackingInfo] = forwardTrackingLoop(forwardTracks, trac
             pArray(n,p) = prctile(matchCostsBoot,p);
           end
         end
-        trackingInfo.matchCostMax(Channel) = mean(costVec(iter-2:iter-1));
+        trackingOptions.matchCostMax(Channel) = mean(costVec(iter-2:iter-1));
         
     else
         % Perform cost-based matching
         [assignments, unassignedTracks, unassignedDetections] = ...
-                    makeParticleTrackAssignment(forwardTracks, SpotMeasurements(:,trackingInfo.trackingIndices), ...
-                    continuedNCFlag*trackingInfo.matchCostMaxForward(Channel), NewSpotNuclei,...
+                    makeParticleTrackAssignment(forwardTracks, SpotMeasurements(:,trackingOptions.trackingIndices), ...
+                    continuedNCFlag*trackingOptions.matchCostMaxForward(Channel), NewSpotNuclei,...
                     [], [], earlyFlags);
     end
 
@@ -68,18 +68,18 @@ function [forwardTracks, trackingInfo] = forwardTrackingLoop(forwardTracks, trac
     % particles
     forwardTracks = makeNewTracks(forwardTracks, SpotMeasurements,...
                                      unassignedDetections, kalmanOptions,...
-                                     CurrentFrame, NewSpotsZ, NewSpotNuclei, trackingInfo);
+                                     CurrentFrame, NewSpotsZ, NewSpotNuclei, trackingOptions);
 
     % update existing tracks that had no match this frame
     forwardTracks = updateUnassignedParticleTracks(forwardTracks, unassignedTracks,...
-              trackingInfo.maxUnobservedFrames(Channel));          
+              trackingOptions.maxUnobservedFrames(Channel));          
 
     % update tracks that matched with a new particle
     forwardTracks = updateAssignedParticleTracks(...
                             forwardTracks, assignments, SpotMeasurements, CurrentFrame,...
-                            NewSpotsZ, trackingInfo);     
+                            NewSpotsZ, trackingOptions);     
 
     % lastly, identify and "Cap" cases where there are too many tracks
     % per nucleus
-    forwardTracks = cleanUpTracks(forwardTracks, trackingInfo.spotsPerNucleus(Channel), ...
-      ~continuedNCFlag||CurrentFrame==trackingInfo.nFrames); 
+    forwardTracks = cleanUpTracks(forwardTracks, trackingOptions.spotsPerNucleus(Channel), ...
+      ~continuedNCFlag||CurrentFrame==trackingOptions.nFrames); 
