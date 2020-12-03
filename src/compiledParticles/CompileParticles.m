@@ -532,6 +532,7 @@ if ~slimVersion && fullEmbryoExists
     % version since there's a lot of duplicate code here.
     if haveHistoneChannel && DVExperiment && fullEmbryoExists %JAKE: Need to change this later
         
+        try
         [NEllipsesDV, MeanVectorAllDV, SEVectorAllDV, OnRatioDV, ParticleCountDV, ...
             ParticleCountProbDV, TotalEllipsesDV, EllipsesOnDV, EllipsesFilteredPos, ...
             FilteredParticlesPos] =...
@@ -540,7 +541,7 @@ if ~slimVersion && fullEmbryoExists
             CompiledParticles, Ellipses, FrameInfo, DropboxFolder, Prefix, ...
             elapsedTime_min, DVbinID, EllipsePos_DV, nc12, nc13, nc14, numFrames, ...
             DVbinArea,edgeWidth, pixelSize);
-        
+        end
     end
     
     %% Calculation of particle speed
