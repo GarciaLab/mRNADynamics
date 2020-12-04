@@ -65,14 +65,14 @@ if isempty(plotTraceSettings.ErrorIntegral)
     plotTraceSettings.ErrorIntegral3 = 0;
 end
 
-lgd_str = {'mRNA (2D 1 slice)'};
+% lgd_str = {'mRNA (2D 1 slice)'};
 if cptState.plot3DGauss
     amp1 = plotTraceSettings.AmpIntegral;
-    amp2 = plotTraceSettings.gauss3DIntensity;        
+    amp2 = plotTraceSettings.gauss3DIntensityRaw;        
     error1aux = plotTraceSettings.ErrorIntegral3;
     error1 = ones(length(amp1(approvedParticleFrames)),1)'*error1aux;
     
-    error2 = plotTraceSettings.gauss3DIntensitySE(approvedParticleFrames);
+    error2 = error1;%plotTraceSettings.gauss3DIntensitySE(approvedParticleFrames);
     
     if cptState.lineFitted
         to = -cptState.Coefficients(2) / cptState.Coefficients(1); % minutes

@@ -142,9 +142,9 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
         
         gaussianArea = pi*sigma_x*sigma_y; %in pixels. this is one width away from peak
         integration_radius = 6*ceil(sqrt(212/pixelSize)); %integrate 109 pixels around the spot with 212nm pixel size
-        spot_x = fits(2) - snippet_size + centroid_x; %final reported spot position
+        spot_x = fits(2) - snippet_size + centroid_x - 1; %final reported spot position
         %         spot_y = fits(4) - snippet_size + centroid_y;
-        spot_y = fits(3) - snippet_size + centroid_y;
+        spot_y = fits(3) - snippet_size + centroid_y - 1;
         
         if show_status && ~isempty(graphicsHandles)
             dogAx = graphicsHandles(2);

@@ -24,7 +24,7 @@ function [Particles, trackingOptions] = addQCFlags(Particles, liveExperiment, tr
   trackingOptions.SpotlogLThreshholdSingle = trackingOptions.SpotlogLThreshold/length(logLIndices);
   trackingOptions.TracelogLThreshold = repelem(-0.75*trackingOptions.matchCostDefault,trackingOptions.NCh);   
   trackingOptions.qcFieldNames = {'xPos','yPos','zPos','nucleusMask','earlyflag'};
-  trackingOptions.nucleusProbThresh = 0.40; %NL: we can afford to be a little generous here
+  trackingOptions.nucleusProbThresh = 0.30; %NL: we can afford to be a little generous here
   
   disp('Adding QC fields...')
   % Iterate through channels

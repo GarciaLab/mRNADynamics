@@ -23,7 +23,15 @@ end
 if ~iscell(Spots)% NL: added for backwards compatibility
   Spots = {Spots};
 end
-trackingOptions.has3DInfo =  isfield(Spots{1}(1).Fits,'GaussPos3D');
+firstFrame = [];
+iter = 1;
+while isempty(firstFrame)
+  if ~isempty(Spots{1}(iter).Fits)
+    firstFrame = iter;
+  end
+  iter = iter + 1;
+end
+trackingOptions.has3DInfo =  isfield(vertcat(Spots{1}(firstFrame).Fits),'GaussPos3D');
 trackingOptions.use3DInfo = trackingOptions.use3DInfo && trackingOptions.has3DInfo;
 
 % handle tracking/retracking options that require user input

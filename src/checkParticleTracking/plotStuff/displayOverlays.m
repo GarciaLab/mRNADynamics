@@ -51,6 +51,7 @@ end
 hold on
 plot(overlayAxes,xTrace,yTrace,'og','LineWidth',2.5)
 plot(overlayAxes,xTraceInf,yTraceInf,'xb','LineWidth',2.5)
+% plot(overlayAxes,xTrace-1,yTrace-1,'sr','LineWidth',2.5)
 hold(overlayAxes,'off')
 
 if isfield(cptState.FrameInfo, 'nc')

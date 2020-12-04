@@ -525,7 +525,7 @@ classdef LiveExperiment
             
             compiledParticlesFile = [this.resultsFolder, 'CompiledParticles.mat'];
             if this.hasCompiledParticlesFile
-                CompiledParticles = load(compiledParticlesFile);
+                load(compiledParticlesFile,'CompiledParticles');
             end
             
         end
