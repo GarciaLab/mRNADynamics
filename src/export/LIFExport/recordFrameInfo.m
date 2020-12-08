@@ -48,7 +48,7 @@ function FrameInfo = recordFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta
     try
       FrameInfo(i).zPosition = zPosition(i);
     catch
-      warning('didn''t record zgalvo in frameinfo- getframeinfo')
+      warning('didn''t record zgalvo in frameinfo')
     end
     
   end
