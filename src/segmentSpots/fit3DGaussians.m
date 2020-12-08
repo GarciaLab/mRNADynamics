@@ -1,4 +1,4 @@
-function  fitInfo = fit3DGaussians(snip3D,PixelSize,zStep,spotDims,nSpots)
+function  fitInfo = fit3DGaussians(snip3D,PixelSize,zStep,spotDims,nSpots,useRandomInitialization)
       
     % INPUT ARGUMENTS:
     % snip3D: 3D array containing spot to fit. Should contain only one spot
@@ -43,16 +43,7 @@ function  fitInfo = fit3DGaussians(snip3D,PixelSize,zStep,spotDims,nSpots)
     % define initial parameters
     xDim = size(snip3D,1);
     yDim = size(snip3D,2);
-    zDim = size(snip3D,3);
-    
-    % initialize parameters
-    fitInfo.initial_parameters =[...
-        max(snip3D(:)), ... % Spot 1 amplitude
-        sigmaXY_guess, sigmaZ_guess,... % Spot dimensions
-        yDim/2-sigmaXY_guess*fitInfo.twoSpotFlag,xDim/2-sigmaXY_guess*fitInfo.twoSpotFlag, zDim/2-sigmaZ_guess*fitInfo.twoSpotFlag,... % Spot 1 position
-        max(snip3D(:)),... % Spot 2 amplitude
-        yDim/2+sigmaXY_guess,xDim/2+sigmaXY_guess, zDim/2+sigmaZ_guess,... % Spot 2 position
-        mean(snip3D(:)/2),0,0,0]; % background fluorescence 
+    zDim = size(snip3D,3);      
     
     % initialize upper and lower parameter bounds
     fitInfo.upperBoundVector = [...
@@ -71,7 +62,21 @@ function  fitInfo = fit3DGaussians(snip3D,PixelSize,zStep,spotDims,nSpots)
         .5, .5, .5,... % Spot 2 position
         0, -mean(snip3D(:)/2)/yDim, -mean(snip3D(:)/2)/xDim, -mean(snip3D(:)/2)/zDim]; % background fluorescence    
     
-       
+    % initialize parameters
+    fitInfo.initial_parameters =[...
+        max(snip3D(:)), ... % Spot 1 amplitude
+        sigmaXY_guess, sigmaZ_guess,... % Spot dimensions
+        yDim/2-sigmaXY_guess*fitInfo.twoSpotFlag,xDim/2-sigmaXY_guess*fitInfo.twoSpotFlag, zDim/2-sigmaZ_guess*fitInfo.twoSpotFlag,... % Spot 1 position
+        max(snip3D(:)),... % Spot 2 amplitude
+        yDim/2+sigmaXY_guess,xDim/2+sigmaXY_guess, zDim/2+sigmaZ_guess,... % Spot 2 position
+        mean(snip3D(:)/2),0,0,0]; % background fluorescence 
+      
+    if useRandomInitialization
+        initSigmas = (fitInfo.upperBoundVector - fitInfo.lowerBoundVector)/8;    
+        fitInfo.initial_parameters = fitInfo.initial_parameters + normrnd(0,initSigmas')';
+        fitInfo.initial_parameters(fitInfo.initial_parameters>fitInfo.upperBoundVector) = fitInfo.upperBoundVector(fitInfo.initial_parameters>fitInfo.upperBoundVector);
+        fitInfo.initial_parameters(fitInfo.initial_parameters<fitInfo.lowerBoundVector) = fitInfo.lowerBoundVector(fitInfo.initial_parameters<fitInfo.lowerBoundVector);
+    end
     % define objective function
     fitInfo.dimensionVector = [yDim, xDim, zDim];    
     % define grid ref arrays
@@ -106,8 +111,30 @@ function  fitInfo = fit3DGaussians(snip3D,PixelSize,zStep,spotDims,nSpots)
     
     % attempt to fit
     options.Display = 'off';
-    [GaussFit, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(spot3DObjective,...
+    [GaussFit, fitInfo.resnorm, residual, ~, ~, ~, jacobian] = lsqnonlin(spot3DObjective,...
         fitInfo.initial_parameters,fitInfo.lowerBoundVector,fitInfo.upperBoundVector,options);
+    
+    % require that spot1 is always closer to the origin
+    spot1Score = sum(GaussFit(3:6).^2);
+    spot2Score = sum(GaussFit(8:10).^2);
+    orderIndices = 1:length(GaussFit);
+    if spot1Score > spot2Score        
+        orderIndices(fitInfo.spot1ParamIndices) = fitInfo.spot2ParamIndices;
+        orderIndices(fitInfo.spot2ParamIndices) = fitInfo.spot1ParamIndices;
+    end   
+    
+    
+    
+    %% %%%%%%%%%%%%%%%%%%%%%% estimate uncertainty %%%%%%%%%%%%%%%%%%%%%%%%
+    
+    % estimate error in integral calculations numeriucally...this is faster
+    % than doing it symbolically in matlab
+    FitCI = nlparci(GaussFit, residual, 'jacobian', jacobian);      
+    FitDeltas = diff(FitCI') / 2 / 1.96;
+    
+    % Reorder if necessary
+    GaussFit = GaussFit(orderIndices);
+    FitDeltas = FitDeltas(orderIndices);
     
     % store parameters
     fitInfo.RawFitParams = GaussFit;    
@@ -117,13 +144,7 @@ function  fitInfo = fit3DGaussians(snip3D,PixelSize,zStep,spotDims,nSpots)
     else
         fitInfo.Gauss2Params = NaN(size(fitInfo.spot2ParamIndices));
     end
-    %% %%%%%%%%%%%%%%%%%%%%%% estimate uncertainty %%%%%%%%%%%%%%%%%%%%%%%%
     
-    % estimate error in integral calculations numeriucally...this is faster
-    % than doing it symbolically in matlab
-    FitCI = nlparci(GaussFit, residual, 'jacobian', jacobian);      
-    FitDeltas = diff(FitCI') / 2 / 1.96;
-
     fitInfo.RawFitSE = FitDeltas;
     gaussIntegral = @(params) params(1).*(2*pi).^1.5 .* params(2).^2.*params(3);  
     
