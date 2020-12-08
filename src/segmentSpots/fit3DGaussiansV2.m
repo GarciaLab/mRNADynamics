@@ -1,4 +1,5 @@
-function  fitInfo = fit3DGaussians(snip3D, PixelSize, zStep, spotDims, nSpots, givenParams)
+function  fitInfo = fit3DGaussiansV2(snip3D, PixelSize, zStep, spotDims, nSpots, ...
+            useRandomInitialization, useMultiSolve)
       
     % INPUT ARGUMENTS:
     % snip3D: 3D array containing spot to fit. Should contain only one spot
@@ -20,8 +21,8 @@ function  fitInfo = fit3DGaussians(snip3D, PixelSize, zStep, spotDims, nSpots, g
     fitInfo = struct;    
     fitInfo.spotInfoFlag = ~isempty(spotDims);
     fitInfo.spotDims = spotDims;
-    fitInfo.twoSpotFlag = nSpots==2;    
-    fitInfo.fitFlag = isempty(givenParams);
+    fitInfo.twoSpotFlag = nSpots==2;
+    fitInfo.useMultiSolve = useMultiSolve;
     
     % initial ballbark estimate for spot size
     if fitInfo.spotInfoFlag
@@ -55,7 +56,7 @@ function  fitInfo = fit3DGaussians(snip3D, PixelSize, zStep, spotDims, nSpots, g
         4*max(snip3D(:)),... % Spot 2 amplitude
         yDim+.5, xDim+.5, zDim+.5,... % Spot 2 position
         max(snip3D(:)), ...
-        mean(snip3D(:)/2)/yDim, mean(snip3D(:)/2)/xDim, mean(snip3D(:)/2)/zDim,...        
+        mean(snip3D(:)/2)/yDim, mean(snip3D(:)/2)/xDim, mean(snip3D(:)/2)/zDim,...
         mean(snip3D(:)/2)/yDim, mean(snip3D(:)/2)/xDim, mean(snip3D(:)/2)/zDim]; % background fluorescence 
       
     fitInfo.lowerBoundVector = [...
@@ -68,7 +69,6 @@ function  fitInfo = fit3DGaussians(snip3D, PixelSize, zStep, spotDims, nSpots, g
         -mean(snip3D(:)/2)/yDim, -mean(snip3D(:)/2)/xDim, -mean(snip3D(:)/2)/zDim,...
         -mean(snip3D(:)/2)/yDim, -mean(snip3D(:)/2)/xDim, -mean(snip3D(:)/2)/zDim]; % background fluorescence    
     
-
     % initialize parameters
     fitInfo.initial_parameters =[...
         max(snip3D(:)), ... % Spot 1 amplitude
@@ -82,8 +82,7 @@ function  fitInfo = fit3DGaussians(snip3D, PixelSize, zStep, spotDims, nSpots, g
       
     
     % define objective function
-    fitInfo.dimensionVector = [yDim, xDim, zDim];  
-    
+    fitInfo.dimensionVector = [yDim, xDim, zDim];    
     % define grid ref arrays
     [mesh_y, mesh_x, mesh_z] = meshgrid(1:yDim, 1:xDim, 1:zDim); 
     
@@ -114,7 +113,27 @@ function  fitInfo = fit3DGaussians(snip3D, PixelSize, zStep, spotDims, nSpots, g
                                     + makeOffsetSnip(params) - double(snip3D);     
     end 
     
-    options.Display = 'off';   
+    options.Display = 'off';
+    if useMultiSolve        
+        problem = createOptimProblem('lsqnonlin','objective',...
+              spot3DObjective,'lb',fitInfo.lowerBoundVector,...
+              'x0', fitInfo.initial_parameters, 'ub',fitInfo.upperBoundVector,'options',options);
+        ms = MultiStart;
+%         gs = GlobalSearch;
+        [GaussFitMulti,~] = run(ms,problem,10);
+        
+        
+    elseif useRandomInitialization
+      
+        initSigmas = (fitInfo.upperBoundVector - fitInfo.lowerBoundVector)/8;    
+        % only do random initialization for position, dimension, and
+        % gradient components
+        initFlags = ~ismember(1:14,[1 7 11]);
+        fitInfo.initial_parameters(initFlags) = fitInfo.initial_parameters(initFlags) + normrnd(0,initSigmas(initFlags)')';
+        fitInfo.initial_parameters(fitInfo.initial_parameters>fitInfo.upperBoundVector) = fitInfo.upperBoundVector(fitInfo.initial_parameters>fitInfo.upperBoundVector);
+        fitInfo.initial_parameters(fitInfo.initial_parameters<fitInfo.lowerBoundVector) = fitInfo.lowerBoundVector(fitInfo.initial_parameters<fitInfo.lowerBoundVector);
+        
+    end
     
     % update initialization and bound fields
     fitInfo.initial_parameters = fitInfo.initial_parameters(include_vec);
@@ -122,16 +141,14 @@ function  fitInfo = fit3DGaussians(snip3D, PixelSize, zStep, spotDims, nSpots, g
     fitInfo.lowerBoundVector = fitInfo.lowerBoundVector(include_vec);
     
     % attempt to fit
-    if fitInfo.fitFlag
+    if ~useMultiSolve
         [GaussFit, fitInfo.resnorm, residual, fitInfo.exitflag, ~,~,jacobian] = lsqnonlin(spot3DObjective,...
             fitInfo.initial_parameters,fitInfo.lowerBoundVector,fitInfo.upperBoundVector,options);
     else
-        options.MaxIterations = 1;
-        [~, fitInfo.resnorm, residual, fitInfo.exitflag, ~,~,jacobian] = lsqnonlin(spot3DObjective,...
-            givenParams,fitInfo.lowerBoundVector,fitInfo.upperBoundVector,options);
-        GaussFit = givenParams;
+        options.MaxIterations = 0;
+        [GaussFit, fitInfo.resnorm, residual, fitInfo.exitflag, output,lambda,jacobian] = lsqnonlin(spot3DObjective,...
+            GaussFitMulti,fitInfo.lowerBoundVector,fitInfo.upperBoundVector,options);
     end
-        
     % require that spot1 is always closer to the origin
     spot1Score = sum(GaussFit(4:6).^2);
     spot2Score = sum(GaussFit(8:10).^2);
@@ -139,7 +156,9 @@ function  fitInfo = fit3DGaussians(snip3D, PixelSize, zStep, spotDims, nSpots, g
     if spot1Score > spot2Score        
         orderIndices(fitInfo.spot1ParamIndices) = fitInfo.spot2ParamIndices;
         orderIndices(fitInfo.spot2ParamIndices) = fitInfo.spot1ParamIndices;
-    end           
+    end   
+    
+    
     
     %% %%%%%%%%%%%%%%%%%%%%%% estimate uncertainty %%%%%%%%%%%%%%%%%%%%%%%%
     
@@ -172,7 +191,6 @@ function  fitInfo = fit3DGaussians(snip3D, PixelSize, zStep, spotDims, nSpots, g
     fitInfo.GaussIntegralSE1 = gaussIntegralError(GaussFit(fitInfo.spot1ParamIndices),FitDeltas(fitInfo.spot1ParamIndices));
     fitInfo.Spot1Pos = GaussFit(4:6);
     fitInfo.Spot1PosSE = FitDeltas(4:6);
-    
     if fitInfo.twoSpotFlag
         fitInfo.GaussIntegral2 = gaussIntegral(GaussFit(fitInfo.spot2ParamIndices));
         fitInfo.GaussIntegralSE2 = gaussIntegralError(GaussFit(fitInfo.spot2ParamIndices),FitDeltas(fitInfo.spot2ParamIndices));
@@ -215,7 +233,9 @@ function  fitInfo = fit3DGaussians(snip3D, PixelSize, zStep, spotDims, nSpots, g
     end
     
     offsetSnipFit = makeOffsetSnip(GaussFit);
+%     offsetSnipVar = FitDeltas(11)^2 + FitDeltas(12)^2*mesh_y.^2 + FitDeltas(13)^2*mesh_x.^2 + FitDeltas(14)^2*mesh_z.^2;
     fitInfo.GaussIntegralRaw = (sum(intMask(:).*double(snip3D(:)) - offsetSnipFit(:).*intMask(:)));
+%     fitInfo.GaussIntegralRawSE = sqrt(sum(offsetSnipVar(:).*intMask(:)));
 
     if fitInfo.twoSpotFlag
         fitInfo.offset = GaussFit(11) + ...

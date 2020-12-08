@@ -8,11 +8,11 @@ function particle = add3DTrackingInfo(particle, SpotsCh, trackingOptions, kalman
     for f = 1:length(particle.Frame)
         spot = SpotsCh(particle.Frame(f)).Fits(particle.Index(f));
         posAdjustment = 0; 
-        if isfield(spot, 'updated3DOffset')
-          if spot.updated3DOffset == 1
-            posAdjustment = -.5;
-          end
-        end
+%         if isfield(spot, 'updated3DOffset')
+%           if spot.updated3DOffset == 1
+%             posAdjustment = -.5;
+%           end
+%         end
         particle.xPos3D(f) = spot.GaussPos3D(2)+posAdjustment;
         particle.yPos3D(f) = spot.GaussPos3D(1)+posAdjustment;
         particle.zPos3D(f) = spot.GaussPos3D(3)+posAdjustment;
