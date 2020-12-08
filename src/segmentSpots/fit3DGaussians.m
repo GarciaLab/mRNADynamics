@@ -128,19 +128,20 @@ function  fitInfo = fit3DGaussians(snip3D, PixelSize, zStep, spotDims, nSpots, g
     else
         options.MaxIterations = 1;
         [~, fitInfo.resnorm, residual, fitInfo.exitflag, ~,~,jacobian] = lsqnonlin(spot3DObjective,...
-            givenParams,fitInfo.lowerBoundVector,fitInfo.upperBoundVector,options);
-        GaussFit = givenParams;
+            givenParams(include_vec),fitInfo.lowerBoundVector,fitInfo.upperBoundVector,options);
+        GaussFit = givenParams(include_vec);
     end
         
     % require that spot1 is always closer to the origin
-    spot1Score = sum(GaussFit(4:6).^2);
-    spot2Score = sum(GaussFit(8:10).^2);
     orderIndices = 1:length(GaussFit);
-    if spot1Score > spot2Score        
-        orderIndices(fitInfo.spot1ParamIndices) = fitInfo.spot2ParamIndices;
-        orderIndices(fitInfo.spot2ParamIndices) = fitInfo.spot1ParamIndices;
-    end           
-    
+    if fitInfo.twoSpotFlag  
+        spot1Score = sum(GaussFit(4:6).^2);
+        spot2Score = sum(GaussFit(8:10).^2);        
+        if spot1Score > spot2Score        
+            orderIndices(fitInfo.spot1ParamIndices) = fitInfo.spot2ParamIndices;
+            orderIndices(fitInfo.spot2ParamIndices) = fitInfo.spot1ParamIndices;
+        end           
+    end
     %% %%%%%%%%%%%%%%%%%%%%%% estimate uncertainty %%%%%%%%%%%%%%%%%%%%%%%%
     
     % estimate error in integral calculations numeriucally...this is faster
@@ -180,7 +181,8 @@ function  fitInfo = fit3DGaussians(snip3D, PixelSize, zStep, spotDims, nSpots, g
         fitInfo.GaussIntegralSETot = sqrt(fitInfo.GaussIntegralSE1^2 + fitInfo.GaussIntegralSE2^2); % NL: it's likely that these two quantities are correlated, so addinin in quadrature is dubious
         fitInfo.Spot2Pos = GaussFit(8:10);
         fitInfo.Spot2PosSE = FitDeltas(8:10);
-        fitInfo.SpotCentroid = (fitInfo.Spot1Pos*fitInfo.GaussIntegral1 + fitInfo.Spot2Pos*fitInfo.GaussIntegral2)/fitInfo.GaussIntegralTot;
+        fitInfo.SpotCentroid = (fitInfo.Spot1Pos*fitInfo.GaussIntegral1^2 + fitInfo.Spot2Pos*fitInfo.GaussIntegral2^2)/...
+                               (fitInfo.GaussIntegral1^2 + fitInfo.GaussIntegral2^2);%fitInfo.GaussIntegralTot;
         
         % estimate error in centroid position (also invokes dubious
         % independence assumption)
