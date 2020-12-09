@@ -530,6 +530,14 @@ classdef LiveExperiment
             
         end
         
+        function CompiledParticlesFull = getCompiledParticlesFull(this)
+            
+            compiledParticlesFile = [this.resultsFolder, 'CompiledParticles.mat'];
+            if this.hasCompiledParticlesFile
+                CompiledParticlesFull = load(compiledParticlesFile);
+            end
+            
+        end
         function Spots = getSpots(this)
             
             spotsFile = [this.resultsFolder, 'Spots.mat'];
