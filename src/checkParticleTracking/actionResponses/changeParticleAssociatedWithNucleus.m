@@ -10,16 +10,20 @@ opts = {};
 if exist('ConnectPosition', 'var')
     opts = {'ConnectPosition'};
 end
-
-ParticleOutput = identifyParticle(Spots, Particles, CurrentFrame, ...
-    CurrentChannelIndex, UseHistoneOverlay, schnitzcells, opts{:});
-
-if (floor(ParticleOutput)>0)&(ParticleOutput<=numParticles)
+try
+    ParticleOutput = identifyParticle(Spots, Particles, CurrentFrame, ...
+        CurrentChannelIndex, UseHistoneOverlay, schnitzcells, opts{:});
     
-    [CurrentParticle,CurrentFrame, ManualZFlag] = ...
-        changeParticle(ParticleOutput, Particles, numParticles, CurrentChannelIndex);
-    
+    if (floor(ParticleOutput)>0)&(ParticleOutput<=numParticles)
+        
+        [CurrentParticle,CurrentFrame, ManualZFlag] = ...
+            changeParticle(ParticleOutput, Particles, numParticles, CurrentChannelIndex);
+    end
+catch
+    disp('Failed to identify clicked particle. Be careful to click the particle.')
 end
+
+
 
 Particles{CurrentChannelIndex}(CurrentParticle).Nucleus = Particles{CurrentChannelIndex}(PreviousParticle).Nucleus;
 Particles{CurrentChannelIndex}(PreviousParticle).Nucleus = [];

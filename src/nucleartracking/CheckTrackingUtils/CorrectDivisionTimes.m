@@ -49,7 +49,7 @@ end
 Ellipses = getEllipses(liveExperiment);
 broken = checkSchnitzCellErrors(schnitzcells, Ellipses);
 if ~isempty(find(broken ~= 0, 1))
-    [schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses);
+    [schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses, Prefix);
 end
 
 [SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
@@ -739,7 +739,7 @@ for i =1:length(schnitzcells)
     end
 end
 %% 
-[schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses);
+[schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses, Prefix);
 
 %% Infer anaphaseFrames for missing anaphases
 schnitz_ncs = [schnitzcells(:).cycle];
@@ -784,10 +784,12 @@ for i=1:length(ncs)
         anaphaseFrame = schnitzcells(inferenceschnitz).anaphaseFrame;
         schnitzcells(matchNoAnaFrameIdx(j)).anaphaseFrame = anaphaseFrame;
         schnitzcells(matchNoAnaFrameIdx(j)).inferredAnaphaseFrame = true;
+        if anaphaseFrame > 0
         anaTime = FrameInfo(anaphaseFrame).Time/60;
         for l=1:length(schnitzcells(matchNoAnaFrameIdx(j)).frames)
             schnitzcells(matchNoAnaFrameIdx(j)).timeSinceAnaphase(l) = ...
                 FrameInfo(schnitzcells(matchNoAnaFrameIdx(j)).frames(l)).Time/60-anaTime;
+        end
         end
     end
 end
@@ -831,7 +833,7 @@ end
 
 
 %% 
-[schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses);
+[schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses, Prefix);
 
 %% 
 try 

@@ -62,6 +62,10 @@ function keyInputHandler = ParticleChangeEventHandler(cptState)
             [cptState.lineFitted, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag, cptState.DisplayRange] = ...
                 goPreviousParticle(cptState.CurrentParticle, cptState.CurrentChannelIndex, cptState.HideApprovedFlag, cptState.Particles);
 
+        elseif (cc == 'v') & (cptState.CurrentParticle < cptState.numParticles())
+            [cptState.lineFitted, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag, cptState.DisplayRange] = ...
+                goNextUncheckedParticle(cptState.CurrentParticle, cptState.CurrentChannelIndex, cptState.HideApprovedFlag, cptState.Particles);
+        
         elseif cc == 'i'
             warning(' AR 1/15/18: This is currently deprecated. Talk to HG if you need this function.')
         end

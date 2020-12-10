@@ -58,6 +58,8 @@ else
             SkipAll=1;
         elseif strcmpi(varargin{i},'ApproveAll')
             ApproveAll=1;
+        elseif strcmpi(varargin{i},'KeepAll') % Opposite of the 'ApproveAll' flag, which is currently set to 1 by default
+            ApproveAll=0;
         elseif strcmpi(varargin{i},'noHist')
             noHist = 1;
         elseif strcmp(varargin{i},'MinParticles')

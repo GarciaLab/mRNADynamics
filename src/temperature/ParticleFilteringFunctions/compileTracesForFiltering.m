@@ -1,6 +1,6 @@
 function [Particles, CompiledParticles, ncFilter, ncFilterID] =...
     ...
-    compileTraces(NChannels, Particles, HistoneChannel, ...
+    compileTracesForFiltering(NChannels, Particles, HistoneChannel, ...
     ...
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
     Spots, SkipTraces, ncFilterID, ncFilter, ...
@@ -12,6 +12,12 @@ function [Particles, CompiledParticles, ncFilter, ncFilterID] =...
 %   Detailed explanation goes here
 
 liveExperiment = LiveExperiment(Prefix);
+
+if isstruct(Spots)
+    SpotsTemp{1} = Spots;
+    Spots = SpotsTemp;
+end
+    
 
 FrameInfo = getFrameInfo(liveExperiment);
 
@@ -37,7 +43,7 @@ for ChN=1:NChannels
     k=1;
     for i=1:length(Particles{ChN})
         try waitbar(i/length(Particles{ChN}),h); end
-        if (Particles{ChN}(i).Approved==1)
+        if ~isempty(Particles{ChN}(i).Nucleus)
             
             for NCh=1:NChannels
                 if ~isfield(Particles{NCh},'FrameApproved')
@@ -222,10 +228,9 @@ for ChN=1:NChannels
                 
                 
                 
-                %Determine the nc where this particle was born
+
                 try
-                    CompiledParticles{ChN}(k).nc=FrameInfo(CompiledParticles{ChN}(k).Frame(1)).nc;
-                    CompiledParticles{ChN}(k).cycle=FrameInfo(CompiledParticles{ChN}(k).Frame(1)).nc;
+                    CompiledParticles{ChN}(k).nc=Particles{ChN}(i).cycle;
                 end
                 
                 if HistoneChannel

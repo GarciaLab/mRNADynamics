@@ -9,7 +9,7 @@ function [OverlayFig, overlayAxes, ImageHandle,...
     ...
     = checkNuclearTracking_drawGUI(cntState,...
     Prefix, xSize, ySize, ImageHisMat,ElapsedTime,...
-          anaphaseInMins, ncFrames)
+    anaphaseInMins, ncFrames)
 %% Description
 % This script is for
 hasInputChannels = ~isempty(cntState.liveExperiment.inputChannels);
@@ -33,7 +33,7 @@ zTraceAxes = [];
 rawDataAxes = [];
 gaussianAxes = [];
 
-% 
+%
 %% Setup Figure 1
 hisImage = ImageHisMat(:, :, cntState.CurrentFrame);
 numFrames = length(cntState.Ellipses);
@@ -68,7 +68,7 @@ else
 end
 overlayAxes.XAxis.Visible = 'off';
 overlayAxes.YAxis.Visible = 'off';
-%% 
+%%
 
 
 
@@ -107,7 +107,7 @@ for i=1:cntState.numNuclei()
         if ~isempty(frame_idx)
             schnitzCellNo_ApprovedUncheckedPassed= [schnitzCellNo_ApprovedUncheckedPassed,cntState.schnitzcells(i).cellno(frame_idx)];
         end
-    elseif (cntState.schnitzcells(i).Approved ==1) & (cntState.schnitzcells(i).Checked ==1) 
+    elseif (cntState.schnitzcells(i).Approved ==1) & (cntState.schnitzcells(i).Checked ==1)
         frame_idx = find(cntState.schnitzcells(i).frames == cntState.CurrentFrame, 1);
         if ~isempty(frame_idx)
             schnitzCellApproved = [schnitzCellApproved,cntState.schnitzcells(i).cellno(frame_idx)];
@@ -121,7 +121,7 @@ for i=1:cntState.numNuclei()
         frame_idx = find(cntState.schnitzcells(i).frames == cntState.CurrentFrame, 1);
         if ~isempty(frame_idx)
             schnitzCellCheckedRejectedUnflagged = [schnitzCellCheckedRejectedUnflagged,cntState.schnitzcells(i).cellno(frame_idx)];
-        end     
+        end
     elseif (cntState.schnitzcells(i).Approved ~=1) & (cntState.schnitzcells(i).Checked ==1)
         frame_idx = find(cntState.schnitzcells(i).frames == cntState.CurrentFrame, 1);
         if ~isempty(frame_idx)
@@ -131,7 +131,7 @@ for i=1:cntState.numNuclei()
         frame_idx = find(cntState.schnitzcells(i).frames == cntState.CurrentFrame, 1);
         if ~isempty(frame_idx)
             schnitzCellUncheckedRejected = [schnitzCellUncheckedRejected,cntState.schnitzcells(i).cellno(frame_idx)];
-        end    
+        end
     end
 end
 
@@ -168,7 +168,7 @@ if isfield(cntState.FrameInfo, 'nc')
             ', Frame: ',num2str(cntState.CurrentFrame),'/',num2str(numFrames),...
             ', Ana: ',num2str(cntState.schnitzcells(cntState.CurrentNucleus).anaphaseFrame),...
             ' nc: ', num2str(cntState.FrameInfo(cntState.CurrentFrame).nc)]);
-
+        
     elseif hasInputChannels
         set(OverlayFig,'Name',['Schnitz Cell: ',num2str(cntState.CurrentNucleus),'/',num2str(cntState.numNuclei()),...
             ', Frame: ',num2str(cntState.CurrentFrame),'/',num2str(numFrames),...
@@ -195,7 +195,7 @@ else
     snipAxes = {snipHistoneAxes};
 end
 
-%% 
+%%
 
 fr_idx = find(cntState.Frames == cntState.CurrentFrame);
 if hasInputChannels
@@ -214,11 +214,11 @@ xSchnitz = cntState.getCurrentX();
 ySchnitz = cntState.getCurrentY();
 
 imSnippet = zeros(2*snippet_size + 1, 2*snippet_size + 1, 'double');
-if hasInputChannels
-    imMedSnippet = zeros(2*snippet_size + 1, 2*snippet_size + 1, 'double');
-    imMidMedSnippet = zeros(2*snippet_size + 1, 2*snippet_size + 1, 'double');
-    imHisSnippet = zeros(2*snippet_size + 1, 2*snippet_size + 1, 'double');
-end
+
+imMedSnippet = zeros(2*snippet_size + 1, 2*snippet_size + 1, 'double');
+imMidMedSnippet = zeros(2*snippet_size + 1, 2*snippet_size + 1, 'double');
+imHisSnippet = zeros(2*snippet_size + 1, 2*snippet_size + 1, 'double');
+
 if (~isempty(xSchnitz)) & (~isempty(ySchnitz))
     if ySchnitz-snippet_size < 1
         rmin_idx = snippet_size-ySchnitz+2;
@@ -244,20 +244,20 @@ if (~isempty(xSchnitz)) & (~isempty(ySchnitz))
     if hasInputChannels
         imMidMedSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
             mat2gray( double(cntState.ImageMat(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
-                    max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
-
+            max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
+        
         imSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
             mat2gray( double(cntState.MaxImageMat(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
-                    max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
-
+            max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
+        
         imMedSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
             mat2gray( double(cntState.MedImageMat(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
-                    max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
+            max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
     end
-
+    
     imHisSnippet(rmin_idx:rmax_idx, cmin_idx:cmax_idx) = ...
         mat2gray( double(hisImage(max(1,ySchnitz-snippet_size):min(ySize,ySchnitz+snippet_size),...
-                max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
+        max(1,xSchnitz-snippet_size):min(xSize,xSchnitz+snippet_size))));
 end
 IntegrationRadius = 2/pixelSize; % 6*ceil(sqrt(212/pixelSize)); %integrate 109 pixels around the spot with 212nm pixel size
 [xGrid, yGrid] = meshgrid(1:2*snippet_size+1,1:2*snippet_size+1);
@@ -267,15 +267,15 @@ IntegrationArea= rGrid < IntegrationRadius & (rGrid+1) >= IntegrationRadius;
 
 if hasInputChannels
     SnippetOverlay=cat(3,IntegrationArea/2 + ...
-    +imSnippet,imSnippet,imSnippet);
+        +imSnippet,imSnippet,imSnippet);
     SnippetMedOverlay=cat(3,IntegrationArea/2 + ...
         +imMedSnippet,imMedSnippet,imMedSnippet);
     SnippetMidMedOverlay=cat(3,IntegrationArea/2 + ...
-        +imMidMedSnippet,imMidMedSnippet,imMidMedSnippet); 
+        +imMidMedSnippet,imMidMedSnippet,imMidMedSnippet);
 end
 HisSnippetOverlay=cat(3,IntegrationArea/2 + ...
-        +imHisSnippet,imHisSnippet,imHisSnippet);
-%% 
+    +imHisSnippet,imHisSnippet,imHisSnippet);
+%%
 snipHandles = {};
 
 
@@ -342,7 +342,7 @@ if hasInputChannels
         traceHandles{3} = plot(traceFigAxes, [0, 1], [0, 1], 'g.-');
         set(traceHandles{3},'Visible','off')
     end
-
+    
     if ~isempty(traceFigTimeAxis(~approvedNucleiFrames))
         traceHandles{4} = plot(traceFigAxes,traceFigTimeAxis(~approvedNucleiFrames),cntState.MidMedFluo(~approvedNucleiFrames),'.r');
         set(get(get(traceHandles{4}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
@@ -351,7 +351,7 @@ if hasInputChannels
         set(traceHandles{4},'Visible','off')
         set(get(get(traceHandles{4}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
     end
-
+    
     if ~isempty(traceFigTimeAxis(cntState.Frames==cntState.CurrentFrame))
         traceHandles{5} = plot(traceFigAxes,traceFigTimeAxis(cntState.Frames==cntState.CurrentFrame),...
             cntState.MidMedFluo(cntState.Frames==cntState.CurrentFrame),'ok');
@@ -361,7 +361,7 @@ if hasInputChannels
         set(get(get(traceHandles{5}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
         set(traceHandles{5},'Visible','off')
     end
-
+    
     if ~isempty(traceFigTimeAxis(~approvedNucleiFrames))
         traceHandles{6} = plot(traceFigAxes,traceFigTimeAxis(~approvedNucleiFrames),cntState.MaxFluo(~approvedNucleiFrames),'.r');
         set(get(get(traceHandles{6}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
@@ -370,7 +370,7 @@ if hasInputChannels
         set(traceHandles{6},'Visible','off')
         set(get(get(traceHandles{6}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
     end
-
+    
     if ~isempty(traceFigTimeAxis(cntState.Frames==cntState.CurrentFrame))
         traceHandles{7} = plot(traceFigAxes,traceFigTimeAxis(cntState.Frames==cntState.CurrentFrame),...
             cntState.MaxFluo(cntState.Frames==cntState.CurrentFrame),'ob');
@@ -380,7 +380,7 @@ if hasInputChannels
         set(get(get(traceHandles{7}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
         set(traceHandles{7},'Visible','off')
     end
-
+    
     if ~isempty(traceFigTimeAxis(~approvedNucleiFrames))
         traceHandles{8} = plot(traceFigAxes,traceFigTimeAxis(~approvedNucleiFrames),cntState.MedFluo(~approvedNucleiFrames),'.r');
         set(get(get(traceHandles{8}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
@@ -389,7 +389,7 @@ if hasInputChannels
         set(traceHandles{8},'Visible','off')
         set(get(get(traceHandles{8}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
     end
-
+    
     if ~isempty(traceFigTimeAxis(cntState.Frames==cntState.CurrentFrame))
         traceHandles{9} = plot(traceFigAxes,traceFigTimeAxis(cntState.Frames==cntState.CurrentFrame),...
             cntState.MedFluo(cntState.Frames==cntState.CurrentFrame),'og');
@@ -399,29 +399,29 @@ if hasInputChannels
         set(get(get(traceHandles{9}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
         set(traceHandles{9},'Visible','off')
     end
-
-
-
-
-
-
+    
+    
+    
+    
+    
+    
     xlabel(traceFigAxes,'frame')
     title(traceFigAxes, '', 'Interpreter', 'none');
     %     traceFigAxes.Title.Interpreter = 'none';
     % creating legend
-
+    
     str1 = 'Mid Median';
     str2 = 'Max';
     str3 = 'Median';
-
+    
     %initialize curves
-
+    
     ylabel(traceFigAxes,'integrated intensity (a.u.)')
     traceLeg = legend(traceFigAxes,[traceHandles{1}, traceHandles{2}, traceHandles{3}], str1,str2,str3,...
         'AutoUpdate', 'off', 'HandleVisibility', 'off', 'location', 'southeast');
     nc = cntState.schnitzcells(cntState.CurrentNucleus).cycle;
-
-
+    
+    
     traceFigYLimits = [0, max(cntState.MaxFluo)*1.3];
     for i = 1:length(ncFrames)
         hndl_idx = length(traceHandles)+1;
@@ -435,21 +435,21 @@ if hasInputChannels
         xlim(traceFigAxes,double([min([priorAnaphase, min(traceFigTimeAxis)]),max([max(traceFigTimeAxis), nextAnaphase])])+[-1,1]);
         setPlotsVisible(traceFigAxes);
     end
-
-
+    
+    
     % plotting the lines and traces
-
+    
     hold(traceFigAxes, 'off')
-
+    
     try
         setPlotsInvisible(traceFigAxes);
         ylim(traceFigAxes, [0, traceFigYLimits(2)]);
         setPlotsVisible(traceFigAxes);
     end
-
+    
     hold(traceFigAxes,'off')
 else
-     if ~isempty(traceFigTimeAxis(approvedNucleiFrames))
+    if ~isempty(traceFigTimeAxis(approvedNucleiFrames))
         traceHandles{1} = plot(traceFigAxes,traceFigTimeAxis(approvedNucleiFrames),...
             ones(1, length(traceFigTimeAxis(approvedNucleiFrames))), 'k.-');
         hold(traceFigAxes, 'on')
@@ -466,7 +466,7 @@ else
         set(traceHandles{2},'Visible','off')
         set(get(get(traceHandles{2}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
     end
-
+    
     if ~isempty(traceFigTimeAxis(cntState.Frames==cntState.CurrentFrame))
         traceHandles{3} = plot(traceFigAxes,traceFigTimeAxis(cntState.Frames==cntState.CurrentFrame),...
             ones(1),'ok');
@@ -476,15 +476,15 @@ else
         set(get(get(traceHandles{3}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
         set(traceHandles{3},'Visible','off')
     end
-
- 
-
+    
+    
+    
     xlabel(traceFigAxes,'frame')
     title(traceFigAxes, '', 'Interpreter', 'none');
- 
+    
     nc = cntState.schnitzcells(cntState.CurrentNucleus).cycle;
-
-
+    
+    
     traceFigYLimits = [0, 2];
     for i = 1:length(ncFrames)
         hndl_idx = length(traceHandles)+1;
@@ -498,8 +498,8 @@ else
         xlim(traceFigAxes,double([min([priorAnaphase, min(traceFigTimeAxis)]),max([max(traceFigTimeAxis), nextAnaphase])])+[-1,1]);
         setPlotsVisible(traceFigAxes);
     end
-
-
+    
+    
     try
         setPlotsInvisible(traceFigAxes);
         ylim(traceFigAxes, [0, traceFigYLimits(2)]);
@@ -508,11 +508,11 @@ else
     traceFigAxes.YAxis.Visible = 'off';
     hold(traceFigAxes,'off')
 end
-% 
+%
 % idata1 = amp1(approvedParticleFrames);
 % idata2 = amp2(approvedParticleFrames);
-% 
-% 
+%
+%
 
 % creating axis title
 frame_idx = find(cntState.Frames == cntState.CurrentFrame);
@@ -523,7 +523,7 @@ secondLine = ['Nucleus: ',num2str(cntState.CurrentNucleus),'/',num2str(numNuclei
 if hasInputChannels
     thirdLine = ['Z: ',num2str(cntState.MidMedZ(frame_idx)),'/',num2str(cntState.ZSlices)];
 end
-    
+
 if isfield(cntState.FrameInfo, 'nc')
     if hasInputChannels
         axisTitle={firstLine,...
@@ -563,7 +563,7 @@ if hasInputChannels
     
     if ~isempty(fr_idx)
         ZProfile = cntState.schnitzcells(cntState.CurrentNucleus).Fluo(fr_idx,:);
-
+        
         zProfileHandles{1} = plot(zProfileFigAxes, z, ZProfile, 'r.-');
         hold(zProfileFigAxes, 'on')
         zProfileHandles{2} = plot(zProfileFigAxes,z(cntState.MidMedZ(fr_idx)),...
@@ -583,8 +583,8 @@ if hasInputChannels
         zProfileHandles{4} = plot(zProfileFigAxes, [0, 1], [0, 1], 'go');
         set(zProfileHandles{4},'Visible','off')
     end
-
-
+    
+    
     xlabel(zProfileFigAxes,'z-slice', 'FontSize',12)
     ylabel(zProfileFigAxes,'intensity (au)', 'FontSize',12)
     title(zProfileFigAxes, 'z-Profile', 'Interpreter', 'none');
@@ -597,8 +597,8 @@ if hasInputChannels
         ylim(zProfileFigAxes, [0, max([zProfileFigYLimits(2), 1])]);
         setPlotsVisible(zProfileFigAxes);
     end
-
-
+    
+    
     zTraceAxes = subplot(1, 2, 2, 'Parent', zFig);
     
     zTraceHandles{1} = plot(zTraceAxes,cntState.Frames,...
@@ -615,14 +615,14 @@ if hasInputChannels
         zTraceHandles{4} = xline(zTraceAxes, 0, 'Color', 'r', 'LineStyle', '--');
         set(zTraceHandles{4},'Visible','off')
     end
-
+    
     hold(zTraceAxes, 'off')
     xlabel(zTraceAxes,'frame')
     ylabel(zTraceAxes,'z-slice')
     title(zTraceAxes,'Z traces')
     zTraceAxes.Title.FontSize = 10;
     zTraceLeg = legend(zTraceAxes,[zTraceHandles{1}, zTraceHandles{2}, zTraceHandles{3}], str1,str2,str3, 'AutoUpdate', 'off', 'HandleVisibility', 'off');
-
+    
     zTraceFigYLimits = [0, cntState.ZSlices*1.3];
     try
         setPlotsInvisible(zTraceAxes);
@@ -630,7 +630,7 @@ if hasInputChannels
         setPlotsVisible(zTraceAxes);
     end
     zFigAxes = {zProfileFigAxes, zTraceAxes};
-
+    
     set(zFig,'Name',['Current Nucleus Z Profile'])
 else
     zFigAxes = [];

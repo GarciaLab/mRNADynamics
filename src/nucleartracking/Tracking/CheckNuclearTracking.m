@@ -160,7 +160,7 @@ ncFramesFull = [zeros(1,8), ncFrames, nFrames]; %more useful for some things
 
 try correspondingNCInfo = [FrameInfo.nc]; end
 
-schnitzcells = correctSchnitzCellErrors(schnitzcells, Ellipses);
+schnitzcells = correctSchnitzCellErrors(schnitzcells, Ellipses, Prefix);
 [schnitzcells] = sortNuclei(sortByFrames, sortByLength, schnitzcells);
 %schnitzcells = flexIntegrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, [1,2]);
 %Some flags and initial parameters
@@ -184,7 +184,7 @@ end
 if ~isempty(cntState.schnitzcells)
     checkEllipsesSchnitzMatches = checkSchnitzCellErrors(cntState.schnitzcells, cntState.Ellipses);
     if sum(checkEllipsesSchnitzMatches) > 0
-        cntState.schnitzcells = correctSchnitzCellErrors(cntState.schnitzcells, cntState.Ellipses);
+        cntState.schnitzcells = correctSchnitzCellErrors(cntState.schnitzcells, cntState.Ellipses, Prefix);
         
     end
     saveNuclearChanges(cntState, DataFolder, FilePrefix, DropboxFolder);

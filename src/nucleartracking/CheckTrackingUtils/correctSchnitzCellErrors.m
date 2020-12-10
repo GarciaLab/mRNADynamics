@@ -1,4 +1,4 @@
-function [valid_schnitzes, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses)
+function [valid_schnitzes, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses, Prefix)
 num_frames = zeros(1, length(schnitzcells));
 % secondtrigger = false;
 for i=1:length(schnitzcells)
@@ -43,3 +43,34 @@ for i=1:length(schnitzcells)
 end
 
 valid_schnitzes = schnitzcells(num_frames > 0);
+%% 
+
+if exist('Prefix', 'var')
+    lE= LiveExperiment(Prefix);
+    FrameInfo = getFrameInfo(lE);
+    ncs = [lE.nc9, lE.nc10, lE.nc11, lE.nc12, lE.nc13, lE.nc14, length(FrameInfo)];
+    NCsForFrames = zeros(1, length(FrameInfo));
+    for nc=9:14
+        if ncs(nc-7) > 0
+            if nc == 14
+                NCsForFrames(ncs(nc-8):end) = nc;
+            elseif ncs(nc-8) > 0
+                NCsForFrames(ncs(nc-8):(ncs(nc-7)-1)) = nc;
+            else
+                NCsForFrames(1:(ncs(nc-7)-1)) = nc;
+            end
+        end
+    end
+    for i=1:length(valid_schnitzes)
+        valid_schnitzes(i).cycle = floor(mode(NCsForFrames(valid_schnitzes(i).frames)));
+        
+    end
+end
+
+
+
+
+
+
+
+
