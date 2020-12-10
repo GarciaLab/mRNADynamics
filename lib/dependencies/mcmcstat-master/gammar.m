@@ -14,11 +14,15 @@ if a<=0 % special case of a<=0
   return;
 end
 
-if exist('distribs') == 3 % mex version
-  y = distribs('gammar',m,n,a).*b;
-else
-  y = gammar_mt(m,n,a,b);
-end
+%AR 10/21/20 I commented this out because I don't know what package distribs comes
+%from so this always evaluates to false. 
+
+% if exist('distribs', 'file') == 3 % mex version
+%   y = distribs('gammar',m,n,a).*b;
+% else
+%   y = gammar_mt(m,n,a,b);
+% end
+y = gammar_mt(m,n,a,b);
 
 function y=gammar_mt(m,n,a,b)
 %GAMMAR_MT random deviates from gamma distribution

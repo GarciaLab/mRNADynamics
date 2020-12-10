@@ -183,7 +183,7 @@ for ChN=1:NChannels
                     
                 end
                 
-                threeDFlag = false; %setting this to false until gaussian fits are fixed
+%                 threeDFlag = false; %setting this to false until gaussian fits are fixed
                 
                 if threeDFlag
                     CompiledParticles{ChN}(k).xPosGauss3D = gx_vec;
