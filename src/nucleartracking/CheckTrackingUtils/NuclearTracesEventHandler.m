@@ -17,17 +17,17 @@ function keyInputHandler = NuclearTracesEventHandler(cntState, FrameInfo, ncFram
                         cntState.CurrentFrame, cntState.schnitzcells, FrameInfo, ncFrames);
                 end
             end
-        elseif cc == 'D'
-            
-            if length(cntState.schnitzcells(cntState.CurrentNucleus).frames) > 1
-                HoldCurrentNucleus = cntState.CurrentNucleus;
-                cntState.schnitzcells=SeparateAllFrameNuclearTraces(cntState.CurrentNucleus,...
-                    cntState.CurrentFrame, cntState.schnitzcells, FrameInfo, ncFrames);
-                [cntState.CurrentNucleus,cntState.CurrentFrame, cntState.ManualZFlag] = ...
-                    changeNucleus(HoldCurrentNucleus, cntState.schnitzcells, cntState.numNuclei())
-            end
-
-            
+%         elseif cc == 'D'
+%             
+%             if length(cntState.schnitzcells(cntState.CurrentNucleus).frames) > 1
+%                 HoldCurrentNucleus = cntState.CurrentNucleus;
+%                 cntState.schnitzcells=SeparateAllFrameNuclearTraces(cntState.CurrentNucleus,...
+%                     cntState.CurrentFrame, cntState.schnitzcells, FrameInfo, ncFrames);
+%                 [cntState.CurrentNucleus,cntState.CurrentFrame, cntState.ManualZFlag] = ...
+%                     changeNucleus(HoldCurrentNucleus, cntState.schnitzcells, cntState.numNuclei())
+%             end
+% 
+%             
             
         elseif cc == 'q'
             % Approve a trace
@@ -54,6 +54,30 @@ function keyInputHandler = NuclearTracesEventHandler(cntState, FrameInfo, ncFram
             catch
                 disp('No Flag Selected')
             end
+        elseif cc == '1'
+            cntState.schnitzcells(cntState.CurrentNucleus).Flag = 1;
+            cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+        elseif cc == '2'
+            cntState.schnitzcells(cntState.CurrentNucleus).Flag = 2;
+            cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+        elseif cc == '3'
+            cntState.schnitzcells(cntState.CurrentNucleus).Flag = 3;
+            cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+        elseif cc == '4'
+            cntState.schnitzcells(cntState.CurrentNucleus).Flag = 4;
+            cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+        elseif cc == '5'
+            cntState.schnitzcells(cntState.CurrentNucleus).Flag = 5;
+            cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+        elseif cc == '6'
+            cntState.schnitzcells(cntState.CurrentNucleus).Flag = 6;
+            cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+        elseif cc == '7'
+            cntState.schnitzcells(cntState.CurrentNucleus).Flag = 7;
+            cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+        elseif cc == '0'
+            cntState.schnitzcells(cntState.CurrentNucleus).Flag = 0;
+            cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
         elseif cc == 'a'
             % Indicate anaphase frame for nucleus 
             CurrentNucleusInFrame = sum(find(cntState.schnitzcells(cntState.CurrentNucleus).frames == cntState.CurrentFrame, 1));
@@ -93,16 +117,7 @@ function keyInputHandler = NuclearTracesEventHandler(cntState, FrameInfo, ncFram
                     cntState.schnitzcells(cntState.CurrentNucleus).timeSinceAnaphase = time(cntState.schnitzcells(cntState.CurrentNucleus).frames) - time(cntState.schnitzcells(cntState.CurrentNucleus).anaphaseFrame);
                 end
             end
-           
-        
-%         elseif cc == 'h'
-%             if cntState.HideApprovedFlag == 0
-%                 cntState.HideApprovedFlag = 1; %Show only non-approved traces
-%             elseif cntState.HideApprovedFlag == 1
-%                 cntState.HideApprovedFlag = 2; %Show only yellow and red traces
-%             elseif cntState.HideApprovedFlag == 2
-%                 cntState.HideApprovedFlag = 0;
-%             end
+
         end
     end
 
