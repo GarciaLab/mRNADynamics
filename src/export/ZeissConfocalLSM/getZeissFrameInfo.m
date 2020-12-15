@@ -1,4 +1,4 @@
-function [FrameInfo,AllLSMImages,NSlices, NPlanes, NFrames,Frame_Times,NChannels] = getZeissFrameInfo(RawDataFiles,NSeries,FrameInfo)
+function [FrameInfo,AllLSMImages,NSlices, NPlanes, NFrames,Frame_Times,NChannels] = getZeissFrameInfo(RawDataFiles,NSeries,FrameInfo,zslicesPadding)
 
   AllLSMImages = cell(NSeries,1);
   Frame_Times = []; % Store the frame information
@@ -48,5 +48,15 @@ function [FrameInfo,AllLSMImages,NSlices, NPlanes, NFrames,Frame_Times,NChannels
     % update frame info
     [~, FrameInfo] = updateZeissFrameInfo(LSMIndex, NFrames, NSlices, FrameInfo, LSMMeta, Frame_Times, ValueField);
   end
+  
+  % If z-padding feature is applied, we need to update NumberSlices after we've processed all serie
+  if zslicesPadding
+      NSlicesMax = max(NSlices);
+      for i = 1:length(FrameInfo)
+          FrameInfo(i).NumberSlices = NSlicesMax;
+      end
+  end
+  
+  
 
   

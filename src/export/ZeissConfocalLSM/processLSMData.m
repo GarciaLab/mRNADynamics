@@ -3,7 +3,7 @@
 
 function FrameInfo = processLSMData(Folder, RawDataFiles, FrameInfo,...
     Channels, ProjectionType, Prefix, OutputFolder,nuclearGUI,...
-    skipExtraction,skipNuclearProjection)
+    skipExtraction,skipNuclearProjection,zslicesPadding)
     
     disp('Exporting movie file...');
     
@@ -24,7 +24,7 @@ function FrameInfo = processLSMData(Folder, RawDataFiles, FrameInfo,...
     if ~skipExtraction
       % This chunk makes FrameInfo                     
       [FrameInfo,AllLSMImages,NSlices, ~, NFrames,~,NChannels] ...
-        = getZeissFrameInfo(RawDataFiles,NSeries,FrameInfo);
+        = getZeissFrameInfo(RawDataFiles,NSeries,FrameInfo,zslicesPadding);
       
       % save FrameInfo
       liveExperiment = LiveExperiment(Prefix);
@@ -33,7 +33,7 @@ function FrameInfo = processLSMData(Folder, RawDataFiles, FrameInfo,...
       % this function exports tif z stacks
       exportTifStacks(AllLSMImages, 'LSM', NChannels, NFrames, NSlices, Prefix, ...
           moviePrecision, hisPrecision, nuclearGUI, ProjectionType, Channels, ReferenceHist, ...
-          skipNuclearProjection)           
+          skipNuclearProjection,zslicesPadding)           
       
       % Look for flat field images
       [FFPaths, FFToUse, LSMFF] = findFlatFieldInformation(Folder);
