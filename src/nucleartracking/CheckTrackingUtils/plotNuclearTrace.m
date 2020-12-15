@@ -21,12 +21,12 @@ nucleusFirstTimePoint = ElapsedTime(...
 
 %traceFigTimeAxis = ElapsedTime(cntState.schnitzcells(cntState.CurrentNucleus).frames) - nucleusFirstTimePoint; %min
 traceFigTimeAxis = cntState.schnitzcells(cntState.CurrentNucleus).frames.';
-approvedNucleiFrames = cntState.schnitzcells(cntState.CurrentNucleus).FrameApproved;
+approvedNucleiFrames = logical(cntState.schnitzcells(cntState.CurrentNucleus).FrameApproved);
 if hasInputChannels
     if isempty(traceHandles{1})
         if ~isempty(cntState.Frames(approvedNucleiFrames))
             set(traceHandles{1},'Visible','on')
-            traceHandles{1} = plot(traceFigAxes,cntState.Frames(approvedNucleiFrames),...
+            traceHandles{1} = plot(traceFigAxes,traceFigTimeAxis(approvedNucleiFrames),...
                 cntState.MidMedFluo(approvedNucleiFrames), 'k.-');
         else
             set(traceHandles{1},'Visible','off') 
@@ -225,7 +225,7 @@ else
         else
             set(traceHandles{1},'Visible','off') 
         end
-    elseif ~isempty(cntState.Frames(approvedNucleiFrames))
+    elseif ~isempty(traceFigTimeAxis(approvedNucleiFrames))
         set(traceHandles{1},'Visible','on')
         set(traceHandles{1}, 'XData', cntState.Frames(approvedNucleiFrames),...
                 'YData', ones(1,length(cntState.Frames(approvedNucleiFrames))),...

@@ -186,6 +186,9 @@ end
 if isfield(schnitzcells, 'Checked')
     NewSchnitzCells(CurrentNucleus+1).Checked=0;
 end
+if isfield(schnitzcells, 'FirstPass')
+    NewSchnitzCells(CurrentNucleus+1).FirstPass=1;
+end
 if isfield(schnitzcells, 'Flag')
     NewSchnitzCells(CurrentNucleus+1).Flag=0;
 end

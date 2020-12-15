@@ -160,7 +160,7 @@ ncFramesFull = [zeros(1,8), ncFrames, nFrames]; %more useful for some things
 
 try correspondingNCInfo = [FrameInfo.nc]; end
 
-schnitzcells = correctSchnitzCellErrors(schnitzcells, Ellipses);
+schnitzcells = correctSchnitzCellErrors(schnitzcells, Ellipses, Prefix);
 [schnitzcells] = sortNuclei(sortByFrames, sortByLength, schnitzcells);
 %schnitzcells = flexIntegrateSchnitzFluo(Prefix, schnitzcells, FrameInfo, [1,2]);
 %Some flags and initial parameters
@@ -184,7 +184,7 @@ end
 if ~isempty(cntState.schnitzcells)
     checkEllipsesSchnitzMatches = checkSchnitzCellErrors(cntState.schnitzcells, cntState.Ellipses);
     if sum(checkEllipsesSchnitzMatches) > 0
-        cntState.schnitzcells = correctSchnitzCellErrors(cntState.schnitzcells, cntState.Ellipses);
+        cntState.schnitzcells = correctSchnitzCellErrors(cntState.schnitzcells, cntState.Ellipses, Prefix);
         
     end
     saveNuclearChanges(cntState, DataFolder, FilePrefix, DropboxFolder);
@@ -245,7 +245,7 @@ currentNC = inds(end);
 if ~isfield(cntState.schnitzcells, 'Approved')
 
     for i = 1:cntState.numNuclei()
-        cntState.schnitzcells(i).Approved = 0;
+        cntState.schnitzcells(i).Approved = 1;
     end
     if ~isfield(cntState.schnitzcells, 'Flag')
         for i = 1:cntState.numNuclei()
@@ -278,6 +278,16 @@ if ~isfield(cntState.schnitzcells, 'Checked')
         end
     end
 end
+if ~isfield(cntState.schnitzcells, 'FirstPass')
+    for i =1:cntState.numNuclei()
+        cntState.schnitzcells(i).FirstPass = 0;
+    end
+end
+if ~isfield(cntState.schnitzcells, 'FrameApproved')
+    for i =1:cntState.numNuclei()
+        cntState.schnitzcells(i).FrameApproved = logical(ones(1, length(cntState.schnitzcells(i).frames)));
+    end
+end
 
 for i =1:cntState.numNuclei()
     if isempty(cntState.schnitzcells(i).Flag) 
@@ -287,9 +297,14 @@ for i =1:cntState.numNuclei()
         cntState.schnitzcells(i).Checked = 0;
     end
     if isempty(cntState.schnitzcells(i).Approved) 
-        cntState.schnitzcells(i).Approved = 0;
+        cntState.schnitzcells(i).Approved = 1;
+    end
+    if isempty(cntState.schnitzcells(i).FirstPass) 
+        cntState.schnitzcells(i).FirstPass = 0;
     end
 end  
+ 
+
 
 minFullNC = find(ncFramesFull > 0, 1);
 for i=1:cntState.numNuclei()
@@ -308,14 +323,14 @@ cntState.updateCurrentNucleusCellNo();
 [xTrace, yTrace] = cntState.getXYTraces(x, y);
 
 cntState.updateTraceInfo();
-
+% 
 
 blankImage = []; % dummy, to enable calling CTPState for this later  
 
 cntState.processImageMatrices(movieMat);
     
 [cntState.schnitzcells, cntState.CurrentNucleus] =...
-    orderNuclei(cntState.numNuclei, cntState.schnitzcells, cntState.CurrentNucleus);
+    orderNuclei(cntState.numNuclei, cntState.schnitzcells, cntState.CurrentNucleus, cntState.ReorderOrientation);
         %% 
     
 

@@ -12,6 +12,7 @@ function keyInputHandler = NuclearChangeEventHandler(cntState)
             end
             if NucleusJump ~= cntState.CurrentNucleus
                 cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+                cntState.schnitzcells(cntState.CurrentNucleus).FirstPass = 1;
                 
             end
             [cntState.CurrentNucleus, cntState.CurrentFrame, cntState.ManualZFlag] = ...
@@ -22,7 +23,14 @@ function keyInputHandler = NuclearChangeEventHandler(cntState)
         
         elseif cc == 'r'
             [cntState.schnitzcells, cntState.CurrentNucleus] =...
-                orderNuclei(cntState.numNuclei, cntState.schnitzcells, cntState.CurrentNucleus);
+                orderNuclei(cntState.numNuclei, cntState.schnitzcells, cntState.CurrentNucleus, cntState.ReorderOrientation);
+            
+        elseif cc == 'R'
+            if cntState.ReorderOrientation == 1
+                cntState.ReorderOrientation = 0;
+            else
+                cntState.ReorderOrientation = 1;
+            end
         
         elseif cc == 'p'
             % Identify a Nucleus.
@@ -33,7 +41,7 @@ function keyInputHandler = NuclearChangeEventHandler(cntState)
             % Moves to clicked nucleus.
 
             cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
-
+            cntState.schnitzcells(cntState.CurrentNucleus).FirstPass = 1;
             [cntState.CurrentNucleus, cntState.CurrentFrame, cntState.ManualZFlag] =...
                 toNearestNucleus(cntState.schnitzcells, ...
                 cntState.CurrentFrame, cntState.UseHistoneOverlay, cntState);
@@ -41,6 +49,7 @@ function keyInputHandler = NuclearChangeEventHandler(cntState)
             % Moves to clicked nucleus.
 
             cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+            cntState.schnitzcells(cntState.CurrentNucleus).FirstPass = 1;
             [cntState.CurrentNucleus, ~, cntState.ManualZFlag] =...
                 toNearestNucleus(cntState.schnitzcells, ...
                 cntState.CurrentFrame, cntState.UseHistoneOverlay, cntState);
@@ -48,19 +57,23 @@ function keyInputHandler = NuclearChangeEventHandler(cntState)
 
         elseif (cc == 'm') & (cntState.CurrentNucleus < cntState.numNuclei())
             cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+            cntState.schnitzcells(cntState.CurrentNucleus).FirstPass = 1;
             [cntState.CurrentNucleus, cntState.CurrentFrame, cntState.ManualZFlag, cntState.DisplayRange] = ...
                 goNextNucleus(cntState.CurrentNucleus, cntState.HideApprovedFlag, cntState.schnitzcells);
         
         elseif (cc == 'n') & (cntState.CurrentNucleus > 1)
             cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+            cntState.schnitzcells(cntState.CurrentNucleus).FirstPass = 1;
             [cntState.CurrentNucleus, cntState.CurrentFrame, cntState.ManualZFlag, cntState.DisplayRange] = ...
                 goPreviousNucleus(cntState.CurrentNucleus, cntState.HideApprovedFlag, cntState.schnitzcells);
         elseif (cc == 'l')
             cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+            cntState.schnitzcells(cntState.CurrentNucleus).FirstPass = 1;
             [cntState.CurrentNucleus, cntState.CurrentFrame, cntState.ManualZFlag] = ...
                 goEarliestUncheckedNucleus(cntState.CurrentNucleus,cntState.schnitzcells);
         elseif (cc == 'b') 
             cntState.schnitzcells(cntState.CurrentNucleus).Checked = 1;
+            cntState.schnitzcells(cntState.CurrentNucleus).FirstPass = 1;
             [cntState.CurrentNucleus, cntState.CurrentFrame, cntState.ManualZFlag] = ...
                 goNextUncheckedNucleus(cntState.CurrentNucleus,cntState.schnitzcells);
         elseif (cc == 'o') 
