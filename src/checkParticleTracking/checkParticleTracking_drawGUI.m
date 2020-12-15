@@ -5,7 +5,7 @@ function [OverlayFig, overlayAxes, snippetFigAxes, rawDataAxes,...
     = checkParticleTracking_drawGUI(UseHistoneOverlay,...
     fish, plot3DGauss, ExperimentType, multiView, xSize, ySize)
 %% Description
-% This script is for 
+% This script is for W
 
 OverlayFig = figure;
 traceFig = figure;

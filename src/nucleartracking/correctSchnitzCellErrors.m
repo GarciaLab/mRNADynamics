@@ -12,7 +12,7 @@ for i=1:length(schnitzcells)
             y0 = round(Ellipses{f}(aCell, 2));
             
             if (x0 ~= schnitzcells(i).cenx(j)) | (y0 ~= schnitzcells(i).ceny(j))
-                Distances=sqrt((Ellipses{f}(:,1)-schnitzcells(i).cenx(j)).^2+(Ellipses{f}(:,2)-schnitzcells(i).ceny(j)).^2); 
+                Distances=sqrt((Ellipses{f}(:,1)-double(schnitzcells(i).cenx(j))).^2+(Ellipses{f}(:,2)-double(schnitzcells(i).ceny(j))).^2); 
                 schnitzcells(i).cellno(j) = find(Distances == min(Distances), 1);
                 cellno_found = true;
 

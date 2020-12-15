@@ -245,7 +245,7 @@ currentNC = inds(end);
 if ~isfield(cntState.schnitzcells, 'Approved')
 
     for i = 1:cntState.numNuclei()
-        cntState.schnitzcells(i).Approved = 0;
+        cntState.schnitzcells(i).Approved = 1;
     end
     if ~isfield(cntState.schnitzcells, 'Flag')
         for i = 1:cntState.numNuclei()
@@ -283,6 +283,11 @@ if ~isfield(cntState.schnitzcells, 'FirstPass')
         cntState.schnitzcells(i).FirstPass = 0;
     end
 end
+if ~isfield(cntState.schnitzcells, 'FrameApproved')
+    for i =1:cntState.numNuclei()
+        cntState.schnitzcells(i).FrameApproved = logical(ones(1, length(cntState.schnitzcells(i).frames)));
+    end
+end
 
 for i =1:cntState.numNuclei()
     if isempty(cntState.schnitzcells(i).Flag) 
@@ -292,7 +297,7 @@ for i =1:cntState.numNuclei()
         cntState.schnitzcells(i).Checked = 0;
     end
     if isempty(cntState.schnitzcells(i).Approved) 
-        cntState.schnitzcells(i).Approved = 0;
+        cntState.schnitzcells(i).Approved = 1;
     end
     if isempty(cntState.schnitzcells(i).FirstPass) 
         cntState.schnitzcells(i).FirstPass = 0;
@@ -318,7 +323,7 @@ cntState.updateCurrentNucleusCellNo();
 [xTrace, yTrace] = cntState.getXYTraces(x, y);
 
 cntState.updateTraceInfo();
-
+% 
 
 blankImage = []; % dummy, to enable calling CTPState for this later  
 
