@@ -1,17 +1,16 @@
 function [CurrentNucleus, schnitzcells] =...
-    combineNuclearTraces(CurrentFrame, schnitzcells, Ellipses, CurrentNucleus, FrameInfo, ncFrames)
+    backwardsCombineNuclearTraces(CurrentFrame, schnitzcells, Ellipses, CurrentNucleus, FrameInfo, ncFrames)
 %COMBINETRACES Summary of this function goes here
 %   Detailed explanation goes here
 
-PreviousNucleus=0;
+
 debug_mode = false;
-exitConnectFlag = 0;
 
 nucleiExistInFrame = size(Ellipses{CurrentFrame}, 1);
-currentNucleusExistsInPreviousFrame =...
-    sum(schnitzcells(CurrentNucleus).frames<CurrentFrame);
+currentNucleusExistsInFutureFrame =...
+    sum(schnitzcells(CurrentNucleus).frames>CurrentFrame);
 
-if currentNucleusExistsInPreviousFrame && nucleiExistInFrame
+if currentNucleusExistsInFutureFrame && nucleiExistInFrame
     
     [ConnectPositionx,ConnectPositiony]=ginput(1);
     ConnectPosition = [ConnectPositionx,ConnectPositiony];
@@ -36,19 +35,20 @@ if currentNucleusExistsInPreviousFrame && nucleiExistInFrame
             %exist in a previous frame we will have to disconnect it.
             
             
-            clickedNucleusExistsInAnyPreviousFrame = sum(schnitzcells(NucleusOutput).frames<CurrentFrame);
+            clickedNucleusExistsInAnyFutureFrame = sum(schnitzcells(NucleusOutput).frames>CurrentFrame);
             
             
-            if clickedNucleusExistsInAnyPreviousFrame
+            if clickedNucleusExistsInAnyFutureFrame
                 schnitzcells = SeparateNuclearTraces(NucleusOutput, ...
-                    CurrentFrame, schnitzcells, FrameInfo, ncFrames);
+                    CurrentFrame+1, schnitzcells, FrameInfo, ncFrames);
                 schnitzcells(NucleusOutput).Approved = 1;
                 schnitzcells(NucleusOutput).Checked = 0;
                 schnitzcells(NucleusOutput).FirstPass = 1;
+                schnitzcells(NucleusOutput+1).Checked = 0;
+                schnitzcells(NucleusOutput+1).FirstPass = 1;
                 if NucleusOutput <= CurrentNucleus
                     CurrentNucleus = CurrentNucleus+1;
                 end
-                NucleusOutput = NucleusOutput + 1;
                 if debug_mode
                     disp('Clicked Nucleus Exists in a previous frame. Separating clicked nucleus previous frames from current frame');
                     disp(['New Current Nucleus Index: ', num2str(CurrentNucleus), ', New Clicked Nucleus Index: ',num2str(NucleusOutput)])
@@ -57,17 +57,21 @@ if currentNucleusExistsInPreviousFrame && nucleiExistInFrame
                     fprintf(fmt, clicked_frames)
                 end
             end
-            currentNucleusExistsInAnyFollowingFrame = sum(schnitzcells(CurrentNucleus).frames>=CurrentFrame);
-            if currentNucleusExistsInAnyFollowingFrame
+            currentNucleusExistsInAnyPreviousFrame = sum(schnitzcells(CurrentNucleus).frames<=CurrentFrame);
+            if currentNucleusExistsInAnyPreviousFrame
                 approved_status = schnitzcells(CurrentNucleus).Approved;
                 schnitzcells = SeparateNuclearTraces(CurrentNucleus, ...
-                    CurrentFrame, schnitzcells, FrameInfo, ncFrames);
+                    CurrentFrame+1, schnitzcells, FrameInfo, ncFrames);
+                schnitzcells(CurrentNucleus).Approved = 1;
+                schnitzcells(CurrentNucleus).FirstPass = 1;
+                schnitzcells(CurrentNucleus).Checked = 0;
                 schnitzcells(CurrentNucleus+1).Approved = approved_status;
                 schnitzcells(CurrentNucleus+1).FirstPass = 1;
-                schnitzcells(NucleusOutput).Checked = 0;
+                schnitzcells(CurrentNucleus+1).Checked = 0;
                 if NucleusOutput >= CurrentNucleus
                     NucleusOutput = NucleusOutput+1;
                 end
+                CurrentNucleus = CurrentNucleus + 1;
                 if debug_mode
                     disp('Current Nucleus Exists in current or future frame. Separating current nucleus current frames from previous frames');
                     disp(['New Current Nucleus Index: ', num2str(CurrentNucleus), ', New Clicked Nucleus Index: ',num2str(NucleusOutput)])
@@ -80,23 +84,25 @@ if currentNucleusExistsInPreviousFrame && nucleiExistInFrame
             end
             
             
-            schnitzcells=JoinNuclearTraces(CurrentNucleus,NucleusOutput,schnitzcells, FrameInfo, ncFrames);
+            schnitzcells=JoinNuclearTraces(NucleusOutput,CurrentNucleus, schnitzcells, FrameInfo, ncFrames);
             %Deals with the indexing changing because of the removal of
             %the old particle.
             
-            if NucleusOutput<CurrentNucleus
-                CurrentNucleus=CurrentNucleus-1;
+            if CurrentNucleus < NucleusOutput
+                NucleusOutput=NucleusOutput-1;
             end
-            schnitzcells(CurrentNucleus).FirstPass = 1;
+            
             if debug_mode
-                disp(['Current Nucleus: ', num2str(CurrentNucleus), ', Clicked Nucleus: ',num2str(NucleusOutput)])
-                curr_frames = schnitzcells(CurrentNucleus).frames;
+                disp(['Current Nucleus: ', num2str(NucleusOutput)])
+                curr_frames = schnitzcells(NucleusOutput).frames;
                 fmt = ['Current Nucleus Frames: [', repmat('%g, ', 1, numel(curr_frames)-1), '%g]\n'];
                 fprintf(fmt, curr_frames)
             end
+            CurrentNucleus = NucleusOutput;
+            schnitzcells(CurrentNucleus).FirstPass = 1;
+            
         end
     end
-    
 else
     
     disp('Cannnot connect to two schnitz cells!')

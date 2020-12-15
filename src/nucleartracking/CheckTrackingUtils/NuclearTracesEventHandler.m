@@ -7,6 +7,9 @@ function keyInputHandler = NuclearTracesEventHandler(cntState, FrameInfo, ncFram
         if cc == 'c'
             [cntState.CurrentNucleus, cntState.schnitzcells] = combineNuclearTraces(cntState.CurrentFrame,...
                 cntState.schnitzcells, cntState.Ellipses, cntState.CurrentNucleus, FrameInfo, ncFrames);
+        elseif cc == 'v'
+            [cntState.CurrentNucleus, cntState.schnitzcells] = backwardsCombineNuclearTraces(cntState.CurrentFrame,...
+                cntState.schnitzcells, cntState.Ellipses, cntState.CurrentNucleus, FrameInfo, ncFrames);
             
         elseif cc == 'd'
             % Separate traces forward at the current frame.
