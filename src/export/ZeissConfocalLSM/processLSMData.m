@@ -3,7 +3,7 @@
 
 function FrameInfo = processLSMData(Folder, RawDataFiles, FrameInfo,...
     Channels, ProjectionType, Prefix, OutputFolder,nuclearGUI,...
-    skipExtraction)
+    skipExtraction,skipNuclearProjection)
     
     disp('Exporting movie file...');
     
@@ -32,7 +32,8 @@ function FrameInfo = processLSMData(Folder, RawDataFiles, FrameInfo,...
       
       % this function exports tif z stacks
       exportTifStacks(AllLSMImages, 'LSM', NChannels, NFrames, NSlices, Prefix, ...
-          moviePrecision, hisPrecision, nuclearGUI, ProjectionType, Channels, ReferenceHist)           
+          moviePrecision, hisPrecision, nuclearGUI, ProjectionType, Channels, ReferenceHist, ...
+          skipNuclearProjection)           
       
       % Look for flat field images
       [FFPaths, FFToUse, LSMFF] = findFlatFieldInformation(Folder);
