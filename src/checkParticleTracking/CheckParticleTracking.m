@@ -190,7 +190,9 @@ end
 if ~iscell(Spots)
     Spots = {Spots};
 end
-SpotFilter = {SpotFilter};
+if ~iscell(SpotFilter)
+    SpotFilter = {SpotFilter};
+end
 
 if UseCompiledParticles
     if ~iscell(CompiledParticles)
