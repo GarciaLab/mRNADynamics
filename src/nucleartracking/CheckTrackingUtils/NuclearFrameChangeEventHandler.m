@@ -20,6 +20,11 @@ function keyInputHandler = NuclearFrameChangeEventHandler(cntState)
             cntState.PreviousFrame = cntState.CurrentFrame;
             [cntState.CurrentFrame, cntState.ManualZFlag] = changeFrame(cntState.CurrentFrame - 5, numValidFrames);
  
+        elseif (cc == '/') %Move to last frame of schnitz
+            cntState.PreviousFrame = cntState.CurrentFrame;
+            cntState.CurrentFrame = cntState.Frames(end);
+            
+            
         elseif cc == 'j'
             cntState.PreviousFrame = cntState.CurrentFrame;
             try

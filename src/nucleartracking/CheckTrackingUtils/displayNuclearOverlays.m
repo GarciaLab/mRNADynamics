@@ -38,64 +38,63 @@ end
 hold(overlayAxes, 'on')
 
 EllipseHandle = [];
-
 EllipseHandleBlue = [];
 EllipseHandleRed = [];
+EllipseHandleMagenta = [];
+EllipseHandleOrange = [];
 EllipseHandleGreen = [];
+EllipseHandleWhite= [];
 
+schnitzCellNo_ApprovedUnchecked=[];
+schnitzCellNo_ApprovedUncheckedPassed=[];
+schnitzCellApproved=[];
+schnitzCellCheckedRejected=[];
+schnitzCellUncheckedRejected=[];
+schnitzCellUncheckedRejectedUnflagged = [];
 
-schnitzCellNo_Unchecked=[];
 
 for i=1:cntState.numNuclei()
-    if ((cntState.schnitzcells(i).Checked ==0) & ( cntState.schnitzcells(i).Approved == 1))
+    if ~isempty(cntState.CurrentNucleusCellNo) & (i == cntState.CurrentNucleus)
+        EllipseHandleGreen = ellipseCellCNT(cntState, cntState.CurrentNucleusCellNo, 'g', 10, overlayAxes);
+    elseif (cntState.schnitzcells(i).Checked ==0) & (cntState.schnitzcells(i).Approved ==1) & (cntState.schnitzcells(i).FirstPass == 0)
         frame_idx = find(cntState.schnitzcells(i).frames == cntState.CurrentFrame, 1);
         if ~isempty(frame_idx)
-            schnitzCellNo_Unchecked= [schnitzCellNo_Unchecked,cntState.schnitzcells(i).cellno(frame_idx)];
+            schnitzCellNo_ApprovedUnchecked= [schnitzCellNo_ApprovedUnchecked,cntState.schnitzcells(i).cellno(frame_idx)];
         end
-    end
-end
-
-EllipseHandle = notEllipseCellCNT(cntState, schnitzCellNo_Unchecked, 'y', 10, overlayAxes);
-
-% Show the ones that have been approved
-schnitzCellApproved=[];
-
-for i=1:cntState.numNuclei()
-    if (cntState.schnitzcells(i).Approved ==1) & (cntState.schnitzcells(i).Checked ==1) 
+    elseif (cntState.schnitzcells(i).Checked ==0) & (cntState.schnitzcells(i).Approved ==1) & (cntState.schnitzcells(i).FirstPass == 1)
+        frame_idx = find(cntState.schnitzcells(i).frames == cntState.CurrentFrame, 1);
+        if ~isempty(frame_idx)
+            schnitzCellNo_ApprovedUncheckedPassed= [schnitzCellNo_ApprovedUncheckedPassed,cntState.schnitzcells(i).cellno(frame_idx)];
+        end
+    elseif (cntState.schnitzcells(i).Approved ==1) & (cntState.schnitzcells(i).Checked ==1) 
         frame_idx = find(cntState.schnitzcells(i).frames == cntState.CurrentFrame, 1);
         if ~isempty(frame_idx)
             schnitzCellApproved = [schnitzCellApproved,cntState.schnitzcells(i).cellno(frame_idx)];
         end
-    end
-end
-
-EllipseHandleBlue = notEllipseCellCNT(cntState, schnitzCellApproved, 'b', 10, overlayAxes);
-
-% Show the ones that have been rejected
-schnitzCellRejected=[];
-
-for i=1:cntState.numNuclei()
-    if (cntState.schnitzcells(i).Approved ~= 1)  
+    elseif (cntState.schnitzcells(i).Approved ~=1) & (cntState.schnitzcells(i).Checked ==1) & (cntState.schnitzcells(i).Flag ~= 0)
         frame_idx = find(cntState.schnitzcells(i).frames == cntState.CurrentFrame, 1);
         if ~isempty(frame_idx)
-            schnitzCellRejected = [schnitzCellRejected,cntState.schnitzcells(i).cellno(frame_idx)];
+            schnitzCellCheckedRejected = [schnitzCellCheckedRejected,cntState.schnitzcells(i).cellno(frame_idx)];
         end
+    elseif (cntState.schnitzcells(i).Approved ~=1) & (cntState.schnitzcells(i).Checked ==1)
+        frame_idx = find(cntState.schnitzcells(i).frames == cntState.CurrentFrame, 1);
+        if ~isempty(frame_idx)
+            schnitzCellUncheckedRejectedUnflagged = [schnitzCellUncheckedRejectedUnflagged,cntState.schnitzcells(i).cellno(frame_idx)];
+        end    
+    elseif (cntState.schnitzcells(i).Approved ~=1) & (cntState.schnitzcells(i).Checked ==0)
+        frame_idx = find(cntState.schnitzcells(i).frames == cntState.CurrentFrame, 1);
+        if ~isempty(frame_idx)
+            schnitzCellUncheckedRejected = [schnitzCellUncheckedRejected,cntState.schnitzcells(i).cellno(frame_idx)];
+        end    
     end
 end
 
-EllipseHandleRed = notEllipseCellCNT(cntState, schnitzCellRejected, 'r', 10, overlayAxes);
-
-% Show the corresponding nucleus
-if ~isempty(cntState.CurrentNucleus) &&...
-    cntState.CurrentNucleus > 0
-    if ~isempty(cntState.CurrentNucleusCellNo)
-        EllipseHandleGreen = ellipseCellCNT(cntState, cntState.CurrentNucleusCellNo, 'g', 10, overlayAxes);
-    end
-end
-
-
-
-
+EllipseHandle = notEllipseCellCNT(cntState, schnitzCellNo_ApprovedUnchecked, 'y', 10, overlayAxes);
+EllipseHandleMagenta = notEllipseCellCNT(cntState, schnitzCellNo_ApprovedUncheckedPassed, 'm', 10, overlayAxes);
+EllipseHandleBlue = notEllipseCellCNT(cntState, schnitzCellApproved, 'c', 10, overlayAxes);
+EllipseHandleRed = notEllipseCellCNT(cntState, schnitzCellCheckedRejected, 'r', 10, overlayAxes);
+EllipseHandleOrange = notEllipseCellCNT(cntState, schnitzCellUncheckedRejected, [1, 0.5, 0], 10, overlayAxes);
+EllipseHandleWhite = notEllipseCellCNT(cntState, schnitzCellUncheckedRejectedUnflagged, [1, 0.5, 0], 10, overlayAxes);
 
 
 

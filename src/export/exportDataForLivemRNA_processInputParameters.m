@@ -59,7 +59,7 @@ while k<=length(varargin)
     elseif strcmpi(varargin{k}, 'exportNuclearProjections')
         exportNuclearProjections= varargin{k+1};
     elseif strcmpi(varargin{k}, 'skipNuclearProjection')
-        skipNuclearProjection = true;
+        skipNuclearProjection = varargin{k+1};
     elseif strcmpi(varargin{k}, 'exportMovieFiles')
         exportMovieFiles = varargin{k+1};
     else

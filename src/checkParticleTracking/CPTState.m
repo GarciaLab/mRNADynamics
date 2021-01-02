@@ -58,11 +58,13 @@ classdef CPTState < handle
         plot3DGauss
         
         projectionMode
+        
+        UseCompiledParticles
     end
     
     methods
         function this = CPTState(liveExperiment, Spots, Particles, SpotFilter, schnitzcells, Ellipses,...
-                FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode)
+                FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode, UseCompiledParticles)
             
             this.liveExperiment = liveExperiment;
             this.Spots = Spots;
@@ -118,6 +120,12 @@ classdef CPTState < handle
             this.plot3DGauss = plot3DGauss;
             
             this.projectionMode = projectionMode;
+            
+            if exist('UseCompiledParticles', 'var')
+                this.UseCompiledParticles = UseCompiledParticles;
+            else
+                this.UseCompiledParticles = false;
+            end
         end
         
         function numParticles = numParticles(this)

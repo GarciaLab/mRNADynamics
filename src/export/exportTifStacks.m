@@ -1,6 +1,6 @@
 function exportTifStacks(AllImages, imagingModality, NChannels, NFrames, NSlices,...
   Prefix, moviePrecision, hisPrecision,...
-  nuclearGUI, ProjectionType, Channels, ReferenceHist, skipNuclearProjection)
+  nuclearGUI, ProjectionType, Channels, ReferenceHist, skipNuclearProjection,zslicesPadding)
 
   
   NSeries = length(NFrames);
@@ -21,8 +21,12 @@ function exportTifStacks(AllImages, imagingModality, NChannels, NFrames, NSlices
   BlankImage = zeros(ySize, xSize, moviePrecision);
 
   hisMat = zeros(ySize, xSize, sum(NFrames), hisPrecision);
-        
-  topZSlice = min(NSlices); 
+  
+  if zslicesPadding
+      topZSlice = max(NSlices);
+  else
+      topZSlice = min(NSlices);
+  end
   
   % loop through each series
   for seriesIndex = 1:NSeries      
