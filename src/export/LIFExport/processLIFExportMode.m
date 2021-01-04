@@ -104,12 +104,9 @@ if ~skipExtraction
     end
 
     % this function exports tif z stacks
-    
-    % 1 was added as an input for 'zslicesPadding' in exportTifStacks by
-    % Clay
     exportTifStacks(LIFImages, 'LIF', NChannels, NFrames, NSlices, Prefix, ...
         moviePrecision, hisPrecision, nuclearGUI,...
-        ProjectionType, Channels, ReferenceHist, skipNuclearProjection,1)  
+        ProjectionType, Channels, ReferenceHist, skipNuclearProjection)  
 
     if nuclearGUI
 

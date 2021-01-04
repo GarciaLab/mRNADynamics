@@ -179,7 +179,7 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFr
     if strcmpi(ExperimentType, 'inputoutput')
         yyaxis(traceFigAxes,'right')
         %now we'll plot the input protein intensity on the right-hand axis.
-        if ~isfield(cptState.schnitzcells, 'Fluo')
+        if ~isfield(cptState.schnitzcells, 'Fluo') || ~isempty(cptState.getCurrentParticle().Nucleus == 0)
                 dummy = cell(length(cptState.schnitzcells), 1);
                 [cptState.schnitzcells.Fluo] = dummy{:};
         else
