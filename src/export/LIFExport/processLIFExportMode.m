@@ -1,7 +1,7 @@
 % Added PreferredFileName so we can automate testing and bypass the user prompt when there are many files available.
 function FrameInfo = processLIFExportMode(rawDataFolder, ProjectionType, Channels,...
     Prefix, PreProcFolder, PreferredFileNameForTest,...
-    nuclearGUI, skipExtraction, skipNuclearProjection)
+    nuclearGUI, skipExtraction, skipNuclearProjection, zslicesPadding)
 
 disp('Exporting movie file...');
 
@@ -106,7 +106,7 @@ if ~skipExtraction
     % this function exports tif z stacks
     exportTifStacks(LIFImages, 'LIF', NChannels, NFrames, NSlices, Prefix, ...
         moviePrecision, hisPrecision, nuclearGUI,...
-        ProjectionType, Channels, ReferenceHist, skipNuclearProjection)  
+        ProjectionType, Channels, ReferenceHist, skipNuclearProjection, zslicesPadding)  
 
     if nuclearGUI
 
