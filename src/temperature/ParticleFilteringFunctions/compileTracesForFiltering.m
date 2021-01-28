@@ -189,7 +189,7 @@ for ChN=1:NChannels
                     
                 end
                 
-                threeDFlag = false; %setting this to false until gaussian fits are fixed
+                %threeDFlag = false; %setting this to false until gaussian fits are fixed
                 
                 if threeDFlag
                     CompiledParticles{ChN}(k).xPosGauss3D = gx_vec;
@@ -243,6 +243,7 @@ for ChN=1:NChannels
                     
                     assert(CompiledParticles{ChN}(k).schnitz <= length(schnitzcells));
                     
+                    CompiledParticles{ChN}(k).schnitzcell=schnitzcells(Particles{ChN}(i).Nucleus);
                     %Save lineage information in terms of particles
                     if isfield(schnitzcells, 'P')
                         

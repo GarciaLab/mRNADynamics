@@ -104,7 +104,8 @@ liveExperiment = LiveExperiment(Prefix);
 %Load all the information
 load([DropboxFolder,filesep,Prefix,'\Ellipses.mat'], 'Ellipses')
 load([DropboxFolder,filesep,Prefix,'\FrameInfo.mat'], 'FrameInfo')
-load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'], 'schnitzcells')
+DetermineNucleiEndFrames(Prefix);
+schnitzcells = CalculateNuclearMovement(Prefix);
 
 % start - Added by GM 9/25/20
 if exist([DropboxFolder,filesep,Prefix,'\GridDivision.mat'], 'file')
@@ -259,6 +260,7 @@ schnitzcells = filterSchnitz(schnitzcells, [ liveExperiment.yDim, liveExperiment
 [schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses);
 
 
+
 %% 
 
 %Now get the nuclear information for those that were approved
@@ -325,6 +327,8 @@ for i=1:length(schnitzcells)
                 CompiledNuclei(k).anaphaseFrame=NaN;
                 CompiledNuclei(k).inferredAnaphaseFrame=false;
             end
+            CompiledNuclei(k).containsLastFrameOfCycle = schnitzcells(i).containsLastFrameOfCycle;
+            CompiledNuclei(k).VelocityInfo = schnitzcells(i).VelocityInfo;
             for j=1:length(radii)
                 FluoLabel = FluoLabels{j};
                 for l=1:length(methods)

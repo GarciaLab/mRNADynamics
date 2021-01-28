@@ -111,7 +111,7 @@ savedVariables = {};
 
 
 %%
-
+AddNuclearPosition(Prefix);
 schnitzcells = getSchnitzcells(liveExperiment);
 Spots = getSpots(liveExperiment);
 Particles = getParticles(liveExperiment);
@@ -413,7 +413,7 @@ end
 CompiledParticlesToken = now;
 save([DropboxFolder,filesep,Prefix,filesep,'CompiledParticlesToken.mat'],'CompiledParticlesToken', '-v6')
 
-disp('CompiledParticles.mat saved.');
+disp('CompiledParticles.mat saved at end of Filter and Compile Particles');
 
 end
 

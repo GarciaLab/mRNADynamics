@@ -4,11 +4,14 @@ function [NCDivisionInfo,DivisionStdErrorInfo, TemperatureInfo, FitParams, Activ
 % Parse inputs
 
 UseSingleNuclei = false;
+UseSchnitzCells = false;
 x = 1;
 
 while x <= length(varargin)
     if strcmp(lower(varargin{x}), 'usesinglenuclei')
         UseSingleNuclei = true;
+    if strcmp(lower(varargin{x}), 'useschnitzcells')
+        UseSchnitzCells = true;
     end
     x = x+1;
 end
@@ -19,7 +22,7 @@ R = 8.314*10^(-3); % kJ * K^(-1)*mol^(-1)
     DetermineLocalFolders;
 
 % Calculate Division cycle times
-if ~UseSingleNuclei
+if ~UseSingleNuclei & ~UseSchnitzCells
     numSets = length(this.ProcessedExperiments);
     
     APResolution = this.Experiments{this.ProcessedExperiments(1)}.APResolution;
@@ -70,7 +73,7 @@ if ~UseSingleNuclei
         
     end
     
-else
+elseif ~UseSchnitzCells
     EmbryosWithNuclearTrackingChecked = [];
     for i = this.ProcessedExperiments
         if this.ExperimentStatuses{i}.hasCheckedNuclearTracking
@@ -134,6 +137,8 @@ else
         
         
     end
+else
+    error('This functionality has not yet been written (GM 12/28/20).')
     
 end
 for NC=10:13

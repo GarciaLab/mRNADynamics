@@ -13,9 +13,7 @@ if ~exist('Particles', 'var')
     Particles = getParticles(liveExperiment);
 end
 if ~exist('CompiledParticles', 'var')
-    try
-        CompiledParticles = getCompiledParticles(liveExperiment);
-    end
+    load([liveExperiment.resultsFolder, 'CompiledParticles.mat'], 'CompiledParticles')
 end
 
 [schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses, Prefix);
@@ -45,6 +43,9 @@ for ChN=liveExperiment.spotChannels
         for i = 1:length(CompiledParticles{ChN})
             
             if isempty(CompiledParticles{ChN}(i).Nucleus)
+                if isfield(CompiledParticles, 'schnitzcell') 
+                    CompiledParticles{ChN}(i).schnitzcell = {};
+                end
                 continue
             end
             ClosestSchnitzCellsInFrames = zeros(1, length(CompiledParticles{ChN}(i).Frame));
@@ -60,6 +61,63 @@ for ChN=liveExperiment.spotChannels
             SchnitzCellIndexForParticle = mode(ClosestSchnitzCellsInFrames);
             if ~isempty(SchnitzCellIndexForParticle)
                 CompiledParticles{ChN}(i).Nucleus = SchnitzCellIndexForParticle;
+                if isfield(CompiledParticles, 'schnitzcell') 
+                    CompiledParticles{ChN}(i).schnitzcell = schnitzcells(SchnitzCellIndexForParticle);
+                end
+            else
+                if isfield(CompiledParticles, 'schnitzcell') 
+                    CompiledParticles{ChN}(i).schnitzcell = {};
+                end
+            end
+        end
+        CompiledParticleSchnitzMap = [CompiledParticles{ChN}(:).Nucleus];
+        if length(CompiledParticleSchnitzMap) < length(CompiledParticles{ChN})
+            cp_indices = 1:length(CompiledParticles{ChN});
+            for i = 1:length(cp_indices)
+                cp_idx = cp_indices(i);
+                if isempty(CompiledParticles{ChN}(cp_idx).Nucleus)
+                    CompiledParticles{ChN}(cp_idx) = [];
+                    cp_indices = cp_indice -1;
+                end
+            end
+        end
+            
+        CompiledParticleSchnitzMap = [CompiledParticles{ChN}(:).Nucleus]; 
+        if length(CompiledParticleSchnitzMap) > length(unique(CompiledParticleSchnitzMap))
+            DoubledSchnitzes = [];
+            for sc_idx = unique(CompiledParticleSchnitzMap)
+                if length(find(CompiledParticleSchnitzMap == sc_idx)) > 1
+                    DoubledSchnitzes = [DoubledSchnitzes, sc_idx];
+                end
+            end
+            CPsToRemove = [];
+            for sc_idx = DoubledSchnitzes
+                CPlist = find(CompiledParticleSchnitzMap == sc_idx);
+                ApprovedDoubledSchnitz = zeros(1,length(CPlist)); 
+                NumFrames = zeros(1,length(CPlist)); 
+                for j = 1:length(CPlist)
+                    cp_idx = CPlist(j);
+                    ApprovedDoubledSchnitz(j) = CompiledParticles{ChN}(cp_idx).Approved;
+                    NumFrames(j) = length(CompiledParticles{ChN}(cp_idx).Frame);
+                end
+                if sum(ApprovedDoubledSchnitz > 0) == 1
+                    for j = 1:length(CPlist)
+                        if ApprovedDoubledSchnitz(j) < 1
+                            CPsToRemove = [CPsToRemove, CPlist(j)];
+                        end
+                    end
+                else
+                    for j = 1:length(CPlist)
+                        if NumFrames(j) < max(NumFrames)
+                            CPsToRemove = [CPsToRemove, CPlist(j)];
+                        end
+                    end
+                end
+            end
+            for i = 1:length(CPsToRemove);
+                cp_idx = CPsToRemove(i);
+                CompiledParticles{ChN}(cp_idx) = [];
+                CPsToRemove = CPsToRemove-1;
             end
         end
     end

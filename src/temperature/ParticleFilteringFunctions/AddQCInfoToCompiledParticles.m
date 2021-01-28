@@ -21,6 +21,8 @@ schnitzcells = integrateHistoneFluo(Prefix, schnitzcells, FrameInfo);
 
 
 [CompiledParticles] = GetFluoZInfo(liveExperiment, CompiledParticles);
+UseZInfo = true;
+UsePositionInfo = false;
 
 for ChN=1:length(liveExperiment.spotChannels)
     for i =1:length(CompiledParticles{ChN})
@@ -96,77 +98,78 @@ for ChN=1:length(liveExperiment.spotChannels)
         
         % Make Histone and spot Fluorescence traces and z positions
         NFrames = length(p.FlaggingInfo.TrueFrames);
-        MaxSpotFluoLevel = NaN(1, NFrames);
-        MaxSpotZPos= NaN(1, NFrames);
-        SpotZTraceApproved = zeros(1, NFrames);
-        DetectedSpot = zeros(1, NFrames);
-        MaxHisFluoLevel = NaN(1, NFrames);
-        MaxHisZPos= NaN(1, NFrames);
-        HisTraceApproved = zeros(1, NFrames);
-        DetectedNucleus = zeros(1, NFrames);
-        for j = 1:length(sc.frames)
-            schnitz_index = find(p.FlaggingInfo.TrueFrames == sc.frames(j), 1);
-            DetectedNucleus(schnitz_index) = 1;
-            HisVector = sc.HistoneFluo(j,2:zDim+1);
-            MaxF = max(HisVector);
-            if ~isempty(MaxF)
-                MaxHisFluoLevel(schnitz_index) = MaxF;
-                MaxZ = find(HisVector(his_zpadding:zDim-his_zpadding) == MaxF, 1);
-                if ~isempty(MaxZ)
-                    MaxHisZPos(schnitz_index) = MaxZ+his_zpadding;
-                    HisTraceApproved(schnitz_index) = 1;
-                else
-                    MaxZ = find(HisVector == MaxF, 1);
+        if UseZInfo
+            MaxSpotFluoLevel = NaN(1, NFrames);
+            MaxSpotZPos= NaN(1, NFrames);
+            SpotZTraceApproved = zeros(1, NFrames);
+            DetectedSpot = zeros(1, NFrames);
+            MaxHisFluoLevel = NaN(1, NFrames);
+            MaxHisZPos= NaN(1, NFrames);
+            HisTraceApproved = zeros(1, NFrames);
+            DetectedNucleus = zeros(1, NFrames);
+            for j = 1:length(sc.frames)
+                schnitz_index = find(p.FlaggingInfo.TrueFrames == sc.frames(j), 1);
+                DetectedNucleus(schnitz_index) = 1;
+                HisVector = sc.HistoneFluo(j,2:zDim+1);
+                MaxF = max(HisVector);
+                if ~isempty(MaxF)
+                    MaxHisFluoLevel(schnitz_index) = MaxF;
+                    MaxZ = find(HisVector(his_zpadding:zDim-his_zpadding) == MaxF, 1);
                     if ~isempty(MaxZ)
-                        MaxHisZPos(schnitz_index) = MaxZ;
-                        HisTraceApproved(schnitz_index) = -1;
+                        MaxHisZPos(schnitz_index) = MaxZ+his_zpadding;
+                        HisTraceApproved(schnitz_index) = 1;
+                    else
+                        MaxZ = find(HisVector == MaxF, 1);
+                        if ~isempty(MaxZ)
+                            MaxHisZPos(schnitz_index) = MaxZ;
+                            HisTraceApproved(schnitz_index) = -1;
+                        end
                     end
+
                 end
-                
+
             end
-            
-        end
-        p.FlaggingInfo.MaxHisFluoLevel = MaxHisFluoLevel;
-        p.FlaggingInfo.MaxHisZPos = MaxHisZPos;
-        p.FlaggingInfo.HisTraceApproved = HisTraceApproved;
-        
-        for j = 1:length(p.Frame)
-            particle_index = find(p.FlaggingInfo.TrueFrames == p.Frame(j), 1);
-            if isempty(find(sc.frames == p.Frame(j), 1))
-                continue
-            elseif p.FrameApproved(j) == 0
-                continue
-            end
-            DetectedSpot(particle_index) = 1;
-            SpotZSliceVector = p.FluoZInfo(j,:);
-            MaxF = max(SpotZSliceVector);
-            if ~isempty(MaxF)
-                MaxSpotFluoLevel(particle_index) = MaxF;
-                MaxZ = find(SpotZSliceVector(spot_zpadding:zDim-spot_zpadding) == MaxF, 1);
-                if ~isempty(MaxZ)
-                    MaxSpotZPos(particle_index) = MaxZ+spot_zpadding;
-                    SpotZTraceApproved(particle_index) = 1;
-                else
-                    MaxZ = find(SpotZSliceVector == MaxF, 1);
+            p.FlaggingInfo.MaxHisFluoLevel = MaxHisFluoLevel;
+            p.FlaggingInfo.MaxHisZPos = MaxHisZPos;
+            p.FlaggingInfo.HisTraceApproved = HisTraceApproved;
+
+            for j = 1:length(p.Frame)
+                particle_index = find(p.FlaggingInfo.TrueFrames == p.Frame(j), 1);
+                if isempty(find(sc.frames == p.Frame(j), 1))
+                    continue
+                elseif p.FrameApproved(j) == 0
+                    continue
+                end
+                DetectedSpot(particle_index) = 1;
+                SpotZSliceVector = p.FluoZInfo(j,:);
+                MaxF = max(SpotZSliceVector);
+                if ~isempty(MaxF)
+                    MaxSpotFluoLevel(particle_index) = MaxF;
+                    MaxZ = find(SpotZSliceVector(spot_zpadding:zDim-spot_zpadding) == MaxF, 1);
                     if ~isempty(MaxZ)
-                        MaxSpotZPos(particle_index) = MaxZ;
-                        SpotZTraceApproved(particle_index) = -1;
+                        MaxSpotZPos(particle_index) = MaxZ+spot_zpadding;
+                        SpotZTraceApproved(particle_index) = 1;
+                    else
+                        MaxZ = find(SpotZSliceVector == MaxF, 1);
+                        if ~isempty(MaxZ)
+                            MaxSpotZPos(particle_index) = MaxZ;
+                            SpotZTraceApproved(particle_index) = -1;
+                        end
                     end
+
                 end
-                
+
             end
-            
+            p.FlaggingInfo.MaxSpotFluoLevel = MaxSpotFluoLevel;
+            p.FlaggingInfo.MaxSpotZPos = MaxSpotZPos;
+            p.FlaggingInfo.SpotZTraceApproved = SpotZTraceApproved;
+
+            p.FlaggingInfo.DetectedNucleus = DetectedNucleus;
+            p.FlaggingInfo.DetectedSpot = DetectedSpot;
+            % Add spot position deviation velocity flags
         end
-        p.FlaggingInfo.MaxSpotFluoLevel = MaxSpotFluoLevel;
-        p.FlaggingInfo.MaxSpotZPos = MaxSpotZPos;
-        p.FlaggingInfo.SpotZTraceApproved = SpotZTraceApproved;
-        
-        p.FlaggingInfo.DetectedNucleus = DetectedNucleus;
-        p.FlaggingInfo.DetectedSpot = DetectedSpot;
-        % Add spot position deviation velocity flags
-        
-        
-        
+
+
         SpotMedianXPos = median(p.xPos);
         SpotMedianYPos = median(p.yPos);
         
@@ -366,7 +369,6 @@ for ChN=1:length(liveExperiment.spotChannels)
         if FI.SickNucleus
             p.Approved = false;
             CompiledParticles{ChN}(i) = p;
-            continue
         end
         % Checking Fluo Values
         MaxFluo = max(FI.MaxSpotFluoLevel);
@@ -561,14 +563,13 @@ for ChN=1:length(liveExperiment.spotChannels)
                 FrameApprovedCPT = 1;
             end
             if (FrameApprovedCPT == 1) & (FrameApprovedByFluoValue(j) ~= -1) & ...
-                    (FrameApprovedByZPos(j) ~= -1) & (FrameApprovedByPosition(j) ~= -1) & ...
-                    (FrameApprovedByTiming(j) ~= -1)
+                    (FrameApprovedByZPos(j) ~= -1) % & (FrameApprovedByPosition(j) ~= -1) & (FrameApprovedByTiming(j) ~= -1)
                 FrameApprovedFinal(j) = 1;
             end
         end
         
         
-        
+        FI.FrameApprovedFinal = FrameApprovedFinal;
         FrameStates = zeros(1, NFrames); % 1 means on, -1 means off, and 0 is inconclusive
         for j = 1:NFrames
             if (FrameApprovedFinal(j) == 1) & (FI.DetectedSpot(j) == 0)
@@ -618,9 +619,9 @@ for ChN=1:length(liveExperiment.spotChannels)
             end
         end
         
-        FI.FrameApprovedFinal = FrameApprovedFinal;
+       
         FI.FrameStates = FrameStates;
-        
+        %FI.FrameApprovedFinal = FrameApprovedFinal;
         if sum(FrameApprovedFinal) == 0
             FI.Approved = 0;
         elseif p.FlaggingInfo.SickNucleus
