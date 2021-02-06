@@ -67,6 +67,7 @@ function CheckParticleTracking(Prefix, varargin)
 %     Useful if the algorithms get the centroid positioning wrong (i.e. your
 %     particle is put in the wrong place by '[').
 % # :Remove a spot from Spots and erase its frame in Particles
+% ^ : Remove an entire trace (all frames from a particle)
 %
 %
 % Nuclear tracking specific:
@@ -105,6 +106,7 @@ function CheckParticleTracking(Prefix, varargin)
 % -/= :Change the zoom factor when in zoom mode.
 % 0 :Enter debug mode to fix things manually
 % ~ :Switch figure 1 from a single plane image to a z or time projection.
+% * : enable/disable multiview titles to help improve GUI speed
 
 %
 % OUTPUT
@@ -275,7 +277,7 @@ end
 
 
 try
-    spotChannels = liveExperiment.spotChannels; 
+    spotChannels = liveExperiment.spotChannels;
     cptState.CurrentChannel = spotChannels(1);
     cptState.CurrentChannelIndex= 1;
 end
@@ -285,11 +287,11 @@ if ~isempty(cptState.Particles{cptState.CurrentChannelIndex})
     cptState.CurrentFrame =...
         cptState.Particles{cptState.CurrentChannelIndex}...
         (cptState.CurrentParticle).Frame(CurrentFrameWithinParticle);
-
+    
 else, error('Looks like the Particles structure is empty. There''s nothing to check.'); end
 
 %load the movies
-movieMat = getMovieMat(liveExperiment);  
+movieMat = getMovieMat(liveExperiment);
 
 
 hisMat = getHisMat(liveExperiment);
@@ -307,7 +309,7 @@ ellipseHisHandles = {};
 % Changing the intial frames and particle if justNC13
 if ncRange
     
-    if strcmpi('nc15', endNC), lastNCFrame = nFrames;      
+    if strcmpi('nc15', endNC), lastNCFrame = nFrames;
     else lastNCFrame = eval(endNC) - 1; end
     
     firstNCFrame = eval(startNC);
@@ -383,7 +385,7 @@ plotTraceSettings = PlotTraceSettings(UseCompiledParticles);
 while (currentCharacter ~= 'x')
     
     cptState.coatChannel = getCoatChannel(Channel1, Channel2, Channel3);
-   
+    
     cptState.nameSuffix = ['_ch', iIndex(cptState.CurrentChannel, 2)];
     
     inds = find(cptState.CurrentFrame > ncFramesFull);
@@ -403,16 +405,16 @@ while (currentCharacter ~= 'x')
     
     %Pull out the right particle if it exists in this frame
     cptState.updateCurrentParticleIndex();
-
+    
     %This is the position of the current particle
     [xTrace, yTrace] = cptState.getXYTraces(x, y);
     
     cptState.updateZIndex(x, y, z);
     
     cptState.processImageMatrices(multiView, nFrames, nSlices,...
-         blankImage, currentNC,...
-            ncFramesFull, movieMat,...
-            maxMat);
+        blankImage, currentNC,...
+        ncFramesFull, movieMat,...
+        maxMat);
     
     if multiView && ~exist('subAx', 'var')
         tiles = tiledlayout(multiFig, 3, 3, 'TileSpacing', 'none', 'Padding', 'none');
@@ -446,37 +448,45 @@ while (currentCharacter ~= 'x')
         end
         for z = 1:size(cptState.multiImage, 1)
             for f= 1:size(cptState.multiImage, 2)
-                if ~isempty(subAx{z,f}.Children)
-                    subAx{z,f}.Children.CData = cptState.multiImage{z, f};
-                    subAx{z, f}.CLim = displayRangeSpot;                   
+                currAx = subAx{z,f};
+                axChild   = currAx.Children;
+                if ~isempty(axChild)
+                    currAx.Children.CData = cptState.multiImage{z, f};
+                    currAx.CLim = displayRangeSpot;
                 else
                     imshow(cptState.multiImage{z, f},...
-                        displayRangeSpot, 'Border', 'Tight', 'Parent', subAx{z,f},...
+                        displayRangeSpot, 'Border', 'Tight', 'Parent', currAx,...
                         'InitialMagnification', 'fit');
                 end
-                title(subAx{z,f},['z: ',...
-                    num2str(cptState.CurrentZ + z - 2), ' frame: ',...
-                    num2str(cptState.CurrentFrame + f - 2)])
+                %matlab's title function is _very_ slow, so you can use the
+                %'*' key to disable titles here if you don't need them. 
+                if cptState.mvTitleSwitch
+                     title(currAx,['z: ',...
+                            num2str(cptState.CurrentZ + z - 2), ' frame: ',...
+                            num2str(cptState.CurrentFrame + f - 2)])
+                end
             end
         end
+      
     end
+    
     hold(overlayAxes, 'on')
     
     if cptState.UseHistoneOverlay
         hisImage = hisMat(:, :, cptState.CurrentFrame);
-
+        
         displayOverlays(overlayAxes, cptState, SpeedMode, ShowThreshold2, Overlay, nFrames, UseSchnitz, ZoomRange, fish, subAx,...
             HisOverlayFigAxes, hisImage);
     else
         displayOverlays(overlayAxes, cptState, SpeedMode, ShowThreshold2, Overlay, nFrames, UseSchnitz, ZoomRange, fish, subAx);
-    end   
-
+    end
+    
     if ~isempty(xTrace)
         MaxZIndex = cptState.getMaxZIndex();
         cptState.updateCurrentZIndex()
     end
     
-     
+    
     % PLOT SNIPPET
     [CurrentSnippet, snipImageHandle] = plotSnippet(snippetFigAxes, rawDataAxes, gaussianAxes, xTrace, ...
         cptState, ExperimentType, snippetSize_px, xSize, ySize, SnippetEdge, CurrentSnippet, snipImageHandle, pixelSize_nm);
@@ -490,18 +500,18 @@ while (currentCharacter ~= 'x')
             plotTraceSettings);
     end
     
-%%
-% %AR- disabled until it's fast enough to be useful.
-% %too slow at present.
-% 
-%     % PLOT Z SLICE RELATED FIGURES
-%     plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType,...
-%         xTrace, cptState, plotTraceSettings, fish};
-%     if exist('MaxZProfile', 'var')
-%         plotzvars = [plotzvars, MaxZProfile];
-%     end
-%    MaxZProfile = plotZFigures(plotzvars{:});
-%%
+    %%
+    % %AR- disabled until it's fast enough to be useful.
+    % %too slow at present.
+    %
+    %     % PLOT Z SLICE RELATED FIGURES
+    %     plotzvars = {zProfileFigAxes, zTraceAxes, ExperimentType,...
+    %         xTrace, cptState, plotTraceSettings, fish};
+    %     if exist('MaxZProfile', 'var')
+    %         plotzvars = [plotzvars, MaxZProfile];
+    %     end
+    %    MaxZProfile = plotZFigures(plotzvars{:});
+    %%
     set(0, 'CurrentFigure', Overlay);
     
     currentCharacter = getUserKeyInput(Overlay);
