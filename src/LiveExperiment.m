@@ -277,8 +277,8 @@ classdef LiveExperiment
             %just return an empty array if we can't load the movie.
             %leave the handling to the caller, presumably by enabling
             %sequential file loading.
+            this.preLoadMovie = true;
             if ~haveSufficientMemory(preTifDir) || ~this.preLoadMovie
-
                 out = [];
                 return;
             end
