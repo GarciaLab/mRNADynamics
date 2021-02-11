@@ -99,7 +99,7 @@ for ch = liveExperiment.spotChannels
     q32 = prctile(spotFluoVec,75);
     q3Indices = find(spotFluoVec<=q32&spotFluoVec>q31);        
     
-    % perform preliminary fitting to estimate spotPSF dims
+%     perform preliminary fitting to estimate spotPSF dims
     preSpots = struct('Fits',[]);
     spotDims = [];
     if false%length(q3Indices) >= 50
@@ -115,14 +115,14 @@ for ch = liveExperiment.spotChannels
         q = parallel.pool.DataQueue;
         afterEach(q, @nUpdateWaitbarPre);
         p = 1;
-        
+        numSamples = length(preFrameIndex);
         if ~isempty(movieMatCh)
-            parfor frameIndex = 1:length(preFrameIndex)
+            parfor frameIndex = 1:numSamples
                 frame = preFrameIndex(frameIndex);
                 imStack = movieMatCh(:, :, :,frame);   
                 preSpots(frameIndex) = spotFittingLoop(SpotsCh(frame).Fits(preIndexVec(preFrameVec==frame)), liveExperiment, imStack, [], nSpots);
                 % update waitbar
-                send(q, frame); %update the waitbar
+                send(q, frameIndex); %update the waitbar
             end
         else
             parfor frameIndex = 1:length(preFrameIndex)
@@ -130,7 +130,7 @@ for ch = liveExperiment.spotChannels
                 imStack = getMovieFrame(liveExperiment, frame, ch);
                 preSpots(frameIndex) = spotFittingLoop(SpotsCh(frame).Fits(preIndexVec(preFrameVec==frame)), liveExperiment, imStack, [], nSpots);
                 % update waitbar
-                send(q, frame); %update the waitbar
+                send(q, frameIndex); %update the waitbar
             end
         end
         
@@ -146,7 +146,8 @@ for ch = liveExperiment.spotChannels
         spotDims.sigmaXYSE = min([.5*spotDims.sigmaXY std(spotParamMat(:,2))]);
         spotDims.sigmaZ = mean(spotParamMat(:,3));
         spotDims.sigmaZSE = min([.5*spotDims.sigmaZ std(spotParamMat(:,3))]);
-               
+           
+        close(waitbarFigure)
     end
     
     waitbarFigure = waitbar(0, ['Fitting 3D Gaussians: Channel ', num2str(ch)]);

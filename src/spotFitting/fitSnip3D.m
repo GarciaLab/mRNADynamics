@@ -41,7 +41,7 @@ yMin = single(min(yRange));
 zMin = single(min(zRange));
 
 % Perform fits
-fitInfo = fit3DGaussians(snip3D, pixelSize_nm, zStep_nm, spotDims, nSpots, 0);
+fitInfo = fit3DGaussians(snip3D, pixelSize_nm, zStep_nm, spotDims, nSpots, []);
 
 % add fit info
 spotsFrame.Fits(spotIndex).SpotFitInfo3D = fitInfo;%single(GaussParams1);
