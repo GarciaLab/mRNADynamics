@@ -102,7 +102,7 @@ for ch = liveExperiment.spotChannels
     % perform preliminary fitting to estimate spotPSF dims
     preSpots = struct('Fits',[]);
     spotDims = [];
-    if length(q3Indices) >= 50
+    if false%length(q3Indices) >= 50
         % randomly select indices to use
         preIndices = randsample(q3Indices,min([250 length(q3Indices)]),false);
         % get unique list of frames
