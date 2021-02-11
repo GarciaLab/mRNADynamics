@@ -14,7 +14,15 @@ function [Particles, trackingOptions, SpotFilter] = ParticleTrackingKalman(...
   schnitzcells = getSchnitzcells(liveExperiment); % this will be empty and ignored if no nucleus info    
   
   % get vector indicating stage position in Z
-  zPosStage = [FrameInfo.zPosition]*1e6 / FrameInfo(1).ZStep;    
+  zPosStage = NaN(1,length(FrameInfo));
+  for f = 1:length(FrameInfo)
+      if ~isempty(FrameInfo(f).zPosition)
+          zPosStage(f) = FrameInfo(f).zPosition*1e6 / FrameInfo(1).ZStep;
+      end
+  end
+  interpPoints = isnan(zPosStage);
+  refVec = 1:length(FrameInfo);
+  zPosStage(interpPoints) = interp1(refVec(~interpPoints),zPosStage(~interpPoints),refVec(interpPoints),'nearest','extrap');  
   trackingOptions.zPosStage = zPosStage;
   
   % load particles and link info if we're retracking

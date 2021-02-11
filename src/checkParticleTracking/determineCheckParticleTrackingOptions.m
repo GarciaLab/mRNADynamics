@@ -31,7 +31,7 @@ noHisOverlay = false;
 multiView = false;
 preStructs = {};
 preMovie = false;
-
+sortByFlags = false;
 
 % these variables are meaningless if ncRange is 0
 NC = -1;
