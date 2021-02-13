@@ -203,6 +203,7 @@ classdef CPTState < handle
                     IndexApprovedParticles = [IndexApprovedParticles,...
                         currentChannelParticles(i).Index(currentChannelParticles(i).Frame == this.CurrentFrame)];
                 end
+                
             end
             
             xApproved = x(IndexApprovedParticles);

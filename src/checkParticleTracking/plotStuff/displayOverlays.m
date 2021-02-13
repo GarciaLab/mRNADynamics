@@ -26,17 +26,35 @@ ApprovedParticles = [cptState.getCurrentChannelParticles().Approved];
 % Approved particles
 [xApproved, yApproved] = cptState.getApprovedParticles(x, y);
 
+
 % Disapproved particles
 [xDisapproved, yDisapproved] = cptState.getDisapprovedParticles(x, y);
 
 % Non-flagged particles (these are particles that have not been processed)
 [xNonFlagged, yNonFlagged] = cptState.getNonFlaggedParticles(x, y);
 
+% G. Martini 2/13/21
+% Attempting to speed up plotting by only keeping tracking of spots and
+% ellipses within the zoom image when in zoom mode
+if cptState.ZoomMode
+    ApprovedInZoomFrame = (abs(xApproved-xTrace) <= ZoomRange) & (abs(yApproved-yTrace) <= ZoomRange);
+    xApproved = xApproved(ApprovedInZoomFrame);
+    yApproved = yApproved(ApprovedInZoomFrame);
+    
+    DisapprovedInZoomFrame = (abs(xDisapproved-xTrace) <= ZoomRange) & (abs(yDisapproved-yTrace) <= ZoomRange);
+    xDisapproved = xDisapproved(DisapprovedInZoomFrame);
+    yDisapproved = yDisapproved(DisapprovedInZoomFrame);
+    
+    NonFlaggedInZoomFrame = (abs(xNonFlagged-xTrace) <= ZoomRange) & (abs(yNonFlagged-yTrace) <= ZoomRange);
+    xNonFlagged = xNonFlagged(NonFlaggedInZoomFrame);
+    yNonFlagged = yNonFlagged(NonFlaggedInZoomFrame);
+end
+
 % Show all particles in regular mode
-if ~SpeedMode
+if ~SpeedMode 
     plot(overlayAxes,xNonFlagged,yNonFlagged,'ow')
     plot(overlayAxes,xApproved,yApproved,'ob')
-    plot(overlayAxes,xDisapproved,yDisapproved,'^r')
+    plot(overlayAxes,xDisapproved,yDisapproved,'^r') 
 end
 % Always show current particle. this indicates the x-y center of the spot
 % within the brightest z-slice and may differ from the position
@@ -54,7 +72,7 @@ end
 if UseSchnitz
     % Show all the nuclei in regular mode
     if ~SpeedMode
-        EllipseHandle = notEllipseCPT(cptState, 'r', 10, overlayAxes);
+        EllipseHandle = notEllipseCPT(cptState, 'r', 10, overlayAxes, xTrace, yTrace, ZoomRange);
 
         % Show the ones that have been approved
         schnitzCellNo=[];
@@ -71,7 +89,7 @@ if UseSchnitz
             end
         end
 
-        EllipseHandleBlue = notEllipseCellCPT(cptState, schnitzCellNo, 'b', 10, overlayAxes);
+        EllipseHandleBlue = notEllipseCellCPT(cptState, schnitzCellNo, 'b', 10, overlayAxes, xTrace, yTrace, ZoomRange);
     end
 
     % Show the corresponding nucleus
@@ -151,6 +169,13 @@ if ShowThreshold2
         ~logical(cptState.SpotFilter{cptState.CurrentChannelIndex}(cptState.CurrentFrame,~isnan(cptState.SpotFilter{cptState.CurrentChannelIndex}(cptState.CurrentFrame,:))));
     x2=x2(CurrentSpotFilter);
     y2=y2(CurrentSpotFilter);
+    
+    
+    if cptState.ZoomMode
+        Threshold2ParticlesInZoomFrame = (abs(x2-xTrace) <= ZoomRange) & (abs(y2-yTrace) <= ZoomRange);
+        x2 = x2(Threshold2ParticlesInZoomFrame);
+        y2 = y2(Threshold2ParticlesInZoomFrame);
+    end
 
     hold(overlayAxes,'on')
     plot(overlayAxes,x2,y2,'sr')
