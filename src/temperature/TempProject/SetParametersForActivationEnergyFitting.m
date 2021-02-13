@@ -33,11 +33,16 @@ if strcmpi(parameter, 'cycledurations')
     this.ActivationEnergyFits.('CycleDurations').Fits.General{NC-8} = f;
     
     
-elseif strcmpi(parameter, 'loadingrates') | strcmpi(parameter, 'elongationrates')
+elseif strcmpi(parameter, 'loadingrates') | strcmpi(parameter, 'elongationrates') | ...
+        strcmpi(parameter, 'plateauheights') | strcmpi(parameter, 'maxfluos')
     if strcmpi(parameter, 'elongationrates')
         pstring = 'ElongationRates';
     elseif strcmpi(parameter, 'loadingrates')
         pstring = 'LoadingRates';
+    elseif strcmpi(parameter, 'plateauheights')
+        pstring = 'PlateauHeights';
+    elseif strcmpi(parameter, 'maxfluos')
+        pstring = 'MaxFluos';
     end
     
     this.ActivationEnergyFits.(pstring).ActivationEnergies.(TraceType)(APindex, NC-8) = -Ea;

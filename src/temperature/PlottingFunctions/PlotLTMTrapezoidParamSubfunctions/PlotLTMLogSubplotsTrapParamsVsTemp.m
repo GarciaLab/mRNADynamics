@@ -29,9 +29,9 @@ elseif ~strcmp(lower(PlottingColors), 'default')  & ~strcmp(lower(PlottingColors
 end
 if ~exist('TraceType', 'var')
     TraceType = 'AnaphaseAligned';
-elseif strcmpi(TraceType, 'Fluo3D')
+elseif strcmpi(TraceType, 'Fluo3D') | strcmpi(TraceType, 'Unaligned3D')
     TraceType = 'Unaligned3D';
-elseif strcmpi(TraceType, 'Fluo')
+elseif strcmpi(TraceType, 'Fluo')| strcmpi(TraceType, 'Unaligned')
     TraceType = 'Unaligned';
 elseif strcmpi(TraceType, 'AnaphaseAligned')
     TraceType = 'AnaphaseAligned';
@@ -46,17 +46,40 @@ else
 end
 
 %%
+
+if strcmpi(parameter, 'TimeOns') | strcmpi(parameter, 'TimeOn')
+    parameter = 'TimeOns';
+elseif strcmpi(parameter, 'TimeOffs') | strcmpi(parameter, 'TimeOff')
+    parameter = 'TimeOffs';
+elseif strcmpi(parameter, 'TranscriptionWindows')| strcmpi(parameter, 'TranscriptionWindow')
+    parameter = 'TranscriptionWindows';
+elseif strcmpi(parameter, 'ElongationTimes') | strcmpi(parameter, 'ElongationTime')
+    parameter = 'ElongationTimes';
+elseif strcmpi(parameter, 'ElongationRates') | strcmpi(parameter, 'ElongationRate')
+    parameter = 'ElongationRates';
+elseif strcmpi(parameter, 'LoadingRates') | strcmpi(parameter, 'LoadingRate')
+    parameter = 'LoadingRates';
+elseif strcmpi(parameter, 'PostTranscriptionDurations') | strcmpi(parameter, 'PostTranscriptionDuration')
+    parameter = 'PostTranscriptionDurations';
+elseif strcmpi(parameter, 'PlateauHeights') | strcmpi(parameter, 'PlateauHeight')
+    parameter = 'PlateauHeights';
+elseif strcmpi(parameter, 'MaxFluos') | strcmpi(parameter, 'MaxFluo')
+    parameter = 'MaxFluos';
+end
+
 if ~strcmpi(parameter, 'TimeOns') & ~strcmpi(parameter, 'TranscriptionWindows') & ...
         ~strcmpi(parameter, 'ElongationTimes') & ~strcmpi(parameter, 'ElongationRates') & ...
-        ~strcmpi(parameter, 'LoadingRates')& ~strcmpi(parameter, 'PostTranscriptionDuration')
+        ~strcmpi(parameter, 'LoadingRates') & ~strcmpi(parameter, 'PostTranscriptionDurations')  & ...
+        ~strcmpi(parameter, 'PlateauHeights') & ~strcmpi(parameter, 'MaxFluos') 
     IncludeFits = false;
-elseif strcmpi(parameter, 'TimeOns') | strcmpi(parameter, 'TranscriptionWindows') | strcmpi(parameter, 'ElongationTimes') | strcmpi(parameter, 'PostTranscriptionDuration')
-    
+elseif strcmpi(parameter, 'TimeOns') | strcmpi(parameter, 'TranscriptionWindows') | strcmpi(parameter, 'ElongationTimes') | strcmpi(parameter, 'PostTranscriptionDurations') 
+
     legLoc = 'northwest';
 else
     legLoc = 'northeast';
     
 end
+
 
 
 %%
@@ -124,9 +147,13 @@ outdir2 = [outdir,filesep,OutputString];
 if ~exist(outdir2, 'dir')
     mkdir(outdir2)
 end
-outdir3 = [outdir2, filesep, datestr(now, 'yyyymmdd')];
+outdir3 = [outdir2, filesep, TraceType];
 if ~exist(outdir3, 'dir')
     mkdir(outdir3)
+end
+outdir4 = [outdir3, filesep, datestr(now, 'yyyymmdd')];
+if ~exist(outdir4, 'dir')
+    mkdir(outdir4)
 end
 
 
@@ -185,11 +212,16 @@ for nc_idx=1:length(ValidNCIndices)
             IncludedBins = find(~isnan(SetParams)) ;
         end
         if ~isempty(IncludedBins)
+            TempParams = SetParams;
+            TempSEParams = SetSEParams;
+            TempSEParams(TempParams > GlobalPlotYmax) = 0;
+            TempParams(TempParams > GlobalPlotYmax) = NaN;
             AllNCParams(i,:) = SetParams;
             AllNCParamSEs(i,:) = SetSEParams;
-            TempSEParams = SetSEParams;
             TempSEParams(isnan(TempSEParams )) = 0;
-            NCMaxParams(i) = max(SetParams +TempSEParams);
+            SumParams = TempParams +TempSEParams;
+            SumParams(SumParams > GlobalPlotYmax)= 0;
+            NCMaxParams(i) = max(SumParams);
             AllNCTemperatures(i,:) =SetTemps;
         end
     end
@@ -198,7 +230,7 @@ for nc_idx=1:length(ValidNCIndices)
         continue
     end
     
-    NCPlotYmax = max(NCMaxParams)*1.2;
+    NCPlotYmax = max(NCMaxParams)*1.5;
     
     ci_plotline = cell(1,  length(ValidAPIndices));
     fitted_prof = cell(1,  length(ValidAPIndices));
@@ -432,7 +464,7 @@ for nc_idx=1:length(ValidNCIndices)
         
         
         
-        ylim([LogPlotYmin, NCPlotYmax])
+        ylim([LogPlotYmin, 1.5*NCPlotYmax])
         
         
         FrameProfAx{l}.YAxis.FontSize = 10;
@@ -531,7 +563,7 @@ for nc_idx=1:length(ValidNCIndices)
     han.YLabel.Color = [0, 0, 0];
     han.YLabel.FontSize = 14;
     ylabel_pos = han.YLabel.Position;
-    ylabel_pos(1) = 0.00-han.Position(1);
+    ylabel_pos(1) = -0.01-han.Position(1);
     han.YLabel.Position = ylabel_pos;
     
     
@@ -544,7 +576,7 @@ for nc_idx=1:length(ValidNCIndices)
     han.Title.FontWeight = 'normal';
     %try
     %
-    saveas(FrameProfFig,[outdir3, filesep,...
-        TraceType,'_LogSubplots', OutputString,  '_NC',num2str(NC),'.png']);
+    saveas(FrameProfFig,[outdir4, filesep,...
+        'LogSubplots', OutputString,  '_NC',num2str(NC),'.png']);
 end
 close all

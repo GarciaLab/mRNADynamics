@@ -5,7 +5,7 @@ APResolution = this.Experiments{1}.APResolution;
 NumAPbins = uint16(1/APResolution)+1;
 
 parameters = {'CycleDurations', 'TimeOns', 'ElongationTimes','ElongationRates',...
-    'TranscriptionWindows', 'PostTranscriptionDurations', 'LoadingRates'};
+    'TranscriptionWindows', 'PostTranscriptionDurations', 'LoadingRates', 'MaxFluos', 'PlateauHeights'};
 traceNames = {'AnaphaseAligned', 'AnaphaseAligned3D', 'Tbinned', 'Tbinned3D',...
     'Unaligned', 'Unaligned3D'};
 

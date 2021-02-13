@@ -15,11 +15,11 @@ elseif strcmp(lower(TraceType), 'tbinned3d')
     fluoLabel = 'Tbinned3DCycleMeanTraces';
     seLabel = 'Tbinned3DCycleTraceStdErrors';
     countLabel = 'Tbinned3DCycleNumOnNuclei';
-elseif strcmp(lower(TraceType), 'fluo')
+elseif strcmp(lower(TraceType), 'fluo') | strcmp(lower(TraceType), 'unaligned')
     fluoLabel = 'UnalignedCycleMeanTraces';
     seLabel = 'UnalignedCycleTraceStdErrors';
     countLabel = 'UnalignedCycleNumOnNuclei';
-elseif strcmp(lower(TraceType), 'fluo3d')
+elseif strcmp(lower(TraceType), 'fluo3d') | strcmp(lower(TraceType), 'unaligned3d')
     fluoLabel = 'Unaligned3DCycleMeanTraces';
     seLabel = 'Unaligned3DCycleTraceStdErrors';
     countLabel = 'Unaligned3DCycleNumOnNuclei';
@@ -31,6 +31,7 @@ Nbins = 1/(this.Experiments{1}.APResolution)+1;
 output_mat = NaN(Nsets, Nbins, 6);
 se_output_mat = NaN(Nsets, Nbins, 6);
 test_output_mat = NaN(Nsets, Nbins, 6);
+counts = NaN(Nsets, Nbins, 6);
 d1dummy = ones(1, Nbins*6, 'uint8');
 d2dummy = repmat(1:41,1,6);
 d3dummy = repmat(1:6,Nbins, 1);

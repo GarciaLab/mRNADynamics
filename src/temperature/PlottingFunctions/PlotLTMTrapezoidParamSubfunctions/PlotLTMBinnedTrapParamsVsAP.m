@@ -1,4 +1,4 @@
-function PlotLTMTrapParamsVsAP(this, parameter, outdir, varargin)
+function PlotLTMBinnedTrapParamsVsAP(this, parameter, outdir, varargin)
 %%
 
 % PlotTitle, PlottingColors, UseDifferentColors,
@@ -33,9 +33,9 @@ elseif ~strcmpi(PlottingColors, 'gradient') &~strcmp(lower(PlottingColors), 'def
 end
 if ~exist('TraceType', 'var')
     TraceType = 'AnaphaseAligned';
-elseif strcmpi(TraceType, 'Fluo3D')| strcmpi(TraceType, 'Unaligned3D') 
+elseif strcmpi(TraceType, 'Fluo3D') | strcmpi(TraceType, 'Unaligned3D')
     TraceType = 'Unaligned3D';
-elseif strcmpi(TraceType, 'Fluo') | strcmpi(TraceType, 'Unaligned') 
+elseif strcmpi(TraceType, 'Fluo')| strcmpi(TraceType, 'Unaligned')
     TraceType = 'Unaligned';
 elseif strcmpi(TraceType, 'AnaphaseAligned')
     TraceType = 'AnaphaseAligned';
@@ -62,17 +62,12 @@ end
 Temp_obs = this.Temp_obs;
 Temp_sp = this.Temp_sps;
 
-if strcmp(lower(PlottingColors), 'default')
+if strcmp(lower(PlottingColors), 'default') | strcmp(lower(PlottingColors), 'gradient')
     [~, colors] = getColorPalettes();
     GradString = '';
 elseif strcmp(lower(PlottingColors), 'pboc')
     [colors, ~] = getColorPalettes();
     GradString = '';
-else
-    Temp_range = 15:0.1:max(Temp_obs);
-    colors = jet(length(Temp_range));
-    FractionalTempRange = (Temp_range-min(Temp_range))/(max(Temp_range)-min(Temp_range));
-    GradString = 'Gradient';
 end
 
 %%
@@ -91,7 +86,10 @@ NumAPbins = length(APbins);
 NumSets = length(this.ExperimentPrefixes);
 UseSet = ismember(1:NumSets, this.ProcessedExperiments);
 Nsigfigs = 3;
-legend_labels = this.LegendLabels;
+legend_labels = {};
+for j =1:NumTemperatures
+    legend_labels = [legend_labels, [num2str(temperatures(j)), ' °C']];
+end
 
 
 MarkerStyles = {'o', 'd', 's', '>', '^','p', 'h', '*', 'x'};
@@ -128,7 +126,7 @@ end
     getBinnedPlottingVariables(this, PlottedParams, PlottedParamSEs,R2s, R2bound);
 %%
 
-outdir2 = [outdir,filesep,OutputString];
+outdir2 = [outdir,filesep,'Binned', OutputString];
 if ~exist(outdir2, 'dir')
     mkdir(outdir2)
 end
@@ -149,24 +147,17 @@ if ~exist(outdir4, 'dir')
 end
 
 
-eb = cell(1, NumSets);
-prof = cell(1, NumSets);
+eb = cell(1, NumTemperatures);
+prof = cell(1, NumTemperatures);
 close all
 FrameProfFig = figure(1);
 set(FrameProfFig,'units', 'normalized', 'position',[0.01, 0.05, .9, .7]);
 set(gcf,'color','w');
 FrameProfAx = axes(FrameProfFig);
-for SetIndex =1:NumSets
-    if strcmp(lower(PlottingColors), 'gradient')
-        ColIndex = find(abs(Temp_range-Temp_obs(SetIndex)) == min(abs(Temp_range-Temp_obs(SetIndex))));
-    else
-        ColIndex = find(temperatures == Temp_sp(SetIndex));
-    end
-    
-    MarkerIndex = find(TempMatches{ColIndex} == SetIndex);
-    if isempty(MarkerIndex)
-        MarkerIndex = length(MarkerStyles);
-    end
+for SetIndex =1:NumTemperatures
+    ColIndex = SetIndex;
+    MarkerIndex = 1;
+
   
     eb{SetIndex} = errorbar(APbins, ones(1, length(APbins)), .1*ones(1, length(APbins)),...
         'vertical', 'LineStyle', 'none');
@@ -221,18 +212,20 @@ for NCIndex=1:length(this.IncludedNCs)
     
     % Prepare Traces for plotting
     
-    NCMaxParams = NaN(1, NumSets);
-    AllNCParams = NaN(NumSets, NumAPbins);
-    AllNCParamSEs = NaN(NumSets, NumAPbins);
-    AllR2s = NaN(NumSets, NumAPbins);
-    for SetIndex=1:NumSets
-        SetParams = PlottedParams(SetIndex,:,NC-8).';
-        SetSEParams = PlottedParamSEs(SetIndex,:,NC-8).';
-        SetR2s = R2s(SetIndex,:,NC-8).';
+    NCMaxParams = NaN(1, NumTemperatures);
+    AllNCParams = NaN(NumTemperatures, NumAPbins);
+    AllNCParamSEs = NaN(NumTemperatures, NumAPbins);
+    AllCounts = NaN(NumTemperatures, NumAPbins);
+    for SetIndex=1:NumTemperatures
+        SetParams = BinnedParams(SetIndex,:,NC-8).';
+        SetSEParams = BinnedSEParams(SetIndex,:,NC-8).';
+        SetTemperatures = ParamTemperatures(SetIndex,:,NC-8).';
+        SetSETemperatures= ParamSETemperatures(SetIndex,:,NC-8).';
+        SetCounts = Counts(SetIndex,:,NC-8).';
         if ~all(isnan(SetSEParams))
-            IncludedBins = find(~isnan(SetParams) & (SetR2s > R2bound) & (SetParams./SetSEParams >= 1)) ;
+            IncludedBins = find(~isnan(SetParams) & (SetCounts >= this.MinimumBinCount) & (SetParams./SetSEParams >= 1)) ;
         else
-            IncludedBins = find(~isnan(SetParams) & (SetR2s > R2bound)) ;
+            IncludedBins = find(~isnan(SetParams) & (SetCounts >= this.MinimumBinCount));
         end
         if ~isempty(IncludedBins)
             AllNCParams(SetIndex,:) = SetParams;
@@ -240,7 +233,7 @@ for NCIndex=1:length(this.IncludedNCs)
             TempSEParams = SetSEParams;
             TempSEParams(isnan(TempSEParams)) = 0;
             NCMaxParams(SetIndex) = max(SetParams+TempSEParams);
-            AllR2s(SetIndex,:) = SetR2s;
+            AllCounts(SetIndex,:) = SetCounts;
         end
     end
     
@@ -252,11 +245,8 @@ for NCIndex=1:length(this.IncludedNCs)
     
     
     
-    PlottedSets = zeros(1, NumSets, 'logical');
-    for SetIndex=1:NumSets
-        if ~ismember(SetIndex, this.ProcessedExperiments)
-            continue
-        end
+    PlottedSets = zeros(1, NumTemperatures, 'logical');
+    for SetIndex=1:NumTemperatures
         if UsePhysicalAPLength
             APLength = this.APLengths(SetIndex);
         else
@@ -264,10 +254,10 @@ for NCIndex=1:length(this.IncludedNCs)
         end
         if ~all(isnan(AllNCParamSEs(SetIndex, :)))
             UseIndex = ~isnan(AllNCParams(SetIndex,:)) &  (AllNCParams(SetIndex, :)./AllNCParamSEs(SetIndex, :) >= 1) & ...
-                (AllR2s(SetIndex,:)>= R2bound);
+                (AllCounts(SetIndex,:)>= this.MinimumBinCount);
         else
             UseIndex = ~isnan(AllNCParams(SetIndex,:)) & ...
-                (AllR2s(SetIndex,:)>= R2bound);
+                (AllCounts(SetIndex,:)>= this.MinimumBinCount);
         end
         
         if sum(UseIndex) == 0 %| sum(DiffMeanFluoMat(i, use_SetIndex, j) == 0)
@@ -283,12 +273,11 @@ for NCIndex=1:length(this.IncludedNCs)
         else
             PlottedSets(SetIndex) = true;
             FrameProfAx.Children(end-(2*(SetIndex-1)+1)).YData = AllNCParams(SetIndex,UseIndex);
-            FrameProfAx.Children(end-(2*(SetIndex-1)+1)).XData = APbins(UseIndex);
+            FrameProfAx.Children(end-(2*(SetIndex-1)+1)).XData = APLength*APbins(UseIndex);
             FrameProfAx.Children(end-(2*(SetIndex-1))).YData = AllNCParams(SetIndex,UseIndex);
-            FrameProfAx.Children(end-(2*(SetIndex-1))).XData = APbins(UseIndex);
+            FrameProfAx.Children(end-(2*(SetIndex-1))).XData =  APLength*APbins(UseIndex);
             FrameProfAx.Children(end-(2*(SetIndex-1))).YPositiveDelta = AllNCParamSEs(SetIndex,UseIndex);
             FrameProfAx.Children(end-(2*(SetIndex-1))).YNegativeDelta  = AllNCParamSEs(SetIndex,UseIndex);
-            
             set(FrameProfAx.Children(end-(2*(SetIndex-1)+1)),'Visible','on'); %'off' or 'on'
             set(FrameProfAx.Children(end-(2*(SetIndex-1))),'Visible','on'); %'off' or 'on'
             set(get(get(prof{SetIndex}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'on');
@@ -306,23 +295,12 @@ for NCIndex=1:length(this.IncludedNCs)
         title(FrameProfAx,  ['Nuclear Cycle ',num2str(NC)], 'FontSize', 14)
     end
     
-    if strcmp(lower(PlottingColors), 'gradient')
-        map = colormap(colors);
-        h = colorbar;
-        % %set(h, 'ylim', [min(Prefix_temp_obs) max(Prefix_temp_obs)])
-        hold off
-        colorTitleHandle = get(h,'Title');
-        titleString = 'Temperature (°C)';
-        set(colorTitleHandle ,'String',titleString);
-        h.Ticks =  FractionalTempRange(1:25:126); %Create 8 ticks from zero to 1
-        h.TickLabels = {'15','17.5','20','22.5','25','27.5'} ;
-    else
-        hlegend = legend(legend_labels(PlottedSets), 'Location', 'eastoutside',...
-            'FontSize', 14);
-    end
-    
+        
+    hlegend = legend(legend_labels(PlottedSets), 'Location', 'eastoutside',...
+        'FontSize', 14);
+
     saveas(FrameProfFig,[outdir4, filesep,...
-        OutputString, '_NC',num2str(NC),'.png']);
+        'Binned', OutputString, '_NC',num2str(NC),'.png']);
     
     
 end

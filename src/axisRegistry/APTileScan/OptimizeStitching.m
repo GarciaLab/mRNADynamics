@@ -37,6 +37,7 @@ end
 [SourcePath,FISHPath,DropboxFolder,MS2CodePath]=...
     DetermineLocalFolders(Prefix);
 
+liveExperiment = LiveExperiment(Prefix);
 stitchingDataFolder = [DropboxFolder,filesep,Prefix,filesep,'FullEmbryoStitching'];
 
 % load TileArray with stitching information 
@@ -228,7 +229,7 @@ for m=2:length(stitchOrder)
             if isempty(TempMaxDeltaC)
                 TempMaxDeltaC = MaxDeltaC;
             end
-            tile_array = ManualTileStitch(tile_array, tA_ind, tB_inds, stitchOrder, TempMaxDeltaR, TempMaxDeltaC);
+            tile_array = ManualTileStitch(liveExperiment, tile_array, tA_ind, tB_inds, stitchOrder, TempMaxDeltaR, TempMaxDeltaC);
         end
         %disp('Checking')
 

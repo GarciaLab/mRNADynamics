@@ -30,9 +30,9 @@ elseif ~strcmpi(PlottingColors, 'gradient') &~strcmp(lower(PlottingColors), 'def
 end
 if ~exist('TraceType', 'var')
     TraceType = 'AnaphaseAligned';
-elseif strcmpi(TraceType, 'Fluo3D')
+elseif strcmpi(TraceType, 'Fluo3D') | strcmpi(TraceType, 'Unaligned3D')
     TraceType = 'Unaligned3D';
-elseif strcmpi(TraceType, 'Fluo')
+elseif strcmpi(TraceType, 'Fluo')| strcmpi(TraceType, 'Unaligned')
     TraceType = 'Unaligned';
 elseif strcmpi(TraceType, 'AnaphaseAligned')
     TraceType = 'AnaphaseAligned';
@@ -49,7 +49,8 @@ end
 %%
 if ~strcmpi(parameter, 'TimeOns') & ~strcmpi(parameter, 'TranscriptionWindows') & ...
         ~strcmpi(parameter, 'ElongationTimes') & ~strcmpi(parameter, 'ElongationRates') & ...
-        ~strcmpi(parameter, 'LoadingRates')& ~strcmpi(parameter, 'PostTranscriptionDuration')
+        ~strcmpi(parameter, 'LoadingRates')& ~strcmpi(parameter, 'PostTranscriptionDuration') & ...
+        ~strcmpi(parameter, 'PlateauHeights')& ~strcmpi(parameter, 'MaxFluos') 
     IncludeFits = false;
 end
 
@@ -125,9 +126,13 @@ outdir2 = [outdir,filesep,'Binned', OutputString];
 if ~exist(outdir2, 'dir')
     mkdir(outdir2)
 end
-outdir3 = [outdir2, filesep, datestr(now, 'yyyymmdd')];
+outdir3 = [outdir2, filesep, TraceType];
 if ~exist(outdir3, 'dir')
     mkdir(outdir3)
+end
+outdir4 = [outdir3, filesep, datestr(now, 'yyyymmdd')];
+if ~exist(outdir4, 'dir')
+    mkdir(outdir4)
 end
 
 
@@ -242,7 +247,7 @@ xlabel('1/(RT) (mol/kJ)')
 xlim([Plot2Xmin, Plot2Xmax])
 
 ylabel(ylab)
-ylim([LogPlotYmin, GlobalPlotYmax])
+ylim([LogPlotYmin, 1.5*GlobalPlotYmax])
 
 set(FrameProfAx2, 'YScale', 'log')
 
@@ -514,8 +519,8 @@ for NCIndex=1:length(this.IncludedNCs)
         
         
         
-        saveas(FrameProfFig,[outdir3, filesep,...
-            TraceType,'_Binned', OutputString,  '_NC',num2str(NC), 'AP', num2str(APindex), '.png']);
+        saveas(FrameProfFig,[outdir4, filesep,...
+            'Binned', OutputString,  '_NC',num2str(NC), '_AP', num2str(APindex), '.png']);
         
     end
 end

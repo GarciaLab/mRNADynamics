@@ -30,9 +30,9 @@ elseif ~strcmpi(PlottingColors, 'gradient') &~strcmp(lower(PlottingColors), 'def
 end
 if ~exist('TraceType', 'var')
     TraceType = 'AnaphaseAligned';
-elseif strcmpi(TraceType, 'Fluo3D')
+elseif strcmpi(TraceType, 'Fluo3D') | strcmpi(TraceType, 'Unaligned3D')
     TraceType = 'Unaligned3D';
-elseif strcmpi(TraceType, 'Fluo')
+elseif strcmpi(TraceType, 'Fluo') | strcmpi(TraceType, 'Unaligned')
     TraceType = 'Unaligned';
 elseif strcmpi(TraceType, 'AnaphaseAligned')
     TraceType = 'AnaphaseAligned';
@@ -49,7 +49,8 @@ end
 %%
 if ~strcmpi(parameter, 'TimeOns') & ~strcmpi(parameter, 'TranscriptionWindows') & ...
         ~strcmpi(parameter, 'ElongationTimes') & ~strcmpi(parameter, 'ElongationRates') & ...
-        ~strcmpi(parameter, 'LoadingRates')& ~strcmpi(parameter, 'PostTranscriptionDuration')
+        ~strcmpi(parameter, 'LoadingRates')& ~strcmpi(parameter, 'PostTranscriptionDuration') & ...
+        ~strcmpi(parameter, 'PlateauHeights')&~strcmpi(parameter, 'MaxFluos')
     IncludeFits = false;
 end
 
@@ -58,11 +59,7 @@ end
 if ~exist(outdir, 'dir')
     mkdir(outdir)
 end
-if UsePhysicalAPLength
-    PhysicalAPString = 'PhysAP';
-else
-    PhysicalAPString = '';
-end
+
 Temp_obs = this.Temp_obs;
 Temp_sp = this.Temp_sps;
 
@@ -130,9 +127,13 @@ outdir2 = [outdir,filesep,OutputString];
 if ~exist(outdir2, 'dir')
     mkdir(outdir2)
 end
-outdir3 = [outdir2, filesep, datestr(now, 'yyyymmdd')];
+outdir3 = [outdir2, filesep, TraceType];
 if ~exist(outdir3, 'dir')
     mkdir(outdir3)
+end
+outdir4 = [outdir3, filesep, datestr(now, 'yyyymmdd')];
+if ~exist(outdir4, 'dir')
+    mkdir(outdir4)
 end
 
 
@@ -166,17 +167,12 @@ for SetIndex =1:NumSets
         set(eb{SetIndex}, 'color', colors(ColIndex,:), 'LineWidth', 1, 'CapSize', 0);
     end
     set(get(get(eb{SetIndex}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
-    if UseLines
-        prof{SetIndex} = plot(APbins, ones(1, length(APbins)), [MarkerStyles{MarkerIndex}, '-'],...
-            'MarkerEdgeColor', [0, 0, 0],'MarkerFaceColor', colors(ColIndex,:), 'Color', colors(ColIndex,:),...
-            'MarkerSize', 10);
-        
-    else
-        prof{SetIndex} = plot(APbins, ones(1, length(APbins)), MarkerStyles{MarkerIndex},...
-            'MarkerEdgeColor', [0, 0, 0],'MarkerFaceColor', colors(ColIndex,:),...
-            'MarkerSize', 10, 'linestyle', 'none');
-        
-    end
+    
+    prof{SetIndex} = plot(APbins, ones(1, length(APbins)), MarkerStyles{MarkerIndex},...
+        'MarkerEdgeColor', [0, 0, 0],'MarkerFaceColor', colors(ColIndex,:),...
+        'MarkerSize', 10, 'linestyle', 'none');
+    
+    
     
     set(eb{SetIndex},'Visible','off'); %'off' or 'on'
     set(prof{SetIndex},'Visible','off'); %'off' or 'on'
@@ -236,17 +232,12 @@ for SetIndex =1:NumSets
         set(eb2{SetIndex}, 'color', colors(ColIndex,:), 'LineWidth', 1, 'CapSize', 0);
     end
     set(get(get(eb2{SetIndex}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
-    if UseLines
-        prof2{SetIndex} = plot(APbins, ones(1, length(APbins)), [MarkerStyles{MarkerIndex}, '-'],...
-            'MarkerEdgeColor', [0, 0, 0],'MarkerFaceColor', colors(ColIndex,:), 'Color', colors(ColIndex,:),...
-            'MarkerSize', 10);
-        
-    else
-        prof2{SetIndex} = plot(APbins, ones(1, length(APbins)), MarkerStyles{MarkerIndex},...
-            'MarkerEdgeColor', [0, 0, 0],'MarkerFaceColor', colors(ColIndex,:),...
-            'MarkerSize', 10, 'linestyle', 'none');
-        
-    end
+    
+    prof2{SetIndex} = plot(APbins, ones(1, length(APbins)), MarkerStyles{MarkerIndex},...
+        'MarkerEdgeColor', [0, 0, 0],'MarkerFaceColor', colors(ColIndex,:),...
+        'MarkerSize', 10, 'linestyle', 'none');
+    
+    
     
     set(eb2{SetIndex},'Visible','off'); %'off' or 'on'
     set(prof2{SetIndex},'Visible','off'); %'off' or 'on'
@@ -262,7 +253,7 @@ xlabel('1/(RT) (mol/kJ)')
 xlim([Plot2Xmin, Plot2Xmax])
 
 ylabel(ylab)
-ylim([LogPlotYmin, GlobalPlotYmax])
+ylim([LogPlotYmin, 1.5*GlobalPlotYmax])
 
 set(FrameProfAx2, 'YScale', 'log')
 
@@ -400,9 +391,9 @@ for NCIndex=1:length(this.IncludedNCs)
                     set(FrameProfAx2.Children(end-(2*(SetIndex-1))-2),'Visible','on'); %'off' or 'on'
                 else
                     FrameProfAx2.Children(end-(2*(SetIndex-1)+1)).YData = AllNCParams(SetIndex, APindex);
-                    FrameProfAx2.Children(end-(2*(SetIndex-1)+1)).XData =1/(R*(Temp_obs(idx)+273));
+                    FrameProfAx2.Children(end-(2*(SetIndex-1)+1)).XData =1/(R*(Temp_obs(SetIndex)+273));
                     FrameProfAx2.Children(end-(2*(SetIndex-1))).YData =  AllNCParams(SetIndex, APindex);
-                    FrameProfAx2.Children(end-(2*(SetIndex-1))).XData = 1/(R*(Temp_obs(idx)+273));
+                    FrameProfAx2.Children(end-(2*(SetIndex-1))).XData = 1/(R*(Temp_obs(SetIndex)+273));
                     FrameProfAx2.Children(end-(2*(SetIndex-1))).YPositiveDelta = AllNCParamSEs(SetIndex,APindex);
                     FrameProfAx2.Children(end-(2*(SetIndex-1))).YNegativeDelta  = AllNCParamSEs(SetIndex,APindex);
                     
@@ -526,8 +517,8 @@ for NCIndex=1:length(this.IncludedNCs)
        
         
         
-        saveas(FrameProfFig,[outdir3, filesep,...
-            TraceType,'_', OutputString,  '_NC',num2str(NC), 'AP', num2str(APindex), '.png']);
+        saveas(FrameProfFig,[outdir4, filesep,...
+            OutputString,  '_NC',num2str(NC), '_AP', num2str(APindex), '.png']);
         
     end
 end

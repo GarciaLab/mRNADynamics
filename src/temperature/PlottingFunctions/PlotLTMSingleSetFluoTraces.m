@@ -56,9 +56,9 @@ if strcmpi(TraceType, 'anaphasealigned')
     traceName = 'AnaphaseAligned';
 elseif strcmpi(TraceType, 'anaphasealigned3d')
     traceName = 'AnaphaseAligned3D';
-elseif strcmpi(TraceType, 'fluo')
+elseif strcmpi(TraceType, 'fluo') | strcmpi(TraceType, 'unaligned') 
     traceName = 'Unaligned';
-elseif strcmpi(TraceType, 'fluo3d')
+elseif strcmpi(TraceType, 'fluo3d') | strcmpi(TraceType, 'unaligned3d') 
     traceName = 'Unaligned3D';
 elseif strcmpi(TraceType, 'tbinned')
     traceName = 'Tbinned';
@@ -120,7 +120,7 @@ for j=1:length(IncludedSets)%length(temperatures)
             mkdir(outdir2);
         end
         
-        outdir3 = [outdir2, filesep, 'NC', num2str(NC)];
+        outdir3 = [outdir2, filesep, traceName];
         
         if ~exist(outdir3, 'dir')
             mkdir(outdir3);
@@ -363,7 +363,7 @@ for j=1:length(IncludedSets)%length(temperatures)
             end
             
             saveas(FrameProfFig,[outdir4, filesep,...
-                FitString,'FluoTrace',TraceType, 'NC',num2str(NC),'_APbin', num2str(i),'.png']);
+                FitString,'FluoTrace_NC',num2str(NC),'_APbin', num2str(i),'.png']);
             
         end
     end

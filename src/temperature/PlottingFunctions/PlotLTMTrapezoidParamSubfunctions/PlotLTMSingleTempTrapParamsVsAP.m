@@ -36,9 +36,9 @@ elseif ~strcmpi(PlottingColors, 'gradient') &~strcmp(lower(PlottingColors), 'def
 end
 if ~exist('TraceType', 'var')
     TraceType = 'AnaphaseAligned';
-elseif strcmpi(TraceType, 'Fluo3D')
+elseif strcmpi(TraceType, 'Fluo3D') | strcmpi(TraceType, 'Unaligned3D')
     TraceType = 'Unaligned3D';
-elseif strcmpi(TraceType, 'Fluo')
+elseif strcmpi(TraceType, 'Fluo') | strcmpi(TraceType, 'Unaligned')
     TraceType = 'Unaligned';
 elseif strcmpi(TraceType, 'AnaphaseAligned')
     TraceType = 'AnaphaseAligned';
@@ -131,13 +131,22 @@ if ~exist(outdir2, 'dir')
 end
 for TemperatureIndex =1:NumTemperatures
     CurrentTemperature = temperatures(TemperatureIndex);
-    outdir3 = [outdir2,filesep,'T', strrep(num2str(CurrentTemperature), '.', '_'),'C'];
-    if ~exist(outdir3, 'dir')
-        mkdir(outdir3)
-    end
-    outdir4 = [outdir3,filesep, datestr(now, 'yyyymmdd')];
+
+    if isempty(PhysicalAPString)
+    outdir4 = [outdir2,filesep, TraceType];
     if ~exist(outdir4, 'dir')
         mkdir(outdir4)
+    end
+    else
+    outdir4 = [outdir3,filesep, TraceType,'_', PhysicalAPString];
+    if ~exist(outdir4, 'dir')
+        mkdir(outdir4)
+    end
+    end
+        
+    outdir5 = [outdir4,filesep, datestr(now, 'yyyymmdd')];
+    if ~exist(outdir5, 'dir')
+        mkdir(outdir5)
     end
     Subset = TempMatches{TemperatureIndex};
     SubNumSets = length(Subset);
@@ -308,8 +317,8 @@ for TemperatureIndex =1:NumTemperatures
         hlegend = legend(legend_labels(PlottedSets), 'Location', 'eastoutside',...
             'FontSize', 14);
         
-        saveas(FrameProfFig,[outdir4, filesep,...
-            TraceType, PhysicalAPString,'_',OutputString,'_NC',num2str(NC),'_T', strrep(num2str(CurrentTemperature), '.', '_'), 'C.png']);
+        saveas(FrameProfFig,[outdir5, filesep,...
+                OutputString,'_NC',num2str(NC),'_T', strrep(num2str(CurrentTemperature), '.', '_'), 'C.png']);
         
         
     end

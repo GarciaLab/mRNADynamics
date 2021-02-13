@@ -62,7 +62,24 @@ elseif strcmpi(parameter, 'loadingrates')
     y = InitiationRates(:,APindex, NC-8).';
     y_err = SEInitiationRates(:,APindex,NC-8).';
     setR2s = R2s(:,APindex, NC-8).';
-    
+elseif strcmpi(parameter, 'maxfluos') | strcmpi(parameter, 'maxfluo') 
+    [MaxFluos, SEMaxFluos] = getMaxFluoMatForPlotting(this, TraceType);
+    R2s = ones(size(MaxFluos));
+    y =  MaxFluos(:,APindex, NC-8).';
+    y_err = SEMaxFluos(:, APindex,NC-8).';
+    setR2s = R2s(:,APindex, NC-8).';
+elseif strcmpi(parameter, 'plateauheights') | strcmpi(parameter, 'plateauheight')
+    InitiationRates = getTrapezoidParameters(this, 'MeanInitiationRates', TraceType, false);
+    SEInitiationRates = getTrapezoidParameters(this, 'MeanInitiationRates', TraceType, true);
+    ElongationTimes = getTrapezoidParameters(this, 'ElongationTimes', TraceType, false);
+    SEElongationTimes = getTrapezoidParameters(this, 'ElongationTimes', TraceType, true);
+    PlateauHeights = InitiationRates.*ElongationTimes;
+    SEPlateauHeights = sqrt((InitiationRates.^2).*(SEElongationTimes.^2)+...
+        (ElongationTimes.^2).*(SEInitiationRates.^2) );
+    R2s = getTrapezoidParameters(this, 'R2s', TraceType);
+    y =  PlateauHeights(:,APindex, NC-8).';
+    y_err = SEPlateauHeights(:, APindex,NC-8).';
+    setR2s = R2s(:,APindex, NC-8).';
 else
    error(['Parameter: ', parameter, ' not supported.'])
 end
