@@ -210,6 +210,7 @@ parfor currentFrame = initialFrame:lastFrame
         
         %probability map regions usually look different from dog regions and
         %require some mophological finesse
+        
         if haveProbs
             se = strel('square', 3);
             im_thresh = imdilate(im_thresh, se); %thresholding from this classified probability map can produce non-contiguous, spurious Spots{channelIndex}. This fixes that and hopefully does not combine real Spots{channelIndex} from different nuclei

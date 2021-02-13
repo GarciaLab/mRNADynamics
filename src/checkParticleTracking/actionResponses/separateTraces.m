@@ -1,17 +1,17 @@
 function [Particles, PreviousParticle] = separateTraces(Particles, ...
-    CurrentChannel, CurrentFrame, CurrentParticle)
+    CurrentChannelIndex, CurrentFrame, CurrentParticle)
 %SEPARATETRACES Summary of this function goes here
 %   Detailed explanation goes here
 
 %The separated particle (the trace following current frame) won't have a nucleus assigned!
 PreviousParticle=0;
 %Check that the particle does actually exist in this frame
-if ~(Particles{CurrentChannel}(CurrentParticle).Frame(1)==CurrentFrame)
-    if sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame)
-        Particles{CurrentChannel}=SeparateParticleTraces(CurrentParticle,CurrentFrame,Particles{CurrentChannel});
+if ~(Particles{CurrentChannelIndex}(CurrentParticle).Frame(1)==CurrentFrame)
+    if sum(Particles{CurrentChannelIndex}(CurrentParticle).Frame==CurrentFrame)
+        Particles{CurrentChannelIndex}=SeparateParticleTraces(CurrentParticle,CurrentFrame,Particles{CurrentChannelIndex});
     end
-elseif length(Particles{CurrentChannel}(CurrentParticle).Frame)==1
-    Particles{CurrentChannel}(CurrentParticle).Nucleus=[];
+elseif length(Particles{CurrentChannelIndex}(CurrentParticle).Frame)==1
+    Particles{CurrentChannelIndex}(CurrentParticle).Nucleus=[];
 else
     disp('Cannot divide a trace at the first time point')
 end

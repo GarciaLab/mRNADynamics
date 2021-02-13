@@ -27,13 +27,20 @@ if ~currentParticleExistsInCurrentFrame && particlesExistInFrame
         %exist in a previous frame we will have to disconnect it.
 
         clickedParticleExistsInAnyPreviousFrame = sum(Particles{CurrentChannelIndex}(ParticleOutput).Frame<CurrentFrame);
-
+        
 
         if clickedParticleExistsInAnyPreviousFrame
-
-            msgbox('this button doesn''t currently support adding traces in this direction. try changing to this particle and then adding to the future particle.')
-            exitConnectFlag = 1;
-
+            ClickedNucleus = Particles{CurrentChannelIndex}(ParticleOutput).Nucleus;
+            Particles{CurrentChannelIndex} =SeparateParticleTraces(ParticleOutput,CurrentFrame,Particles{CurrentChannelIndex});
+            Particles{CurrentChannelIndex}(ParticleOutput).Approved = 0;
+            if ParticleOutput < CurrentParticle
+                CurrentParticle = CurrentParticle + 1;
+            end
+            ParticleOutput = ParticleOutput + 1;
+            disp('Splitting clicked particle at current frame to allow combination with current particle.');
+            %msgbox('this button doesn''t currently support adding traces in this direction. try changing to this particle and then adding to the future particle.')
+            %exitConnectFlag = 1;
+            
         end
 
         if ~exitConnectFlag
