@@ -21,7 +21,6 @@ skipExtraction = false;
 rootFolder = '';
 zslicesPadding = false;
 dataType = '';
-exportNuclearProjections = true;
 exportMovieFiles = true;
 ignoreCh3 = false;
 skipNuclearProjection = true;
@@ -55,11 +54,8 @@ while k<=length(varargin)
         shouldTrackNuclei = varargin{k+1};
     elseif strcmpi(varargin{k}, 'zslicesPadding')
         zslicesPadding = true;
-        
-    elseif strcmpi(varargin{k}, 'exportNuclearProjections')
-        exportNuclearProjections= varargin{k+1};
     elseif strcmpi(varargin{k}, 'skipNuclearProjection')
-        skipNuclearProjection = varargin{k+1};
+        skipNuclearProjection = true;
     elseif strcmpi(varargin{k}, 'exportMovieFiles')
         exportMovieFiles = varargin{k+1};
     else
