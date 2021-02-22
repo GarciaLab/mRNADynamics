@@ -34,6 +34,7 @@ for i = 1:length(rawDir)
             projName = projDir(k).name;
             fullPath = [projPath, filesep, projName];
             delete(fullPath)
+%             java.io.File(fullPath).delete();
         end        
     end   
 end

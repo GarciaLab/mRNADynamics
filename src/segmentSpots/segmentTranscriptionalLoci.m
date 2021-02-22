@@ -1,21 +1,38 @@
-function [Spots, dogs]...
+function Spots...
     ...
     = segmentTranscriptionalLoci(...
     ...
-    nCh, coatChannel, channelIndex, initialFrame, numFrames,...
-    zSize, PreProcPath, Prefix, DogOutputFolder, displayFigures,doFF, ffim,...
-    Threshold, neighborhood, snippet_size, pixelSize, microscope,...
-    Weka,filterMovieFlag, resultsFolder, gpu, saveAsMat, saveType, Ellipses)
+    ch_quantify, initialFrame, lastFrame,...
+    zSize, ~, Prefix, ~, shouldDisplayFigures,doFF, ffim,...
+    Threshold, neighborhood, snippet_size, ~, microscope,...
+    ~,filterMovieFlag, resultsFolder, gpu, saveAsMat, ~, shouldMaskNuclei,...
+    autoThresh, ch_segment)
+
+
+cleanupObj = onCleanup(@myCleanupFun);
+
+radiusScale = 1.3; %dilate the nuclear mask by this factor
+
+liveExperiment = LiveExperiment(Prefix);
+pixelSize_nm = liveExperiment.pixelSize_nm;
 
 
 dogs = [];
 
+DogOutputFolder = [liveExperiment.procFolder, 'dogs', filesep];
+
+dogDir = dir([DogOutputFolder, '*_ch0', num2str(ch_segment), '.*']);
+
+haveProbs = any(cellfun(@(x) contains(x, 'prob'), {dogDir.name}));
+%stacks won't be indexed by _z
+haveStacks = any(cellfun(@(x) ~contains(x, '_z'), {dogDir.name}));
+
 waitbarFigure = waitbar(0, 'Segmenting spots');
 set(waitbarFigure, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
 
-Spots = repmat(struct('Fits', []), 1, numFrames);
+Spots = repmat(struct('Fits', []), 1, lastFrame);
 
-if displayFigures
+if shouldDisplayFigures
     %left bottom width height
     dogFig = figure('units', 'normalized', 'position',[.4, .5, .4, .4]);
     dogAx = axes(dogFig, 'Visible', 'off');
@@ -25,180 +42,175 @@ if displayFigures
     snipAx = axes(snipFig);
     rawFig = figure('units', 'normalized', 'position',[.01, .1, .33, .33]);
     rawAx = axes(rawFig);
-    
+    maskFig = figure;
     graphicsHandles = [dogFig, dogAx, gFig, gAx, snipFig, snipAx, rawFig, rawAx];
 else
     graphicsHandles = [];
     dogAx = 0;
 end
 
-if Weka
+if haveProbs
     MLFlag = 'ML';
     dogStr = 'prob';
-    if Threshold < 5000
+    if isnan(Threshold) || isempty(Threshold)
         warning('Increasing threshold to 5000. For Weka ML, you are thresholding on probability maps so the threshold shouldn''t be set below 50% = 5000.')
         Threshold = 5000;
     end
 else
     MLFlag = '';
-    dogStr = 'DOG_';
+    
+    if haveStacks
+        dogStr = 'dogStack_';
+    else      
+        dogStr = 'DOG_';
+    end
 end
+
 
 %Check how many coat channels we have and segment the appropriate channel
 %accordingly
 
 if filterMovieFlag
     filterType = 'Difference_of_Gaussian_3D';
-    sigmas = {round(200/pixelSize),round(800/pixelSize)};
-    filterOpts = {'nWorkers', 1, 'highPrecision', 'customFilter', filterType,...
+    sigmas = {round(200/liveExperiment.pixelSize_nm),...
+        round(800/liveExperiment.pixelSize_nm)};
+    filterOpts = {'nWorkers', 1, 'highPrecision',...
+         'noSave', 'customFilter', filterType,...
         sigmas, 'double', 'keepPool', gpu};
-    if saveAsMat
-        filterOpts = [filterOpts, 'saveAsMat'];
-    else
-        filterOpts = [filterOpts, 'noSave'];
-    end
+  
     [~, dogs] = filterMovie(Prefix,'optionalResults', resultsFolder, filterOpts{:});
 end
 
-if nCh > 1
-    chh = channelIndex;
+movieMat = getMovieMat(liveExperiment);
+if ~isempty(movieMat)
+    movieMat_channel = movieMat(:, :, :, :, ch_quantify);
 else
-    chh = coatChannel;
+    movieMat_channel = [];
 end
 
-nameSuffix = ['_ch', iIndex(chh, 2)];
+yDim = liveExperiment.yDim;
+xDim = liveExperiment.xDim;
+zDim = liveExperiment.zDim;
 
-if Threshold == -1 && ~Weka
-    
-    if ~filterMovieFlag
-        Threshold = determineThreshold(Prefix, chh, 'numFrames', numFrames);
-        display(['Threshold: ', num2str(Threshold)])
-    else
-        Threshold = determineThreshold(Prefix, chh, 'noSave', dogs, 'numFrames', numFrames);
+% if shouldMaskNuclei
+%     if liveExperiment.hasEllipsesFile
+%         Ellipses = getEllipses(liveExperiment);
+%         if isempty(Ellipses)
+%             disp('Don''t try to do anything to Ellipses')
+%         else
+%             Ellipses = filterEllipses(Ellipses, [yDim, xDim]);
+%         end
+%     else
+%         shouldMaskNuclei = false;
+%     end
+% end
+
+   
+    if autoThresh
+        if ~filterMovieFlag
+            Threshold = determineThreshold(Prefix,...
+                ch_segment,  'numFrames', lastFrame, 'firstFrame', initialFrame);
+            display(['Threshold: ', num2str(Threshold)])
+        else
+            Threshold = determineThreshold(Prefix,...
+                ch_segment, 'noSave', 'numFrames', lastFrame);
+        end
     end
     
-    display(['Threshold: ', num2str(Threshold)])
-    
-end
-
+    display(['Spot intensity threshold: ', num2str(Threshold)])
+        
+isZPadded = size(movieMat, 3) ~= zSize;
 
 q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
-
-if filterMovieFlag
-    saveType = 'none';
-end
-
-isZPadded = false;
-
-firstdogpath = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2),...
-    nameSuffix];
-
-matsPresent = exist([firstdogpath, '.mat'], 'file');
-tifsPresent = exist([firstdogpath, '.tif'], 'file');
-
-if isempty(saveType)
-    if tifsPresent & ~matsPresent
-        saveType = '.tif';
-    elseif matsPresent & ~tifsPresent
-        saveType = '.mat';
-    elseif matsPresent & tifsPresent
-        error('not sure which files to pick. check your processed folder.');
+parfor currentFrame = initialFrame:lastFrame
+    
+    if ~isempty(movieMat_channel)
+        imStack = movieMat_channel(:, :, :, currentFrame);
+    else
+        imStack = getMovieFrame(liveExperiment, currentFrame, ch_quantify);
     end
-end
-
-firstdogpath = [firstdogpath, saveType];
-if strcmpi(saveType, '.tif')
-    firstDoG = imread(firstdogpath);
-elseif strcmpi(saveType, '.mat')
-    load(firstdogpath, 'plane');
-    firstDoG = plane;
-elseif strcmpi(saveType, 'none')
-    firstDoG = dogs(:, :, 1, 1);
-end
-
-if sum(firstDoG(:)) == 0
-    isZPadded = true;
-end
-
-parfor current_frame = initialFrame:numFrames
+    
+   
+    %report progress every tenth frame
+    if ~mod(currentFrame, 10), disp(['Segmenting frame ',...
+            num2str(currentFrame), '...']); end
+    
+    if haveStacks
+        
+        dogStackFile = [DogOutputFolder, dogStr, Prefix, '_',...
+            iIndex(currentFrame, 3),...
+            '_ch', iIndex(ch_segment, 2)];
+        
+        if exist([dogStackFile, '.mat'], 'file')
+            dogStack = load([dogStackFile,'.mat'], 'dogStack');
+            dogStack = dogStack.dogStack;
+        elseif exist([dogStackFile, '.tif'], 'file')
+            dogStack = imreadStack2([dogStackFile, '.tif'], yDim,...
+                xDim, zDim);
+        else
+            error('Cannot find any dogs in the ProcessedData folder. Are they missing or incorrectly named?')
+        end
+        
+        
+    end
     
     for zIndex = 1:zSize
         
-        imFileName = [PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex, 2),...
-            nameSuffix, '.tif'];
-        im = double(imread(imFileName));
+        im = imStack(:, :, zIndex);
+        
         try
-            imAbove = double(imread([PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex-1, 2),...
-                nameSuffix, '.tif']));
-            imBelow = double(imread([PreProcPath, filesep, Prefix, filesep, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(zIndex+1, 2),...
-                nameSuffix, '.tif']));
+            imAbove = imStack(:, :, zIndex+1);
+            imBelow= imStack(:, :, zIndex-1);
         catch
             imAbove = nan(size(im,1),size(im,2));
             imBelow = nan(size(im,1),size(im,2));
         end
         
         
-        if isZPadded
-            dogZ = zIndex;
-        else
-            dogZ = zIndex - 1;
-        end
+        if isZPadded, dogZ = zIndex;
+        else, dogZ = zIndex - 1; end
         
-%         try
-            if isZPadded | ( ~isZPadded & (zIndex~=1 & zIndex~=zSize) )
-                if strcmpi(saveType, '.tif')
-                    dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(dogZ, 2),...
-                        nameSuffix,'.tif'];
-                    dog = double(imread(dogFileName));
-                elseif strcmpi(saveType, '.mat')
-                    dogFileName = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(current_frame, 3), '_z', iIndex(dogZ, 2),...
-                        nameSuffix,'.mat'];
-                    plane = load(dogFileName, 'plane');
-                    dog = plane.plane;
-                elseif strcmpi(saveType, 'none')
-                    dog = dogs(:,:, dogZ, current_frame);
-                end
-            else
-                dog = false(size(im, 1), size(im, 2));
-            end
-%         catch
-%             error('Please run filterMovie to create DoG files.');
-%         end
+        if haveStacks, dog = dogStack(:, :, dogZ); end
+      
         
-        
-        
-        
-        if displayFigures
+        if shouldDisplayFigures
             dogO = im(:);
             lLim = median(dogO);
             uLim = max(dogO);
             if lLim ~= uLim
-                imagescUpdate(dogAx, im, [lLim, uLim]);
+                imagescUpdate(dogAx, im, [lLim, uLim], 'cmap', 'gray');
             else
-                imagescUpdate(dogAx, im, []);
+                imagescUpdate(dogAx, im, [], 'cmap', 'gray');
             end
             drawnow;
         end
         
         % Apply flatfield correction
         if doFF && sum(size(im)==size(ffim))
-            im = im.*ffim;
+            im = double(im).*ffim; % GM 9/3/20
+            %im = im.*ffim;
         end
         
         im_thresh = dog >= Threshold;
         
         % apply nuclear mask if it exists
-        if ~isempty(Ellipses)
-            ellipsesFrame = Ellipses{current_frame};
-            nuclearMask = makeNuclearMask(ellipsesFrame, [size(im,1), size(im,2)]);
-    %         immask = uint16(nuclearMask).*im;
-    %         imshow(immask, [])
-            im_thresh = im_thresh & nuclearMask;
-        end
+%         if shouldMaskNuclei
+%     
+%             nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
+%             im_thresh = im_thresh & nuclearMask;
+%             
+% %             if shouldDisplayFigures
+% %                 figure(maskFig);
+% %                 imshowpair(nuclearMask, dog, 'montage'); 
+% %             end
+%             
+%         end
         
-        if Weka
+        %probability map regions usually look different from dog regions and
+        %require some mophological finesse
+        if haveProbs
             se = strel('square', 3);
             im_thresh = imdilate(im_thresh, se); %thresholding from this classified probability map can produce non-contiguous, spurious Spots{channelIndex}. This fixes that and hopefully does not combine real Spots{channelIndex} from different nuclei
             im_thresh = im_thresh > 0;
@@ -207,32 +219,35 @@ parfor current_frame = initialFrame:numFrames
         [im_label, n_spots] = bwlabel(im_thresh);
         centroids = regionprops(im_thresh, 'centroid');
         
-        temp_frames = {};
-        temp_particles = cell(1, n_spots);
         
         if n_spots ~= 0
             
             for spotIndex = 1:n_spots
                 centroid = round(centroids(spotIndex).Centroid);
-                tic
-                [temp_particles(spotIndex), Fits] = identifySingleSpot(spotIndex, {im,imAbove,imBelow}, im_label, dog, ...
-                    neighborhood, snippet_size, pixelSize, displayFigures, graphicsHandles, microscope, 0, centroid,MLFlag, current_frame, spotIndex, zIndex);
-                Spots(current_frame).Fits = [Spots(current_frame).Fits, Fits];
+                
+                 Fits = identifySingleSpot(spotIndex,...
+                    {im,imAbove,imBelow}, im_label, dog, ...
+                    neighborhood, snippet_size, pixelSize_nm, shouldDisplayFigures,...
+                    graphicsHandles, microscope, 0,...
+                    centroid,MLFlag, currentFrame, spotIndex, zIndex);
+                
+                Spots(currentFrame).Fits = [Spots(currentFrame).Fits, Fits];
+                
             end
             
         end
         
     end
     
-    send(q, current_frame);
+    send(q, currentFrame);
     
 end
 
 
-close(waitbarFigure);
+try close(waitbarFigure); catch; end
 
     function nUpdateWaitbar(~)
-        waitbar(p/numFrames, waitbarFigure);
+        try waitbar(p/lastFrame, waitbarFigure); catch; end
         p = p + 1;
     end
 

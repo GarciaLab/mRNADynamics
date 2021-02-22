@@ -4,7 +4,7 @@ function keyInputHandler = GeneralEventHandler(cptState, DataFolder, DropboxFold
         if cc == 'f'
             [cptState.Particles, cptState.schnitzcells] = redoTracking(DataFolder, ...
                 cptState.UseHistoneOverlay, cptState.FrameInfo, DropboxFolder, FilePrefix, cptState.schnitzcells, ...
-                cptState.Particles, NChannels, cptState.CurrentChannel, cptState.numParticles());
+                cptState.Particles, NChannels, cptState.CurrentChannelIndex, cptState.numParticles());
         elseif cc == 's'
             saveChanges(NChannels, cptState, DataFolder, FilePrefix, DropboxFolder);
         elseif cc == '~'
@@ -27,6 +27,9 @@ function keyInputHandler = GeneralEventHandler(cptState, DataFolder, DropboxFold
             cptState.DisplayRangeSpot = [min(cptState.ImageMat(:)), max(cptState.ImageMat(:)) * 1.5];
             
             disp('decreased spot contrast');
+        elseif cc == '*'
+            % Enable/disable multi-view titles for speed
+            cptState.mvTitleSwitch = ~cptState.mvTitleSwitch;
             
         elseif cc == '0' %Debugging mode
             keyboard;

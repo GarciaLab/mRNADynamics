@@ -1,32 +1,42 @@
 function [Particles, CompiledParticles, ncFilter, ncFilterID] =...
+    ...
     compileTraces(NChannels, Particles, HistoneChannel, ...
+    ...
     schnitzcells, minTime, ExperimentAxis, APbinID, APbinArea, CompiledParticles, ...
-    Spots, SkipTraces, nc9, nc10, nc11, nc12, nc13, nc14, ncFilterID, ncFilter, ...
+    Spots, SkipTraces, ncFilterID, ncFilter, ...
     ElapsedTime, Ellipses, EllipsePos, PreProcPath, ...
-    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits, edgeWidth, pixelSize, coatChannels, fullEmbryo)
+    FilePrefix, Prefix, DropboxFolder, numFrames, manualSingleFits,...
+    edgeWidth, pixelSize_nm, coatChannels, fullEmbryoExists, liveExperiment)
+
 %COMPILETRACES Summary of this function goes here
 %   Detailed explanation goes here
 
-%See how  many frames we have and adjust the index size of the files to
-%load accordingly
-if numFrames<1E3
-    NDigits=3;
-elseif numFrames<1E4
-    NDigits=4;
-else
-    error('No more than 10,000 frames currently supported.')
-end
+liveExperiment = LiveExperiment(Prefix);
 
-pixelSize = pixelSize * 1000; %nm
-SnippetSize = 2 * (floor(1300 / (2 * pixelSize))) + 1; % nm. note that this is forced to be odd
+FrameInfo = getFrameInfo(liveExperiment);
+
+anaphaseFrames = liveExperiment.anaphaseFrames';
+nc9 = anaphaseFrames(1); nc10 = anaphaseFrames(2); nc11 = anaphaseFrames(3);
+nc12 = anaphaseFrames(4); nc13 = anaphaseFrames(5); nc14 = anaphaseFrames(6);
+
+NDigits = liveExperiment.nDigits;
+
+DropboxFolder = liveExperiment.userResultsFolder;
+PreProcPath = liveExperiment.userPreFolder;
+pixelSize_nm = liveExperiment.pixelSize_nm;
+SnippetSize = 2 * (floor(1300 / (2 * pixelSize_nm))) + 1; % nm. note that this is forced to be odd
 
 NChannels = length(coatChannels);
+
+if ~SkipTraces
+    movieMat = getMovieMat(liveExperiment); 
+end
 
 h = waitbar(0,'Compiling traces');
 for ChN=1:NChannels
     k=1;
     for i=1:length(Particles{ChN})
-        waitbar(i/length(Particles{ChN}),h)
+        try waitbar(i/length(Particles{ChN}),h); end
         if (Particles{ChN}(i).Approved==1)
             
             for NCh=1:NChannels
@@ -43,14 +53,6 @@ for ChN=1:NChannels
             %condition?
             FirstFrame=Particles{ChN}(i).Frame(min(find(Particles{ChN}(i).FrameApproved)));
             
-            %Check that for the remaining frames we got a good z-profile
-            %                 for j=1:length(Particles{ChN}(i).Frame)
-            %                     ZProfile=fad(ChN).channels(Particles{ChN}(i).Frame(j)).fits.shadowsDog{Particles{ChN}(i).Index(j)};
-            %                     [Dummy,ZMax]=max(ZProfile);
-            %                     if (ZMax==1)|(ZMax==length(ZProfile))
-            %                         FrameFilter(j)=0;
-            %                     end
-            %                 end
             
             %Should I only keep traces of a certain length? We also just keep
             %the ones that have a real schnitz associated with them
@@ -81,7 +83,7 @@ for ChN=1:NChannels
             
             %See if this particle is in one of the approved AP bins
             try
-                if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV') && fullEmbryo
+                if (strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV')) && fullEmbryoExists
                     CurrentAPbin=max(find(APbinID<mean(Particles{ChN}(i).APpos(FrameFilter))));
                     if isnan(APbinArea(CurrentAPbin))
                         AnalyzeThisParticle=0;
@@ -111,13 +113,13 @@ for ChN=1:NChannels
                 %CompiledParticles{ChN}(k).DVpos=Particles{ChN}(i).DVpos(FrameFilter);
                 CompiledParticles{ChN}(k).FrameApproved = Particles{ChN}(i).FrameApproved;
                 
-                if strcmpi(ExperimentAxis,'AP') && fullEmbryo
+                if strcmpi(ExperimentAxis,'AP') && fullEmbryoExists
                     CompiledParticles{ChN}(k).APpos=Particles{ChN}(i).APpos(FrameFilter);
                     
                     %Determine the particles average and median AP position
                     CompiledParticles{ChN}(k).MeanAP=mean(Particles{ChN}(i).APpos(FrameFilter));
                     CompiledParticles{ChN}(k).MedianAP=median(Particles{ChN}(i).APpos(FrameFilter));
-                elseif strcmpi(ExperimentAxis,'DV') && fullEmbryo %&isfield(Particles,'APpos')
+                elseif strcmpi(ExperimentAxis,'DV') && fullEmbryoExists %&isfield(Particles,'APpos')
                     %AP information:
                     CompiledParticles{ChN}(k).APpos=Particles{ChN}(i).APpos(FrameFilter);
                     CompiledParticles{ChN}(k).MeanAP=mean(Particles{ChN}(i).APpos(FrameFilter));
@@ -134,7 +136,7 @@ for ChN=1:NChannels
                 %found. If there is no nucleus (like when a particle survives
                 %past the nuclear division) we will still use the actual particle
                 %position.
-                if HistoneChannel&strcmpi(ExperimentAxis,'AP') && fullEmbryo
+                if HistoneChannel&strcmpi(ExperimentAxis,'AP') && fullEmbryoExists
                     %Save the original particle position
                     CompiledParticles{ChN}(k).APposParticle=CompiledParticles{ChN}(k).APpos;
                     
@@ -167,16 +169,22 @@ for ChN=1:NChannels
                     CompiledParticles{ChN}(k).fittedSlope = [];
                     CompiledParticles{ChN}(k).fittedTon = [];
                 end
+                
                 %Extract position info and general Gauss3D fit info
                 try
-                [~,gx_vec,gy_vec,gz_vec,g_fits_cell,f3_vec,f3_raw_vec]=...
-                    getGauss3DFitInfo(k,CompiledParticles{ChN},Spots{ChN});
-                threeDFlag = ~all(isnan(gx_vec));
-
+                    [~,gx_vec,gy_vec,gz_vec,g_fits_cell,f3_vec,f3_raw_vec]=...
+                        getGauss3DFitInfo(k,CompiledParticles{ChN},Spots{ChN});
+                    threeDFlag = ~all(isnan(gx_vec));
+                    
                 catch
+                    
                     warning('Didn''t have complete Gauss 3D info');
                     threeDFlag = false;
+                    
                 end
+                
+%                 threeDFlag = false; %setting this to false until gaussian fits are fixed
+                
                 if threeDFlag
                     CompiledParticles{ChN}(k).xPosGauss3D = gx_vec;
                     CompiledParticles{ChN}(k).yPosGauss3D = gy_vec;
@@ -188,7 +196,7 @@ for ChN=1:NChannels
                 end
                 %Extract information from Spots about fluorescence and background
                 plotTraceSettings = PlotTraceSettings();
-
+                
                 [Frame, AmpGaussian, Off, ErrorGauss, optFit1, FitType,...
                     AmpDog, AmpDogMax, ampdog3, ampdog3Max]...
                     = GetParticleTrace(k,CompiledParticles{ChN},Spots{ChN}, plotTraceSettings, false);
@@ -196,12 +204,16 @@ for ChN=1:NChannels
                 CompiledParticles{ChN}(k).Fluo3 = plotTraceSettings.AmpIntegral3;
                 CompiledParticles{ChN}(k).FluoGauss= AmpGaussian;
                 CompiledParticles{ChN}(k).Off=Off;
-                CompiledParticles{ChN}(k).FluoError = plotTraceSettings.ErrorIntegral(1); % SEANCHANGED
+                if ~isempty(plotTraceSettings.ErrorIntegral)
+                    CompiledParticles{ChN}(k).FluoError = plotTraceSettings.ErrorIntegral(1); % SEANCHANGED
+                else
+                    CompiledParticles{ChN}(k).FluoError = NaN;
+                end
                 CompiledParticles{ChN}(k).optFit1=optFit1;
                 CompiledParticles{ChN}(k).FitType=FitType;
                 CompiledParticles{ChN}(k).FluoDog = AmpDog;
                 CompiledParticles{ChN}(k).FluoDogMax = AmpDogMax;
-                ampIntegralGauss3DAux = plotTraceSettings.AmpIntegralGauss3D
+                ampIntegralGauss3DAux = plotTraceSettings.AmpIntegralGauss3D;
                 CompiledParticles{ChN}(k).FluoGauss3D = ampIntegralGauss3DAux';
                 CompiledParticles{ChN}(k).FluoGauss3DError = plotTraceSettings.ErrorIntegralGauss3D;
                 CompiledParticles{ChN}(k).ampdog3 = ampdog3;
@@ -213,15 +225,18 @@ for ChN=1:NChannels
                 %Determine the nc where this particle was born
                 try
                     CompiledParticles{ChN}(k).nc=FrameInfo(CompiledParticles{ChN}(k).Frame(1)).nc;
-                catch
+                    CompiledParticles{ChN}(k).cycle=FrameInfo(CompiledParticles{ChN}(k).Frame(1)).nc;
                 end
                 
                 if HistoneChannel
                     CompiledParticles{ChN}(k).Nucleus=Particles{ChN}(i).Nucleus;
+                    
                     %We have two fields with the same information:
                     %"Nucleus" and "schnitz". In future versions we'll get rid of
                     %"Nucleus"
                     CompiledParticles{ChN}(k).schnitz=Particles{ChN}(i).Nucleus;
+                    
+                    assert(CompiledParticles{ChN}(k).schnitz <= length(schnitzcells));
                     
                     %Save lineage information in terms of particles
                     if isfield(schnitzcells, 'P')
@@ -235,7 +250,7 @@ for ChN=1:NChannels
                         else
                             CompiledParticles{ChN}(k).PParticle=[];
                         end
-
+                        
                         if ~isempty(schnitzcells(Particles{ChN}(i).Nucleus).D)
                             if isempty(find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).D))
                                 CompiledParticles{ChN}(k).DParticle=0;
@@ -245,7 +260,7 @@ for ChN=1:NChannels
                         else
                             CompiledParticles{ChN}(k).DParticle=[];
                         end
-
+                        
                         if ~isempty(schnitzcells(Particles{ChN}(i).Nucleus).E)
                             if isempty(find([Particles{ChN}.Nucleus]==schnitzcells(Particles{ChN}(i).Nucleus).E))
                                 CompiledParticles{ChN}(k).EParticle=0;
@@ -255,7 +270,7 @@ for ChN=1:NChannels
                         else
                             CompiledParticles{ChN}(k).EParticle=[];
                         end
-                    
+                        
                     end
                     
                     %Save information about the nucleus birth and death
@@ -343,11 +358,11 @@ for ChN=1:NChannels
                     
                     
                     titlestr = ['ParticleTraces',filesep,iIndex(k,NDigits),...
-                            '(',num2str(i),')-nc',...
-                            num2str(CompiledParticles{ChN}(k).nc),'_ch',iIndex(ChN,2)];
+                        '(',num2str(i),')-nc',...
+                        num2str(CompiledParticles{ChN}(k).nc),'_ch',iIndex(ChN,2)];
                     
                     figure('Name',titlestr,'NumberTitle','off');
-
+                    
                     left_color = [213,108,85]/255;
                     right_color = [0, 0, 0]/255;
                     set(gcf,'defaultAxesColorOrder',[left_color; right_color]);
@@ -374,42 +389,42 @@ for ChN=1:NChannels
                     FilterMatrix(:,1:ceil(NCols/2))=1;
                     subplot(TotalRows,NCols,find(FilterMatrix'))
                     
-                    %                     yyaxis left
+%                     yyaxis left
 %                     errorbar(ElapsedTime(CompiledParticles{ChN}(k).Frame),...
 %                         CompiledParticles{ChN}(k).Fluo,ones(size(CompiledParticles{ChN}(k).Fluo))*...
 %                         CompiledParticles{ChN}(k).FluoError,...
 %                         '.-r');
                     errorbar(ElapsedTime(CompiledParticles{ChN}(k).Frame),...
-                        CompiledParticles{ChN}(k).FluoGauss3D, CompiledParticles{ChN}(k).FluoGauss3DError,...
+                        CompiledParticles{ChN}(k).Fluo3, 3*CompiledParticles{ChN}(k).FluoError *ones(size(CompiledParticles{ChN}(k).Fluo)),...
                         '.-r');
                     ylabel('fluorescence (au)')
-%                     hold on
+                    %                     hold on
                     
                     %                     yyaxis right
-%                     plot(ElapsedTime(CompiledParticles{ChN}(k).Frame),...
-%                         CompiledParticles{ChN}(k).Off*intArea,'.-g');
-%                     if ~isempty(CompiledParticles{ChN}(k).optFit1)
-%                         
-%                         if strcmp(CompiledParticles{ChN}(k).FitType,'spline')
-%                             SplineValues=ppval(CompiledParticles{ChN}(k).optFit1,double(CompiledParticles{ChN}(k).Frame));
-%                         elseif strcmp(CompiledParticles{ChN}(k).FitType,'mean')
-%                             SplineValues=ones(size(CompiledParticles{ChN}(k).Frame))*CompiledParticles{ChN}(k).optFit1;
-%                         elseif strcmp(CompiledParticles{ChN}(k).FitType,'line')
-%                             SplineValues=polyval(CompiledParticles{ChN}(k).optFit1,CompiledParticles{ChN}(k).Frame);
-%                         end
-%                         
-%                         %                         yyaxis right
-%                         plot(ElapsedTime(CompiledParticles{ChN}(k).Frame),SplineValues*intArea,'-b')
-%                         try
-%                             title(['particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{ChN}(k).nc),', Ch: ',num2str(ChN)])
-%                         catch
-%                         end
-%                     else
-%                         title(['particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{1}(k).nc),', Ch: ',num2str(ChN),...
-%                             ' - WARNING: No offset fit'])
-%                     end
-%                     hold off
-%                     legend({'Particle','Offset','Offset fit'},'Location','Best')
+                    %                     plot(ElapsedTime(CompiledParticles{ChN}(k).Frame),...
+                    %                         CompiledParticles{ChN}(k).Off*intArea,'.-g');
+                    %                     if ~isempty(CompiledParticles{ChN}(k).optFit1)
+                    %
+                    %                         if strcmp(CompiledParticles{ChN}(k).FitType,'spline')
+                    %                             SplineValues=ppval(CompiledParticles{ChN}(k).optFit1,double(CompiledParticles{ChN}(k).Frame));
+                    %                         elseif strcmp(CompiledParticles{ChN}(k).FitType,'mean')
+                    %                             SplineValues=ones(size(CompiledParticles{ChN}(k).Frame))*CompiledParticles{ChN}(k).optFit1;
+                    %                         elseif strcmp(CompiledParticles{ChN}(k).FitType,'line')
+                    %                             SplineValues=polyval(CompiledParticles{ChN}(k).optFit1,CompiledParticles{ChN}(k).Frame);
+                    %                         end
+                    %
+                    %                         %                         yyaxis right
+                    %                         plot(ElapsedTime(CompiledParticles{ChN}(k).Frame),SplineValues*intArea,'-b')
+                    %                         try
+                    %                             title(['particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{ChN}(k).nc),', Ch: ',num2str(ChN)])
+                    %                         catch
+                    %                         end
+                    %                     else
+                    %                         title(['particle ',num2str(k),'(',num2str(i),'), nc',num2str(CompiledParticles{1}(k).nc),', Ch: ',num2str(ChN),...
+                    %                             ' - WARNING: No offset fit'])
+                    %                     end
+                    %                     hold off
+                    %                     legend({'Particle','Offset','Offset fit'},'Location','Best')
                     xlabel('time (min)')
                     axis square
                     set(gca, 'Position', get(gca, 'OuterPosition') - ...
@@ -419,132 +434,141 @@ for ChN=1:NChannels
                     
                     
                     
-%                     %%
-%                     %Top right plot
-%                     if HistoneChannel
-%                         subplot(TotalRows,NCols,find(~FilterMatrix'))
-%                         
-%                         if length(CompiledParticles{ChN}(k).Frame)>1
-%                             colormap(jet(128));
-%                             cmap=colormap;
-%                             
-%                             ColorTime=[];
-%                             for j=1:length(CompiledParticles{ChN}(k).Frame)
-%                                 ColorTime(j,:)= cmap(round((j-1)/...
-%                                     (length(CompiledParticles{ChN}(k).Frame)-1)*127+1),:);
-%                             end
-%                         else
-%                             ColorTime=[];
-%                             ColorTime(1,:)=[1,0,0];
-%                         end
-%                         
-%                         
-%                         
-%                         hold on
-%                         for j=1:length(CompiledParticles{ChN}(k).Frame)
-%                             PosSchnitz=find((schnitzcells(CompiledParticles{ChN}(k).Nucleus).frames)==...
-%                                 CompiledParticles{ChN}(k).Frame(j));
-%                             PosEllipse=schnitzcells(CompiledParticles{ChN}(k).Nucleus).cellno(PosSchnitz);
-%                             CurrEllipse=Ellipses{CompiledParticles{ChN}(k).Frame(j)}(PosEllipse,:);
-%                             
-%                             if ~isempty(CurrEllipse)
-%                                 EllipseHandle=ellipse(CurrEllipse(3),...
-%                                     CurrEllipse(4),...
-%                                     CurrEllipse(5),...
-%                                     0,0,[],[],gca);
-%                                 set(EllipseHandle,'color',ColorTime(j,:))
-%                                 plot(CompiledParticles{ChN}(k).xPos(j)-CurrEllipse(1),...
-%                                     CompiledParticles{ChN}(k).yPos(j)-CurrEllipse(2),'o','color',...
-%                                     ColorTime(j,:))
-%                             else
-%                                 PosSchnitz=length(schnitzcells(CompiledParticles{ChN}(k).Nucleus).frames);
-%                                 PosEllipse=schnitzcells(CompiledParticles{ChN}(k).Nucleus).cellno(PosSchnitz);
-%                                 CurrEllipse=...
-%                                     Ellipses{schnitzcells(CompiledParticles{ChN}(k).Nucleus).frames(PosSchnitz)}(PosEllipse,:);
-%                                 
-%                                 
-%                                 
-%                                 plot(CompiledParticles{ChN}(k).xPos(j)-CurrEllipse(1),...
-%                                     CompiledParticles{ChN}(k).yPos(j)-CurrEllipse(2),'o','color',...
-%                                     ColorTime(j,:))
-%                             end
-%                             
-%                             
-%                             
-%                         end
-%                         hold off
-%                         box on
-%                         xlabel('x position (pixels)')
-%                         ylabel('y position (pixels)')
-%                         axis square
-%                         set(gca, 'Position', get(gca, 'OuterPosition') - ...
-%                             get(gca, 'TightInset') * [-1 0 1 0; 0 -1 0 1; 0 0 1 0; 0 0 0 1]);
-%                         set(gca, 'YDir', 'reverse')
-%                         BarHandle = colorbar;
-%                         set(BarHandle,'YTick',[])
-%                        
-%                         if strcmpi(ExperimentAxis,'AP')
-%                             title(['Mean AP: ',num2str(CompiledParticles{ChN}(k).MeanAP)])
-%                         end
-%                         drawnow
-%                     end
+                    %                     %%
+                    %                     %Top right plot
+                    %                     if HistoneChannel
+                    %                         subplot(TotalRows,NCols,find(~FilterMatrix'))
+                    %
+                    %                         if length(CompiledParticles{ChN}(k).Frame)>1
+                    %                             colormap(jet(128));
+                    %                             cmap=colormap;
+                    %
+                    %                             ColorTime=[];
+                    %                             for j=1:length(CompiledParticles{ChN}(k).Frame)
+                    %                                 ColorTime(j,:)= cmap(round((j-1)/...
+                    %                                     (length(CompiledParticles{ChN}(k).Frame)-1)*127+1),:);
+                    %                             end
+                    %                         else
+                    %                             ColorTime=[];
+                    %                             ColorTime(1,:)=[1,0,0];
+                    %                         end
+                    %
+                    %
+                    %
+                    %                         hold on
+                    %                         for j=1:length(CompiledParticles{ChN}(k).Frame)
+                    %                             PosSchnitz=find((schnitzcells(CompiledParticles{ChN}(k).Nucleus).frames)==...
+                    %                                 CompiledParticles{ChN}(k).Frame(j));
+                    %                             PosEllipse=schnitzcells(CompiledParticles{ChN}(k).Nucleus).cellno(PosSchnitz);
+                    %                             CurrEllipse=Ellipses{CompiledParticles{ChN}(k).Frame(j)}(PosEllipse,:);
+                    %
+                    %                             if ~isempty(CurrEllipse)
+                    %                                 EllipseHandle=ellipse(CurrEllipse(3),...
+                    %                                     CurrEllipse(4),...
+                    %                                     CurrEllipse(5),...
+                    %                                     0,0,[],[],gca);
+                    %                                 set(EllipseHandle,'color',ColorTime(j,:))
+                    %                                 plot(CompiledParticles{ChN}(k).xPos(j)-CurrEllipse(1),...
+                    %                                     CompiledParticles{ChN}(k).yPos(j)-CurrEllipse(2),'o','color',...
+                    %                                     ColorTime(j,:))
+                    %                             else
+                    %                                 PosSchnitz=length(schnitzcells(CompiledParticles{ChN}(k).Nucleus).frames);
+                    %                                 PosEllipse=schnitzcells(CompiledParticles{ChN}(k).Nucleus).cellno(PosSchnitz);
+                    %                                 CurrEllipse=...
+                    %                                     Ellipses{schnitzcells(CompiledParticles{ChN}(k).Nucleus).frames(PosSchnitz)}(PosEllipse,:);
+                    %
+                    %
+                    %
+                    %                                 plot(CompiledParticles{ChN}(k).xPos(j)-CurrEllipse(1),...
+                    %                                     CompiledParticles{ChN}(k).yPos(j)-CurrEllipse(2),'o','color',...
+                    %                                     ColorTime(j,:))
+                    %                             end
+                    %
+                    %
+                    %
+                    %                         end
+                    %                         hold off
+                    %                         box on
+                    %                         xlabel('x position (pixels)')
+                    %                         ylabel('y position (pixels)')
+                    %                         axis square
+                    %                         set(gca, 'Position', get(gca, 'OuterPosition') - ...
+                    %                             get(gca, 'TightInset') * [-1 0 1 0; 0 -1 0 1; 0 0 1 0; 0 0 0 1]);
+                    %                         set(gca, 'YDir', 'reverse')
+                    %                         BarHandle = colorbar;
+                    %                         set(BarHandle,'YTick',[])
+                    %
+                    %                         if strcmpi(ExperimentAxis,'AP')
+                    %                             title(['Mean AP: ',num2str(CompiledParticles{ChN}(k).MeanAP)])
+                    %                         end
+                    %                         drawnow
+                    %                     end
                     %%
                     %Snippets
                     for j=1:NFrames
                         subplot(TotalRows,NCols,(TotalRows-NRows)*NCols+j)
                         spotFrame = CompiledParticles{ChN}(k).Frame(j);
                         [x,y,z]=SpotsXYZ(Spots{ChN}(spotFrame));
-%                             [x,y,z]=SpotsXYZ(Spots{ChN}(spotFrame), true);
+                        %                             [x,y,z]=SpotsXYZ(Spots{ChN}(spotFrame), true);
                         if ~isempty(x)
                             if threeDFlag
                                 xTrace = round(CompiledParticles{ChN}(k).xPosGauss3D(j));
                                 yTrace = round(CompiledParticles{ChN}(k).yPosGauss3D(j));
                                 zTrace = round(CompiledParticles{ChN}(k).zPosGauss3D(j));
                             else
-                                xTrace=x(CompiledParticles{ChN}(k).Index(j));
-                                yTrace=y(CompiledParticles{ChN}(k).Index(j));
+                                yTrace=x(CompiledParticles{ChN}(k).Index(j));
+                                xTrace=y(CompiledParticles{ChN}(k).Index(j));
                                 zTrace=z(CompiledParticles{ChN}(k).Index(j));
                             end
-                                try
-                            Image=imread([PreProcPath,filesep,FilePrefix(1:end-1),filesep,...
-                                FilePrefix,iIndex(CompiledParticles{ChN}(k).Frame(j),NDigits),'_z',iIndex(zTrace,2),...
-                                '_ch',iIndex(coatChannels(ChN),2),'.tif']);
-                           
-                            [ImRows,ImCols]=size(Image);
-                            ImageSnippet=zeros(SnippetSize,SnippetSize);
-                            yRange=round(yTrace)+[-(SnippetSize-1)/2:(SnippetSize-1)/2];
-                            yFilter=(yRange>0)&(yRange<=ImRows);
-                            xRange=round(xTrace)+[-(SnippetSize-1)/2:(SnippetSize-1)/2];
-                            xFilter=(xRange>0)&(xRange<=ImCols);
-                            ImageSnippet(yFilter,xFilter)=Image(yRange(yFilter),...
-                                xRange(xFilter));
-                            imshow(ImageSnippet,[],'Border','Tight','InitialMagnification',200)
-                            set(gca, 'Position', get(gca, 'OuterPosition') - ...
-                                get(gca, 'TightInset') * [-1 0 1 0; 0 -1 0 1; 0 0 1 0; 0 0 0 1]);
-                            if HistoneChannel
-                                %Plot the corresponding nucleus
-                                CurrentSchnitz=schnitzcells(CompiledParticles{ChN}(k).Nucleus);
-                                if sum((CurrentSchnitz.frames)==CompiledParticles{ChN}(k).Frame(j))==1
-                                    hold on
-                                    EllipseNumber=CurrentSchnitz.cellno(...
-                                        (CurrentSchnitz.frames)==CompiledParticles{ChN}(k).Frame(j));
-                                    CurrEllipse=Ellipses{CompiledParticles{ChN}(k).Frame(j)}(EllipseNumber,:);
-                                    EllipseHandle=ellipse(CurrEllipse(3),...
-                                        CurrEllipse(4),...
-                                        CurrEllipse(5),...
-                                        CurrEllipse(1)-xTrace+(SnippetSize-1)/2,...
-                                        CurrEllipse(2)-yTrace+(SnippetSize-1)/2,[],[],gca);
-                                    %set(EllipseHandle,'color',ColorTime(j,:))
-                                    set(EllipseHandle,'color','g')
-                                    hold off
+%                             try
+                                if isempty(movieMat)
+                                    Image = getMovieSlice(liveExperiment, CompiledParticles{ChN}(k).Frame(j), coatChannels(ChN), zTrace );
+                                else
+                                    Image = movieMat(:, :, zTrace, CompiledParticles{ChN}(k).Frame(j), coatChannels(ChN));
                                 end
-                            end
-                        end
+%                           
+                                
+                                [ImRows,ImCols]=size(Image);
+                                ImageSnippet=zeros(SnippetSize,SnippetSize);
+                                yRange= round(yTrace)+ [-(SnippetSize-1)/2:(SnippetSize-1)/2];
+                                yFilter=(yRange>0)&(yRange<=ImRows);
+                                xRange=round(xTrace)+[-(SnippetSize-1)/2:(SnippetSize-1)/2];
+                                xFilter=(xRange>0)&(xRange<=ImCols);
+                                
+                                ImageSnippet(yFilter,xFilter)=Image(yRange(yFilter),...
+                                    xRange(xFilter));
+                                
+                                imshow(ImageSnippet,[],'Border','Tight','InitialMagnification',200)
+                                
+                                set(gca, 'Position', get(gca, 'OuterPosition') - ...
+                                    get(gca, 'TightInset') * [-1 0 1 0; 0 -1 0 1; 0 0 1 0; 0 0 0 1]);
+                                
+                                showNucleus = false;
+                                if HistoneChannel && showNucleus
+                                    %Plot the corresponding nucleus
+                                    CurrentSchnitz=schnitzcells(CompiledParticles{ChN}(k).Nucleus);
+                                    if sum((CurrentSchnitz.frames)==CompiledParticles{ChN}(k).Frame(j))==1
+                                        hold on
+                                        EllipseNumber=CurrentSchnitz.cellno(...
+                                            (CurrentSchnitz.frames)==CompiledParticles{ChN}(k).Frame(j));
+                                        CurrEllipse=Ellipses{CompiledParticles{ChN}(k).Frame(j)}(EllipseNumber,:);
+                                        EllipseHandle=ellipse(CurrEllipse(3),...
+                                            CurrEllipse(4),...
+                                            CurrEllipse(5),...
+                                            CurrEllipse(1)-xTrace+(SnippetSize-1)/2,...
+                                            CurrEllipse(2)-yTrace+(SnippetSize-1)/2,[],[],gca);
+                                        %set(EllipseHandle,'color',ColorTime(j,:))
+                                        set(EllipseHandle,'color','g')
+                                        hold off
+                                    end
+                                end
+%                             end %try
                         end
                     end
                     set(gcf,'Position',[1,41,1280,684])
                     
                     drawnow
+               
                     if isfield(CompiledParticles{ChN}(k), 'nc')
                         saveas(gcf,[DropboxFolder,filesep,Prefix,filesep,titlestr,'.tif'])
                     end
@@ -558,6 +582,8 @@ for ChN=1:NChannels
         end
     end
 end
-close(h)
+
+try close(h); end
+
 end
 

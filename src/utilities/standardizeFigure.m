@@ -4,12 +4,12 @@ function standardizeFigure(ax, leg, varargin)
 try
     
     colorDict = struct();
-    colorDict.magenta = [208,109,171]/256;
-    colorDict.lightBlue = [115,142,193]/256;
-    colorDict.yellow = [234,194,100]/256;
-    colorDict.red = [213,108,85]/256;
-    colorDict.brown = [207 178 147] /256;
-    colorDict.cyan = [108,188,233]/256;
+    colorDict.magenta = [208,109,171]/255;
+    colorDict.lightBlue = [115,142,193]/255;
+    colorDict.yellow = [234,194,100]/255;
+    colorDict.red = [213,108,85]/255;
+    colorDict.brown = [207 178 147] /255;
+    colorDict.cyan = [108,188,233]/255;
     colorDictFields = fields(colorDict);
     
     color(1,:) = [0 0 0];
@@ -95,7 +95,7 @@ try
     end
     
     set(ax, 'TickLength',[.01 .01],...
-        'FontSize', fontSize, 'FontName', 'Lucida Sans OT', 'FontWeight', 'bold');
+        'FontSize', fontSize, 'FontName', 'Arial');
     ax.TickDir = 'in';
     ax.LineWidth = axesLineWidth;
     faceColor = 'none'; %yellow axis face.

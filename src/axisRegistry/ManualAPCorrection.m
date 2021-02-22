@@ -31,12 +31,12 @@ close all
 ZoomOutResized=imresize(SurfImage, ResizeFactor);
 
 %Get the nuclear mask overlay
-NucMaskZoomOut=GetNuclearMask(SurfImage,2.5,0);
-NucMaskZoomOutResized=imresize(NucMaskZoomOut, ResizeFactor);
-NucMaskZoomIn=GetNuclearMask(ZoomImage,8,2);
+% NucMaskZoomOut=GetNuclearMask(SurfImage,2.5,0);
+% NucMaskZoomOutResized=imresize(NucMaskZoomOut, ResizeFactor);
+% NucMaskZoomIn=GetNuclearMask(ZoomImage,8,2);
 
 %Sizes of images
-[RowsResized,ColumnsResized]=size(NucMaskZoomOutResized);
+[RowsResized,ColumnsResized]=size(ZoomOutResized);
 [RowsZoom,ColumnsZoom]=size(ZoomImage);
 
 FigureCorrelation=figure;
@@ -51,9 +51,9 @@ FigureRealOverlay=figure;
 realAxes = axes(FigureRealOverlay);
 set(FigureRealOverlay,'units', 'normalized', 'position',[0.05, 0.2, 0.3, 0.3]);
 
-FigureOverlay=figure;
-overlayAxes = axes(FigureOverlay);
-set(FigureOverlay,'units', 'normalized', 'position',[0.05, 0.6, 0.3, 0.3]);
+% FigureOverlay=figure;
+% overlayAxes = axes(FigureOverlay);
+% set(FigureOverlay,'units', 'normalized', 'position',[0.05, 0.6, 0.3, 0.3]);
 
 cc=1;
 
@@ -87,18 +87,18 @@ while (cc~=13)
     colInd1 = uint16( (ColumnsResized/2-ColumnsZoom/2) + (ShiftColumn*ResizeFactor) + 1);
     colInd2 = uint16(ColumnsResized/2+ColumnsZoom/2+ShiftColumn*ResizeFactor);
     try
-        NucMaskZoomOutResizedCropped = NucMaskZoomOutResized(rowInd1:rowInd2, colInd1:colInd2);
+%         NucMaskZoomOutResizedCropped = NucMaskZoomOutResized(rowInd1:rowInd2, colInd1:colInd2);
     
         ZoomOutResizedCropped=...
             ZoomOutResized(rowInd1:rowInd2,colInd1:colInd2);
     
    
-        ImOverlayMask=cat(3,mat2gray(NucMaskZoomOutResizedCropped),...
-            +mat2gray(NucMaskZoomIn),zeros(size(NucMaskZoomOutResizedCropped)));
+%         ImOverlayMask=cat(3,mat2gray(NucMaskZoomOutResizedCropped),...
+%             +mat2gray(NucMaskZoomIn),zeros(size(NucMaskZoomOutResizedCropped)));
         ImOverlay=cat(3,mat2gray(ZoomOutResizedCropped)*Red,...
             +mat2gray(ZoomImage)*Green,zeros(size(ZoomOutResizedCropped)));
 
-        imshow(ImOverlayMask,'Parent', overlayAxes)
+%         imshow(ImOverlayMask,'Parent', overlayAxes)
         imshow(ImOverlay, 'Parent', realAxes);
     catch
         warning('Could not generate correlation image.');
@@ -170,7 +170,7 @@ while (cc~=13)
     elseif (ct~=0)&(cc=='-')
         OldXLim=xlim(axesCorrelation);
         OldYLim=ylim(axesCorrelation);
-        xlim(axesCorrelation,[OldXLim-CorrX]*2+CorrX)
+        xlim(axesCoxrrelation,[OldXLim-CorrX]*2+CorrX)
         ylim(axesCorrelation,[OldYLim-CorrY]*2+CorrY)
        
         
@@ -181,7 +181,7 @@ while (cc~=13)
     end
 end
 
-close(FigureOverlay);
+% close(FigureOverlay);
 close(FigureRectangle);
 close(FigureRealOverlay);
 close(FigureCorrelation);

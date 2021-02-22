@@ -64,7 +64,7 @@ plotGPUMem;
 for k = 1:length(chunks)-1
     h = waitbar(chunks(k) / numFrames, h);
     plotGPUMem;
-    g = makeGiantImage(PreProcPath, format, padSize, chunks(k), chunks(k+1)-1, Prefix, spotChannels);
+    g = makeGiantImage(Prefix, PreProcPath, format, padSize, chunks(k), chunks(k+1)-1, spotChannels);
 %     plotGPUMem;
     %     gt = permute(g, [2 1 3]);
     pChunk = beta(1).*ones(size(g), 'like', g);

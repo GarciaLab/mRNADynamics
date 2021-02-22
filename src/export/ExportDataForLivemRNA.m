@@ -44,9 +44,10 @@
 %               opening data that is in a different project folder.
 % 'zslicesPadding': if series have different number of z-slices, pad them
 % with blank images so every generates series has the same amount
-% 'nuclearGUI'
-% 'lowbit': use uint8 for non-nuclear images
-%
+% 'nuclearGUI': accepts true (default) or false if you want to open the
+% nuclear channel / anaphase frame choosing GUI 
+% 'skipNuclearProjection': only extract channels 
+% 
 % OUTPUT
 % Exported tif images are placed in the PreProcessedData folder and divided
 % into a nuclear channel for tracking/protein quantification and a channel
@@ -77,18 +78,32 @@
 %The idea of (4) being in Dropbox is that I don't need to be synchronizing
 %the part related to the manual analysis.
 
-function [Prefix, mats ] = ExportDataForLivemRNA(varargin)
+function Prefix = ExportDataForLivemRNA(varargin)
 
-  [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, keepTifs,...
+cleanupObj = onCleanup(@myCleanupFun);
+clear LiveExperiment;
+
+warning('off', 'MATLAB:MKDIR:DirectoryExists');
+
+
+
+
+
+  [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, ~,...
     generateTifStacks, nuclearGUI, skipExtraction, rootFolder, zslicesPadding,...
-    lowbit, dataType, makeMovieMats] = exportDataForLivemRNA_processInputParameters(varargin{:});
+    dataType, skipNuclearProjection] = ...
+    ...
+    exportDataForLivemRNA_processInputParameters(varargin{:});
 
-  [rawDataPath, ~, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
+  [rawDataPath, ProcPath, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
     Channel3] = readMovieDatabase(Prefix,'rootFolder', rootFolder);
+
+Channels = {Channel1, Channel2, Channel3};
 
 if ~isempty(dataType)
      args = varargin;
-     writeScriptArgsToDataStatus(DropboxFolder, dataType, Prefix, args, 'Ran ExportDataFor', 'ExportDataForLivemRNA')
+     writeScriptArgsToDataStatus(DropboxFolder,...
+         dataType, Prefix, args, 'Ran ExportDataFor', 'ExportDataForLivemRNA')
 end
 
 %   if ~isempty(rootFolder)
@@ -97,10 +112,15 @@ end
 %     [D, FileMode] = DetermineFileMode(rootFolder);
 %   end
 
-  %Create the output folder
-  OutputFolder = [PreProcPath, filesep, Prefix];
-  disp(['Creating folder: ', OutputFolder]);
-  mkdir(OutputFolder)
+%Create the output folder
+OutputFolder = [PreProcPath, filesep, Prefix];
+disp(['Creating folder: ', OutputFolder]);
+mkdir(OutputFolder)
+  
+%Create the results folder
+DropboxFolderName = [DropboxFolder, filesep, Prefix];
+disp(['Creating folder: ', DropboxFolderName]);
+mkdir(DropboxFolderName);
 
   %Generate FrameInfo
   FrameInfo = struct('LinesPerFrame', {}, 'PixelsPerLine', {}, ...
@@ -121,12 +141,14 @@ end
     FrameInfo = processLatticeLightSheetData(rawDataFolder, D, Channel1, Channel2, ProjectionType, Prefix, OutputFolder);
 
   elseif strcmpi(FileMode, 'LSM')
-    FrameInfo = processLSMData(rawDataFolder, D, FrameInfo, ExperimentType, ...
-    Channel1, Channel2, Channel3, ProjectionType,Prefix, OutputFolder,nuclearGUI, zslicesPadding);
+    FrameInfo = processLSMData(rawDataFolder, D, FrameInfo, ...
+    Channels, ProjectionType, Prefix, OutputFolder,nuclearGUI,...
+    skipExtraction,skipNuclearProjection,zslicesPadding);
 
   elseif strcmpi(FileMode, 'LIFExport')
-    FrameInfo = processLIFExportMode(rawDataFolder, ExperimentType, ProjectionType, Channel1, Channel2, Channel3, Prefix, ...
-      OutputFolder, PreferredFileNameForTest, nuclearGUI, skipExtraction, lowbit);
+    FrameInfo = processLIFExportMode(rawDataFolder, ProjectionType, Channels, Prefix, ...
+      OutputFolder, PreferredFileNameForTest, nuclearGUI, skipExtraction,...
+      skipNuclearProjection, zslicesPadding);
 
   elseif strcmpi(FileMode, 'DSPIN') || strcmpi(FileMode, 'DND2')
     %Nikon spinning disk confocal mode - TH/CS 2017
@@ -135,29 +157,14 @@ end
 
   doFrameSkipping(SkipFrames, FrameInfo, OutputFolder);
 
-  %Save the information about the various frames
-  DropboxFolderName = [DropboxFolder, filesep, Prefix];
-  disp(['Creating folder: ', DropboxFolderName]);
-  mkdir(DropboxFolderName);
-  save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
-
-  if strcmpi(FileMode, 'LIFExport') & ~keepTifs
-    removeUnwantedTIFs(rawDataFolder);
+  if ~skipExtraction
+      %Save the information about the various frames
+      save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo', '-v6');
   end
   
-  if generateTifStacks
-    filterMovie(Prefix, 'Tifs');
-    disp(['Prefix: ', Prefix]);
-  end
-  
-  mats = struct;
-
-  if makeMovieMats
-      nWorkers = 18;
-      Channels = {Channel1, Channel2, Channel3};
-      [movieMat, hisMat, maxMat, medMat, midMat]...
-    = makeMovieMats(Prefix, PreProcPath, nWorkers, FrameInfo, Channels);
-    mats.movieMat = movieMat;  mats.hisMat = hisMat; mats.maxMat=maxMat;mats.medMat=medMat;mats.midMat = midMat;
-  end
+  %make folders we'll need later
+  DogOutputFolder=[ProcPath,filesep,Prefix, '_', filesep, 'dogs',filesep];
+  mkdir(DogOutputFolder);
+    
 
 end

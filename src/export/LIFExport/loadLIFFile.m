@@ -10,7 +10,7 @@ function [LIFImages, LIFMeta] = loadLIFFile(Folder)
 
   if isempty(LIFIndex)
       disp('couldn''t find movie file. try selecting it?');
-      [file, path] = uigetfile(Folder);
+      [file, path] = uigetfile([Folder, filesep, '*.lif']);
       LIFPath = [path, file];
 %       error('Only flat field LIF file found. No dataset LIF file found.\n%s', 'Check that your dataset LIF is present in the folder. Check that your full dataset name doesn''t contain the phrase ''FF''.')
   end

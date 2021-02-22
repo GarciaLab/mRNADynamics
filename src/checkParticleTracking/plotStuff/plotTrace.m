@@ -1,7 +1,7 @@
 function plotTrace(traceFigAxes, cptState, anaphaseInMins, ElapsedTime,...
     anaphase, prophase, metaphase,prophaseInMins, metaphaseInMins,Prefix,...
     numFrames, correspondingNCInfo, ExperimentType, Channels, PreProcPath, DropboxFolder,...
-    plotTraceSettings)
+    plotTraceSettings, UseCompiledParticles)
 %PLOTTRACE
 %plot traces in checkparticletracking
 
@@ -9,7 +9,7 @@ switchParticleFlag= false;
 switchFrameFlag = cptState.PreviousFrame ~= cptState.CurrentFrame;
 
 % Only update the trace information if we have switched particles
-if cptState.CurrentParticle ~= cptState.PreviousParticle || isempty(plotTraceSettings.AmpIntegral) || cptState.CurrentChannel ~= cptState.PreviousChannel || cptState.lastParticle
+if cptState.CurrentParticle ~= cptState.PreviousParticle || isempty(plotTraceSettings.AmpIntegral) || cptState.CurrentChannelIndex ~= cptState.PreviousChannel || cptState.lastParticle
     switchParticleFlag = true;
     switchFrameFlag = true;
     cptState.PreviousParticle = cptState.CurrentParticle;
@@ -20,7 +20,7 @@ end
 % Check if this particle has a saved manual fit or if fitInitialSlope ran
 if cptState.lineFitted
     fittedXFrames = cptState.FrameIndicesToFit;
-elseif  isfield(cptState.Particles{cptState.CurrentChannel},'fitApproved') && ...
+elseif  isfield(cptState.Particles{cptState.CurrentChannelIndex},'fitApproved') && ...
         ~isempty(cptState.getCurrentParticle().fitApproved)
     approvedFit = 1;
 
@@ -130,7 +130,7 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFr
         else
             currentAnaphaseBoundary = anaphaseInMins(i) - priorAnaphaseInMins;
         end
-        plot(traceFigAxes,ones(1,2).*currentAnaphaseBoundary,traceFigYLimits,...
+        plot(traceFigAxes,ones(1,2).*double(currentAnaphaseBoundary),traceFigYLimits,...
             'LineWidth',2,'Color','black', 'Marker', 'none');
     end
     
@@ -179,21 +179,26 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFr
     if strcmpi(ExperimentType, 'inputoutput')
         yyaxis(traceFigAxes,'right')
         %now we'll plot the input protein intensity on the right-hand axis.
-        if ~isfield(cptState.schnitzcells, 'Fluo')
+        if ~isfield(cptState.schnitzcells, 'Fluo') || ~isempty(cptState.getCurrentParticle().Nucleus == 0)
                 dummy = cell(length(cptState.schnitzcells), 1);
                 [cptState.schnitzcells.Fluo] = dummy{:};
         else
             proteinLine = traceFigAxes.Children(end);
-            set(proteinLine, 'XData', cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).frames,...
-                'YData', max(cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).Fluo,[],2));
+            proteinFluo = cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).Fluo;
+            if ~isempty(proteinFluo)
+                set(proteinLine, 'XData', cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).frames,...
+                    'YData', max(proteinFluo,[],2));
+            else
+                warning('protein fluo empty. maybe rerun integrateschnitzfluo?');
+            end
         end
     end
     
     % creating axis title
-    numParticles = length(cptState.Particles{cptState.CurrentChannel});
+    numParticles = length(cptState.Particles{cptState.CurrentChannelIndex});
     firstLine = [Prefix,'    Particle: ',num2str(cptState.CurrentParticle),'/',num2str(numParticles)];
     secondLine = ['Frame: ',num2str(cptState.CurrentFrame),'/',num2str(numFrames),'    ',num2str(round(cptState.FrameInfo(cptState.CurrentFrame).Time)), 's'];
-    thirdLine = ['Z: ',num2str(cptState.CurrentZ),'/',num2str(cptState.ZSlices),', Ch: ',num2str(cptState.CurrentChannel)];
+    thirdLine = ['Z: ',num2str(cptState.CurrentZ),'/',num2str(cptState.ZSlices),', Ch: ',num2str(cptState.CurrentChannelIndex)];
     
     if isfield(cptState.FrameInfo, 'nc')
         axisTitle={firstLine,...

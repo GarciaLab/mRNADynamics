@@ -1,4 +1,3 @@
-% Extracts time information from xml files
 function [XMLFolder, seriesPropertiesXML, seriesXML] = getSeriesFiles(Folder)
   XMLFolder = Folder;
   seriesPropertiesXML = dir([XMLFolder, filesep, '*Series*Properties.xml']);

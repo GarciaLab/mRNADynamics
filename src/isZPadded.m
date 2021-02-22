@@ -39,14 +39,18 @@ if strcmpi(saveType, '.tif')
     end
 elseif strcmpi(saveType, '.mat')
     try
-        load(firstdogpath, 'plane');
+        load(firstdogpath);
     catch
         dogProb = 'prob';
         firstdogname = [dogProb, Prefix, '_', iIndex(1, 3), '_z', iIndex(1, 2), nameSuffix];
         firstdogpath = [ProcPath, filesep,Prefix,'_',filesep,'dogs',filesep,firstdogname, saveType];
-        load(firstdogpath, 'plane');
+        load(firstdogpath, 'plane', 'dog');
     end
-    firstDoG = plane;
+    if exist('plane', 'var')
+        firstDoG = plane;
+    else
+        firstDoG = dog;
+    end
 elseif strcmpi(saveType, 'none')
     firstDoG = dogs(:, :, 1, 1);
 end

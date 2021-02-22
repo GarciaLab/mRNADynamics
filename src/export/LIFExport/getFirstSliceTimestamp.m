@@ -1,38 +1,50 @@
 %Get the time stamp corresponding to the first slice of each Z-stack
-function [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices, NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML)
-  
-  m = 1;
-  
-  for i = 1:NSeries
-    
-    if i == 1
-        StartIndex = 1;
-    else
-        StartIndex = sum(NPlanes(1:i-1)) + 1;
-    end
+function [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices, NSeries,...
+    NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML)
 
-    %Grab the z-galvo position by parsing the XML metadata
-    xmltext = fileread([XMLFolder,filesep,seriesXML(i).name]);
-    expressionobj = '(?<=" ZPosition=").*?(?=")';
-    possiblePositions = regexp(xmltext, expressionobj, 'match'); 
-    zPos = str2double(possiblePositions{1}); %AR- this is sometimes the right element. 
-   
-    for j = StartIndex:(NSlices(i)*NChannels):sum(NPlanes(1:i))
-      
-      InitialStackTime(m) = Frame_Times(j);
-      
-      %currently only correctly records the z-position from data from the
-      %Bateman lab Leica
-      try
-        zPosition(m) = zPos;
-      catch
-%         warning('didn''t record zgalvo position')
-      end
-      
-      m = m + 1;
+zPosition = [];
+frameIndex= 1;
+
+m = 1;
+
+for series = 1:NSeries
     
+    if series == 1
+        startIndex = 1;
+    else
+        startIndex = sum(NPlanes(1:series-1)) + 1;
     end
     
-  end
-  
+    frameStep = NSlices(series)*NChannels;
+    finalIndex = sum(NPlanes(1:series));
+    
+    try
+        %Grab the z-galvo position by parsing the XML metadata
+        xmltext = fileread([XMLFolder,filesep,seriesXML(series).name]);
+        expressionobj = '(?<=" ZPosition=").*?(?=")';
+        possiblePositions = regexp(xmltext, expressionobj, 'match');
+        zPos = str2double(possiblePositions{1}); %AR- this is sometimes the right element.
+    catch
+        warning('didn''t record zgalvo position since data hasn''t been exported from LASX');
+    end
+    
+    for frame = startIndex:frameStep:finalIndex
+        
+        InitialStackTime(frameIndex) = Frame_Times(frame);
+        frameIndex = frameIndex + 1;
+        
+        %currently only correctly records the z-position from data from the
+        %Bateman lab Leica
+        try
+            zPosition(m) = zPos;
+        catch
+            warning('didn''t record zgalvo position')
+        end
+        
+        m = m + 1;
+        
+    end
+    
+end
+
 end

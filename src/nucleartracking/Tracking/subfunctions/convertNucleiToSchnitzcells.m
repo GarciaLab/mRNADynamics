@@ -1,26 +1,29 @@
-function [ schnitzcells, varargout ] = convertNucleiToSchnitzcells( nuclei, approvedCenters, approvedSchnitzcell, previousSchnitzcell)
-%CONVERTMAPPINGANDCENTERTOSCHNITZCELLS 
+function [ schnitzcells, varargout ] =...
+    convertNucleiToSchnitzcells( nuclei, approvedCenters,...
+    approvedSchnitzcell, previousSchnitzcell)
+%CONVERT MAPPING AND CENTER TO SCHNITZCELLS 
 
 approvedSchnitz = false(numel(nuclei),1);
 
 
-for j = 1:numel(nuclei)
+for nucleus = 1:numel(nuclei)
 
-    schnitzcells(j).P = uint16(nuclei(j).P);
-    schnitzcells(j).E = uint16(nuclei(j).E);
-    schnitzcells(j).D = uint16(nuclei(j).D);
-    schnitzcells(j).frames = uint16(find(nuclei(j).indXY > 0));
-    for jj = 1:numel(schnitzcells(j).frames)
-        frameInd = schnitzcells(j).frames(jj);
-        schnitzcells(j).cenx(jj) = uint16(nuclei(j).position(frameInd,2));
-        schnitzcells(j).ceny(jj) = uint16(nuclei(j).position(frameInd,1));
-        schnitzcells(j).len(jj) = NaN;
-        schnitzcells(j).cellno(jj) = uint16(nuclei(j).indXY(frameInd));
+    schnitzcells(nucleus).P = uint16(nuclei(nucleus).P);
+    schnitzcells(nucleus).E = uint16(nuclei(nucleus).E);
+    schnitzcells(nucleus).D = uint16(nuclei(nucleus).D);
+    schnitzcells(nucleus).frames = uint16(find(nuclei(nucleus).indXY > 0));
+    for jj = 1:numel(schnitzcells(nucleus).frames)
+        frameInd = schnitzcells(nucleus).frames(jj);
+        schnitzcells(nucleus).cenx(jj) = uint16(nuclei(nucleus).position(frameInd,2));
+        schnitzcells(nucleus).ceny(jj) = uint16(nuclei(nucleus).position(frameInd,1));
+        schnitzcells(nucleus).len(jj) = NaN;
+        schnitzcells(nucleus).cellno(jj) = uint16(nuclei(nucleus).indXY(frameInd));
         
-        if exist('approvedCenters','var') && approvedCenters{frameInd}(nuclei(j).indXY(frameInd))
-            approvedSchnitz(j) = true;
+        if exist('approvedCenters','var') &&...
+                approvedCenters{frameInd}(nuclei(nucleus).indXY(frameInd))
+            approvedSchnitz(nucleus) = true;
         else
-            approvedSchnitz(j) = false;
+            approvedSchnitz(nucleus) = false;
         end
     end
         
@@ -29,20 +32,24 @@ varargout{1} = approvedSchnitz;
 
 if exist('approvedSchnitzcell','var')
     map = [];
-    for j = 1:numel(previousSchnitzcell)
-        if approvedSchnitzcell(j)
+    for nucleus = 1:numel(previousSchnitzcell)
+        if approvedSchnitzcell(nucleus)
             for jj = 1:numel(schnitzcells)
-                if schnitzcells(jj).frames(1) == previousSchnitzcell(j).frames(1)...
-                        && schnitzcells(jj).cenx(1) == previousSchnitzcell(j).cenx(1)...
-                        && schnitzcells(jj).ceny(1) == previousSchnitzcell(j).ceny(1)
+                if schnitzcells(jj).frames(1) == previousSchnitzcell(nucleus).frames(1)...
+                        && schnitzcells(jj).cenx(1) == previousSchnitzcell(nucleus).cenx(1)...
+                        && schnitzcells(jj).ceny(1) == previousSchnitzcell(nucleus).ceny(1)
                     
-                    map = [map; j jj];
+                    map = [map; nucleus jj];
                     
                     break
                 end
             end
         end
     end
+    
     varargout{2} = map;
+    
 end
 
+
+end

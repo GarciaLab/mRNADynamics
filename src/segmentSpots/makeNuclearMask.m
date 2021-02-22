@@ -1,34 +1,30 @@
-function nuclearMask = makeNuclearMask(ellipsesFrame, dim, varargin)
+function nuclearMask = makeNuclearMask(ellipseFrame, imageDims, radiusScale)
 
 %make a mask from the ellipses structure. this is currently used for
 %segmenting loci in segmentSpots.
 
-radScale = 1.3;
+%ellipseFrame is a single element of the Ellipses cell. 
+%imageDims is a 2 element vector of the x-y size of the image. eg [512
+%512]. 
+%radiusScale will scale the default radius up or down depending on the
+%purpose. wwq2
 
-for i = 1:length(varargin)
-    if strcmpi(varargin{i}, 'radScale')
-        radScale = varargin{i+1};
-    end
+if nargin < 3
+    radiusScale = 1.3; %be more lenient with the size of ellipses in the nuclear mask   
+    %so spots don't get excluded inappropriately
 end
 
-nuclearMask = false(dim(1), dim (2));
+yDim = imageDims(1);
+xDim = imageDims(2);
 
-for e = 1:size(ellipsesFrame, 1)
-    
-    ceny = ellipsesFrame(e, 1);
-    cenx = ellipsesFrame(e, 2);
-    rad = ellipsesFrame(e,3)*radScale;
-    xrange = max(ceil(cenx-rad), 1) : min(ceil(cenx+rad),dim(1));
-    yrange = max(ceil(ceny-rad), 1) : min(ceil(ceny+rad),dim(2));
-    for x = xrange
-        for y = yrange
-            nuclearMask(x, y) = norm([x, y] - [cenx, ceny]) < rad;
-        end
-    end
-    
+nuclearMask = false(yDim, xDim);
+
+nEllipses = size(ellipseFrame, 1);
+
+for n = 1:nEllipses
+    h = images.roi.Ellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
+        'SemiAxes', radiusScale*[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
+        'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)),'StripeColor','m');
+    nuclearMask = nuclearMask + poly2mask(h.Vertices(:, 1), h.Vertices(:, 2), yDim, xDim);
 end
 
-
-
-
-end

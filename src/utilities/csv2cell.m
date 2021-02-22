@@ -63,7 +63,8 @@ elseif nargin == 2
             if fid < 0
                 error('File %s not found', filename);
             end
-            text = char(fread(fid))';
+%             text = char(fread(fid))';
+            text = fread(fid, '*char')';
             fclose(fid);
         case 'text'
             text = varargin{1};

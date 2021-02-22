@@ -11,13 +11,14 @@ function CheckDivisionTimes(Prefix, varargin)
 %x  : Save and quit
 
 
-close all
-
 %Find out which computer this is. That will determine the folder structure.
 %Information about about folders
 
+liveExperiment = LiveExperiment(Prefix);
+
 [SourcePath, FISHPath, DefaultDropboxFolder, DropboxFolder, MS2CodePath, PreProcPath,...
     configValues, movieDatabasePath] = DetermineAllLocalFolders(Prefix);
+
 
 lazy = false;
 for arg = 1:length(varargin)
@@ -26,24 +27,16 @@ for arg = 1:length(varargin)
     end
 end
 
-
-%Find out the date it was taken
-Dashes=findstr(Prefix,'-');
-Date=Prefix(1:Dashes(3)-1);
-EmbryoName=Prefix(Dashes(3)+1:end);
-
-
-%See if we're dealing with a Bcd case
-if (~isempty(findstr(Prefix,'Bcd')))&(isempty(findstr(Prefix,'BcdE1')))&...
-        (isempty(findstr(Prefix,'NoBcd')))&(isempty(findstr(Prefix,'Bcd1x')))
-    SourcePath=[SourcePath,filesep,'..',filesep,'..',filesep,'Bcd-GFP'];
+try 
+    hisMat = getHisMat(liveExperiment); 
+    ZoomImage = hisMat(:,:,end);
+    nFrames = size(hisMat, 3);
+catch 
+    D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
+    ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,D(end).name]);
+    nFrames = length(D);
 end
 
-
-
-
-D=dir([PreProcPath,filesep,Prefix,filesep,Prefix,'-His*.tif']);
-ZoomImage=imread([PreProcPath,filesep,Prefix,filesep,D(end).name]);
 
 
 
@@ -60,11 +53,8 @@ if ~lazy
 end
 
 %Angle between the x-axis and the AP-axis
-APAngle=atan((coordPZoom(2)-coordAZoom(2))/(coordPZoom(1)-coordAZoom(1)));
-%Correction for if APAngle is in quadrants II or III
-if coordPZoom(1)-coordAZoom(1) < 0
-    APAngle = APAngle + pi;
-end
+APAngle=atan2((coordPZoom(2)-coordAZoom(2)),(coordPZoom(1)-coordAZoom(1)));
+
 APLength=sqrt((coordPZoom(2)-coordAZoom(2))^2+(coordPZoom(1)-coordAZoom(1))^2);
 
 
@@ -73,13 +63,7 @@ APPosImage=zeros(size(ZoomImage));
 
 for i=1:Rows
     for j=1:Columns
-        Angle=atan((i-coordAZoom(2))./(j-coordAZoom(1)));
-        % Correction for if Angle is in quadrant II
-        if (j-coordAZoom(1) < 0)
-            Angle = Angle + pi;
-        end
-        
-        
+        Angle = atan2((i-coordAZoom(2)),(j-coordAZoom(1)));
         Distance=sqrt((coordAZoom(2)-i).^2+(coordAZoom(1)-j).^2);
         APPosition=Distance.*cos(Angle-APAngle);
         APPosImage(i,j)=APPosition/APLength;
@@ -149,7 +133,11 @@ if ~lazy
     
     
     if ~isnan(CurrentFrame)
-        HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame).name]);
+        try
+            HisImage = hisMat(:, :, CurrentFrame);
+        catch
+            HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(CurrentFrame).name]);
+        end
     end
     
     
@@ -188,7 +176,7 @@ if ~lazy
     
     imshow(HisOverlay, 'Parent', axOverlay)
     
-    set(figureOverlay,'Name',(['Frame: ',num2str(CurrentFrame),'/',num2str(length(D)),...
+    set(figureOverlay,'Name',(['Frame: ',num2str(CurrentFrame),'/',num2str(nFrames),...
         '. Current nc:',num2str(CurrentNC)]));
     
     
@@ -198,11 +186,11 @@ if ~lazy
     cm=get(axOverlay,'CurrentPoint');
     
     %Move frames
-    if (ct~=0)&(cc=='.')&(CurrentFrame<length(D))
+    if (ct~=0)&(cc=='.')&(CurrentFrame<nFrames)
         CurrentFrame=CurrentFrame+1;
     elseif (ct~=0)&(cc==',')&(CurrentFrame>1)
         CurrentFrame=CurrentFrame-1;
-    elseif (ct~=0)&(cc=='>')& (CurrentFrame+10)< length(D)
+    elseif (ct~=0)&(cc=='>')& (CurrentFrame+10)< nFrames
         CurrentFrame=CurrentFrame+10;
     elseif (ct~=0)&(cc=='<')&( CurrentFrame-10) > 1
         CurrentFrame=CurrentFrame-10;

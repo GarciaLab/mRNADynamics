@@ -13,10 +13,17 @@ classdef PlotTraceSettings < handle
         ErrorIntegralGauss3D
         
         Spots3D
+        
+        UseCompiledParticles
     end
     
     methods
-        function this = PlotTraceSettings()
+        function this = PlotTraceSettings(UseCompiledParticles)
+            if exist('UseCompiledParticles', 'var')
+                this.UseCompiledParticles = UseCompiledParticles;
+            else
+                this.UseCompiledParticles = false;
+            end
         end
     end
 

@@ -44,10 +44,10 @@ if ~isempty(NewSpotsX)
     if retrack
         for i=1:length(Particles)
             %Find which approved particles are in this frame
-            if sum(Particles(i).Frame==CurrentFrame)&(Particles(i).Approved~=0)
+            if sum(Particles(i).Frame==CurrentFrame)&&(Particles(i).Approved~=0)
                 %Make the distance infinite
-                Distance(Particles(i).Index(find(Particles(i).Frame==CurrentFrame)),:)=inf;
-                NewParticlesFlag(Particles(i).Index(find(Particles(i).Frame==CurrentFrame)))=-1;
+                Distance(Particles(i).Index(Particles(i).Frame==CurrentFrame),:)=inf;
+                NewParticlesFlag(Particles(i).Index(Particles(i).Frame==CurrentFrame))=-1;
             end
         end
     end
@@ -195,20 +195,6 @@ if ~isempty(NewSpotsX)
             end
             NewSpotToAssign=NewSpotToAssignTemp';
             
-%             %Old Version:
-%             %Assign the new spots to the previous particles
-%             for j=1:length(ParticleToAssign)
-%                 if ~isinf(DistancesToNewSpots(j))
-%                     SpotIndexToCopy=SpotToParticleIndices(NewSpotToAssign(j));
-%                     %Finally, copy the information onto this particle.
-%                     Particles(ParticleToAssign(j)).Index(end+1)=SpotIndexToCopy;
-%                     Particles(ParticleToAssign(j)).Frame(end+1)=CurrentFrame;
-%                     %Remove this spot from the pool so that it doesn't get
-%                     %assigned to a new particle at the end of the code
-%                     NewParticlesFlag(SpotIndexToCopy)=0;
-%                 end
-%             end
-            
 
             %Assign the new spots to their corresponding particles
             for j=1:length(ParticleToAssign)
@@ -225,75 +211,6 @@ if ~isempty(NewSpotsX)
                 end
             end
             
-            
-
-%             [MinValuesParticles,MinIndexParticles]=SortDistances([SpotToParticleX;SpotToParticleY]',...
-%                ,PixelSize)
-
-%             
-%             %Calculate the distances between the spots on this frame and the
-%             %ellipses
-%             clear DistanceParticles
-% 
-%             for j=1:length(SpotToParticleX)
-%                 DistanceParticles(j,:)=sqrt((SpotToParticleX(j)*PixelSize-...
-%                     PreviousParticlesX*PixelSize).^2+...
-%                     (SpotToParticleY(j)*PixelSize-...
-%                     PreviousParticlesY*PixelSize).^2);
-%             end
-%             %MinIndexParticles is a row vector. The position in MinIndex
-%             %corresponds to each spot. The value at that
-%             %position corresponds to the closest particle. Note that this
-%             %is not true if we have only one particle
-%             [MinValuesParticles,MinIndexParticles]=min(DistanceParticles');
-%             
-%             
-%             %Sometimes the two or more new Spots are closer to the same
-%             %previous Particle. In that case, only keep the closest
-%             %Spot-Particle pair and set the distance of the other spots to
-%             %the same particle to infinity.
-%             UniqueMinIndexParticles=unique(MinIndexParticles);
-%             
-%                         
-%             %Assign the spots to their corresponding particles. I need to
-%             %consider the case where there was only one previous particle.
-%             if length(ParticleToAssign)>1
-%                 %If we have more than one previous particle, I can make use
-%                 %of the matrix Distance, of MinValuesParticles, and
-%                 %MinIndexParticles.
-%                 for j=1:length(UniqueMinIndexParticles)
-%                     %Which particle does this spot go to?
-%                     CurrentParticleToAssign=ParticleToAssign(UniqueMinIndexParticles(j));
-%                     %Which spot needs to be copied onto this particle? I
-%                     %need to consider that I might have more than one spot
-%                     %that could be assigned to a particle. In this case,
-%                     %I'll use distance.
-% 
-%                     if sum(MinIndexParticles==UniqueMinIndexParticles(j))==1
-%                         SpotIndexToCopy=SpotToParticleIndices(find(MinIndexParticles==UniqueMinIndexParticles(j)));
-%                     else
-%                         [Dummy,SortOrder]=sort(MinValuesParticles(MinIndexParticles==UniqueMinIndexParticles(j)));
-%                         SpotIndicesTemp=SpotToParticleIndices(MinIndexParticles==UniqueMinIndexParticles(j));
-%                         SpotIndexToCopy=SpotIndicesTemp(SortOrder(1));
-%                     end
-%                     
-%                     %Finally, copy the information onto this particle.
-%                     Particles(CurrentParticleToAssign).Index(end+1)=SpotIndexToCopy;
-%                     Particles(CurrentParticleToAssign).Frame(end+1)=CurrentFrame;
-%                     NewParticlesFlag(SpotIndexToCopy)=0;
-%                 end
-%             else
-%                 %If we have only one previous particle, I need to be more
-%                 %careful about the values MinIndexParticles and MinValuesParticles.
-%                 
-%                 %Which particle does this spot go to?
-%                 CurrentParticleToAssign=ParticleToAssign;
-%                 %Copy the information onto this particle
-%                 Particles(CurrentParticleToAssign).Frame(end+1)=CurrentFrame;
-%                 Particles(CurrentParticleToAssign).Index(end+1)=...
-%                     SpotToParticleIndices(MinIndexParticles);
-%                 NewParticlesFlag(SpotToParticleIndices(MinIndexParticles))=0;
-%             end
         end
     end
 
@@ -329,6 +246,9 @@ if ~isempty(NewSpotsX)
             Particles(end+1).Frame=CurrentFrame;
             Particles(end).Index=NewParticlesIndices(i);
             Particles(end).Nucleus=MinIndexSchnitz(NewParticlesIndices(i));
+            
+            assert(Particles(end).Nucleus <= length(schnitzcells));
+            
             if retrack
                 Particles(end).Approved=0;
             end

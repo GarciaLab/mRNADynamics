@@ -32,7 +32,7 @@
 % 'autoThresh': Pops up a UI to help decide on a threshhold
 % 'keepProcessedData': Keeps the ProcessedData folder for the given prefix after running segment spots
 % 'fit3D': Fit 3D Gaussians to all segmented spots (assumes 1 locus per spot).
-% 'fit3D2Spot': Fit 3D Gaussians to all segmented spots (assumes 2 loci per spot).
+% 'fit3DOnly': Skip segmentation step and perform 3D fits
 % 'skipChannel': Skips segmentation of channels inputted array (e.g. [1]
 %                skips channel 1, [1, 2] skips channels 1 and 2
 % 'optionalResults': use this if you have multiple Results/Dropbox folders
@@ -40,6 +40,7 @@
 % 'nuclearMask': Use the Ellipses structure to filter out particles
 % detected outside of nuclei. 
 %'track': track after running
+% 'segmentChannel': use the DoGs of one channel to segment another
 %
 % OUTPUT
 % 'Spots':  A structure array with a list of detected transcriptional loci
@@ -53,143 +54,175 @@
 % Last Updated: 8/23/2018
 %
 % Documented by: Armando Reimer (areimer@berkeley.edu)
-
 function log = segmentSpots(Prefix, Threshold, varargin)
 
-warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
-disp('Segmenting spots...')
 
-[displayFigures, numFrames, numShadows, keepPool, ...
-    autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData,...
-    fit3D, skipChannel, optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat,...
-    saveType, nuclearMask, DataType, track]...
-    = determineSegmentSpotsOptions(varargin{:});
+%% Argument validation
 
-argumentErrorMessage = 'Please use filterMovie(Prefix, options) instead of segmentSpots with the argument "[]" to generate DoG images';
-try
-    if autoThresh
-        Threshold = -1;
-    elseif isempty(Threshold)
-        error(argumentErrorMessage);
-    end
-    
-catch
-    error(argumentErrorMessage);
+
+arguments   
+    Prefix char
+    Threshold (1,:) double
 end
 
-[~, ~, ~, ~, ~, ~, ~, ExperimentType, Channel1, Channel2,~, ~, spotChannels] = readMovieDatabase(Prefix);
+arguments (Repeating)
+    varargin
+end
 
-[~, ProcPath, DropboxFolder, ~, PreProcPath] = DetermineLocalFolders(Prefix, optionalResults);
+
+[displayFigures, lastFrame, numShadows, keepPool, ...
+    autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData,...
+    fit3D, skipChannel, optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat,...
+    saveType, nuclearMask, DataType, track, skipSegmentation, frameRange, segmentChannel]...
+    = determineSegmentSpotsOptions(varargin{:});
+
+%validate the Threshold argument
+if isempty(Threshold)
+    Threshold = NaN;
+end
+
+
+
+
+%% Setup
+
+
+
+
+
+cleanupObj = onCleanup(@myCleanupFun);
+%this function uses persistent (static) variables to speed computation.
+%if not cleared, this could lead to errors 
+clear fitSingleGaussian
+warning('off', 'MATLAB:MKDIR:DirectoryExists');
+
+
+
+
+%% Main code
+
+
+
+
+liveExperiment = LiveExperiment(Prefix);
+
+spotChannels = liveExperiment.spotChannels;
+
+[~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(Prefix, optionalResults);
+
 
 if ~isempty(DataType)
      args = [Prefix, Threshold, varargin];
      writeScriptArgsToDataStatus(DropboxFolder, DataType, Prefix, args, 'Found filtered threshold', 'segmentSpots')
 end
 
-load([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo');
-if nuclearMask
-    load([DropboxFolder, filesep, Prefix, filesep, 'Ellipses.mat'], 'Ellipses');
-else
-    Ellipses = {};
+FrameInfo = getFrameInfo(liveExperiment);
+
+DogOutputFolder=[liveExperiment.procFolder,filesep,'dogs',filesep];
+
+if length(dir(DogOutputFolder)) <= 2
+    error('Filtered movie files not found. Did you run FilterMovie?')
 end
 
+nSpotChannels = length(spotChannels);
 
-ProcessedDataFolder = [ProcPath, filesep, Prefix, '_'];
-DogOutputFolder = [ProcessedDataFolder, filesep, 'dogs'];
-
-microscope = FrameInfo(1).FileMode;
-
-zSize = 2;
-for i = 1:size(FrameInfo,2)
-    if (FrameInfo(i).NumberSlices+2)>zSize
-        zSize = FrameInfo(i).NumberSlices + 2;
-    end
+%make sure the user inputted the right number of thresholds
+if nSpotChannels > 1 && isempty(skipChannel) && length(Threshold) ~= nSpotChannels
+    error('You must input the correct number of thresholds.');
 end
+   
 
-nCh = length(spotChannels);
-
-if numFrames == 0
-%     numFrames = length(FrameInfo);
-    d = dir([DogOutputFolder,filesep,'*',saveType]);
-    numFrames = length(d)/(zSize*nCh);
+if lastFrame==0
+    lastFrame = numel(FrameInfo);
 end
-
-
+ 
 % The spot finding algorithm first segments the image into regions that are
 % above the threshold. Then, it finds global maxima within these regions by searching in a region "neighborhood"
 % within the regions.
 
-pixelSize = FrameInfo(1).PixelSize * 1000; %nm
-neighboorhood_size = 1300;
-neighborhood = round(neighboorhood_size / pixelSize); %nm
-snippet_size = 2 * (floor(neighboorhood_size / (2 * pixelSize))) + 1; % nm. note that this is forced to be odd
-coatChannel = spotChannels;
+pixelSize_nm = FrameInfo(1).PixelSize * 1000;
+neighboorhood_nm = 1300;
+neighborhood_px = round(neighboorhood_nm / pixelSize_nm);
+snippetSize_px = 2 * (floor(neighboorhood_nm / (2 * pixelSize_nm))) + 1; % note that this is forced to be odd
 
 falsePositives = 0;
-Spots = cell(1, nCh);
+if ~skipSegmentation
+    disp('Segmenting spots...')
+    Spots = cell(1, nSpotChannels);
+    n = 0;
+    for channelIndex = spotChannels
+    
+        n = n + 1;    
+    
+        if ismember(channelIndex, skipChannel)
+            continue
+        end
+                
+        if isempty(segmentChannel)
+            segmentChannel = channelIndex;
+        end
 
-for channelIndex = 1:nCh
-    if ismember(channelIndex, skipChannel)
-        continue
+        tic;
+
+        [ffim, doFF] = loadSegmentSpotsFlatField(...
+            liveExperiment.userPreFolder, Prefix, spotChannels);
+        
+
+        tempSpots = segmentTranscriptionalLoci(channelIndex, initialFrame, lastFrame, FrameInfo(1).NumberSlices, ...
+            liveExperiment.userPreFolder, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(n), neighborhood_px, ...
+            snippetSize_px, pixelSize_nm, FrameInfo(1).FileMode, [],...
+             filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, nuclearMask, autoThresh, segmentChannel);
+
+        tempSpots = segmentSpotsZTracking(pixelSize_nm,tempSpots);
+
+        [~, falsePositives, tempSpots] = findBrightestZ([], numShadows,...
+            useIntegralCenter, 0, tempSpots);
+
+        Spots{n} = tempSpots;
+
+        timeElapsed = toc;
+        disp(['Elapsed time: ', num2str(timeElapsed / 60), ' min'])
+        try %#ok<TRYNC>
+            log = logSegmentSpots(DropboxFolder, Prefix, timeElapsed, [], lastFrame, Spots, falsePositives, Threshold, channelIndex, numShadows, intScale, fit3D);
+            display(log);
+        end
+
     end
-    
-    tic;
-    
-    [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, spotChannels);
-
-    [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, coatChannel, channelIndex, initialFrame, numFrames, zSize, ...
-        PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(channelIndex), neighborhood, ...
-        snippet_size, pixelSize, microscope, Weka,...
-         filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, Ellipses);
-
-    tempSpots = segmentSpotsZTracking(pixelSize,tempSpots);
-
-    [~, falsePositives, tempSpots] = findBrightestZ([], numShadows, useIntegralCenter, 0, tempSpots, 'dogs', dogs);
-                        
-    Spots{channelIndex} = tempSpots;
-    
-    timeElapsed = toc;
-    disp(['Elapsed time: ', num2str(timeElapsed / 60), ' min'])
-    try %#ok<TRYNC>
-        log = logSegmentSpots(DropboxFolder, Prefix, timeElapsed, [], numFrames, Spots, falsePositives, Threshold, channelIndex, numShadows, intScale, fit3D);
-        display(log);
-    end
-    
+else
+    disp('loading Spots.mat structure for 3D fitting...')
+    load([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots');
 end
-
 %If we only have one channel, then convert Spots to a
 %standard structure.
-if nCh == 1 && iscell(Spots)
+if nSpotChannels == 1 && iscell(Spots)
     Spots = Spots{1}; 
 end
 
 mkdir([DropboxFolder, filesep, Prefix]);
-save([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots', '-v7.3');
+if whos(var2str(Spots)).bytes < 2E9
+    save([DropboxFolder, filesep, Prefix,...
+        filesep, 'Spots.mat'], 'Spots', '-v6');
+else
+    save([DropboxFolder, filesep, Prefix,...
+        filesep, 'Spots.mat'], 'Spots', '-v7.3', '-nocompression');
+end
+
+if track, TrackmRNADynamics(Prefix, 'noretrack'); end
 
 if fit3D > 0
     disp('Fitting 3D Gaussians...')
-    fit3DGaussiansToAllSpots(Prefix, fit3D, 'segmentSpots', Spots, 'nWorkers', nWorkers, saveType);
+    fit3DGaussiansToAllSpots(Prefix, fit3D,...
+        'segmentSpots', Spots, 'nWorkers', nWorkers, saveType);
     disp('3D Gaussian fitting completed.')
 end
 
-if ~keepProcessedData
-    deleteProcessedDataFolder(ProcessedDataFolder, Prefix);
-else
-    disp('keepProcessedData parameter sent. ProcessedData folder will not be removed.');
-end
-
-if ~keepPool
-    
+if ~keepPool    
     try  %#ok<TRYNC>
         poolobj = gcp('nocreate');
         delete(poolobj);
     end
-    
 end
 
-if track
-    TrackmRNADynamics(Prefix, 'noretrack');
-end
 
 end

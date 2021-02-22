@@ -1,5 +1,5 @@
 function [ mapping, nextNucleiXY, score, inverse_mapping, varargout ] =...
-    frame2frameCorrespondence(FrameInfo, names, frameNumber1, frameNumber2, ...
+    frame2frameCorrespondence(FrameInfo, hisMat, frameNumber1, frameNumber2, ...
     nucleiFrame1, nucleusDiameter, precision, nucleiFrame2, manualMapping, ...
     shifts, ExpandedSpaceTolerance, NoBulkShift )
 %FRAME2FRAMECORRESPONDENCE Summary of this function goes here
@@ -13,8 +13,11 @@ maxNucleusStep = getDefaultParameters(FrameInfo,'max Interphase Displacement')..
     *time_resolution/60*nucleusDiameter/space_resolution * ExpandedSpaceTolerance;
 mapping = zeros(size(nucleiFrame1,1),1);
 
-frame1 = double(imread(names{frameNumber1}));
-frame2 = double(imread(names{frameNumber2}));
+frame1 = double(hisMat(:, :, frameNumber1));
+frame2 = double(hisMat(:, :, frameNumber2));
+
+xDim = size(frame1, 2);
+yDim = size(frame1, 1);
 
 %% 1. Find overall movements between the two frames
 if NoBulkShift
@@ -24,26 +27,26 @@ if NoBulkShift
     varargout{1}(:,:,2) = vy;
 else
     if ~exist('shifts','var') || isempty(shifts)
-        [x,y,vx,vy] = interpolatedShift(FrameInfo, frame1, frame2, maxShiftCorrection, [], [], precision);
+        [x,y,vx,vy] = interpolatedShift(...
+            FrameInfo, frame1, frame2, maxShiftCorrection, [], [], precision);
         varargout{1}(:,:,1) = vx;
         varargout{1}(:,:,2) = vy;
     else
         vx = shifts(:,:,1);
         vy = shifts(:,:,2);
-
+        
         varargout{1} = shifts;
     end
 end
-
-%Added by HG for troubleshooting
-[size(vx);size(vy)];
 
 %[x,y,currentNucleiShiftedXY] = interpolatedShift(frame1, frame2, maxShiftCorrection, [], [], precision,nucleiFrame1);
 
 
 %% 2. If not provided, find nuclei in the second frame
 if ~exist('nucleiFrame2','var') || isempty(nucleiFrame2)
-    [nextNucleiXY, intensity] = findNuclei(FrameInfo,names, frameNumber2, nucleusDiameter, true(size(frame1)), [],[1 1 1 1 1]);
+    [nextNucleiXY, intensity] =...
+        findNuclei(FrameInfo, hisMat(:, :, frameNumber2), nucleusDiameter,...
+        true(size(frame1)), [],[1 1 1 1 1]);
 else
     nextNucleiXY = nucleiFrame2;
     intensity = zeros(size(nextNucleiXY,1),1);
@@ -51,18 +54,27 @@ end
 inverse_mapping = zeros(size(nextNucleiXY,1),1);
 
 %% 3. Update the position to correct for the shift
+
 currentNucleiShiftedXY = zeros(size(nucleiFrame1));
-for j = 1:size(nucleiFrame1,1)%length(nucleiFrame1)
-    currentNucleiShiftedXY(j,:) = nucleiFrame1(j,:) + [vx(round(nucleiFrame1(j,1)),round(nucleiFrame1(j,2))), vy(round(nucleiFrame1(j,1)),round(nucleiFrame1(j,2)))];
-    %Modified by HG - I think the callout to the information in vx was
-    %transposed
-    %currentNucleiShiftedXY(j,:) = nucleiFrame1(j,:) + [vx(round(nucleiFrame1(j,2)),round(nucleiFrame1(j,1))), vy(round(nucleiFrame1(j,2)),round(nucleiFrame1(j,1)))];
+nNuclei1 = size(nucleiFrame1, 1);
+
+for j = 1:nNuclei1
+    
+    nucleusPosition = nucleiFrame1(j, :);
+    %round and bracket the positions so they can be...
+    %used as array indices
+    xSub = min(max(round(nucleusPosition(2)), 1), xDim);
+    ySub = min(max(round(nucleusPosition(1)), 1), yDim);
+    
+    currentNucleiShiftedXY(j,:) = nucleusPosition +...
+        ...
+        [vx( ySub, xSub) , vy( ySub, xSub)];
+    
 end
 
 
 %% 4. Find the distance between each nuclei pair and build correspondences.
 % Compute the distances between all nuclei
-keep_looping = true;
 remainingNuclei1 = nucleiFrame1;
 remainingNuclei2 = nextNucleiXY;
 shiftedXY1 = currentNucleiShiftedXY;
@@ -72,6 +84,7 @@ indices2 = 1:size(remainingNuclei2,1);
 
 mappedNuc1 = [];
 mappedNuc2 = [];
+
 
 
 %% 5. If manual data is provided, set them first.
@@ -86,7 +99,7 @@ if exist('manualMapping','var') && ~isempty(manualMapping)
     
     mappedNuc1 = [mappedNuc1; remainingNuclei1(ind0,:)];
     mappedNuc1 = [mappedNuc1; remainingNuclei1(ind1,:)];
-
+    
     mappedNuc2 = [mappedNuc2; remainingNuclei2(ind2,:)];
     indices1(ind0) = [];
     indices1(ind1) = [];
@@ -99,20 +112,21 @@ if exist('manualMapping','var') && ~isempty(manualMapping)
     
 end
 
+keep_looping = true;
 while keep_looping
     [dist] = pdist2(shiftedXY1,remainingNuclei2,'euclidean');
     
     % Build correspondences
     
     % First attribute nuclei that are mutually the closest
-    [mc,ic] = min(dist,[],1);
-    [mr,ir] = min(dist,[],2);
+    [c_min_value,c_min_index] = min(dist,[],1);
+    [r_min_value,r_min_index] = min(dist,[],2);
     
-    indc = sub2ind(size(dist),ic,1:numel(ic));
-    indr = sub2ind(size(dist),1:numel(ir),ir');
+    indc = sub2ind(size(dist),c_min_index,1:numel(c_min_index));
+    indr = sub2ind(size(dist),1:numel(r_min_index),r_min_index');
     
-    indc(mc>maxNucleusStep) = [];
-    indr(mr>maxNucleusStep) = [];
+    indc(c_min_value>maxNucleusStep) = [];
+    indr(r_min_value>maxNucleusStep) = [];
     
     Mc = zeros(size(dist));
     Mc(indc) = 1;
@@ -146,28 +160,17 @@ while keep_looping
     end
     
     
-    if isempty(remainingNuclei1) || isempty(remainingNuclei2) || ~any(attributedIndices)
+    if isempty(remainingNuclei1) || isempty(remainingNuclei2)...
+            || ~any(attributedIndices)
         keep_looping = false;
     end
     
 end % while loop
 
 if nargout > 2
-   
+    
     score = nan(size(nucleiFrame1,1),1);
-    %projectedXY = fnval(st,nucleiFrame1');
-    %dist = sqrt(sum( (projectedXY(:,mapping~=0)'-nextNucleiXY(mapping(mapping~=0),:)),2));
 
-    %score(mapping~=0) = mvnpdf(dist , 0, maxNucleusStep).*intensity(mapping(mapping~=0));
-   
-    if nargout > 4
-       
-%         naive_score = nan(size(nucleiFrame1,1),1);
-%         projectedXY = fnval(st,nucleiFrame1');
-%         dist = sqrt(sum( (projectedXY(mapping~=0,:)-nextNucleiXY(mapping(mapping~=0),:)),2));
-%         naive_score(mapping~=0) = mvnpdf(dist , 0, maxNucleusStep).*intensity(mapping(mapping~=0));
-        
-    end
 end
 
 end % function

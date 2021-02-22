@@ -14,7 +14,7 @@ function [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, channelIn
     elseif length(D) == 1
         ffim = imread([prefixPath, filesep, Prefix, '_FF.tif']);
     else 
-        doFF = 0;
+        doFF = 0; 
     end
     ffim = CPsmooth(ffim, 'Gaussian Filter', 256, 0);
 
