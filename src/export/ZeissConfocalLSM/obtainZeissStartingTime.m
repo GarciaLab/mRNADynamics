@@ -8,6 +8,9 @@ function StartingTime = obtainZeissStartingTime(Folder, LSMIndex, LSMMeta2, NDig
     StartingTime = LSMMeta2.get(['TimeStamp #', iIndex(1, NDigits)]); %SEANCHANGE
   elseif ~isempty(CZIDir)
     TimeStampString = LSMMeta2.get('Global Information|Image|T|StartTime #1');
+    if isempty(TimeStampString)
+        disp('StartTime was not present in CZI metadata. Using file creation date as start date')
+        TimeStampString = '2020-11-26T00:00:00' %JP HARDCODE just for testing
     TimeStampStrings{LSMIndex} = TimeStampString;
     %Get the number of days since 1/1/0000
     TimeStamp = datetime(TimeStampString(1:19),'InputFormat','yyyy-MM-dd''T''HH:mm:ss');
