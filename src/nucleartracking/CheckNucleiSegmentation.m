@@ -87,13 +87,12 @@ for k = 1:length(varargin)
         yToRetrackPrompt = varargin{k+1};
     elseif strcmpi(varargin{k}, 'drawTraces')
         drawTraces = true;
-    elseif strcmpi(varargin{k}, 'preLoadMovie')
-        preLoadMovie = true;
     end
 end
 
-liveExperiment = LiveExperiment(Prefix, preLoadMovie);
+liveExperiment = LiveExperiment(Prefix);
 
+ProcPath = liveExperiment.userProcFolder;
 DropboxFolder = liveExperiment.userResultsFolder;
 
 Channel1 = liveExperiment.Channel1;

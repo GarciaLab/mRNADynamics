@@ -27,9 +27,6 @@ function keyInputHandler = GeneralEventHandler(cptState, DataFolder, DropboxFold
             cptState.DisplayRangeSpot = [min(cptState.ImageMat(:)), max(cptState.ImageMat(:)) * 1.5];
             
             disp('decreased spot contrast');
-        elseif cc == '*'
-            % Enable/disable multi-view titles for speed
-            cptState.mvTitleSwitch = ~cptState.mvTitleSwitch;
             
         elseif cc == '0' %Debugging mode
             keyboard;

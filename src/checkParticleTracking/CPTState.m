@@ -51,7 +51,6 @@ classdef CPTState < handle
         UseHistoneOverlay
         ImageHis
         HideApprovedFlag
-        mvTitleSwitch
         
         nameSuffix
         
@@ -114,7 +113,6 @@ classdef CPTState < handle
             this.DisplayRangeSpot = [];
             this.UseHistoneOverlay = UseHistoneOverlay;
             this.HideApprovedFlag = 0;
-            this.mvTitleSwitch = false;
             
             this.nameSuffix = '';
             

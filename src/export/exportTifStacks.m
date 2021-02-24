@@ -22,7 +22,7 @@ function exportTifStacks(AllImages, imagingModality, NChannels, NFrames, NSlices
 
   hisMat = zeros(ySize, xSize, sum(NFrames), hisPrecision);
   
-  if zslicesPadding
+  if zslicesPadding % added compatibility with zslicesPadding
       topZSlice = max(NSlices);
   else
       topZSlice = min(NSlices);

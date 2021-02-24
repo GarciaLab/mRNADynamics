@@ -19,14 +19,8 @@ function [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrame
   %Finally, use this information to determine the number of frames in each series        
   NFrames = NPlanes./NSlices/NChannels;
 
-  %Get rid of the last frame as it is always incomplete because that's when
-  %we stopped it.
-  %AR 2/7/21- sometimes we actually want to keep that frame. Let's assume
-  %that if there's only one frame per series, we want to keep it. 
-  if max(NFrames) ~= 1
-      NFrames = NFrames - 1;
-      NPlanes = NPlanes - (NSlices * NChannels);
-  end
+  %Get rid of the last frame as it is always incomplete because that's when we stopped it
+  NFrames = NFrames - 1;
+  NPlanes = NPlanes - (NSlices * NChannels);
   Frame_Times = zeros(1, sum(NFrames.*NSlices));
-  
 end

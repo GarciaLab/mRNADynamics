@@ -148,7 +148,7 @@ mkdir(DropboxFolderName);
   elseif strcmpi(FileMode, 'LIFExport')
     FrameInfo = processLIFExportMode(rawDataFolder, ProjectionType, Channels, Prefix, ...
       OutputFolder, PreferredFileNameForTest, nuclearGUI, skipExtraction,...
-      skipNuclearProjection, zslicesPadding);
+      skipNuclearProjection);
 
   elseif strcmpi(FileMode, 'DSPIN') || strcmpi(FileMode, 'DND2')
     %Nikon spinning disk confocal mode - TH/CS 2017

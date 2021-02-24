@@ -1,4 +1,4 @@
-% filterMovie(Prefix, [Options])
+    % filterMovie(Prefix, [Options])
 %
 % DESCRIPTION
 % Generates differences of gaussians files that will be later used to run segment spots using regular method or Weka.

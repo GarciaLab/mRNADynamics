@@ -56,8 +56,6 @@ else
             SkipFits=1;
             SkipMovie=1;
             SkipAll=1;
-        elseif strcmpi(varargin{i},'doCyto')
-            SkipAll=0;
         elseif strcmpi(varargin{i},'ApproveAll')
             ApproveAll=1;
         elseif strcmpi(varargin{i},'KeepAll') % Opposite of the 'ApproveAll' flag, which is currently set to 1 by default

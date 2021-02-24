@@ -78,8 +78,10 @@ for ch = spotChannels
             end
             
             if strcmpi(filterType, 'Difference_of_Gaussian')
+                %dogMat(:, :,:,currentFrame) = uint16((filterImage(imStack, filterType, sigmas,...
+                %    'filterSize',filterSize, 'zStep', zStep) + 100) * 100);
                 dogMat(:, :,:,currentFrame) = uint16((filterImage(imStack, filterType, sigmas,...
-                    'filterSize',filterSize, 'zStep', zStep) + 100) * 100);
+                    'filterSize',filterSize, 'zStep', zStep)));
             else
                 dogMat(:, :,:,currentFrame)  = uint16((filterImage(imStack, filterType, sigmas,...
                     'filterSize',filterSize) + 100) * 100);

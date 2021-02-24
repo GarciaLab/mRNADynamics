@@ -45,9 +45,7 @@ for ch = 1:nCh
     
 end
 
-if ~isempty(CompiledParticles{1})
-    CompiledParticles{ch}(p).nc = CompiledParticles{ch}(p).cycle;
-end
+CompiledParticles{ch}(p).nc = CompiledParticles{ch}(p).cycle;
 
 
 
