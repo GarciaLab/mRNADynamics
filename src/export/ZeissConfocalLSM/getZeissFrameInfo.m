@@ -6,7 +6,8 @@ function [FrameInfo,AllLSMImages,NSlices, NPlanes, NFrames,Frame_Times,NChannels
     Folder = RawDataFiles(LSMIndex).folder;
     %Load the file using BioFormats
     LSMImages = bfopen([Folder, filesep, RawDataFiles(LSMIndex).name]);
-
+    FileCreationDate = RawDataFiles(LSMIndex).datenum;
+    
     % Extract the metadata for each series
     LSMMeta = LSMImages{:, 4}; % OME Metadata
     LSMMeta2 = LSMImages{:, 2}; % Original Metadata
@@ -37,9 +38,9 @@ function [FrameInfo,AllLSMImages,NSlices, NPlanes, NFrames,Frame_Times,NChannels
     NDigits = getNDigits(NFrames, LSMIndex);
 
     try
-        StartingTime(LSMIndex) = obtainZeissStartingTime(Folder, LSMIndex, LSMMeta2, NDigits);
+        StartingTime(LSMIndex) = obtainZeissStartingTime(Folder, LSMIndex, LSMMeta2, NDigits, FileCreationDate);
     catch
-        StartingTime(LSMIndex) = obtainZeissStartingTime(Folder, LSMIndex, LSMMeta2, NDigits+1);
+        StartingTime(LSMIndex) = obtainZeissStartingTime(Folder, LSMIndex, LSMMeta2, NDigits+1, FileCreationDate);
     end       
     
     % add times
