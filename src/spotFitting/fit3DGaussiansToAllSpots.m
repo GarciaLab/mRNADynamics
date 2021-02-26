@@ -99,56 +99,8 @@ for ch = liveExperiment.spotChannels
     q32 = prctile(spotFluoVec,75);
     q3Indices = find(spotFluoVec<=q32&spotFluoVec>q31);        
     
-%     perform preliminary fitting to estimate spotPSF dims
-    preSpots = struct('Fits',[]);
-    spotDims = [];
-    if false%length(q3Indices) >= 50
-        % randomly select indices to use
-        preIndices = randsample(q3Indices,min([250 length(q3Indices)]),false);
-        % get unique list of frames
-        preFrameVec = frameRefVec(preIndices);
-        preIndexVec = indexRefVec(preIndices);
-        preFrameIndex = unique(preFrameVec);
-                
-        waitbarFigure = waitbar(0, ['Performing initial fits to estimate PSF dimensions ', num2str(ch)]);
-    
-        q = parallel.pool.DataQueue;
-        afterEach(q, @nUpdateWaitbarPre);
-        p = 1;
-        numSamples = length(preFrameIndex);
-        if ~isempty(movieMatCh)
-            parfor frameIndex = 1:numSamples
-                frame = preFrameIndex(frameIndex);
-                imStack = movieMatCh(:, :, :,frame);   
-                preSpots(frameIndex) = spotFittingLoop(SpotsCh(frame).Fits(preIndexVec(preFrameVec==frame)), liveExperiment, imStack, [], nSpots);
-                % update waitbar
-                send(q, frameIndex); %update the waitbar
-            end
-        else
-            parfor frameIndex = 1:length(preFrameIndex)
-                frame = preFrameIndex(frameIndex);
-                imStack = getMovieFrame(liveExperiment, frame, ch);
-                preSpots(frameIndex) = spotFittingLoop(SpotsCh(frame).Fits(preIndexVec(preFrameVec==frame)), liveExperiment, imStack, [], nSpots);
-                % update waitbar
-                send(q, frameIndex); %update the waitbar
-            end
-        end
-        
-        % extract parameters
-        spotParamMat = [];
-        preFits = [preSpots.Fits];
-        for i = 1:length(preFits)                        
-            spotParamMat = vertcat(spotParamMat, preFits(i).SpotFitInfo3D.RawFitParams);            
-        end
-
-        % calculate average inferred spot dimensions
-        spotDims.sigmaXY = mean(spotParamMat(:,2));
-        spotDims.sigmaXYSE = min([.5*spotDims.sigmaXY std(spotParamMat(:,2))]);
-        spotDims.sigmaZ = mean(spotParamMat(:,3));
-        spotDims.sigmaZSE = min([.5*spotDims.sigmaZ std(spotParamMat(:,3))]);
-           
-        close(waitbarFigure)
-    end
+%     perform preliminary fitting to estimate spotPSF dims    
+    spotDims = [];    
     
     waitbarFigure = waitbar(0, ['Fitting 3D Gaussians: Channel ', num2str(ch)]);
     
