@@ -43,7 +43,12 @@ for i=1:length(ParticleFrames)
         spot = Spots(Frame(i)).Fits(Particles(CurrentParticle).Index(i));
         
         %Determine the brightest Z plane of this particle
-        zIndex=find(spot.brightestZ == spot.z);
+        
+        %GM 3/1/21: This zIndex didn't correspond to the brightest z Plane
+        %for many of my spots. 
+        
+        zIndex = find(spot.FixedAreaIntensity == nanmax(spot.FixedAreaIntensity), 1);
+        %zIndex=find(spot.brightestZ == spot.z);
         
         %Offset obtained using Gaussian fitting.
         Offset(i) = double(spot.Offset(zIndex));
@@ -105,7 +110,12 @@ for i=1:length(ParticleFrames)
             spot = Spots(Frame(i)).Fits(Particles(CurrentParticle).Index(FrameIndex));
             
             %Determine the brightest Z plane of this particle
-            zIndex=find(spot.brightestZ == spot.z);
+            %GM 3/1/21: This zIndex didn't correspond to the brightest z Plane
+            %for many of my spots.
+            
+            zIndex = find(spot.FixedAreaIntensity == nanmax(spot.FixedAreaIntensity), 1);
+            %zIndex=find(spot.brightestZ == spot.z);
+            
             
             %Offset obtained using Gaussian fitting.
             Offset(i) = double(spot.Offset(zIndex));

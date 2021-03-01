@@ -27,7 +27,6 @@ defaultArea = 109; %109 pixels is the default area when the pixels are assumed t
 warning('off', 'MATLAB:rankDeficientMatrix'); %suppress the spline fitting warnings
 for j=1:length(CompiledParticles{ChN})
     CurrentParticle = CompiledParticles{ChN}(j).OriginalParticle;
-    
     for i=1:length(Particles{ChN}(CurrentParticle).Frame)
         
         spot = Spots(Particles{ChN}(CurrentParticle).Frame(i)).Fits(Particles{ChN}(CurrentParticle).Index(i));
@@ -36,8 +35,12 @@ for j=1:length(CompiledParticles{ChN})
         for zIndex = 1:length(spot.z)
             z = spot.z(zIndex);
             CompiledParticles{ChN}(j).FluoZInfo(i,z) = spot.FixedAreaIntensity(zIndex);
+            
         end
+        
     end
+    
+   
     
 end
 %% 
