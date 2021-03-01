@@ -1,17 +1,14 @@
-function Spots = fit3DGaussiansToAllSpots(Prefix, nSpots, varargin)
+function Spots = fit3DGaussiansToAllSpots(Prefix, varargin)
 %%
 
 cleanupObj = onCleanup(@myCleanupFun);
-
-optionalResults = '';
 
 segmentSpots = false;
 displayFigures = false;
 nWorkers = 8;
 keepPool = true;
-dogs = [];
-saveType = '.tif';
 save_flag = true;
+% nSpots = 2;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'displayFigures')
@@ -21,61 +18,49 @@ for i = 1:length(varargin)
         %in the future, this should just be
         %replaced with a call to dbstack to check
         %if the caller is segmentSpots
-        
+       
         Spots = varargin{i+1};
-        segmentSpots = true;
-    elseif strcmpi(varargin{i}, 'optionalResults')
-        optionalResults = varargin{i+1};
+        segmentSpots = true;  
     elseif strcmpi(varargin{i}, 'noSave')
         save_flag = false;
     elseif strcmpi(varargin{i}, 'nWorkers')
         nWorkers = varargin{i+1};
     elseif strcmpi(varargin{i}, 'keepPool')
-        keepPool = true;
-    elseif strcmpi(varargin{i}, 'dogs')
-        dogs = varargin{i+1};
-    elseif strcmpi(varargin{i}, 'saveAsMat') | strcmpi(varargin{i}, '.mat')
-        saveType = '.mat';
+        keepPool = true;  
+%     elseif strcmpi(varargin{i}, 'fitSingleGaussian')
+%         nSpots = 1;
     end
 end
 
-if ~any([nSpots==1, nSpots==2])
-    error('Second argument must be the number of spots to fit and must equal 1 or 2')
-end
-
-
 disp(['Fitting 3D Gaussians to: ', Prefix]);
 
+% generate liveExperiment object
 liveExperiment = LiveExperiment(Prefix);
 
-[~,~,DropboxFolder,~, PreProcPath,...
-    ~, Prefix, ~,~,~,~, ~, spotChannels] = readMovieDatabase(Prefix, optionalResults);
-
+% get mat containing raw image data
+disp('Loading image files...')
 movieMat = getMovieMat(liveExperiment);
-DataFolder=[DropboxFolder,filesep,Prefix];
+disp('Done')
+
+% create dircetory
+DataFolder=[liveExperiment.resultsFolder,filesep];
 
 if ~segmentSpots
     Spots = getSpots(liveExperiment);
 end
-
-FrameInfo = getFrameInfo(liveExperiment);
-
 startParallelPool(nWorkers, displayFigures, keepPool);
 
+%% %%%%%%%%%%%%%%%%%%%%% Clean up Spots Structure %%%%%%%%%%%%%%%%%%%%%%%%%
+% NL: implement this once I know which fields I'm adding
+% error('pause here')
 
-%%
-for ch = spotChannels
-    
-    waitbarFigure = waitbar(0, ['Fitting 3D Gaussians: Channel ', num2str(ch)]);
-    
-    q = parallel.pool.DataQueue;
-    afterEach(q, @nUpdateWaitbar);
-    p = 1;
+%% %%%%%%%%%%%%%%%%%%%%% Perform 3D fits to all spots %%%%%%%%%%%%%%%%%%%%%
+for ch = liveExperiment.spotChannels       
     
     if iscell(Spots)
         SpotsCh = Spots{ch};
     else
-        SpotsCh = Spots;
+        SpotsCh =  Spots;
     end
     
     if ~isempty(movieMat)
@@ -85,35 +70,116 @@ for ch = spotChannels
     end
     
     numFrames = length(SpotsCh);
-	
-    for frame = 1:numFrames
-%     parfor frame = 1:numFrames %frames
-
-        
-        SpotsFr = SpotsCh(frame);
-        
-        if ~isempty(movieMatCh)
-            imStack = movieMatCh(:, :, :, frame);
-        else
-            imStack = getMovieFrame(liveExperiment, frame, ch);
-        end
-        
-        nSpotsPerFrame = length(SpotsFr.Fits);
-        for spot = 1:nSpotsPerFrame
-            SpotsFr = fitSnip3D(SpotsFr, ch, spot, frame,...
-                liveExperiment, PreProcPath, FrameInfo, nSpots, imStack, displayFigures);
-%             fitSnip3DArchive(SpotsFr, ch, spot, frame, Prefix,...
-%                 PreProcPath, liveExperiment.procFolder, FrameInfo, dogs, displayFigures, saveType)
-
-        end
-        SpotsCh(frame) = SpotsFr;
-        send(q, frame); %update the waitbar
+    
+    % determine whether to expect 1 or 2 spots per locus
+    % if this is TF cluster data, 1. For all transcription spots we assume
+    % 2    
+    inputChannels = liveExperiment.inputChannels;  
+    nSpots = 2;
+    if any(inputChannels==ch)
+        nSpots = 1;
     end
     
+    % iterate through spots and pull basic indexing info and fluorescence
+    % stats
+    frameRefVec = [];
+    indexRefVec = [];
+    spotFluoVec = [];
+    for frame = 1:numFrames   
+        for ind = 1:length(SpotsCh(frame).Fits)
+            frameRefVec(end+1) = frame;
+            indexRefVec(end+1) = ind;
+            zIndex = SpotsCh(frame).Fits(ind).brightestZ==SpotsCh(frame).Fits(ind).z;
+            spotFluoVec(end+1) = SpotsCh(frame).Fits(ind).FixedAreaIntensity(zIndex);
+        end
+    end
+    
+    % identify spots falling into the 3rd quartile
+    q31 = prctile(spotFluoVec,50);
+    q32 = prctile(spotFluoVec,75);
+    q3Indices = find(spotFluoVec<=q32&spotFluoVec>q31);        
+    
+%     perform preliminary fitting to estimate spotPSF dims
+    preSpots = struct('Fits',[]);
+    spotDims = [];
+    if false%length(q3Indices) >= 50
+        % randomly select indices to use
+        preIndices = randsample(q3Indices,min([250 length(q3Indices)]),false);
+        % get unique list of frames
+        preFrameVec = frameRefVec(preIndices);
+        preIndexVec = indexRefVec(preIndices);
+        preFrameIndex = unique(preFrameVec);
+                
+        waitbarFigure = waitbar(0, ['Performing initial fits to estimate PSF dimensions ', num2str(ch)]);
+    
+        q = parallel.pool.DataQueue;
+        afterEach(q, @nUpdateWaitbarPre);
+        p = 1;
+        numSamples = length(preFrameIndex);
+        if ~isempty(movieMatCh)
+            parfor frameIndex = 1:numSamples
+                frame = preFrameIndex(frameIndex);
+                imStack = movieMatCh(:, :, :,frame);   
+                preSpots(frameIndex) = spotFittingLoop(SpotsCh(frame).Fits(preIndexVec(preFrameVec==frame)), liveExperiment, imStack, [], nSpots);
+                % update waitbar
+                send(q, frameIndex); %update the waitbar
+            end
+        else
+            parfor frameIndex = 1:length(preFrameIndex)
+                frame = preFrameIndex(frameIndex);
+                imStack = getMovieFrame(liveExperiment, frame, ch);
+                preSpots(frameIndex) = spotFittingLoop(SpotsCh(frame).Fits(preIndexVec(preFrameVec==frame)), liveExperiment, imStack, [], nSpots);
+                % update waitbar
+                send(q, frameIndex); %update the waitbar
+            end
+        end
+        
+        % extract parameters
+        spotParamMat = [];
+        preFits = [preSpots.Fits];
+        for i = 1:length(preFits)                        
+            spotParamMat = vertcat(spotParamMat, preFits(i).SpotFitInfo3D.RawFitParams);            
+        end
+
+        % calculate average inferred spot dimensions
+        spotDims.sigmaXY = mean(spotParamMat(:,2));
+        spotDims.sigmaXYSE = min([.5*spotDims.sigmaXY std(spotParamMat(:,2))]);
+        spotDims.sigmaZ = mean(spotParamMat(:,3));
+        spotDims.sigmaZSE = min([.5*spotDims.sigmaZ std(spotParamMat(:,3))]);
+           
+        close(waitbarFigure)
+    end
+    
+    waitbarFigure = waitbar(0, ['Fitting 3D Gaussians: Channel ', num2str(ch)]);
+    
+    q = parallel.pool.DataQueue;
+    afterEach(q, @nUpdateWaitbar);
+    p = 1;
+    
+    % iterate through all spots    
+    if ~isempty(movieMatCh)
+        parfor frame = 1:numFrames %frames                
+            imStack = movieMatCh(:, :, :, frame);
+            
+            SpotsCh(frame) = spotFittingLoop(SpotsCh(frame).Fits, liveExperiment, imStack, spotDims, nSpots);
+
+            send(q, frame); %update the waitbar
+        end
+    else
+        parfor frame = 1:numFrames %frames                
+            imStack = getMovieFrame(liveExperiment, frame, ch);
+            
+            SpotsCh(frame) = spotFittingLoop(SpotsCh(frame).Fits, liveExperiment, imStack, spotDims, nSpots);
+
+            send(q, frame); %update the waitbar
+        end
+    end
     if iscell(Spots) && length(Spots) > 1
         Spots{ch} = SpotsCh;
-    else Spots = SpotsCh; end
-    
+    else
+        Spots = SpotsCh; 
+    end
+     
 end
 
 if iscell(Spots) && length(Spots) < 2
@@ -132,10 +198,15 @@ if save_flag
     try close(waitbarFigure); end
     
 end
+    
+function nUpdateWaitbarPre(~)
+    try waitbar(p/numSamples, waitbarFigure); end
+    p = p + 1;
+end
 
-    function nUpdateWaitbar(~)
-        try waitbar(p/numFrames, waitbarFigure); end
-        p = p + 1;
-    end
+function nUpdateWaitbar(~)
+    try waitbar(p/numFrames, waitbarFigure); end
+    p = p + 1;
+end
 
 end
