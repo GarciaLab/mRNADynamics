@@ -1,6 +1,8 @@
 function keyInputHandler = ParticleChangeEventHandler(cptState)
     
     function keyInput(cc)
+        
+        
         if cc == 'k'
         
             try
@@ -10,8 +12,7 @@ function keyInputHandler = ParticleChangeEventHandler(cptState)
             catch
                 ParticleJump = CurrentParticle;
             end
-            
-            [cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag] = ...
+            [cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag, cptState.TwinParticle] = ...
                 changeParticle(ParticleJump, cptState.Particles, cptState.numParticles, cptState.CurrentChannelIndex);
 
             cptState.DisplayRange = [];
@@ -21,11 +22,12 @@ function keyInputHandler = ParticleChangeEventHandler(cptState)
         
         elseif cc == 'p'
             % Identify a particle. It will also tell you the particle associated with the clicked nucleus.
+            
             identifyParticle(cptState.Spots, cptState.Particles, cptState.CurrentFrame, ...
                 cptState.CurrentChannelIndex, cptState.UseHistoneOverlay, cptState.schnitzcells);
         
         elseif cc == '|'
-            % Moves to clicked particle.
+            % Remove nuclear association with current particle
             [cptState.Particles, cptState.CurrentParticle, cptState.CurrentFrame] =...
                 removeNucleusAssociatedWithParticle(cptState.Spots, cptState.Particles, cptState.CurrentParticle,...
                 cptState.CurrentFrame, cptState.CurrentChannelIndex, cptState.UseHistoneOverlay, cptState.schnitzcells);
@@ -39,7 +41,7 @@ function keyInputHandler = ParticleChangeEventHandler(cptState)
         elseif cc == ')'
             % Switches nuclear association to clicked particle and switches to the first frame for that particle.
             % Added by G. Martini on 11/23/20
-            [cptState.Particles, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag] =...
+            [cptState.Particles, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag, cptState.TwinParticle] =...
                 changeParticleAssociatedWithNucleus(cptState.Spots, cptState.Particles, cptState.CurrentParticle,...
                 cptState.CurrentFrame, cptState.CurrentChannelIndex, cptState.UseHistoneOverlay, cptState.schnitzcells);
 
@@ -54,15 +56,18 @@ function keyInputHandler = ParticleChangeEventHandler(cptState)
             end
 
         elseif (cc == 'm') & (cptState.CurrentParticle < cptState.numParticles())
-            [cptState.lineFitted, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag, cptState.DisplayRange] = ...
+  
+            [cptState.lineFitted, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag, cptState.DisplayRange, cptState.TwinParticle] = ...
                 goNextParticle(cptState.CurrentParticle, cptState.CurrentChannelIndex, cptState.HideApprovedFlag, cptState.Particles);
         
         elseif (cc == 'n') & (cptState.CurrentParticle > 1)
-            [cptState.lineFitted, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag, cptState.DisplayRange] = ...
+
+            [cptState.lineFitted, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag, cptState.DisplayRange, cptState.TwinParticle] = ...
                 goPreviousParticle(cptState.CurrentParticle, cptState.CurrentChannelIndex, cptState.HideApprovedFlag, cptState.Particles);
 
         elseif (cc == 'v') & (cptState.CurrentParticle < cptState.numParticles())
-            [cptState.lineFitted, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag, cptState.DisplayRange] = ...
+
+            [cptState.lineFitted, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag, cptState.DisplayRange, cptState.TwinParticle] = ...
                 goNextUncheckedParticle(cptState.CurrentParticle, cptState.CurrentChannelIndex, cptState.HideApprovedFlag, cptState.Particles);
         
         elseif cc == 'i'

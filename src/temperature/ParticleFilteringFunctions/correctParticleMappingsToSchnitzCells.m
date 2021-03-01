@@ -16,8 +16,14 @@ if ~exist('CompiledParticles', 'var')
     load([liveExperiment.resultsFolder, 'CompiledParticles.mat'], 'CompiledParticles')
 end
 
+NumberParticlesPerSchnitz = 1;
+if strcmpi(liveExperiment.experimentType, '2spot')
+    NumberParticlesPerSchnitz = 2;
+end
+%%
+
 [schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses, Prefix);
-for ChN=liveExperiment.spotChannels
+for ChN=1:length(liveExperiment.spotChannels)
     for p = 1:length(Particles{ChN})
         if isempty(Particles{ChN}(p).Nucleus)
             continue
@@ -86,7 +92,7 @@ for ChN=liveExperiment.spotChannels
         if length(CompiledParticleSchnitzMap) > length(unique(CompiledParticleSchnitzMap))
             DoubledSchnitzes = [];
             for sc_idx = unique(CompiledParticleSchnitzMap)
-                if length(find(CompiledParticleSchnitzMap == sc_idx)) > 1
+                if length(find(CompiledParticleSchnitzMap == sc_idx)) > NumberParticlesPerSchnitz
                     DoubledSchnitzes = [DoubledSchnitzes, sc_idx];
                 end
             end

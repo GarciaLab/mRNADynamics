@@ -1,10 +1,13 @@
-function PlotParticleTrace(cptState, plotTraceSettings, noSpline)
-    % noSpline displays the particle trace as well as a montage of the images
-
+function PlotParticleTrace(cptState, plotTraceSettings, noSpline, UseTwin)
+% noSpline displays the particle trace as well as a montage of the images
+if ~exist('UseTwin', 'var')
+    UseTwin = false;
+end
+if ~UseTwin
     CurrentParticle = cptState.CurrentParticle;
     Particles = cptState.getCurrentChannelParticles();
     Spots = cptState.getCurrentChannelSpots();
-
+    
     GetParticleTrace(CurrentParticle, Particles, Spots, plotTraceSettings, noSpline);
     
     if ~plotTraceSettings.UseCompiledParticles
@@ -12,7 +15,20 @@ function PlotParticleTrace(cptState, plotTraceSettings, noSpline)
     else
         cptState.Frames = Particles(CurrentParticle).FlaggingInfo.TrueFrames;
     end
-%{    
+else
+    TwinParticle = cptState.TwinParticle;
+    Particles = cptState.getCurrentChannelParticles();
+    Spots = cptState.getCurrentChannelSpots();
+    
+    GetParticleTrace(TwinParticle, Particles, Spots, plotTraceSettings, noSpline);
+    
+    if ~plotTraceSettings.UseCompiledParticles
+        cptState.Frames = Particles(TwinParticle).Frame;
+    else
+        cptState.Frames = Particles(TwinParticle).FlaggingInfo.TrueFrames;
+    end
+end
+%{
     for i=1:length(cptState.Frames)
         
         CurrentFrame = Frames(i);

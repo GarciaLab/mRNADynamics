@@ -6,6 +6,7 @@ function keyInputHandler = GeneralEventHandler(cptState, DataFolder, DropboxFold
                 cptState.UseHistoneOverlay, cptState.FrameInfo, DropboxFolder, FilePrefix, cptState.schnitzcells, ...
                 cptState.Particles, NChannels, cptState.CurrentChannelIndex, cptState.numParticles());
         elseif cc == 's'
+            %disp('Temporarily disabled save.')
             saveChanges(NChannels, cptState, DataFolder, FilePrefix, DropboxFolder);
         elseif cc == '~'
             % Switch projection mode

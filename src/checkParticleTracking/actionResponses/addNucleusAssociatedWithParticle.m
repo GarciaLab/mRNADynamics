@@ -21,7 +21,7 @@ if ~isempty(ConnectPosition)
     disp(['Clicked nucleus: ',num2str(NucleusOutput)]);
     CurrentParticle = PreviousParticle;
     Particles{CurrentChannelIndex}(CurrentParticle).Nucleus = NucleusOutput;
-    
+    Particles{CurrentChannelIndex}(CurrentParticle).Schnitz = NucleusOutput;
 end
 
 

@@ -4,7 +4,7 @@ function Particles=SeparateParticleTraces(CurrentParticle,CurrentFrame,Particles
 
 
 fieldNames = fields(Particles);
-fieldNames(cellfun(@(x) strcmpi(x, 'Approved'), fieldNames) |  cellfun(@(x) strcmpi(x, 'Nucleus'), fieldNames) ) = [];
+fieldNames(cellfun(@(x) strcmpi(x, 'Approved'), fieldNames) | cellfun(@(x) strcmpi(x, 'Schnitz'), fieldNames) | cellfun(@(x) strcmpi(x, 'Nucleus'), fieldNames) ) = [];
 
 FrameFilter=Particles(CurrentParticle).Frame < CurrentFrame;
 
@@ -24,6 +24,9 @@ for f = 1:length(fieldNames)
     NewParticles(CurrentParticle+1).(fieldNames{f})=Particles(CurrentParticle).(fieldNames{f})(~FrameFilter);
     NewParticles(CurrentParticle+1).Approved=0;
     NewParticles(CurrentParticle+1).Nucleus=[];
+    if isfield(NewParticles, 'Schnitz')
+       NewParticles(CurrentParticle+1).Schnitz = NaN;
+    end
 
 
 end

@@ -39,7 +39,7 @@ load([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat']);
 
 
 CNfieldnames = fieldnames(CompiledNuclei);
-if nargin == 1
+if ~exist('FluoLabel', 'var')
     FluoLabel = chooseFluo(CNfieldnames);
     FluoTimeTraceLabel = [FluoLabel, '_TimeTrace'];
     FluoZTraceLabel = [FluoLabel, '_Z'];
@@ -102,7 +102,9 @@ for k=1:length(CompiledNuclei)
     NCDeltas{cycle-8} = [NCDeltas{cycle-8} NucleusDeltas];
     
     CompiledNuclei(k).FluoTimeTrace = FluoTimeTrace;
+    CompiledNuclei(k).FluoZInfo = FluoZ;
     CompiledNuclei(k).FrameApproved = FrameApproved;
+   
     %CompiledNuclei(k).FluoDeltas = [0 NucleusDeltas];
     
     if isempty(anaphaseFrame)

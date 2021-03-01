@@ -30,10 +30,11 @@ else
     
     %Check that this particle doesn't already have a spot assigned
     %in this frame
-    if sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame) &&  ~GlobalZoomMode
+    if (sum(Particles{CurrentChannel}(CurrentParticle).Frame==CurrentFrame) &&  ~GlobalZoomMode)
+        
         warning('There is a spot assigned to this particle in this frame already.')
     else
-        
+
         
         [ConnectPositionx,ConnectPositiony] = ginput(1);
         
@@ -79,6 +80,11 @@ else
                     Fit = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, neighborhood_px, liveExperiment.snippetSize_px, ...
                         liveExperiment.pixelSize_nm, show_status, fig, microscope,...
                         [1, ConnectPositionx, ConnectPositiony], [ConnectPositionx, ConnectPositiony], '', CurrentFrame, [], z);
+                elseif cc == '}'
+                    small_neighborhood_px = round(500 / liveExperiment.pixelSize_nm); %nm
+                    Fit = identifySingleSpot(k, {spotsIm,imAbove,imBelow}, im_label, dog, small_neighborhood_px, liveExperiment.snippetSize_px, ...
+                        liveExperiment.pixelSize_nm, show_status, fig, microscope,...
+                        [1, ConnectPositionx, ConnectPositiony], [], '', CurrentFrame, [], z);
                 end
                 
                 FitCell{z} = Fit;
@@ -105,7 +111,7 @@ else
             end
             
             if ~breakflag
-                if cc == '['
+                if cc == '[' | cc == '}'
                     force_z = 0;
                 elseif cc == '{'
                     force_z = CurrentZ;

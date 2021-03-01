@@ -25,15 +25,12 @@ classdef LTP
         MaxOffsetAP = [];
         time_delta = [];
         MinimumNuclearCount = [];
+        MinimumTimePoints = [];
         
-        MeanAPMats = {};
-        MeanFluoMats = {};
-        StdFluoMats = {};
-        NumNucMats = {};
-        DiffMeanFluoMats = {};
-        DiffStdErrorMats = {};
-        FluoOffsets = {};
-        FluoOffsetStdErrors = {};
+        TFProfiles = {};
+        TempFluoOffsets = {};
+        SetFluoOffsets = {};
+
         
         LegendLabels = {};
         
@@ -67,7 +64,7 @@ classdef LTP
             if exist('time_delta', 'var')
                 this.time_delta = time_delta;
             else
-                this.time_delta = 1; % unit: minutes
+                this.time_delta = 60; % unit: seconds
             end
             
             if exist('MinimumNuclearCount', 'var')
@@ -76,8 +73,15 @@ classdef LTP
                 this.MinimumNuclearCount = 5; % unit: minutes
             end
             
+            AllPrefixes = getProjectPrefixes(ProjectName);
+            TempVector = zeros(1, length(AllPrefixes));
+            for i = 1:length(AllPrefixes)
+                TempVector(i) = pullTempSpFromDataStatus(ProjectName, AllPrefixes{i});
+            end
+             [~, indexorder] = sort(TempVector, 'descend');
+            this.ExperimentPrefixes = AllPrefixes(indexorder);
             
-            this.ExperimentPrefixes = getProjectPrefixes(ProjectName);
+            
             
             for i = 1:length(this.ExperimentPrefixes)
                 Prefix = this.ExperimentPrefixes{i};
@@ -90,7 +94,7 @@ classdef LTP
                         include_set(i) = 0;
                     end
                 end
-                if this.ExperimentStatuses{1}.hasExtractedNuclearFluoProfilesAP
+                if this.ExperimentStatuses{1}.hasCompiledNuclearProtein
                     finished_set(i) = 1;
                 else
                     finished_set(i) = 0;
@@ -120,30 +124,14 @@ classdef LTP
             end
             if isempty(this.MaxOffsetAP)
                 if contains(lower(this.ProjectName), 'hb')
-                    this.MaxOffsetAP = 0.7;
+                    this.MaxOffsetAP = 0.675;
                 end
             end
             
-            this.MeanAPMats = {};
-            this.MeanFluoMats = {};
-            this.StdFluoMats = {};
-            this.NumNucMats = {};
-            this.DiffMeanFluoMats = {};
-            this.DiffStdErrorMats = {};
-            this.FluoOffsets = {};
-            this.FluoOffsetStdErrors = {};
-            for i = 1:length(this.IncludedNCs)
-                this.MeanAPMats{i} = [];
-                this.MeanFluoMats{i} = [];
-                this.StdFluoMats{i} = [];
-                this.NumNucMats{i} = [];
-                this.DiffMeanFluoMats{i} = [];
-                this.DiffStdErrorMats{i} = [];
-                this.FluoOffsets{i} = [];
-                this.FluoOffsetStdErrors{i} = [];
-                
-            end
-            this = addTFProfiles(this);
+
+    
+            this = AddTFProfiles(this, this.time_delta);
+            this = AddNBFluoOffsets(this);
             this.APLengths = AddAPLengths(this);
             
         end
@@ -168,117 +156,21 @@ classdef LTP
                 end
             end
         end
-        function this = addTFProfiles(this)
-            
-            
-            % Function to load all profiles for plotting
-            [~,~,DropboxFolder,~,~]=...
-                DetermineLocalFolders;
-            
-            numSets = length(this.ProcessedExperiments);
-            ncs = flip(this.IncludedNCs);
-            time_delta = this.time_delta;
-            
-            
-            
-            for k = 1:length(ncs)
-                NC = ncs(k);
-                nc_idx = length(ncs)-(k-1);
-                AllMeanFluoAP_Frames = {};
-                AllStdFluoAP_Frames = {};
-                AllNumNucAP_Frames = {};
-                AllSetTimes_Frames = {};
-                AllMeanAP = {};
-                for i=1:numSets
-                    j = this.ProcessedExperiments(i);
-                    if isfile([DropboxFolder, filesep, this.ExperimentPrefixes{j}, filesep, 'MeanAPposNC', num2str(NC), '_FramesNC.mat'])
-                        load([DropboxFolder, filesep, this.ExperimentPrefixes{j}, filesep, 'MeanAPposNC', num2str(NC), '_FramesNC.mat'])
-                        AllMeanAP{i} = MeanAP;
-                        load([DropboxFolder, filesep, this.ExperimentPrefixes{j}, filesep, 'MeanFluoAPNC', num2str(NC), '_FramesNC.mat'])
-                        AllMeanFluoAP_Frames{i} = MeanFluoAP;
-                        load([DropboxFolder, filesep,  this.ExperimentPrefixes{j}, filesep, 'StdFluoAPNC', num2str(NC), '_FramesNC.mat'])
-                        AllStdFluoAP_Frames{i} = StdFluoAP;
-                        load([DropboxFolder, filesep,  this.ExperimentPrefixes{j}, filesep, 'NumNucAPNC', num2str(NC), '_FramesNC.mat'])
-                        AllNumNucAP_Frames{i} = NumNucAP;
-                        load([DropboxFolder, filesep,  this.ExperimentPrefixes{j}, filesep, 'TimeNC', num2str(NC), '_FramesNC.mat'])
-                        AllSetTimes_Frames{i} = NCTimes - min(NCTimes);
-                    else
-                        AllMeanAP{i} = [];
-                        AllMeanFluoAP_Frames{i} = [];
-                        AllStdFluoAP_Frames{i} = [];
-                        AllNumNucAP_Frames{i} = [];
-                        AllSetTimes_Frames{i} = [];
-                    end
-                    
+        
+        function this = AddTFProfiles(this, deltaT)
+            this.TFProfiles = cell(1, length(this.ExperimentPrefixes));
+            disp('Adding Mean Profiles.')
+            for i = 1:length(this.ExperimentPrefixes)
+                disp(num2str(i))
+                if ~ismember(i, this.ProcessedExperiments)
+                    continue
                 end
-                %%
-                
-                APResolution = this.Experiments{this.ProcessedExperiments(1)}.APResolution;
-                
-                
-                MaxTimes = zeros(1, numSets);
-                for i =1:numSets
-                    if ~isempty(AllSetTimes_Frames{i})
-                        MaxTimes(i) = max(AllSetTimes_Frames{i});
-                    end
+                if this.ExperimentStatuses{i}.hasCompiledNuclearProtein
+                    this.TFProfiles{i} = CalculateNBAPProfiles(this.ExperimentPrefixes{i}, deltaT);
                 end
-                time_vector = 0:time_delta:ceil(max(MaxTimes));
-                numTimes = length(time_vector);
-                APbins = 0:APResolution:1;
-                numBins = length(APbins);
-                MeanAPMat = NaN(numTimes,numBins, numSets);
-                MeanFluoMat = NaN(numTimes,numBins, numSets);
-                StdFluoMat = NaN(numTimes,numBins, numSets);
-                NumNucMat = zeros(numTimes,numBins, numSets);
-                
-                
-                for i=1:numSets
-                    rounded_times_setI = round(AllSetTimes_Frames{i});
-                    for j=1:numTimes
-                        t = time_vector(j);
-                        DataPointsInTimeBin = find(rounded_times_setI == t);
-                        if isempty(DataPointsInTimeBin)
-                            continue
-                        elseif length(DataPointsInTimeBin) == 1
-                            t_idx = DataPointsInTimeBin;
-                        else
-                            t_idx = find(   abs(AllSetTimes_Frames{i}-t) == min(abs(AllSetTimes_Frames{i}-t)), 1);
-                        end
-                        MeanAPMat(j,:,i) = AllMeanAP{i}(t_idx,:);
-                        MeanFluoMat(j,:, i) = AllMeanFluoAP_Frames{i}(t_idx,:);
-                        StdFluoMat(j,:, i) = AllStdFluoAP_Frames{i}(t_idx,:);
-                        NumNucMat(j,:, i) = AllNumNucAP_Frames{i}(t_idx,:);
-                        
-                        
-                    end
-                end
-                this.MeanAPMats{nc_idx} = MeanAPMat;
-                this.MeanFluoMats{nc_idx} = MeanFluoMat;
-                this.StdFluoMats{nc_idx} = StdFluoMat;
-                this.NumNucMats{nc_idx} = NumNucMat;
-                [FluoOffset, FluoOffsetStdError] = getTFoffset(this, NC);
-                DiffMeanFluoMat = NaN(numTimes,numBins, numSets);
-                DiffStdErrorMat = NaN(numTimes,numBins, numSets);
-                for i=1:numTimes
-                    for j = 1:numSets
-                        ValidBins = ~isnan(MeanFluoMat(i,:,j));
-                        DiffMeanFluoMat(i,ValidBins,j) = MeanFluoMat(i,ValidBins,j)-FluoOffset(i,j);
-                        StdErrorValidBins = StdFluoMat(i,ValidBins,j)./sqrt(NumNucMat(i,ValidBins,j));
-                        DiffStdErrorMat(i,ValidBins,j) = sqrt(sum(StdErrorValidBins.^2));
-                    end
-                end
-                
-                this.FluoOffsets{nc_idx} = FluoOffset;
-                this.FluoOffsetStdErrors{nc_idx} = FluoOffsetStdError;
-                this.DiffMeanFluoMats{nc_idx} = DiffMeanFluoMat;
-                this.DiffStdErrorMats{nc_idx} = DiffStdErrorMat;
-                
-                
             end
-            
-            
-            
         end
+       
         
         function this = addTFoffsts(this)
             for NC=this.IncludedNCs

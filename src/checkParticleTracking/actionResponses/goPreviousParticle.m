@@ -1,4 +1,4 @@
-function [lineFit, CurrentParticle, CurrentFrame, ManualZFlag, DisplayRange] =...
+function [lineFit, CurrentParticle, CurrentFrame, ManualZFlag, DisplayRange, TwinParticle] =...
     goPreviousParticle(CurrentParticle, CurrentChannel, HideApprovedFlag, Particles)
 %GOPREVIOUSPARTICLE Summary of this function goes here
 %   Detailed explanation goes here
@@ -33,7 +33,7 @@ if NextParticle<1
     NextParticle=CurrentParticle;
 end
 
-[CurrentParticle,CurrentFrame, ManualZFlag] = ...
+[CurrentParticle,CurrentFrame, ManualZFlag, TwinParticle] = ...
     changeParticle(NextParticle, Particles, numParticles, CurrentChannel);
 
 

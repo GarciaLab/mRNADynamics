@@ -24,6 +24,12 @@ cycles = [];
 SchnitzIDs = [];
 Velocities = [];
 
+if ~isfield(schnitzcells, 'Flag')
+    for i = 1:length(schnitzcells)
+        schnitzcells(i).Flag = 0;
+    end
+end
+
 for schnitz_index=1:length(schnitzcells)
     CurrentSchnitz = schnitzcells(schnitz_index);
     if length(CurrentSchnitz.frames) <= 1

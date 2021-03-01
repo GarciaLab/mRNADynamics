@@ -9,6 +9,9 @@ function keyInputHandler = TracesEventHandler(cptState)
             % Separate traces forward at the current frame.
             [cptState.Particles, cptState.PreviousParticle] = separateTraces(cptState.Particles, ...
                 cptState.CurrentChannelIndex, cptState.CurrentFrame, cptState.CurrentParticle);
+        elseif cc == 'y'
+            % remove current time point from trace 
+            cptState = removeCurrentFrame(cptState);
         elseif cc == 'q'
             % Approve a trace
             if cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Approved == 1

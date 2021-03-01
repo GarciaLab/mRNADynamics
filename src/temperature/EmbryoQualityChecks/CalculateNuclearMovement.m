@@ -35,6 +35,13 @@ schnitzcells = DetermineNucleiEndFrames(Prefix);
 % yVelocity (micron/s)
 % Velocity (microns/s) 
 
+if ~isfield(schnitzcells, 'anaphaseFrame')
+    for sc = 1:length(schnitzcells)
+        schnitzcells(sc).anaphaseFrame = [];
+        schnitzcells(sc).inferredAnaphaseFrame = false;
+    end
+end
+
 
 for schnitz_index=1:length(schnitzcells)
     CurrentSchnitz = schnitzcells(schnitz_index);
@@ -69,6 +76,8 @@ for schnitz_index=1:length(schnitzcells)
     % First add total info for cells with info for the first and last franes
     % of the cycle. Note that for NC14, the cell must be present in the
     % last frame of the movie rather than the last frame of the cycle. 
+
+    
     SchnitzHasFirstAndLastCycleFrames = false;
     if ~isempty(CurrentSchnitz.anaphaseFrame) & ~isempty(CurrentSchnitz.inferredAnaphaseFrame)
         if ~CurrentSchnitz.inferredAnaphaseFrame & ~isnan(CurrentSchnitz.anaphaseFrame)

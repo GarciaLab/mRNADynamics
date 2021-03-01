@@ -27,10 +27,6 @@ classdef TemperatureExpStatus
         hasCheckedDivisionTimes = false;
         hasCorrectedDivisionTime = false;
         hasCompiledNuclearProtein = false;
-        hasSetDefaultFluo = false;
-        hasConvertedCompiledNucleiToTableArray = false;
-        hasExtractedNuclearFluoProfilesAP = false;
-        hasPlottedNuclearFluoProfilesAP = false;
         hasChosenCytoplasmFrames = false;
         hasFilteredHistoneWeka = false;
         hasSegmentedCytoplasm = false;
@@ -373,7 +369,7 @@ classdef TemperatureExpStatus
             end
             
             % Store CompiledNuclearProtein info
-            hasCompiledNuclearProteinIndex = find(contains(dataStatusRownames, 'CompileNuclearProteinFlexFluo'));
+            hasCompiledNuclearProteinIndex = find(contains(dataStatusRownames, 'FilterCompileNuclei'));
             if ~isempty(hasCompiledNuclearProteinIndex)
                 hCNP = dataTypeTabContents{hasCompiledNuclearProteinIndex, ColIndex};
                 if isdatetime(hCNP)
@@ -389,77 +385,7 @@ classdef TemperatureExpStatus
                     this.hasCompiledNuclearProtein = 0;
                 end
             end
-            % Store SetDefaultFluo info
-            hasSetDefaultFluoIndex = find(contains(dataStatusRownames, 'setDefaultFluo'));
-            if ~isempty(hasSetDefaultFluoIndex)
-                hSDF = dataTypeTabContents{hasSetDefaultFluoIndex, ColIndex};
-                if isdatetime(hSDF)
-                    this.hasSetDefaultFluo = 1;
-                    this.SetDefaultFluoDate = hSDF;
-                elseif ischar(hSDF) | isstring(hSDF)
-                    if contains(lower(hSDF), 'yes') |  contains(lower(hSDF), 'done')
-                        this.hasSetDefaultFluo = 1;
-                    else
-                        this.hasSetDefaultFluo = 0;
-                    end
-                elseif ismissing(hSDF)
-                    this.hasSetDefaultFluo = 0;
-                end
-            end
-            
-            % Store ConvertCompiledNucleiToTableArray info
-            hasConvertedCompiledNucleiToTableIndex = find(contains(dataStatusRownames, 'ConvertCompiledNucleiToTableArray'));
-            if ~isempty(hasConvertedCompiledNucleiToTableIndex)
-                hCCNTTA = dataTypeTabContents{hasConvertedCompiledNucleiToTableIndex, ColIndex};
-                if isdatetime(hCCNTTA)
-                    this.hasConvertedCompiledNucleiToTableArray = 1;
-                    this.ConvertedCompiledNucleiDate = hCCNTTA;
-                elseif ischar(hCCNTTA) | isstring(hCCNTTA)
-                    if contains(lower(hCCNTTA), 'yes') |  contains(lower(hCCNTTA), 'done')
-                        this.hasConvertedCompiledNucleiToTableArray = 1;
-                    else
-                        this.hasConvertedCompiledNucleiToTableArray = 0;
-                    end
-                elseif ismissing(hCCNTTA)
-                    this.hasConvertedCompiledNucleiToTableArray = 0;
-                end
-            end
-            
-            % Store ExtractNuclearFluoProfilesAP info
-            hasExtractNuclearFluoProfilesAPIndex = find(contains(dataStatusRownames, 'ExtractNuclearFluoProfilesAP'));
-            if ~isempty(hasExtractNuclearFluoProfilesAPIndex)
-                hENFPAP = dataTypeTabContents{hasExtractNuclearFluoProfilesAPIndex, ColIndex};
-                if isdatetime(hENFPAP)
-                    this.hasExtractedNuclearFluoProfilesAP = 1;
-                    this.ExtractedNuclearFluoProfilesAPDate = hENFPAP;
-                elseif ischar(hENFPAP) | isstring(hENFPAP)
-                    if contains(lower(hENFPAP), 'yes') |  contains(lower(hENFPAP), 'done')
-                        this.hasExtractedNuclearFluoProfilesAP = 1;
-                    else
-                        this.hasExtractedNuclearFluoProfilesAP = 0;
-                    end
-                elseif ismissing(hENFPAP)
-                    this.hasExtractedNuclearFluoProfilesAP = 0;
-                end
-            end
-            
-            % Store PlotNuclearFluoProfilesAP info
-            hasPlotNuclearFluoProfilesAPIndex = find(contains(dataStatusRownames, 'PlotNuclearFluoProfilesAP'));
-            if ~isempty(hasPlotNuclearFluoProfilesAPIndex)
-                hPNFPAP = dataTypeTabContents{hasPlotNuclearFluoProfilesAPIndex, ColIndex};
-                if isdatetime(hPNFPAP)
-                    this.hasPlottedNuclearFluoProfilesAP = 1;
-                    this.PlottedNuclearFluoProfilesAPDate = hPNFPAP;
-                elseif ischar(hPNFPAP) | isstring(hPNFPAP)
-                    if contains(lower(hPNFPAP), 'yes') |  contains(lower(hPNFPAP), 'done')
-                        this.hasPlottedNuclearFluoProfilesAP = 1;
-                    else
-                        this.hasPlottedNuclearFluoProfilesAP = 0;
-                    end
-                elseif ismissing(hPNFPAP)
-                    this.hasPlottedNuclearFluoProfilesAP = 0;
-                end
-            end
+       
             % Store ChooseCytoplasmFrames info
             hasChooseCytoplasmFramesIndex = find(contains(dataStatusRownames, 'ChooseCytoplasmFrames'));
             if ~isempty(hasChooseCytoplasmFramesIndex)
@@ -544,18 +470,12 @@ classdef TemperatureExpStatus
         
         
         function [MinAP, MaxAP] = getAPrange(this)
-            [~,~,DropboxFolder,~,~]=...
-                DetermineLocalFolders;
-
-            if this.hasExtractedNuclearFluoProfilesAP
-                load([DropboxFolder, filesep, this.Prefix, filesep, 'MeanAPposNC14_FramesNC.mat']);
-                load([DropboxFolder, filesep,  this.Prefix, filesep, 'NumNucAPNC14_FramesNC.mat']);
-                APResolution = 1/(size(MeanAP, 2)-1);
-                MeanAP(NumNucAP < 5) = NaN;
-                [~,MinAPBinIDs] = min(MeanAP, [], 2);
-                MinAP= (mode(MinAPBinIDs)-1)*APResolution;
-                [~,MaxAPBinIDs] = max(MeanAP, [], 2);
-                MaxAP = (mode(MaxAPBinIDs)-1)*APResolution;
+            if this.hasCompiledNuclearProtein
+                liveExperiment = LiveExperiment(this.Prefix);
+                load([liveExperiment.resultsFolder, filesep, 'HealthSummary.mat']);
+                MinAP = floor(HealthSummary.APboundaries(1)/liveExperiment.APResolution)*liveExperiment.APResolution;
+                
+                MaxAP = floor(HealthSummary.APboundaries(2)/liveExperiment.APResolution)*liveExperiment.APResolution;
             else
                 MinAP = [];
                 MaxAP = [];

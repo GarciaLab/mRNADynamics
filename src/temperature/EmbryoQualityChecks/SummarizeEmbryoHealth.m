@@ -1,5 +1,8 @@
 function HealthSummary = SummarizeEmbryoHealth(Prefix, includePlots)
 %% Load necessary info into memory
+if ~exist('includePlots', 'var')
+    includePlots = true;
+end
 liveExperiment = LiveExperiment(Prefix);
 FrameInfo = getFrameInfo(liveExperiment);
 FrameTimes = [FrameInfo(:).Time]; % in seconds
@@ -14,6 +17,12 @@ AddNuclearPosition(Prefix);
 DetermineNucleiEndFrames(Prefix);
 schnitzcells = CalculateNuclearMovement(Prefix);
 schnitzcycles = [schnitzcells(:).cycle];
+
+if ~isfield(schnitzcells, 'Approved')
+    for sc = 1:length(schnitzcells)
+        schnitzcells(sc).Approved = 1;
+    end
+end
 %% Initialize HealthSummaryInfo
 HealthSummary = {};
 HealthSummary.SchnitzCount = NaN(1, 5);
@@ -117,11 +126,11 @@ text(-0.55,0.8,[Prefix]); axis off
 text(-0.55,0.6,['AP range: ', num2str(round(HealthSummary.APboundaries(1), 2)), ' - ', num2str(round(HealthSummary.APboundaries(2), 2))]); 
 subplot(2, 3, [2, 3])
 set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0.04, 0.8, 0.8]);
-errorbar(10:13, HealthSummary.NCDivisionInfo, HealthSummary.DivisionStdErrorInfo,'o',  'Color', 'r', 'MarkerFaceColor', 'w', 'MarkerEdgeColor', 'r')
+errorbar(10:13, HealthSummary.NCDivisionInfo, HealthSummary.DivisionStdInfo,'o',  'Color', 'r', 'MarkerFaceColor', 'w', 'MarkerEdgeColor', 'r')
 xlim([9, 14])
 xticks(9:14)
 try
-ylim([0, max(HealthSummary.NCDivisionInfo+HealthSummary.DivisionStdErrorInfo)*1.1])
+ylim([0, max(HealthSummary.NCDivisionInfo+HealthSummary.DivisionStdInfo)*1.1])
 end
 xlabel('division cycle')
 ylabel('mean cycle duration')

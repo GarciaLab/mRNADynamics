@@ -1,4 +1,4 @@
-function CompileNuclearProteinFlexFluo(Prefix, varargin)
+function CompiledNuclei = CompileNuclearProteinFlexFluo(Prefix, varargin)
 % date created: 9/25/20
 % author: Gabriella Martini
 % date last modified: 10/7/20
@@ -62,7 +62,7 @@ SDVectorAP = [];
 NParticlesAP = [];
 CompiledNuclei = [];
 
-radii = [2];
+
 methods = {'max', 'gaussiansmooth'};
 if ~isempty(varargin)
     x = 1;
@@ -82,11 +82,6 @@ if ~isempty(varargin)
     end
 end
 
-FluoLabels = {};
-for i=1:length(radii)
-    r = radii(i);
-    FluoLabels{i} = strrep(['Fluo', num2str(r), 'um'], '.', '_');
-end
 
 %This function will add fluorescence information to each schnitz.
 
@@ -107,6 +102,22 @@ load([DropboxFolder,filesep,Prefix,'\FrameInfo.mat'], 'FrameInfo')
 DetermineNucleiEndFrames(Prefix);
 schnitzcells = CalculateNuclearMovement(Prefix);
 
+FrameInfo = getFrameInfo(liveExperiment);
+Ellipses = getEllipses(liveExperiment);
+nc_info = [liveExperiment.nc9, liveExperiment.nc10, liveExperiment.nc11,...
+    liveExperiment.nc12, liveExperiment.nc13, liveExperiment.nc14, length(FrameInfo)];
+PixelSize = liveExperiment.pixelSize_um;
+nucleusDiameters = zeros(1, 6);
+for nc=9:14
+    nucleusDiameters(nc-8) = getDefaultParameters(FrameInfo,[['d', num2str(nc)]])/PixelSize; % in pixels
+end
+xDim = liveExperiment.xDim;
+yDim = liveExperiment.yDim;
+zDim = liveExperiment.zDim;
+ChN = liveExperiment.inputChannels(1);
+if length(liveExperiment.inputChannels) > 1
+    error('multiple protein challenges currently unsupported.')
+end
 % start - Added by GM 9/25/20
 if exist([DropboxFolder,filesep,Prefix,'\GridDivision.mat'], 'file')
     load([DropboxFolder,filesep,Prefix,'\GridDivision.mat'], 'GridDivision')
@@ -142,31 +153,6 @@ fullEmbryo = exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'], 'fi
 
 
 
-%Do we need to convert any NaN chars into doubles?
-if strcmpi(nc14,'nan')
-    nc14=nan;
-end
-if strcmpi(nc13,'nan')
-    nc13=nan;
-end
-if strcmpi(nc12,'nan')
-    nc12=nan;
-end
-if strcmpi(nc11,'nan')
-    nc11=nan;
-end
-if strcmpi(nc10,'nan')
-    nc10=nan;
-end
-if strcmpi(nc9,'nan')
-    nc9=nan;
-end
-
-NewCyclePos=[nc9,nc10,nc11,nc12,nc13,nc14];
-NewCyclePos=NewCyclePos(~(NewCyclePos==0));
-NewCyclePos=NewCyclePos(~isnan(NewCyclePos));
-
-
 %% 
 
 
@@ -177,10 +163,13 @@ if (~isfield(schnitzcells,'APpos'))&&(strcmpi(ExperimentAxis,'AP')||strcmpi(Expe
     %images:
     %     AddParticlePosition(Prefix)
     %Now, add the nuclear position
-    AddNuclearPosition(Prefix)
-    load([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'])
+    AddNuclearPosition(Prefix);
+    schnitzcells = getSchnitzcells(liveExperiment);
 end
 
+if ~isfield(schnitzcells, 'HistoneFluo')
+    schnitzcells = integrateHistoneFluo(Prefix, schnitzcells, FrameInfo);
+end
 
 %% Figure out which DVpositions are represented in the image
 %Angle between the x-axis and the AP-axis
@@ -261,14 +250,35 @@ schnitzcells = filterSchnitz(schnitzcells, [ liveExperiment.yDim, liveExperiment
 
 
 
+
 %% 
 
 %Now get the nuclear information for those that were approved
 NZSlices=size(schnitzcells(1).Fluo,2);
-PixelSize = FrameInfo(end).PixelSize;
-MinCycle = 15-length(NewCyclePos);
 %CompiledNuclei(length(schnitzcells))=struct;
+FluoLabels = {};
+if ~exist('radii', 'var')
+    radii = [];
+    SCfieldnames = fieldnames(schnitzcells);
+    for i=1:length(SCfieldnames)
+        fn = SCfieldnames{i};
+        if regexp(fn, '^Fluo[_0-9]*um')
+            FluoLabels{end+1} = fn;
+            r = strrep(fn, 'Fluo', '');
+            r = strrep(r, 'um', '');
+            r = strrep(r, '_', '.');
+            radii(end + 1) = str2double(r);
+        end
+    end
+else
+    
+    for i=1:length(radii)
+        r = radii(i);
+        FluoLabels{i} = strrep(['Fluo', num2str(r), 'um'], '.', '_');
+    end
+end
 
+MinCycle = find(nc_info > 0, 1) + 8;
 
 h=waitbar(0,'Compiling nuclear traces');
 k=1;
@@ -321,13 +331,27 @@ for i=1:length(schnitzcells)
             if isfield(schnitzcells, 'anaphaseFrame')
                 CompiledNuclei(k).timeSinceAnaphase = double(schnitzcells(i).timeSinceAnaphase(FrameFilter));
                 CompiledNuclei(k).anaphaseFrame=schnitzcells(i).anaphaseFrame;
-                CompiledNuclei(k).inferredAnaphaseFrame=schnitzcells(i).inferredAnaphaseFrame;
+                if ~isempty(schnitzcells(i).inferredAnaphaseFrame) 
+                    if ~isnan(schnitzcells(i).inferredAnaphaseFrame)
+                        CompiledNuclei(k).inferredAnaphaseFrame=logical(schnitzcells(i).inferredAnaphaseFrame);
+                    else
+                        CompiledNuclei(k).inferredAnaphaseFrame = false;
+                    end
+                else
+                    CompiledNuclei(k).inferredAnaphaseFrame = false;
+                end
             else
                 CompiledNuclei(k).timeSinceAnaphase = NaN;
                 CompiledNuclei(k).anaphaseFrame=NaN;
                 CompiledNuclei(k).inferredAnaphaseFrame=false;
             end
-            CompiledNuclei(k).containsLastFrameOfCycle = schnitzcells(i).containsLastFrameOfCycle;
+            if isfield(schnitzcells, 'containsFirstFrameOfCycle')
+                CompiledNuclei(k).containsLastFrameOfCycle = schnitzcells(i).containsFirstFrameOfCycle;
+            end
+            if isfield(schnitzcells, 'containsLastFrameOfCycle')
+                CompiledNuclei(k).containsLastFrameOfCycle = schnitzcells(i).containsLastFrameOfCycle;
+            end
+            
             CompiledNuclei(k).VelocityInfo = schnitzcells(i).VelocityInfo;
             for j=1:length(radii)
                 FluoLabel = FluoLabels{j};
@@ -342,6 +366,7 @@ for i=1:length(schnitzcells)
                 end
                 
             end
+            CompiledNuclei(k).HistoneFluo = schnitzcells(i).HistoneFluo;
             CompiledNuclei(k).Flag1 = 0;
             CompiledNuclei(k).Flag2 = 0;
             CompiledNuclei(k).Flag3 = 0;

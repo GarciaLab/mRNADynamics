@@ -48,7 +48,9 @@ Particles(OriginalParticle).Index=Particles(OriginalParticle).Index(Permutations
 % 9/4 EL: Added the if statement to remove error of the index (Permutations)
 % exceeding matrix dimension. Did this always create an error when the
 % frames of the original particle was not approved before?
-if ~isfield(Particles,'FrameApproved')
+% GM 2/15/21: Previous verion of if statement didn't make sense (everything is the same except it used to say
+% "if ~isfield(Particles, 'FrameApproved')"
+if isfield(Particles,'FrameApproved')
     Particles(OriginalParticle).FrameApproved=Particles(OriginalParticle).FrameApproved(Permutations);
 end
 

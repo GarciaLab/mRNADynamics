@@ -1,7 +1,7 @@
 function [sortByFrame, sortByLength, ForCompileAll, SpeedMode, SisterMode, ...
     ncRange, projectionMode, plot3DGauss, NC, ...
     startNC, endNC, optionalResults, nWorkers, fish,...
-    noHisOverlay, multiView, preStructs, preMovie, UseCompiledParticles] = determineCheckParticleTrackingOptions(varargin)
+    noHisOverlay, multiView, preStructs, preMovie, ShowTwinTrace, PlotInputChannel, UseCompiledParticles] = determineCheckParticleTrackingOptions(varargin)
 %DETERMINEOPTIONS Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -32,7 +32,8 @@ multiView = false;
 preStructs = {};
 preMovie = false;
 UseCompiledParticles = false; % added by GM 12/10/20
-
+ShowTwinTrace = []; % added by GM 2/13/21
+PlotInputChannel = false; % added by GM 2/16/21
 
 % these variables are meaningless if ncRange is 0
 NC = -1;
@@ -64,6 +65,12 @@ for i=1:length(varargin)
         preStructs = varargin{i+1};
     elseif strcmpi(varargin{i}, 'UseCompiledParticles')
         UseCompiledParticles = true;
+    elseif strcmpi(varargin{i}, 'ShowTwinTrace')
+        ShowTwinTrace = true;
+    elseif strcmpi(varargin{i}, 'PlotInputChannel') | strcmpi(varargin{i}, 'ShowInputChannel') 
+        PlotInputChannel = true;
+    elseif strcmpi(varargin{i}, 'HideTwinTrace')
+        ShowTwinTrace = false;
     elseif strcmpi(varargin{i}, 'optionalResults')
         optionalResults = varargin{i+1};
         elseif strcmpi(varargin{i}, 'fish')

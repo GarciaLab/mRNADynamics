@@ -8,7 +8,7 @@ function ellipseHandle = notEllipseCPT(cptState, color, pointsToDraw, overlayAxe
     
     % Speed up plotting by excluding ellipses outside of ZoomRange wherever
     % possible
-    if cptState.ZoomMode & exist('xTrace', 'var')
+    if cptState.ZoomMode & exist('xTrace', 'var') & ~isempty(xTrace)
         EllipsesInZoomFrame = (abs(x0-xTrace)-ra <= ZoomRange) & ...
             (abs(y0-yTrace)-ra <= ZoomRange);
         ra = ra(EllipsesInZoomFrame);

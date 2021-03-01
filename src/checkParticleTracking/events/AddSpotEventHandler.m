@@ -2,8 +2,10 @@ function keyInputHandler = AddSpotEventHandler(cptState, Prefix)
 %Add particle and all of its shadows to cptState.Spots.
 
     function keyInput(cc)
-        if cc == '[' | cc == '{' %#ok<*OR2>
-               
+        if cc == '[' | cc == '{' | cc == '}' %#ok<*OR2>
+            if cc == '}'
+                cptState = removeCurrentFrame(cptState);
+            end
             movieMat = getMovieMat(LiveExperiment(Prefix));
             if ~isempty(movieMat)
                 imStack = double(movieMat(:, :, :, cptState.CurrentFrame, cptState.CurrentChannel));

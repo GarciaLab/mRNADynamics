@@ -12,6 +12,12 @@ plotTraceSettings.backGround3 = NaN;
 plotTraceSettings.AmpIntegralGauss3D = NaN;
 plotTraceSettings.ErrorIntegralGauss3D = NaN;
 
+plotTraceSettings.AmpIntegral= [];
+plotTraceSettings.AmpIntegral3= [];
+plotTraceSettings.GaussIntegral = [];
+plotTraceSettings.Spots3D = [];
+
+
 doSpline = ~noSpline;
 
 ampdog3 = NaN;

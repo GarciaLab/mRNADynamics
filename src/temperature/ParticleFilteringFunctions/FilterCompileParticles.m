@@ -303,8 +303,9 @@ if DVExperiment && fullEmbryoExists
 end
 %% 
 
-CompiledParticles = CompileParticlesForFiltering(Prefix, 'SkipAll', 'UseAll');    
-CompiledParticles = AddQCInfoToCompiledParticles(CompiledParticles, schnitzcells, Prefix);
+CompiledParticles = CompileParticlesForFiltering(Prefix, 'SkipAll', 'UseAll');   
+schnitzcells = getSchnitzCells(liveExperiment);
+%CompiledParticles = AddQCInfoToCompiledParticles(Prefix, CompiledParticles, schnitzcells);
 
 
 %%

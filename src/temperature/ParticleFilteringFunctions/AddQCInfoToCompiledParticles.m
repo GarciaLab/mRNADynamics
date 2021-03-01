@@ -1,7 +1,46 @@
-function [CompiledParticles] = AddQCInfoToCompiledParticles(CompiledParticles, schnitzcells, Prefix)
+function [CompiledParticles] = AddQCInfoToCompiledParticles(Prefix, CompiledParticles, varargin)
 
+UseZInfo = true;
+UseHistoneInfo = true;
+UsePositionInfo = true;
+Use2SpotPositionInfo = true;
+UseFluoInfo = true;
+
+x = 0;
+while x < length(varargin)
+    if strcmp(lower(varargin{x}), 'nozinfo')
+        UseZInfo = false;
+    elseif strcmp(lower(varargin{x}), 'nohistone')
+        UseHistoneInfo = false;
+    elseif strcmp(lower(varargin{x}), 'noposition')
+        UsePositionInfo = false;
+    elseif strcmp(lower(varargin{x}), 'no2spot')
+        Use2SpotPositionInfo = false;
+    elseif strcmp(lower(varargin{x}), 'nofluo')
+        UseFluoInfo = false;
+    end
+    x = x+1;
+    
+end
 %% Add histone fluorescence information for each schnitz cell z-stack
 liveExperiment = LiveExperiment(Prefix);
+schnitzcells = getSchnitzcells(liveExperiment);
+if ~strcmpi(liveExperiment.experimentType, '2spot')
+    Use2SpotPositionInfo = false;
+end
+
+NoHistone = true;
+for ch = 1:length(liveExperiment.Channels)
+    if contains(lower(liveExperiment.Channels{ch}), 'his') 
+        NoHistone = false;
+    end
+end
+
+if NoHistone
+    UseHistoneInfo = false;
+end
+
+    
 FrameInfo = getFrameInfo(liveExperiment);
 FrameTimes = [FrameInfo(:).Time];
 nc_info = [liveExperiment.nc9, liveExperiment.nc10, liveExperiment.nc11,...
@@ -21,8 +60,9 @@ schnitzcells = integrateHistoneFluo(Prefix, schnitzcells, FrameInfo);
 
 
 [CompiledParticles] = GetFluoZInfo(liveExperiment, CompiledParticles);
-UseZInfo = true;
-UsePositionInfo = false;
+%%
+his_zpadding = 1;
+spot_zpadding = 2;
 
 for ChN=1:length(liveExperiment.spotChannels)
     for i =1:length(CompiledParticles{ChN})
@@ -32,8 +72,7 @@ for ChN=1:length(liveExperiment.spotChannels)
     end
     %%
     
-    his_zpadding = 1;
-    spot_zpadding = 2;
+    
     for i=1:length(CompiledParticles{ChN})%[test_idx]
         p = CompiledParticles{ChN}(i);
         sc = p.schnitzcell;
@@ -53,33 +92,33 @@ for ChN=1:length(liveExperiment.spotChannels)
             if sc.inferredAnaphaseFrame == 0
                 if ~isempty(sc.anaphaseFrame)
                     if sc.anaphaseFrame >= nc_info(sc.cycle-8)-1
-                        p.FlaggingInfo.TrueNucStart = max([sc.anaphaseFrame, 1]);
+                        p.FlaggingInfo.TrueNucStart = min(max([sc.anaphaseFrame, 1]),sc.frames(1));
                         p.FlaggingInfo.TNSinferred = false;
                     else
-                        p.FlaggingInfo.TrueNucStart =  max([nc_info(sc.cycle-8), 1]);
+                        p.FlaggingInfo.TrueNucStart =  min(max([nc_info(sc.cycle-8), 1]), sc.frames(1));
                         p.FlaggingInfo.TNSinferred = true;
                     end
                 else
-                    p.FlaggingInfo.TrueNucStart =  max([1, nc_info(sc.cycle-8)]);
+                    p.FlaggingInfo.TrueNucStart =  min(max([1, nc_info(sc.cycle-8)]), sc.frames(1));
                     p.FlaggingInfo.TNSinferred = true;
                 end
             elseif sc.anaphaseFrame >= nc_info(sc.cycle-8)-1
-                p.FlaggingInfo.TrueNucStart = max([1, sc.anaphaseFrame]);
+                p.FlaggingInfo.TrueNucStart = min(max([1, sc.anaphaseFrame]), sc.frames(1));
                 p.FlaggingInfo.TNSinferred = true;
             else
-                p.FlaggingInfo.TrueNucStart =  max([1,nc_info(sc.cycle-8)]);
+                p.FlaggingInfo.TrueNucStart =  min(max([1,nc_info(sc.cycle-8)]), sc.frames(1));
                 p.FlaggingInfo.TNSinferred = true;
             end
         elseif ~isempty(sc.anaphaseFrame)
             if sc.anaphaseFrame >= nc_info(sc.cycle-8)-1
-                p.FlaggingInfo.TrueNucStart = max([1, sc.anaphaseFrame]);
+                p.FlaggingInfo.TrueNucStart = min(max([1, sc.anaphaseFrame]), sc.frames(1));
                 p.FlaggingInfo.TNSinferred = false;
             else
-                p.FlaggingInfo.TrueNucStart =  max([1, nc_info(sc.cycle-8)]);
+                p.FlaggingInfo.TrueNucStart =  min(max([1, nc_info(sc.cycle-8)]), sc.frames(1));
                 p.FlaggingInfo.TNSinferred = true;
             end
         else
-            p.FlaggingInfo.TrueNucStart =  max([1, nc_info(sc.cycle-8)]);
+            p.FlaggingInfo.TrueNucStart =  min(max([1, nc_info(sc.cycle-8)]), sc.frames(1));
             p.FlaggingInfo.TNSinferred = true;
         end
         % Find True Nuclear end frame by inference or direct observation
@@ -103,35 +142,7 @@ for ChN=1:length(liveExperiment.spotChannels)
             MaxSpotZPos= NaN(1, NFrames);
             SpotZTraceApproved = zeros(1, NFrames);
             DetectedSpot = zeros(1, NFrames);
-            MaxHisFluoLevel = NaN(1, NFrames);
-            MaxHisZPos= NaN(1, NFrames);
-            HisTraceApproved = zeros(1, NFrames);
-            DetectedNucleus = zeros(1, NFrames);
-            for j = 1:length(sc.frames)
-                schnitz_index = find(p.FlaggingInfo.TrueFrames == sc.frames(j), 1);
-                DetectedNucleus(schnitz_index) = 1;
-                HisVector = sc.HistoneFluo(j,2:zDim+1);
-                MaxF = max(HisVector);
-                if ~isempty(MaxF)
-                    MaxHisFluoLevel(schnitz_index) = MaxF;
-                    MaxZ = find(HisVector(his_zpadding:zDim-his_zpadding) == MaxF, 1);
-                    if ~isempty(MaxZ)
-                        MaxHisZPos(schnitz_index) = MaxZ+his_zpadding;
-                        HisTraceApproved(schnitz_index) = 1;
-                    else
-                        MaxZ = find(HisVector == MaxF, 1);
-                        if ~isempty(MaxZ)
-                            MaxHisZPos(schnitz_index) = MaxZ;
-                            HisTraceApproved(schnitz_index) = -1;
-                        end
-                    end
-
-                end
-
-            end
-            p.FlaggingInfo.MaxHisFluoLevel = MaxHisFluoLevel;
-            p.FlaggingInfo.MaxHisZPos = MaxHisZPos;
-            p.FlaggingInfo.HisTraceApproved = HisTraceApproved;
+            
 
             for j = 1:length(p.Frame)
                 particle_index = find(p.FlaggingInfo.TrueFrames == p.Frame(j), 1);
@@ -164,11 +175,64 @@ for ChN=1:length(liveExperiment.spotChannels)
             p.FlaggingInfo.MaxSpotZPos = MaxSpotZPos;
             p.FlaggingInfo.SpotZTraceApproved = SpotZTraceApproved;
 
-            p.FlaggingInfo.DetectedNucleus = DetectedNucleus;
+         
             p.FlaggingInfo.DetectedSpot = DetectedSpot;
             % Add spot position deviation velocity flags
-        end
+        else
+            p.FlaggingInfo.MaxSpotFluoLevel = ones(1, NFrames);
+            p.FlaggingInfo.MaxSpotZPos = ones(1, NFrames);
+            p.FlaggingInfo.SpotZTraceApproved = ones(1, NFrames);
 
+         
+            p.FlaggingInfo.DetectedSpot = ones(1, NFrames);
+        end
+        
+        
+        if UseHistoneInfo
+            MaxHisFluoLevel = NaN(1, NFrames);
+            MaxHisZPos= NaN(1, NFrames);
+            HisTraceApproved = zeros(1, NFrames);
+            DetectedNucleus = zeros(1, NFrames);
+            for j = 1:length(sc.frames)
+                schnitz_index = find(p.FlaggingInfo.TrueFrames == sc.frames(j), 1);
+                DetectedNucleus(schnitz_index) = 1;
+                HisVector = sc.HistoneFluo(j,2:zDim+1);
+                MaxF = max(HisVector);
+                if ~isempty(MaxF)
+                    MaxHisFluoLevel(schnitz_index) = MaxF;
+                    MaxZ = find(HisVector(his_zpadding:zDim-his_zpadding) == MaxF, 1);
+                    if ~isempty(MaxZ)
+                        MaxHisZPos(schnitz_index) = MaxZ+his_zpadding;
+                        HisTraceApproved(schnitz_index) = 1;
+                    else
+                        MaxZ = find(HisVector == MaxF, 1);
+                        if ~isempty(MaxZ)
+                            MaxHisZPos(schnitz_index) = MaxZ;
+                            HisTraceApproved(schnitz_index) = -1;
+                        end
+                    end
+
+                end
+
+            end
+            p.FlaggingInfo.MaxHisFluoLevel = MaxHisFluoLevel;
+            p.FlaggingInfo.MaxHisZPos = MaxHisZPos;
+            p.FlaggingInfo.HisTraceApproved = HisTraceApproved;
+            p.FlaggingInfo.DetectedNucleus = DetectedNucleus;
+        else
+
+            p.FlaggingInfo.MaxHisFluoLevel =ones(1, NFrames);
+            p.FlaggingInfo.MaxHisZPos = ones(1, NFrames);
+            p.FlaggingInfo.HisTraceApproved = ones(1, NFrames);
+            p.FlaggingInfo.DetectedNucleus = ones(1, NFrames);
+        end
+        CompiledParticles{ChN}(i) = p;
+    end
+    %%
+    
+    for i = 1:length(CompiledParticles{ChN})
+        p = CompiledParticles{ChN}(i);
+        sc = p.schnitzcell;
 
         SpotMedianXPos = median(p.xPos);
         SpotMedianYPos = median(p.yPos);

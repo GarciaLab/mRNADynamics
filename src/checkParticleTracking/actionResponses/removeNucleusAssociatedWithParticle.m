@@ -6,7 +6,7 @@ function [Particles, CurrentParticle,CurrentFrame] =...
 
 
 Particles{CurrentChannelIndex}(CurrentParticle).Nucleus = [];
-
+Particles{CurrentChannelIndex}(CurrentParticle).Schnitz = NaN;
 
 
 

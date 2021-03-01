@@ -8,6 +8,8 @@ EllipseHandleBlue = [];
 EllipseHandleWhite = [];
 EllipseHandleGreen = [];
 
+ExperimentType2spot = strcmpi(cptState.liveExperiment.experimentType, '2spot');
+
 if ~isempty(multiAx)
     multiView = true;
 else
@@ -20,6 +22,7 @@ end
 CurrentParticleIndex = cptState.getCurrentParticleIndex();
 xTrace = x(CurrentParticleIndex);
 yTrace = y(CurrentParticleIndex);
+
 
 ApprovedParticles = [cptState.getCurrentChannelParticles().Approved];
 
@@ -37,43 +40,85 @@ ApprovedParticles = [cptState.getCurrentChannelParticles().Approved];
 % Attempting to speed up plotting by only keeping tracking of spots and
 % ellipses within the zoom image when in zoom mode
 if cptState.ZoomMode
-    ApprovedInZoomFrame = (abs(xApproved-xTrace) <= ZoomRange) & (abs(yApproved-yTrace) <= ZoomRange);
+    if ~isempty(xTrace)
+        ApprovedInZoomFrame = (abs(xApproved-xTrace) <= ZoomRange) & (abs(yApproved-yTrace) <= ZoomRange);
+        DisapprovedInZoomFrame = (abs(xDisapproved-xTrace) <= ZoomRange) & (abs(yDisapproved-yTrace) <= ZoomRange);
+        NonFlaggedInZoomFrame = (abs(xNonFlagged-xTrace) <= ZoomRange) & (abs(yNonFlagged-yTrace) <= ZoomRange);
+        
+    else
+        [~,MinIndex]=min((cptState.getCurrentParticle().Frame - cptState.CurrentFrame).^2);
+        if length(MinIndex)>1
+            MinIndex=MinIndex(1);
+        end
+        currentChannelSpots = cptState.getCurrentChannelSpots();
+        [xForZoom,yForZoom]=...
+            SpotsXYZ(currentChannelSpots(cptState.getCurrentParticle().Frame(MinIndex)));
+        xForZoom = xForZoom(cptState.getCurrentParticle().Index(MinIndex));
+        yForZoom = yForZoom(cptState.getCurrentParticle().Index(MinIndex));
+        ApprovedInZoomFrame = (abs(xApproved-xForZoom) <= ZoomRange) & (abs(yApproved-yForZoom) <= ZoomRange);
+        DisapprovedInZoomFrame = (abs(xDisapproved-xForZoom) <= ZoomRange) & (abs(yDisapproved-yForZoom) <= ZoomRange);
+        NonFlaggedInZoomFrame = (abs(xNonFlagged-xForZoom) <= ZoomRange) & (abs(yNonFlagged-yForZoom) <= ZoomRange);
+    end
     xApproved = xApproved(ApprovedInZoomFrame);
     yApproved = yApproved(ApprovedInZoomFrame);
     
-    DisapprovedInZoomFrame = (abs(xDisapproved-xTrace) <= ZoomRange) & (abs(yDisapproved-yTrace) <= ZoomRange);
     xDisapproved = xDisapproved(DisapprovedInZoomFrame);
     yDisapproved = yDisapproved(DisapprovedInZoomFrame);
     
-    NonFlaggedInZoomFrame = (abs(xNonFlagged-xTrace) <= ZoomRange) & (abs(yNonFlagged-yTrace) <= ZoomRange);
     xNonFlagged = xNonFlagged(NonFlaggedInZoomFrame);
     yNonFlagged = yNonFlagged(NonFlaggedInZoomFrame);
 end
 
 % Show all particles in regular mode
-if ~SpeedMode 
+if ~SpeedMode
     plot(overlayAxes,xNonFlagged,yNonFlagged,'ow')
     plot(overlayAxes,xApproved,yApproved,'ob')
-    plot(overlayAxes,xDisapproved,yDisapproved,'^r') 
+    plot(overlayAxes,xDisapproved,yDisapproved,'^r')
 end
 % Always show current particle. this indicates the x-y center of the spot
 % within the brightest z-slice and may differ from the position
 % shown in the snippet image, which is centered at the position with
 % the current z-slice.
 plot(overlayAxes,xTrace,yTrace,'og')
+if ExperimentType2spot
+    TwinParticleIndex = cptState.getTwinParticleIndex();
+    xTwin = x(TwinParticleIndex);
+    yTwin = y(TwinParticleIndex);
+    plot(overlayAxes,xTwin,yTwin,'sc')
+end
 hold(overlayAxes,'off')
 
 if isfield(cptState.FrameInfo, 'nc')
+    if ~cptState.UseTwinTraces
     set(Overlay,'Name',['Particle: ',num2str(cptState.CurrentParticle),'/',num2str(cptState.numParticles()),...
         ', Frame: ',num2str(cptState.CurrentFrame),'/',num2str(numFrames),...
         ', Z: ',num2str(cptState.CurrentZ),'/',num2str(cptState.ZSlices),' nc: ', num2str(cptState.FrameInfo(cptState.CurrentFrame).nc),...
         ', Ch: ',num2str(cptState.CurrentChannel)])
+    else
+      numParticles = length([cptState.Particles{cptState.CurrentChannelIndex}(:).Nucleus]);
+      counter = 0;
+      for cp = 1:cptState.CurrentParticle
+          if ~isempty(cptState.Particles{cptState.CurrentChannelIndex}(cp).Nucleus)
+              counter = counter + 1;
+          end
+      end
+      
+      Unchecked = length(find(~isnan([cptState.Particles{cptState.CurrentChannelIndex}(:).Schnitz]) & ...
+          ([cptState.Particles{cptState.CurrentChannelIndex}(:).Approved] == 0)));
+          
+              
+      set(Overlay,'Name',['Particle: ',num2str(counter),'(', num2str(cptState.CurrentParticle),')/',num2str(numParticles),...
+          '(', num2str(Unchecked), ')',...
+        ', Frame: ',num2str(cptState.CurrentFrame),'/',num2str(numFrames),...
+        ', Z: ',num2str(cptState.CurrentZ),'/',num2str(cptState.ZSlices),' nc: ', num2str(cptState.FrameInfo(cptState.CurrentFrame).nc),...
+        ', Ch: ',num2str(cptState.CurrentChannel)])  
+    end
 end
 if UseSchnitz
     % Show all the nuclei in regular mode
     if ~SpeedMode
         EllipseHandle = notEllipseCPT(cptState, 'r', 10, overlayAxes, xTrace, yTrace, ZoomRange);
-
+        
         % Show the ones that have been approved
         schnitzCellNo=[];
         
@@ -88,10 +133,10 @@ if UseSchnitz
                 end
             end
         end
-
+        
         EllipseHandleBlue = notEllipseCellCPT(cptState, schnitzCellNo, 'b', 10, overlayAxes, xTrace, yTrace, ZoomRange);
     end
-
+    
     % Show the corresponding nucleus
     if ~isempty(cptState.getCurrentParticle().Nucleus) &&...
             cptState.getCurrentParticle().Nucleus > 0
@@ -99,32 +144,32 @@ if UseSchnitz
             cptState.getCurrentParticle().Nucleus).frames == cptState.CurrentFrame;
         EllipsesIndex = cptState.schnitzcells(...
             cptState.getCurrentParticle().Nucleus).cellno(SchnitzIndex);
-
+        
         if ~isempty(EllipsesIndex)
             EllipseHandleGreen = ellipseCellCPT(cptState, EllipsesIndex, 'g', 10, overlayAxes);
         end
-
+        
         % Show the daughter nuclei if applicable
         [DaughterE, DaughterD, Mother] = cptState.getMotherDaughters();
-
+        
         try
-        if DaughterE~=0
-            SchnitzIndex = find(cptState.schnitzcells(DaughterE).frames == cptState.CurrentFrame);
-            EllipsesIndex = cptState.schnitzcells(DaughterE).cellno(SchnitzIndex);
-
-            if ~isempty(EllipsesIndex)
-                EllipseHandleWhite = [EllipseHandleWhite,ellipseCellCPT(cptState, EllipsesIndex, 'w', 10, overlayAxes)];
+            if DaughterE~=0
+                SchnitzIndex = find(cptState.schnitzcells(DaughterE).frames == cptState.CurrentFrame);
+                EllipsesIndex = cptState.schnitzcells(DaughterE).cellno(SchnitzIndex);
+                
+                if ~isempty(EllipsesIndex)
+                    EllipseHandleWhite = [EllipseHandleWhite,ellipseCellCPT(cptState, EllipsesIndex, 'w', 10, overlayAxes)];
+                end
             end
-        end
-
-        if DaughterD~=0
-            SchnitzIndex = find(cptState.schnitzcells(DaughterD).frames == cptState.CurrentFrame);
-            EllipsesIndex = cptState.schnitzcells(DaughterD).cellno(SchnitzIndex);
-
-            if ~isempty(EllipsesIndex)
-                EllipseHandleWhite = [EllipseHandleWhite,ellipseCellCPT(cptState, EllipsesIndex, 'w', 10, overlayAxes)];
+            
+            if DaughterD~=0
+                SchnitzIndex = find(cptState.schnitzcells(DaughterD).frames == cptState.CurrentFrame);
+                EllipsesIndex = cptState.schnitzcells(DaughterD).cellno(SchnitzIndex);
+                
+                if ~isempty(EllipsesIndex)
+                    EllipseHandleWhite = [EllipseHandleWhite,ellipseCellCPT(cptState, EllipsesIndex, 'w', 10, overlayAxes)];
+                end
             end
-        end
         catch
             warning('inconsistency found in schnitzcells. proceeding anyway.');
         end
@@ -134,7 +179,7 @@ if UseSchnitz
             if Mother~=0
                 SchnitzIndex = cptState.schnitzcells(Mother).frames == cptState.CurrentFrame;
                 EllipsesIndex = cptState.schnitzcells(Mother).cellno(SchnitzIndex);
-
+                
                 if ~isempty(EllipsesIndex)
                     EllipseHandleYellow=ellipseCellCPT(cptState, EllipsesIndex, 'y', 10, overlayAxes);
                 end
@@ -142,7 +187,7 @@ if UseSchnitz
         catch
             warning('inconsistency found in schnitzcells. proceeding anyway.');
         end
-
+        
     else
         if cptState.UseHistoneOverlay
             warning('This particle does not have an associated nucleus.');
@@ -172,11 +217,15 @@ if ShowThreshold2
     
     
     if cptState.ZoomMode
-        Threshold2ParticlesInZoomFrame = (abs(x2-xTrace) <= ZoomRange) & (abs(y2-yTrace) <= ZoomRange);
+        if ~isempty(xTrace)
+            Threshold2ParticlesInZoomFrame = (abs(x2-xTrace) <= ZoomRange) & (abs(y2-yTrace) <= ZoomRange);
+        else
+            Threshold2ParticlesInZoomFrame = (abs(x2-xForZoom) <= ZoomRange) & (abs(y2-yForZoom) <= ZoomRange);
+        end
         x2 = x2(Threshold2ParticlesInZoomFrame);
         y2 = y2(Threshold2ParticlesInZoomFrame);
     end
-
+    
     hold(overlayAxes,'on')
     plot(overlayAxes,x2,y2,'sr')
     hold(overlayAxes,'off')
@@ -191,20 +240,20 @@ if cptState.ZoomMode
     currentChannelSpots = cptState.getCurrentChannelSpots();
     [cptState.xForZoom,cptState.yForZoom]=...
         SpotsXYZ(currentChannelSpots(cptState.getCurrentParticle().Frame(MinIndex)));
-
+    
     cptState.xForZoom = cptState.xForZoom(cptState.getCurrentParticle().Index(MinIndex));
     cptState.yForZoom = cptState.yForZoom(cptState.getCurrentParticle().Index(MinIndex));
-
+    
     try
         xlim(overlayAxes,[cptState.xForZoom-ZoomRange,cptState.xForZoom+ZoomRange])
         ylim(overlayAxes,[cptState.yForZoom-ZoomRange/2,cptState.yForZoom+ZoomRange/2])
         if multiView
-           for z = 1:length(multiAx)
-               for f = 1:length(multiAx)
+            for z = 1:length(multiAx)
+                for f = 1:length(multiAx)
                     xlim(multiAx{z, f},[cptState.xForZoom-ZoomRange,cptState.xForZoom+ZoomRange])
-                    ylim(multiAx{z, f},[cptState.yForZoom-ZoomRange/2,cptState.yForZoom+ZoomRange/2]) 
-               end
-           end
+                    ylim(multiAx{z, f},[cptState.yForZoom-ZoomRange/2,cptState.yForZoom+ZoomRange/2])
+                end
+            end
         end
     catch
         %something's outside the limits of the image
@@ -215,17 +264,17 @@ if cptState.GlobalZoomMode
     xlim(overlayAxes,[cptState.xForZoom-ZoomRange,cptState.xForZoom+ZoomRange])
     ylim(overlayAxes,[cptState.yForZoom-ZoomRange/2,cptState.yForZoom+ZoomRange/2])
     if multiView
-           for z = 1:length(multiAx)
-               for f = 1:length(multiAx)
-                   xlim(multiAx{z, f},[cptState.xForZoom-ZoomRange,cptState.xForZoom+ZoomRange])
-                    ylim(multiAx{z, f},[cptState.yForZoom-ZoomRange/2,cptState.yForZoom+ZoomRange/2]) 
-               end
-           end
+        for z = 1:length(multiAx)
+            for f = 1:length(multiAx)
+                xlim(multiAx{z, f},[cptState.xForZoom-ZoomRange,cptState.xForZoom+ZoomRange])
+                ylim(multiAx{z, f},[cptState.yForZoom-ZoomRange/2,cptState.yForZoom+ZoomRange/2])
+            end
+        end
     end
 end
 
 if cptState.UseHistoneOverlay
-
+    
     if isempty(cptState.DisplayRange)
         HisOverlayImageMat=cat(3,mat2gray(ImageHisMat),mat2gray(cptState.ImageMat),zeros(size(cptState.ImageMat)));
     else
@@ -240,25 +289,28 @@ if cptState.UseHistoneOverlay
         plot(HisOverlayFigAxes,xApproved,yApproved,'ob')
     end
     plot(HisOverlayFigAxes,xTrace,yTrace,'og')
+    if ExperimentType2spot
+        plot(HisOverlayFigAxes,xTwin,yTwin,'oc')
+    end
     hold(HisOverlayFigAxes,'off')
-
+    
     if ShowThreshold2
         hold(HisOverlayFigAxes,'on')
         plot(HisOverlayFigAxes,x2,y2,'sw')
         hold(HisOverlayFigAxes,'off')
     end
-
-
+    
+    
     if UseSchnitz
-
+        
         copyobj(EllipseHandle,HisOverlayFigAxes)
         copyobj(EllipseHandleBlue,HisOverlayFigAxes)
         copyobj(EllipseHandleGreen,HisOverlayFigAxes)
         copyobj(EllipseHandleWhite,HisOverlayFigAxes)
         copyobj(EllipseHandleYellow,HisOverlayFigAxes)
-
+        
     end
-
+    
     if cptState.ZoomMode || cptState.GlobalZoomMode
         try
             xlim(HisOverlayFigAxes,[cptState.xForZoom-ZoomRange,cptState.xForZoom+ZoomRange])
@@ -267,7 +319,7 @@ if cptState.UseHistoneOverlay
             %something's outside the limits of the image
         end
     end
-
+    
 end
 
 end

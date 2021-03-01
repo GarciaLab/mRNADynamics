@@ -13,6 +13,12 @@ classdef CPTState < handle
         multiImage
         maxTimeCell
         
+        UseTwinTraces 
+        HideSingleSliceTrace
+        
+        PlotInputChannel
+        
+        
         Ellipses
         nucleiModified
         
@@ -29,6 +35,10 @@ classdef CPTState < handle
         CurrentParticle {mustBeEmptyOrScalar(CurrentParticle)}
         PreviousParticle {mustBeEmptyOrScalar(PreviousParticle)}
         lastParticle {mustBeEmptyOrScalar(lastParticle)}
+        
+        TwinParticleIndex {mustBeEmptyOrScalar(TwinParticleIndex)}
+        TwinParticle {mustBeEmptyOrScalar(TwinParticle)}
+        PreviousTwinParticle {mustBeEmptyOrScalar(PreviousTwinParticle)}
         
         CurrentChannel {mustBeEmptyOrScalar(CurrentChannel)}
         CurrentChannelIndex {mustBeEmptyOrScalar(CurrentChannelIndex)}
@@ -64,7 +74,7 @@ classdef CPTState < handle
     
     methods
         function this = CPTState(liveExperiment, Spots, Particles, SpotFilter, schnitzcells, Ellipses,...
-                FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode, UseCompiledParticles)
+                FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode, UseTwinTraces, PlotInputChannel, UseCompiledParticles)
             
             this.liveExperiment = liveExperiment;
             this.Spots = Spots;
@@ -76,6 +86,18 @@ classdef CPTState < handle
             this.storedTimeProjection = []; % Don't need to wait for timeProjection to finish each time its called
             this.multiImage = {};
             this.maxTimeCell = [];
+            
+            if exist('UseTwinTraces', 'var')
+                this.UseTwinTraces = UseTwinTraces;
+            else
+                this.UseTwinTraces = false;
+            end
+            
+            if exist('PlotInputChannel', 'var')
+                this.PlotInputChannel = PlotInputChannel;
+            else
+                this.PlotInputChannel = false;
+            end
             
             this.Ellipses = Ellipses;
             this.nucleiModified = false;
@@ -93,11 +115,15 @@ classdef CPTState < handle
             this.PreviousParticle = 1;
             this.lastParticle = 0; %this gets flagged if there's a drop to one particle within the Particles structure.
             
+            
             this.CurrentChannel = 1;
             this.CurrentChannelIndex = 1;
             this.PreviousChannel = this.CurrentChannel;
             this.PreviousChannelIndex = this.CurrentChannelIndex;
             
+            % Added by G. Martini to support 2 spot data analysis
+            this.TwinParticle = findTwinParticle(this.CurrentParticle, this.Particles, this.CurrentChannelIndex);
+            this.PreviousTwinParticle = 1;
             
             this.FrameIndicesToFit = 0; % index of the current particle that were used for fitting
             this.Coefficients = []; % coefficients of the fitted line
@@ -126,6 +152,12 @@ classdef CPTState < handle
             else
                 this.UseCompiledParticles = false;
             end
+            
+            if this.UseTwinTraces
+                this.HideSingleSliceTrace = true;
+            else
+                this.HideSingleSliceTrace = false;
+            end
         end
         
         function numParticles = numParticles(this)
@@ -153,6 +185,13 @@ classdef CPTState < handle
             currentParticles = this.getCurrentChannelParticles();
             currentParticle = currentParticles(this.CurrentParticle);
         end
+        
+        function twinParticle = getTwinParticle(this)
+            currentParticles = this.getCurrentChannelParticles();
+            twinParticle = currentParticles(this.TwinParticle);
+        end
+        
+     
         
         function currentParticleFit = getCurrentParticleFit(this)
             currentFrameSpots = this.getCurrentFrameSpots();
@@ -190,6 +229,20 @@ classdef CPTState < handle
         function currentParticleIndex = getCurrentParticleIndex(this)
             currentParticleIndex = this.getCurrentParticle().Index(...
                 this.getCurrentParticle().Frame == this.CurrentFrame);
+        end
+        
+        function twinParticleIndex = getTwinParticleIndex(this)
+            if this.UseTwinTraces
+                TwinParticle = this.getTwinParticle();
+                if ~isempty(TwinParticle)
+                    twinParticleIndex = TwinParticle.Index(...
+                        TwinParticle.Frame == this.CurrentFrame);
+                else
+                    twinParticleIndex = [];
+                end
+            else
+                twinParticleIndex = [];
+            end
         end
         
         function [xApproved, yApproved] = getApprovedParticles(this, x, y)
@@ -269,7 +322,7 @@ classdef CPTState < handle
                         this.CurrentFrame, this.CurrentChannel, this.CurrentZ);
                 end
                 
-                %to have a 3x3 square of time and z images on the screen. 
+                %to have a 3x3 square of time and z images on the screen.
                 if multiView
                     for z = 1:-1:-1
                         for f = -1:1:1
@@ -335,7 +388,11 @@ classdef CPTState < handle
         end
         
         function updateCurrentParticleIndex(this)
+            if this.UseTwinTraces
+                this.TwinParticle = findTwinParticle(this.CurrentParticle, this.Particles, this.CurrentChannelIndex);
+            end
             this.CurrentParticleIndex = this.getCurrentParticleIndex();
+            this.TwinParticleIndex = this.getTwinParticleIndex();
         end
     end
 end

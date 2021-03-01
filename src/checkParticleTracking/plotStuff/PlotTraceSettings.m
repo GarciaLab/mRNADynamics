@@ -15,10 +15,26 @@ classdef PlotTraceSettings < handle
         Spots3D
         
         UseCompiledParticles
+        
+        UseTwinTraces
+        
+        PlotInputChannel
     end
     
     methods
-        function this = PlotTraceSettings(UseCompiledParticles)
+        function this = PlotTraceSettings(UseTwinTraces, PlotInputChannel, UseCompiledParticles)
+            if exist('UseTwinTraces', 'var')
+                this.UseTwinTraces = UseTwinTraces;
+            else
+                this.UseTwinTraces = false;
+            end
+            
+            if exist('PlotInputChannel', 'var')
+                this.PlotInputChannel = PlotInputChannel;
+            else
+                this.PlotInputChannel = false;
+            end
+            
             if exist('UseCompiledParticles', 'var')
                 this.UseCompiledParticles = UseCompiledParticles;
             else

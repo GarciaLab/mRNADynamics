@@ -38,6 +38,19 @@ if ~SkipTraces
     movieMat = getMovieMat(liveExperiment); 
 end
 
+IncludeCompiledNuclei = false;
+if length(liveExperiment.inputChannels) == 1
+    if exist([liveExperiment.resultsFolder,filesep,'CompiledNuclei.mat'], 'file')
+        load([liveExperiment.resultsFolder,filesep,'CompiledNuclei.mat']);
+        IncludeCompiledNuclei = true;
+        if iscell(CompiledNuclei)
+            CompiledNuclei = CompiledNuclei{1};
+        end
+    end
+elseif length(liveExperiment.inputChannels) > 1
+    error('Not supported for multiple input channels and one or more spot channels') 
+end
+
 h = waitbar(0,'Compiling traces');
 for ChN=1:NChannels
     k=1;
@@ -244,6 +257,13 @@ for ChN=1:NChannels
                     assert(CompiledParticles{ChN}(k).schnitz <= length(schnitzcells));
                     
                     CompiledParticles{ChN}(k).schnitzcell=schnitzcells(Particles{ChN}(i).Nucleus);
+                    
+                    if IncludeCompiledNuclei
+                       CNindex = find([CompiledNuclei(:).schnitz] == Particles{ChN}(i).Nucleus, 1);
+                       if ~isempty(CNindex)
+                            CompiledParticles{ChN}(k).CompiledNucleus = CompiledNuclei(CNindex);
+                       end
+                    end
                     %Save lineage information in terms of particles
                     if isfield(schnitzcells, 'P')
                         

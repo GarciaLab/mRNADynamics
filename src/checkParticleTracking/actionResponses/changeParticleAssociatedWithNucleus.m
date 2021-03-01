@@ -1,4 +1,4 @@
-function [Particles, CurrentParticle,CurrentFrame, ManualZFlag] =...
+function [Particles, CurrentParticle,CurrentFrame, ManualZFlag, TwinParticle] =...
     changeParticleAssociatedWithNucleus(Spots, Particles, PreviousParticle,...
     CurrentFrame, CurrentChannelIndex, UseHistoneOverlay, schnitzcells, ConnectPosition)
 %TONEARESTPARTICLE Summary of this function goes here
@@ -16,7 +16,7 @@ try
     
     if (floor(ParticleOutput)>0)&(ParticleOutput<=numParticles)
         
-        [CurrentParticle,CurrentFrame, ManualZFlag] = ...
+        [CurrentParticle,CurrentFrame, ManualZFlag, TwinParticle] = ...
             changeParticle(ParticleOutput, Particles, numParticles, CurrentChannelIndex);
     end
 catch
@@ -28,6 +28,9 @@ end
 Particles{CurrentChannelIndex}(CurrentParticle).Nucleus = Particles{CurrentChannelIndex}(PreviousParticle).Nucleus;
 Particles{CurrentChannelIndex}(PreviousParticle).Nucleus = [];
 Particles{CurrentChannelIndex}(PreviousParticle).Approved = 0;
+Particles{CurrentChannelIndex}(CurrentParticle).Schnitz = Particles{CurrentChannelIndex}(CurrentParticle).Nucleus;
+Particles{CurrentChannelIndex}(PreviousParticle).Schnitz = NaN;
+
 
 
 

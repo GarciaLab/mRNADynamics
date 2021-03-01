@@ -87,7 +87,7 @@ classdef LTM
             if exist('time_delta', 'var')
                 this.time_delta = time_delta;
             else
-                this.time_delta = 0.5; % unit: minutes
+                this.time_delta = 30; % unit: minutes
             end
             
             if exist('MinimumTraceCount', 'var')
@@ -173,11 +173,11 @@ classdef LTM
             
             
             this.APLengths = AddAPLengths(this);
-            this.MeanProfiles = AddMeanProfiles(this, this.time_delta*60);
+            this.MeanProfiles = AddMeanProfiles(this, this.time_delta);
             this = AddInitiationRates(this);
             this = AddFractionOns(this);
             this = AddHealthInfo(this);
-            this = CalculateMeanSpotFluo(this, this.time_delta*60);
+            this = CalculateMeanSpotFluo(this, this.time_delta);
             this = AddActivationEnergies(this);
         end
         
