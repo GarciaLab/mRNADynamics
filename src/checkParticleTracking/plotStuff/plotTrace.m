@@ -72,7 +72,7 @@ if cptState.UseTwinTraces & ~isempty(cptState.TwinParticle)
         error1 = ones(length(amp1(approvedParticleFrames)),1)'*error1aux;
         
         error2 = plotTraceSettings.ErrorIntegralGauss3D(approvedParticleFrames);
-        
+        error2 = zeros(1, length(plotTraceSettings.ErrorIntegralGauss3D(approvedParticleFrames)));
         if cptState.lineFitted
             to = -cptState.Coefficients(2) / cptState.Coefficients(1); % minutes
             fittedXSegment = [to, traceFigTimeAxis(fittedXFrames)];
@@ -212,7 +212,7 @@ if cptState.plot3DGauss
     error1 = ones(length(amp1(approvedParticleFrames)),1)'*error1aux;
     
     error2 = plotTraceSettings.ErrorIntegralGauss3D(approvedParticleFrames);
-    
+    error2 = zeros(1, length(error2));
     if cptState.lineFitted
         to = -cptState.Coefficients(2) / cptState.Coefficients(1); % minutes
         fittedXSegment = [to, traceFigTimeAxis(fittedXFrames)];
@@ -228,6 +228,7 @@ else
     
     error2aux = plotTraceSettings.ErrorIntegral3;
     error2 = ones(length(amp2(approvedParticleFrames)),1)'.*error2aux';
+    error2 = zeros(length(amp2(approvedParticleFrames)),1)'.*error2aux';
 end
 
 idata1 = amp1(approvedParticleFrames);

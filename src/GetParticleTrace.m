@@ -69,8 +69,11 @@ for i=1:length(ParticleFrames)
             plotTraceSettings.AmpIntegral3(i)= NaN;
         end
         try
+            % GM 3/1/21: Changed to reflect Nick's new 3D spot fitting 
             plotTraceSettings.AmpIntegralGauss3D(i)=...
                 double(spot.gauss3DIntensityRaw);
+                
+                
         catch
             plotTraceSettings.AmpIntegralGauss3D(i)= NaN;
         end
@@ -137,7 +140,8 @@ for i=1:length(ParticleFrames)
             end
             try
                 plotTraceSettings.AmpIntegralGauss3D(i)=...
-                    double(spot.gauss3DIntensityRaw);
+                    double(spot.gauss3DIntensity);
+                    %double(spot.gauss3DIntensityRaw);
             catch
                 plotTraceSettings.AmpIntegralGauss3D(i)= NaN;
             end

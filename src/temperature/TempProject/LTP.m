@@ -130,7 +130,7 @@ classdef LTP
             
 
     
-            this = AddTFProfiles(this, this.time_delta);
+            this = AddTFProfiles(this);
             this = AddNBFluoOffsets(this);
             this.APLengths = AddAPLengths(this);
             
@@ -140,45 +140,10 @@ classdef LTP
         
         %% Methods
         
-        function APLengths = AddAPLengths(this)
-            % 1. Define DropboxFolder
-            [~,~,DropboxFolder,~,~]=...
-                DetermineLocalFolders;
-            % 2. Load APDetection and find pixel size for each embryo
-            APLengths = []; % in microns
-            for i = 1:length(this.ExperimentPrefixes)
-                if this.ExperimentStatuses{i}.hasAddedParticlePosition
-                    load([DropboxFolder,filesep,this.ExperimentPrefixes{i},filesep,'APDetection.mat']);
-                    % I think AP Length  is in pixels
-                    APLengths(i) = this.Experiments{i}.pixelSize_um*APLength;
-                else
-                    APLengths(i) = NaN;
-                end
-            end
-        end
         
-        function this = AddTFProfiles(this, deltaT)
-            this.TFProfiles = cell(1, length(this.ExperimentPrefixes));
-            disp('Adding Mean Profiles.')
-            for i = 1:length(this.ExperimentPrefixes)
-                disp(num2str(i))
-                if ~ismember(i, this.ProcessedExperiments)
-                    continue
-                end
-                if this.ExperimentStatuses{i}.hasCompiledNuclearProtein
-                    this.TFProfiles{i} = CalculateNBAPProfiles(this.ExperimentPrefixes{i}, deltaT);
-                end
-            end
-        end
-       
         
-        function this = addTFoffsts(this)
-            for NC=this.IncludedNCs
-                nc_idx =  find(this.IncludedNCs == NC, 1);
-                [this.FluoOffsets{nc_idx}, this.FluoOffsetStdErrors{nc_idx}] = ...
-                    getTFoffset(this, NC);
-            end
-        end
+        
+      
         
         function [FluoOffset, FluoOffsetStdError] = getTFoffset(this, NC)
             

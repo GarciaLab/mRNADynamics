@@ -304,8 +304,8 @@ end
 %% 
 
 CompiledParticles = CompileParticlesForFiltering(Prefix, 'SkipAll', 'UseAll');   
-schnitzcells = getSchnitzCells(liveExperiment);
-%CompiledParticles = AddQCInfoToCompiledParticles(Prefix, CompiledParticles, schnitzcells);
+schnitzcells = getSchnitzcells(liveExperiment);
+CompiledParticles = AddQCInfoToCompiledParticles(Prefix, CompiledParticles);
 
 
 %%

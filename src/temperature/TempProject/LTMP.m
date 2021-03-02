@@ -1,9 +1,10 @@
-classdef LTM
+classdef LTMP
     %liveProject Summary of this class goes here
     %   Detailed explanation goes here
     
     properties
         
+       
         ProjectName = '';
         ProjectType = '';
         ExperimentTypes = {};
@@ -13,6 +14,9 @@ classdef LTM
         IncludedExperiments = [];
         ProcessedExperiments = [];
         
+        LegendLabels = {};
+        APLengths = [];
+        
         IncludedNCs = [];
         Regions = {};
         Temp_sps = [];
@@ -20,37 +24,40 @@ classdef LTM
         MinAPs = [];
         MaxAPs = [];
         
+        time_delta = [];
+        MinimumTimePoints = [];
+        MinimumNuclearCount = []; % From LTP
+        MinimumTraceCount = [];  % From LTM
+        MinimumFittingPoints = []; % From LTM
+        MinimumBinCount = []; % From LTM
+        MinimumSchnitzCount = []; % From LTM
+        
+        FluoScalingFactors = [];
+        FluoScalingFactorSEs = [];
+        
+        
+        % LTP specific parameters for nuclear fluorescence offset 
+        MinOffsetAP = [];
+        MaxOffsetAP = [];
+        
+        % LTM specific parameters 
         R = [];
         alpha = [];
         R2bound = [];
-        time_delta = [];
-        MinimumTraceCount = [];
-        MinimumTimePoints = [];
-        MinimumFittingPoints = [];
-        MinimumBinCount = [];
-        MinimumSchnitzCount = [];
-        
-        LegendLabels = {};
-        
-        APLengths = [];
-        
-        MeanProfiles = {};
-        
         GeneLength = [];
         
+         %% LTM parameters start
+        MeanProfiles = {};
         MeanInitiationRates = {};
         TimeOns = {};
         TimeOffs = {};
         UnloadingRates = {};
         ElongationTimes = {};
         MeanFitR2s = {};
-        
+
         SchnitzCounts = [];
         FractionOns = [];
-        
-        FluoScalingFactors = [];
-        FluoScalingFactorSEs = [];
-        
+
         Fits = {};
         
         EmbryoStats = {};
@@ -58,6 +65,17 @@ classdef LTM
         MeanSpotFluo = {};
         
         ActivationEnergyFits = {};
+        
+        % LTM Parameters end
+        
+        %% LTP parameters start 
+        
+        TFProfiles = {};
+        TempFluoOffsets = {};
+        SetFluoOffsets = {};
+
+        
+ 
         
         
     end
@@ -68,8 +86,8 @@ classdef LTM
         %% Constructors
         
         
-        function this = LTM(ProjectName, ProjectType, GeneLength, IncludedNCs, time_delta,...
-                MinimumTraceCount, MinimumTimePoints, MinimumBinCount, MinimumFittingPoints, MinimumSchnitzCount)
+        function this = LTMP(ProjectName, ProjectType, GeneLength, IncludedNCs, time_delta,...
+                MinimumNuclearCount, MinimumTraceCount, MinimumTimePoints, MinimumBinCount, MinimumFittingPoints, MinimumSchnitzCount)
             %liveProject Construct an instance of this class
             %   Detailed explanation goes here
             this.ProjectName = ProjectName;
@@ -81,13 +99,19 @@ classdef LTM
             if exist('IncludedNCs', 'var')
                 this.IncludedNCs = IncludedNCs;
             else
-                this.IncludedNCs =[10, 11, 12, 13, 14];
+                this.IncludedNCs =[9, 10, 11, 12, 13, 14];
             end
             
             if exist('time_delta', 'var')
                 this.time_delta = time_delta;
             else
                 this.time_delta = 30; % unit: minutes
+            end
+            
+            if exist('MinimumNuclearCount', 'var')
+                this.MinimumNuclearCount = MinimumNuclearCount;
+            else
+                this.MinimumNuclearCount = 5;
             end
             
             if exist('MinimumTraceCount', 'var')
@@ -100,26 +124,31 @@ classdef LTM
             else
                 this.MinimumTimePoints = 5;
             end
+            
             if exist('MinimumFittingPoints', 'var')
                 this.MinimumFittingPoints = MinimumFittingPoints;
             else
                 this.MinimumFittingPoints = 5;
             end
+            
             if exist('MinimumBinCount', 'var')
                 this.MinimumBinCount = MinimumBinCount;
             else
                 this.MinimumBinCount = 2;
             end
+            
             if exist('MinimumSchnitzCount', 'var')
                 this.MinimumSchnitzCount = MinimumSchnitzCount;
             else
                 this.MinimumSchnitzCount = 5;
             end
+            
             if exist('R2bound', 'var')
                 this.R2bound = R2bound;
             else
                 this.R2bound = 0.95;
             end
+            
             if exist('alpha', 'var')
                 this.alpha = alpha;
             else
@@ -135,8 +164,15 @@ classdef LTM
             
             this.R = 8.314*10^(-3); % kJ * K^(-1)*mol^(-1)
             
-            this.ExperimentPrefixes = getProjectPrefixes(ProjectName);
+            AllPrefixes = getProjectPrefixes(ProjectName);
+            TempVector = zeros(1, length(AllPrefixes));
+            for i = 1:length(AllPrefixes)
+                TempVector(i) = pullTempSpFromDataStatus(ProjectName, AllPrefixes{i});
+            end
+            [~, indexorder] = sort(TempVector, 'descend');
+            this.ExperimentPrefixes = AllPrefixes(indexorder);
             
+
             for i = 1:length(this.ExperimentPrefixes)
                 Prefix = this.ExperimentPrefixes{i};
                 this.Experiments{i} = LiveExperiment(Prefix);
@@ -171,6 +207,20 @@ classdef LTM
             this.IncludedExperiments = find(include_set > 0);
             this.ProcessedExperiments = find((include_set > 0) & (finished_set > 0));
             
+            if isempty(this.MinOffsetAP)
+                if contains(lower(this.ProjectName), 'hb')
+                    this.MinOffsetAP = 0.575;
+                end
+            end
+            if isempty(this.MaxOffsetAP)
+                if contains(lower(this.ProjectName), 'hb')
+                    this.MaxOffsetAP = 0.675;
+                end
+            end
+            
+            this = AddTFProfiles(this);
+            this = AddNBFluoOffsets(this);
+            
             
             this.APLengths = AddAPLengths(this);
             this.MeanProfiles = AddMeanProfiles(this);
@@ -184,10 +234,12 @@ classdef LTM
         
         
         %% Methods
+        
 
         
-       
+  
         
+       
         function this = AddFractionOns(this)
             % author: G. Martini
             % date created: 1/19/21

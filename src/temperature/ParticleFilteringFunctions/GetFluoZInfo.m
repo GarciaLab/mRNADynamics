@@ -8,6 +8,9 @@ if ~exist('CompiledParticles', 'var')
 end
 if ~exist('Particles', 'var')
     Particles = getParticles(liveExperiment);
+    if ~iscell(Particles)
+        Particles = {Particles};
+    end
 end
 if ~exist('Spots', 'var')
     Spots = getSpots(liveExperiment);
