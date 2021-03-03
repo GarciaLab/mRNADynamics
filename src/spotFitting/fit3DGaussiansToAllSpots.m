@@ -78,29 +78,7 @@ for ch = liveExperiment.spotChannels
     nSpots = 2;
     if any(inputChannels==ch)
         nSpots = 1;
-    end
-    
-    % iterate through spots and pull basic indexing info and fluorescence
-    % stats
-    frameRefVec = [];
-    indexRefVec = [];
-    spotFluoVec = [];
-    for frame = 1:numFrames   
-        for ind = 1:length(SpotsCh(frame).Fits)
-            frameRefVec(end+1) = frame;
-            indexRefVec(end+1) = ind;
-            zIndex = SpotsCh(frame).Fits(ind).brightestZ==SpotsCh(frame).Fits(ind).z;
-            spotFluoVec(end+1) = SpotsCh(frame).Fits(ind).FixedAreaIntensity(zIndex);
-        end
-    end
-    
-    % identify spots falling into the 3rd quartile
-    q31 = prctile(spotFluoVec,50);
-    q32 = prctile(spotFluoVec,75);
-    q3Indices = find(spotFluoVec<=q32&spotFluoVec>q31);        
-    
-%     perform preliminary fitting to estimate spotPSF dims    
-    spotDims = [];    
+    end          
     
     waitbarFigure = waitbar(0, ['Fitting 3D Gaussians: Channel ', num2str(ch)]);
     
@@ -108,7 +86,8 @@ for ch = liveExperiment.spotChannels
     afterEach(q, @nUpdateWaitbar);
     p = 1;
     
-    % iterate through all spots    
+    % iterate through all spots  
+    spotDims = []; % NL: 
     if ~isempty(movieMatCh)
         parfor frame = 1:numFrames %frames                
             imStack = movieMatCh(:, :, :, frame);
