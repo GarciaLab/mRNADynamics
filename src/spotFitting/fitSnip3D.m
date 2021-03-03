@@ -9,9 +9,9 @@ ySize = FrameInfo(1).LinesPerFrame;
 pixelSize_nm = FrameInfo(1).PixelSize*1000; %nm
 zStep_nm = FrameInfo(1).ZStep*1000; %nm
 zMax = FrameInfo(1).NumberSlices+1;
-snipDepth = ceil(2500/zStep_nm);
+snipDepth = ceil(3500/zStep_nm); % sets Z depth above and below brightest plane that is extracted for fitting
 
-% NL: Need to make this independent of 2D fit info 
+% NL: Ideally we would make this independent of 2D fit info 
 brightestZPlane = spot.brightestZ;
 xSpot = spot.xDoG(spot.z==brightestZPlane);
 ySpot = spot.yDoG(spot.z==brightestZPlane);
@@ -32,7 +32,6 @@ yRange = max([1,ySpot-snippet_size]):min([ySize,ySpot+snippet_size]);
 
 snip3D = imStack(yRange, xRange, zRange);
   
-
 %% %%%%%%%%%%%%%%%%%%%%%% perform fitting %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % get stack origins
