@@ -87,7 +87,7 @@ for ch = liveExperiment.spotChannels
     p = 1;
     
     % iterate through all spots  
-    spotDims = []; % NL: 
+    spotDims = []; % NL: Deprecated field to be removed in future
     if ~isempty(movieMatCh)
         parfor frame = 1:numFrames %frames                
             imStack = movieMatCh(:, :, :, frame);
