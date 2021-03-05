@@ -199,22 +199,26 @@ for ChN=1:NChannels
                 threeDFlag = isfield(Spots{ChN}(Particles{ChN}(i).Frame(1)).Fits(Particles{ChN}(i).Index(1)),'GaussIntensity3DRaw');                
                 if threeDFlag
                     CompiledParticles{ChN}(k).Fluo3DGauss = NaN(size(Particles{ChN}(i).Frame));
+                    CompiledParticles{ChN}(k).Fluo3DGaussSE = NaN(size(Particles{ChN}(i).Frame));
                     CompiledParticles{ChN}(k).Fluo3DRaw = NaN(size(Particles{ChN}(i).Frame));
+                    CompiledParticles{ChN}(k).Fluo3DRawSE = NaN(size(Particles{ChN}(i).Frame));
                     CompiledParticles{ChN}(k).yPos3D = NaN(size(Particles{ChN}(i).Frame));
                     CompiledParticles{ChN}(k).xPos3D = NaN(size(Particles{ChN}(i).Frame));
                     CompiledParticles{ChN}(k).zPos3D = NaN(size(Particles{ChN}(i).Frame));
                     fitInfoCell = cell(size(Particles{ChN}(i).Frame));
                     for f = 1:length(Particles{ChN}(i).Frame)
-                        spot = SpotsCh(Particles{ChN}(i).Frame(f)).Fits(Particles{ChN}(i).Index(f));
+                        spot = Spots{ChN}(Particles{ChN}(i).Frame(f)).Fits(Particles{ChN}(i).Index(f));
 
                         CompiledParticles{ChN}(k).Fluo3DRaw(f) = spot.GaussIntensity3DRaw;
-                        CompiledParticles{ChN}(k).Fluo3DGauss(f) = spot.Gauss3DIntensity;  
+                        CompiledParticles{ChN}(k).Fluo3DRawSE(f) = spot.GaussIntensity3DRawSE;
+                        CompiledParticles{ChN}(k).Fluo3DGauss(f) = spot.GaussIntensity3D; 
+                        CompiledParticles{ChN}(k).Fluo3DGaussSE(f) = spot.GaussIntensity3DSE;
                         CompiledParticles{ChN}(k).yPos3D(f) = spot.GaussPos3D(1);
                         CompiledParticles{ChN}(k).xPos3D(f) = spot.GaussPos3D(2);
                         CompiledParticles{ChN}(k).zPos3D(f) = spot.GaussPos3D(3);
                         fitInfoCell{f} = spot.SpotFitInfo3D;
                     end
-                                                CompiledParticles{ChN}(k).SpotFitInfo3D = fitInfoCell;
+                    CompiledParticles{ChN}(k).SpotFitInfo3D = fitInfoCell;
                 end 
                 %Extract information from Spots about fluorescence and background
                 plotTraceSettings = PlotTraceSettings();
