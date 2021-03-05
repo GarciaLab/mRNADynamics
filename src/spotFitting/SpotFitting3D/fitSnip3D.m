@@ -46,8 +46,8 @@ fitInfo = fit3DGaussians(snip3D, pixelSize_nm, zStep_nm, spotDims, nSpots, []);
 spotsFrame.Fits(spotIndex).SpotFitInfo3D = fitInfo;%single(GaussParams1);
 
 % combined metrics
-spotsFrame.Fits(spotIndex).gauss3DIntensity = fitInfo.GaussIntegralTot;
-spotsFrame.Fits(spotIndex).gauss3DIntensitySE = fitInfo.GaussIntegralSETot;
+spotsFrame.Fits(spotIndex).GaussIntensity3D = fitInfo.GaussIntegralTot;
+spotsFrame.Fits(spotIndex).GaussIntensity3DSE = fitInfo.GaussIntegralSETot;
 spotsFrame.Fits(spotIndex).Offset3D = fitInfo.offset;
 spotsFrame.Fits(spotIndex).GaussIntensity3DRaw = fitInfo.GaussIntegralRaw;
 
