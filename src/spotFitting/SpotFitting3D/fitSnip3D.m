@@ -50,6 +50,7 @@ spotsFrame.Fits(spotIndex).GaussIntensity3D = fitInfo.GaussIntegralTot;
 spotsFrame.Fits(spotIndex).GaussIntensity3DSE = fitInfo.GaussIntegralSETot;
 spotsFrame.Fits(spotIndex).Offset3D = fitInfo.offset;
 spotsFrame.Fits(spotIndex).GaussIntensity3DRaw = fitInfo.GaussIntegralRaw;
+spotsFrame.Fits(spotIndex).GaussIntensity3DRawSE = fitInfo.GaussIntegralRawSE;
 
 % spotsFrame.Fits(spotIndex).Offset3DSE = offsetSE;   
 spotsFrame.Fits(spotIndex).GaussPos3D = fitInfo.SpotCentroid + [yMin xMin zMin] - 1.0;

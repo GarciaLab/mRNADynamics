@@ -92,11 +92,18 @@ function  fitInfo = fit3DGaussians(snip3D, PixelSize, zStep, spotDims, nSpots, g
         makeOffsetSnip = @(params) params(11) + ...
                                    params(12)*mesh_y + params(13)*mesh_x + params(14)*mesh_z + ...
                                    params(15)*mesh_y.^2 + params(16)*mesh_x.^2 + params(17)*mesh_z.^2;
+                               
+        makeOffsetSnipSE = @(params)  sqrt(params(11)^2 );% + ... NL: gradient parameters are generally small and somehwat volatile, so they lead to inflated error estimates                                                                            
+%                                            params(12)^2*mesh_y.^2 + params(13)^2*mesh_x.^2 + params(14)^2*mesh_z.^2 + ...
+%                                            params(15)^2*mesh_y.^4 + params(16)^2*mesh_x.^4 + params(17)^2*mesh_z.^4);
         include_vec = true(1,17); 
     else
         makeOffsetSnip = @(params) params(7) + ...
                                    params(8)*mesh_y + params(9)*mesh_x + params(10)*mesh_z + ...
                                    params(11)*mesh_y.^2 + params(12)*mesh_x.^2 + params(13)*mesh_z.^2;
+                               
+        makeOffsetSnipSE = @(params)  params(7)^2 ;
+        
         include_vec = ~ismember(1:17,7:10); 
     end
     
@@ -217,8 +224,9 @@ function  fitInfo = fit3DGaussians(snip3D, PixelSize, zStep, spotDims, nSpots, g
     end
     
     offsetSnipFit = makeOffsetSnip(GaussFit);
+    offsetSnipSE = makeOffsetSnipSE(FitDeltas);
     fitInfo.GaussIntegralRaw = (sum(intMask(:).*double(snip3D(:)) - offsetSnipFit(:).*intMask(:)));
-
+    fitInfo.GaussIntegralRawSE = sum(offsetSnipSE*intMask(:));
     if fitInfo.twoSpotFlag
         fitInfo.offset = GaussFit(11) + ...
                          GaussFit(12:14)*fitInfo.SpotCentroid' + ...
