@@ -23,7 +23,7 @@ zslicesPadding = false;
 dataType = '';
 exportMovieFiles = true;
 ignoreCh3 = false;
-skipNuclearProjection = true;
+skipNuclearProjection = false;
 
 k=1;
 while k<=length(varargin)
