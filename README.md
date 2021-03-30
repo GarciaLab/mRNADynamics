@@ -21,7 +21,7 @@ Please, when you use this code cite “H. G. Garcia, M. Tikhonov, A. Lin, T. Gre
 
 The installation scripts will automatically create the folder structure described in the following figure:
 
-[Image]
+![installation-structure](https://github.com/GarciaLab/mRNADynamics/blob/master/doc/installation-structure.jpg?raw=true)
 
 1. Create a folder called “LivemRNA” as shown in the figure above. This will be our main repository of code and data.
 2. Clone the  “mRNADynamics” repository from the “Master” branch into it.
@@ -33,5 +33,5 @@ The installation scripts will automatically create the folder structure describe
 
 This text includes instructions for the acquisition and analysis of live mRNA data obtained using methods such as MS2 or PP7 in the early embryo of the fruit fly Drosophila melanogaster. Throughout the code we will assume that the data consists of one channel of fluorescent puncta (MCP channel) and one channel of a nuclear marker such as Histone-RFP (Nuclear channel). The following figure shows these channels as well as the flow of analysis all the way from raw images to data structures that can be used for making plots and analyzing data.
 
-[image]
+![scripts-example-usage](https://github.com/GarciaLab/mRNADynamics/blob/master/doc/scripts-summary.jpg?raw=true)
 
