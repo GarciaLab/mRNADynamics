@@ -92,7 +92,7 @@ for k = 1:length(varargin)
     end
 end
 
-liveExperiment = LiveExperiment(Prefix, preLoadMovie);
+liveExperiment = LiveExperiment(Prefix, preMovie);
 
 DropboxFolder = liveExperiment.userResultsFolder;
 

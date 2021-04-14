@@ -162,7 +162,7 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFr
     if cptState.plot3DGauss && ~isnan(traceFigYLimits(2))
             setPlotsInvisible(traceFigAxes);
             ylim(traceFigAxes, [0, traceFigYLimits(2)]);
-            setPlotsVisible(traceFigAxes);
+            setPlotsVisible(traceFigAxes);            
     end
 
     

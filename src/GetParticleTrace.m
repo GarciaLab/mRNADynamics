@@ -59,7 +59,7 @@ for i=1:length(ParticleFrames)
         end
         try
             plotTraceSettings.AmpIntegralGauss3D(i)=...
-                double(spot.gauss3DIntensityRaw);
+                double(spot.GaussIntensity3DRaw);
         catch
             plotTraceSettings.AmpIntegralGauss3D(i)= NaN;
         end

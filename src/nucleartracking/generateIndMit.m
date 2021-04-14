@@ -35,6 +35,10 @@ indMit=[anaphaseFrames'-2,anaphaseFrames'+2];
 %started at frame 1, for example.
 indMit(indMit<1)=1;
 
+if isnan(indMit(end-1))
+    indMit(end-1, :) = nFrames;
+end
+
 %Check whether nc14 occurred very close to the end of the movie. For those
 %frames we'll move the boundary for tracking purposes
 indMit(indMit>=nFrames)=indMit(indMit>=nFrames)-2;

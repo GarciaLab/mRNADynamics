@@ -3,7 +3,9 @@ function [schnitzcells, ncTimes] = addRelativeTimeToSchnitzcells(schnitzcells, F
 
     ncFrames(ncFrames==0) = 1;
     ind = find(isnan(ncFrames));
-    ncFrames(ind) = ncFrames(ind-1); %if the last nc was 'Nan' it makes it equal to the previous nc
+    for k = 1:length(ind)
+        ncFrames(ind(k)) = ncFrames(ind(k)-1); %if the last nc was 'NaN' change it to the previous nc frame
+    end
     time = [FrameInfo.Time]/60; %frame times in minutes 
     ncTimes = time(ncFrames);
     
