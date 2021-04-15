@@ -174,21 +174,22 @@ if ~skipSegmentation
             snippetSize_px, pixelSize_nm, FrameInfo(1).FileMode, [],...
              filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, nuclearMask, autoThresh, segmentChannel);
 
-%             if ~isempty(segmentChannel)
-%          if channelIndex == segmentChannel
-%                 tempSpots2Cell = {tempSpots}; 
-%         else
-%                 tempSpots2Cell = [tempSpots2Cell, tempSpots];
-%          end
-%         end   
+            if ~isempty(segmentChannel)
+         if channelIndex == segmentChannel
+                tempSpots2Cell = {tempSpots}; 
+        else
+                tempSpots2Cell = [tempSpots2Cell, tempSpots];
+         end
+        end   
      
          
-%         options_zTracking = {};
-%         if ~isempty(segmentChannel) && channelIndex ~= segmentChannel
-%             options_zTracking = [options_zTracking, 'spotsTracking', tempSpots2Cell{1}];
-%         end
-%          
-%         tempSpots = segmentSpotsZTracking(pixelSize_nm,tempSpots, options_zTracking{:});
+        options_zTracking = {};
+        if channelIndex ~= segmentChannel
+            options_zTracking = [options_zTracking, 'spotsTracking', tempSpots2Cell{1}];
+            tempSpots = segmentSpotsZTracking(pixelSize_nm,tempSpots, options_zTracking{:});
+        end           
+         
+        tempSpots = segmentSpotsZTracking(pixelSize_nm,tempSpots, options_zTracking{:});
 %         
 %             if ~isempty(segmentChannel)
 %          if channelIndex == segmentChannel
@@ -199,7 +200,7 @@ if ~skipSegmentation
 %          end
 %         end
 
-        tempSpots = segmentSpotsZTracking(pixelSize_nm,tempSpots);
+%         tempSpots = segmentSpotsZTracking(pixelSize_nm,tempSpots);
         
         
 

@@ -24,20 +24,20 @@ if ~isempty([Spots.Fits])
             
             while changes ~= 0
                 changes = 0;
-
+                
                 nSpots = length(Spots(currentFrame).Fits);
-
+                
                 for spotIndex = 1:nSpots
                     for spotIndex2 = (spotIndex + 1):nSpots
-                           xDist = Spots(currentFrame).Fits(spotIndex).xFit(end) - Spots(currentFrame).Fits(spotIndex2).xFit(end);
+                        xDist = Spots(currentFrame).Fits(spotIndex).xFit(end) - Spots(currentFrame).Fits(spotIndex2).xFit(end);
                         yDist = Spots(currentFrame).Fits(spotIndex).yFit(end) - Spots(currentFrame).Fits(spotIndex2).yFit(end);
-%                          xDist = Spots(currentFrame).Fits(spotIndex).xDoG(end) - Spots(currentFrame).Fits(spotIndex2).xDoG(end);
-%                         yDist = Spots(currentFrame).Fits(spotIndex).yDoG(end) - Spots(currentFrame).Fits(spotIndex2).yDoG(end);
+                        %                          xDist = Spots(currentFrame).Fits(spotIndex).xDoG(end) - Spots(currentFrame).Fits(spotIndex2).xDoG(end);
+                        %                         yDist = Spots(currentFrame).Fits(spotIndex).yDoG(end) - Spots(currentFrame).Fits(spotIndex2).yDoG(end);
                         
-%                          dist = sqrt(double(xDist)^2 + double(yDist)^2);
+                        %                          dist = sqrt(double(xDist)^2 + double(yDist)^2);
                         dist = sqrt(xDist^2 + yDist^2);
-
-
+                        
+                        
                         if dist < neighborhood &&...
                                 Spots(currentFrame).Fits(spotIndex).z(end) ~= Spots(currentFrame).Fits(spotIndex2).z(end)
                             for m = 1:numel(fields)
@@ -46,7 +46,7 @@ if ~isempty([Spots.Fits])
                                 elseif strcmpi(fields{m}, 'frame') ||...
                                         strcmpi(fields{m}, 'IntegralZ') ||...
                                         strcmpi(fields{m}, 'intArea') ||...
-                                        strcmpi(fields{m}, 'snippet_size')                     
+                                        strcmpi(fields{m}, 'snippet_size')
                                     %do nothing
                                 else
                                     Spots(currentFrame).Fits(spotIndex).(fields{m}) =...
@@ -64,7 +64,7 @@ if ~isempty([Spots.Fits])
 else
     fields = {};
 end
-    
-    close(waitbarFigure)
+
+close(waitbarFigure)
 
 end
