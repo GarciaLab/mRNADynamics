@@ -24,6 +24,25 @@ function [Particles,falsePositives, Spots2] = findBrightestZ(Particles, num_shad
 
 
 
+segmentChannel = nan;
+
+%options must be specified as name, value pairs. unpredictable errors will
+%occur, otherwise.
+for i = 1:2:(numel(varargin)-1)
+    if i ~= numel(varargin)
+        eval([varargin{i} '=varargin{i+1};']);
+    end
+end
+
+if iscell(Spots)
+    ch = [1, 2]; %assuming there are only 2 channels. easily fixed if not. 
+    quantifyChannel = ch(ch~=segmentChannel);
+    spotsQuantifyChannel = Spots{quantifyChannel};
+    Spots = Spots{segmentChannel};
+else
+    spotsQuantifyChannel = [];
+end
+
 numFrames = length(Spots);
 Spots2 = repmat(struct('Fits', []), 1, numFrames);
 
@@ -145,7 +164,26 @@ if ~isempty(Spots)
             else
                 Spots(frame).Fits(spotIndex).brightestZ = uint8(force_z);
             end
-            Spots(frame).Fits(spotIndex).FixedAreaIntensity3 = single(sum(z_raw_values(ismember(z_grid,Spots(frame).Fits(spotIndex).brightestZ-1:Spots(frame).Fits(spotIndex).brightestZ+1))));
+            
+            if ~isnan(segmentChannel)
+                
+                %pull intensity value from particle snippets
+                RawIntensityVec_Q = [spotsQuantifyChannel(frame).Fits(spotIndex).FixedAreaIntensity];
+                z_Q = spotsQuantifyChannel(frame).Fits(spotIndex).z;
+                z_raw_values_Q = zeros(size(z_grid));
+                z_raw_values_Q(ismember(z_grid,z_vec)) = RawIntensityVec_Q;
+                z_raw_values_Q(z_raw_values==0) = NaN;
+                try
+                    Spots(frame).Fits(spotIndex).FixedAreaIntensity3 = RawIntensityVec_Q(z_Q==CentralZ-1) + RawIntensityVec_Q(z_Q==CentralZ) + RawIntensityVec_Q(z_Q==CentralZ+1);
+                catch
+                    Spots(frame).Fits(spotIndex).FixedAreaIntensity3 = RawIntensityVec_Q(z_Q==CentralZ);
+                end
+%                 Spots(frame).Fits(spotIndex).FixedAreaIntensity3 = single(nansum(z_raw_values_Q(ismember(z_grid,Spots(frame).Fits(spotIndex).brightestZ-1:Spots(frame).Fits(spotIndex).brightestZ+1))));
+
+            else
+                Spots(frame).Fits(spotIndex).FixedAreaIntensity3 = single(nansum(z_raw_values(ismember(z_grid,Spots(frame).Fits(spotIndex).brightestZ-1:Spots(frame).Fits(spotIndex).brightestZ+1))));
+            end
+            
             
             
             %use convolution kernel to look for shadows
@@ -158,7 +196,11 @@ if ~isempty(Spots)
                 Spots(frame).Fits(spotIndex).discardThis = true;
                 falsePositives = falsePositives + 1;
             else
-                Spots2(frame).Fits = [Spots2(frame).Fits, Spots(frame).Fits(spotIndex)];
+                if isempty(spotsQuantifyChannel)
+                    Spots2(frame).Fits = [Spots2(frame).Fits, Spots(frame).Fits(spotIndex)];
+                else
+                    Spots2(frame).Fits = [Spots2(frame).Fits, spotsQuantifyChannel(frame).Fits(spotIndex)];
+                end
             end
         end
     end

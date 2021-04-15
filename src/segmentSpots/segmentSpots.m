@@ -174,10 +174,49 @@ if ~skipSegmentation
             snippetSize_px, pixelSize_nm, FrameInfo(1).FileMode, [],...
              filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, nuclearMask, autoThresh, segmentChannel);
 
-        tempSpots = segmentSpotsZTracking(pixelSize_nm,tempSpots);
+%             if ~isempty(segmentChannel)
+%          if channelIndex == segmentChannel
+%                 tempSpots2Cell = {tempSpots}; 
+%         else
+%                 tempSpots2Cell = [tempSpots2Cell, tempSpots];
+%          end
+%         end   
+     
+         
+%         options_zTracking = {};
+%         if ~isempty(segmentChannel) && channelIndex ~= segmentChannel
+%             options_zTracking = [options_zTracking, 'spotsTracking', tempSpots2Cell{1}];
+%         end
+%          
+%         tempSpots = segmentSpotsZTracking(pixelSize_nm,tempSpots, options_zTracking{:});
+%         
+%             if ~isempty(segmentChannel)
+%          if channelIndex == segmentChannel
+%                 tempSpots0Cell = {tempSpots}; 
+%         else
+%                 tempSpots0Cell = [tempSpots0Cell, tempSpots];
+%                 1
+%          end
+%         end
 
-        [~, falsePositives, tempSpots] = findBrightestZ([], numShadows,...
-            useIntegralCenter, 0, tempSpots);
+        tempSpots = segmentSpotsZTracking(pixelSize_nm,tempSpots);
+        
+        
+
+        if isempty(segmentChannel)
+            [~, falsePositives, tempSpots] = findBrightestZ([], numShadows,...
+                useIntegralCenter, 0, tempSpots);
+        else
+            if channelIndex == segmentChannel
+                [~, falsePositives, tempSpots] = findBrightestZ([], numShadows,...
+                useIntegralCenter, 0, tempSpots);
+                tempSpotsCell = {tempSpots}; 
+            else
+                tempSpotsCell = [tempSpotsCell, tempSpots];
+                [~, falsePositives, tempSpots] = findBrightestZ([], numShadows,...
+                useIntegralCenter, 0, tempSpotsCell, 'segmentChannel', segmentChannel);
+            end
+        end
 
         Spots{n} = tempSpots;
 

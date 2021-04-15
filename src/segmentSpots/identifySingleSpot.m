@@ -1,9 +1,9 @@
 
 
-function Fits = identifySingleSpot(particle_index, image, image_label,...
+function Fits = identifySingleSpot(particle_index, imageForFitting, image_label,...
     dog_image, searchRadius, snippet_size, ...
     pixelSize, show_status, graphicsHandles, microscope, addition,...
-    forced_centroid, ml_string, currentFrame, spotIndex, zIndex)
+    forced_centroid, ml_string, currentFrame, spotIndex, zIndex, varargin)
 % identifySingleSpot(awholelot)
 %
 % DESCRIPTION
@@ -25,6 +25,17 @@ function Fits = identifySingleSpot(particle_index, image, image_label,...
 % Documented by: Armando Reimer (areimer@berkeley.edu)
 
 
+imageForTracking = imageForFitting;
+
+%options must be specified as name, value pairs. unpredictable errors will
+%occur, otherwise.
+for i = 1:2:(numel(varargin)-1)
+    if i ~= numel(varargin)
+        eval([varargin{i} '=varargin{i+1};']);
+    end
+end
+
+
 Fits = [];
 
 ML = false;
@@ -33,11 +44,11 @@ if strcmp(ml_string, 'ML')
 end
 
 doCyl = false;
-if iscell(image)
+if iscell(imageForFitting)
     doCyl = true;
-    imageAbove = image{2};
-    imageBelow = image{3};
-    image = image{1};
+    imageAbove = imageForFitting{2};
+    imageBelow = imageForFitting{3};
+    imageForFitting = imageForFitting{1};
 end
 
 %Find spot centroids in the actual image by hunting for global maxima in
@@ -60,14 +71,14 @@ end
 for y = 1:2*searchRadius
     for x = 1:2*searchRadius
         if row - searchRadius + y > 0 && col - searchRadius + x > 0 ...
-                && row - searchRadius + y < size(image,1)  && col - searchRadius + x < size(image,2)
+                && row - searchRadius + y < size(imageForTracking,1)  && col - searchRadius + x < size(imageForTracking,2)
             if ML
-                possible_centroid_intensity(y,x) = sum(sum(image(row-searchRadius+y, col-searchRadius+x)));
+                possible_centroid_intensity(y,x) = sum(sum(imageForTracking(row-searchRadius+y, col-searchRadius+x)));
             else
                 if addition(1) || round(pixelSize)~=212
-                                possible_centroid_intensity(y,x) = sum(sum(image(row-searchRadius+y, col-searchRadius+x)));
+                                possible_centroid_intensity(y,x) = sum(sum(imageForTracking(row-searchRadius+y, col-searchRadius+x)));
                 else
-                    possible_centroid_intensity(y,x) = sum(sum(image(row-searchRadius+y, col-searchRadius+x)));
+                    possible_centroid_intensity(y,x) = sum(sum(imageForTracking(row-searchRadius+y, col-searchRadius+x)));
                 end
             end
             possible_centroid_location{y,x} = [row-searchRadius+y, col-searchRadius+x];
@@ -90,7 +101,7 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
     %adding spots in checkparticletracking, we'll try to use the
     %position where the user actually clicked
     if addition(1) && ~(centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 ...
-            && centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2))
+            && centroid_y + snippet_size < size(imageForTracking, 1) && centroid_x + snippet_size < size(imageForTracking,2))
         centroid_y = k_row;
         centroid_x = k_column;
     end
@@ -102,9 +113,9 @@ if ~isempty(possible_centroid_intensity) && sum(sum(possible_centroid_intensity)
     
     %Now, we'll calculate Gaussian fits
     if centroid_y - snippet_size > 1 && centroid_x - snippet_size > 1 && ...
-            centroid_y + snippet_size < size(image, 1) && centroid_x + snippet_size < size(image,2)
+            centroid_y + snippet_size < size(imageForFitting, 1) && centroid_x + snippet_size < size(imageForFitting,2)
         
-        snippet = image(centroid_y-snippet_size:centroid_y+snippet_size, centroid_x-snippet_size:centroid_x+snippet_size);
+        snippet = imageForFitting(centroid_y-snippet_size:centroid_y+snippet_size, centroid_x-snippet_size:centroid_x+snippet_size);
         dogsnip = dog_image(centroid_y-snippet_size:centroid_y+snippet_size, centroid_x-snippet_size:centroid_x+snippet_size);
         
         if doCyl

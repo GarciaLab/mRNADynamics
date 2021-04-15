@@ -6,8 +6,17 @@ function Spots...
     zSize, ~, Prefix, ~, shouldDisplayFigures,doFF, ffim,...
     Threshold, neighborhood, snippet_size, ~, microscope,...
     ~,filterMovieFlag, resultsFolder, gpu, saveAsMat, ~, shouldMaskNuclei,...
-    autoThresh, ch_segment)
+    autoThresh, ch_segment, varargin)
 
+
+
+%options must be specified as name, value pairs. unpredictable errors will
+%occur, otherwise.
+for i = 1:2:(numel(varargin)-1)
+    if i ~= numel(varargin)
+        eval([varargin{i} '=varargin{i+1};']);
+    end
+end
 
 cleanupObj = onCleanup(@myCleanupFun);
 
@@ -92,18 +101,18 @@ yDim = liveExperiment.yDim;
 xDim = liveExperiment.xDim;
 zDim = liveExperiment.zDim;
 
-% if shouldMaskNuclei
-%     if liveExperiment.hasEllipsesFile
-%         Ellipses = getEllipses(liveExperiment);
-%         if isempty(Ellipses)
-%             disp('Don''t try to do anything to Ellipses')
-%         else
-%             Ellipses = filterEllipses(Ellipses, [yDim, xDim]);
-%         end
-%     else
-%         shouldMaskNuclei = false;
-%     end
-% end
+if shouldMaskNuclei
+    if liveExperiment.hasEllipsesFile
+        Ellipses = getEllipses(liveExperiment);
+        if isempty(Ellipses)
+            disp('Don''t try to do anything to Ellipses')
+        else
+            Ellipses = filterEllipses(Ellipses, [yDim, xDim]);
+        end
+    else
+        shouldMaskNuclei = false;
+    end
+end
 
    
     if autoThresh
@@ -195,18 +204,18 @@ parfor currentFrame = initialFrame:lastFrame
         
         im_thresh = dog >= Threshold;
         
-        % apply nuclear mask if it exists
-%         if shouldMaskNuclei
-%     
-%             nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
-%             im_thresh = im_thresh & nuclearMask;
-%             
-% %             if shouldDisplayFigures
-% %                 figure(maskFig);
-% %                 imshowpair(nuclearMask, dog, 'montage'); 
-% %             end
-%             
-%         end
+%         apply nuclear mask if it exists
+        if shouldMaskNuclei
+    
+            nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
+            im_thresh = im_thresh & nuclearMask;
+            
+%             if shouldDisplayFigures
+%                 figure(maskFig);
+%                 imshowpair(nuclearMask, dog, 'montage'); 
+%             end
+            
+        end
         
         %probability map regions usually look different from dog regions and
         %require some mophological finesse

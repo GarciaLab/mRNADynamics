@@ -13,10 +13,10 @@ m = max(snippet(:));
 %let's cache this for efficiency
 %realized caching does weird stuff in parpools
 %gonna disable that til i figure out why. 
-persistent y x
-if isempty(y), [y,x] = meshgrid(1:size(snippet,2), 1:size(snippet,1)); end
+% persistent y x
+% if isempty(y), [y,x] = meshgrid(1:size(snippet,2), 1:size(snippet,1)); end
 
-% [y,x] = meshgrid(1:xDim, 1:yDim);
+[y,x] = meshgrid(1:xDim, 1:yDim);
 
 med = median(snippet(:));
 %fits: [amplitude, x position, x width, y position, y width, offset, angle]
@@ -31,7 +31,7 @@ initial_parameters = [m, round(xDim/2), round(yDim/2), ...
 lb_offset = 1/10; %this is empirical. corresponds to a weak background of 1 pixel per ten having a value of 1.
 % lb = [0, 0, 0, 0, 0,lb_offset, 0, -med/2, -med/2];
 % ub = [max(snippet(:))*1.5, size(snippet, 2), size(snippet, 1), size(snippet, 2), size(snippet, 1), max(snippet(:)), 2*pi, med/2, med/2];
-%
+% 
 % [single_fit, ~, residual, ~, ~, ~, ~] = lsqnonlin(singleGaussian, ...
 %     initial_parameters,lb,ub, lsqOptions);
 
@@ -41,9 +41,9 @@ ub = [m*1.5, xDim, yDim, 1,...
     xDim, yDim, m, med/2, med/2];
 
 %let's cache this for efficiency
-persistent lsqOptions 
-if isempty(lsqOptions), lsqOptions=optimset('Display','none'); end
-
+% persistent lsqOptions 
+% if isempty(lsqOptions), lsqOptions=optimset('Display','none'); end
+lsqOptions=optimset('Display','none');
 [single_fit, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(singleGaussian, ...
     initial_parameters,lb,ub, lsqOptions);
 
