@@ -130,6 +130,8 @@ end
         
 isZPadded = size(movieMat, 3) ~= zSize;
 
+
+
 q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
 p = 1;
@@ -139,6 +141,10 @@ parfor currentFrame = initialFrame:lastFrame
         imStack = movieMat_channel(:, :, :, currentFrame);
     else
         imStack = getMovieFrame(liveExperiment, currentFrame, ch_quantify);
+    end
+    
+    if ch_segment~=ch_quantify
+        imStackSegment = getMovieFrame(liveExperiment, currentFrame, ch_segment);
     end
     
    
@@ -168,6 +174,10 @@ parfor currentFrame = initialFrame:lastFrame
     for zIndex = 1:zSize
         
         im = imStack(:, :, zIndex);
+        
+        if ch_segment~=ch_quantify
+           imSegment = imStackSegment(:, :, zIndex); 
+        end
         
         try
             imAbove = imStack(:, :, zIndex+1);
@@ -202,13 +212,13 @@ parfor currentFrame = initialFrame:lastFrame
             %im = im.*ffim;
         end
         
-        im_thresh = dog >= Threshold;
+        dog_thresh = dog >= Threshold;
         
 %         apply nuclear mask if it exists
         if shouldMaskNuclei
     
             nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
-            im_thresh = im_thresh & nuclearMask;
+            dog_thresh = dog_thresh & nuclearMask;
             
 %             if shouldDisplayFigures
 %                 figure(maskFig);
@@ -221,24 +231,30 @@ parfor currentFrame = initialFrame:lastFrame
         %require some mophological finesse
         if haveProbs
             se = strel('square', 3);
-            im_thresh = imdilate(im_thresh, se); %thresholding from this classified probability map can produce non-contiguous, spurious Spots{channelIndex}. This fixes that and hopefully does not combine real Spots{channelIndex} from different nuclei
-            im_thresh = im_thresh > 0;
+            dog_thresh = imdilate(dog_thresh, se); %thresholding from this classified probability map can produce non-contiguous, spurious Spots{channelIndex}. This fixes that and hopefully does not combine real Spots{channelIndex} from different nuclei
+            dog_thresh = dog_thresh > 0;
         end
         
-        [im_label, n_spots] = bwlabel(im_thresh);
-        centroids = regionprops(im_thresh, 'centroid');
+        [dog_label, n_spots] = bwlabel(dog_thresh);
+        centroids = regionprops(dog_thresh, 'centroid');
         
+        options_ISS = {};
+        if ch_segment~=ch_quantify
+           options_ISS =  [options_ISS, 'imageForTracking', imSegment];
+        end
         
+     
         if n_spots ~= 0
             
             for spotIndex = 1:n_spots
+                
                 centroid = round(centroids(spotIndex).Centroid);
                 
                  Fits = identifySingleSpot(spotIndex,...
-                    {im,imAbove,imBelow}, im_label, dog, ...
+                    {im,imAbove,imBelow}, dog_label, dog, ...
                     neighborhood, snippet_size, pixelSize_nm, shouldDisplayFigures,...
                     graphicsHandles, microscope, 0,...
-                    centroid,MLFlag, currentFrame, spotIndex, zIndex);
+                    centroid,MLFlag, currentFrame, spotIndex, zIndex, options_ISS{:});
                 
                 Spots(currentFrame).Fits = [Spots(currentFrame).Fits, Fits];
                 
