@@ -206,18 +206,18 @@ parfor currentFrame = initialFrame:lastFrame
         
         dog_thresh = dog >= Threshold;
         
-        % apply nuclear mask if it exists
-        if shouldMaskNuclei
-    
-            nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
-            dog_thresh = dog_thresh & nuclearMask;
-            
-%             if shouldDisplayFigures
-%                 figure(maskFig);
-%                 imshowpair(nuclearMask, dog, 'montage'); 
-%             end
-            
-        end
+%         % apply nuclear mask if it exists
+%         if shouldMaskNuclei
+%     
+%             nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
+%             dog_thresh = dog_thresh & nuclearMask;
+%             
+% %             if shouldDisplayFigures
+% %                 figure(maskFig);
+% %                 imshowpair(nuclearMask, dog, 'montage'); 
+% %             end
+%             
+%         end
         
         %probability map regions usually look different from dog regions and
         %require some mophological finesse
