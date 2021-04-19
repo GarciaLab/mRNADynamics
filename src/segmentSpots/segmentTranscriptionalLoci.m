@@ -125,7 +125,6 @@ isZPadded = size(movieMat, 3) ~= zSize;
 % afterEach(q, @nUpdateWaitbar);
 % p = 1;
 parfor currentFrame = initialFrame:lastFrame
-    
     if ~isempty(movieMat_channel)
         imStack = movieMat_channel(:, :, :, currentFrame);
     else
@@ -192,6 +191,18 @@ parfor currentFrame = initialFrame:lastFrame
             im = double(im).*ffim; % GM 9/3/20
             %im = im.*ffim;
         end
+        
+        maxMaxDog = max(max(dog))
+        maxDogOrderOfMagnitude = floor(log10(maxMaxDog))
+        thresholdOrderOfMagnitude = floor(log10(Threshold))
+        
+        if thresholdOrderOfMagnitude < maxDogOrderOfMagnitude
+            disp('WARNING: Threshold probably too low, resulting in out of memory errors.');
+        elseif thresholdOrderOfMagnitude > maxDogOrderOfMagnitude
+            disp('WARNING: Threshold probably too high, nothing will be detected.');
+        end
+        
+        
         
         dog_thresh = dog >= Threshold;
         

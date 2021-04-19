@@ -125,7 +125,7 @@ elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>=2
 end
 
 if isempty(HisChannel)
-    error('LIF Mode error: Channel name not recognized. Check MovieDatabase.XLSX')
+    error('LIF Mode error: Channel name not recognized. Check MovieDatabase.csv')
 end
 
 %% Rotate full embryo image and/or zoomed-in time series to match each other
