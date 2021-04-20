@@ -102,7 +102,10 @@ if shouldMaskNuclei
         end
     else
         shouldMaskNuclei = false;
+        Ellipses = {}; % for parfor compatibility, see below.
     end
+else
+    Ellipses = {}; % for parfor compatibility, see below.
 end
 
    
@@ -125,6 +128,13 @@ isZPadded = size(movieMat, 3) ~= zSize;
 % afterEach(q, @nUpdateWaitbar);
 % p = 1;
 parfor currentFrame = initialFrame:lastFrame
+    % neeed for parfor compatibility
+    size(Ellipses);
+    % this is just to send a hint to parfor to classify Ellipses variable correctly.
+    % otherwise, it fails saying it doesnt exist or it doesnt have the
+    % required size, even if not used by the worker.
+    % See: https://la.mathworks.com/matlabcentral/answers/570619-matlab-parfor-index-exceeds-the-number-of-array-elements
+    
     if ~isempty(movieMat_channel)
         imStack = movieMat_channel(:, :, :, currentFrame);
     else
@@ -206,18 +216,18 @@ parfor currentFrame = initialFrame:lastFrame
         
         dog_thresh = dog >= Threshold;
         
-%         % apply nuclear mask if it exists
-%         if shouldMaskNuclei
-%     
-%             nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
-%             dog_thresh = dog_thresh & nuclearMask;
-%             
-% %             if shouldDisplayFigures
-% %                 figure(maskFig);
-% %                 imshowpair(nuclearMask, dog, 'montage'); 
-% %             end
-%             
-%         end
+         % apply nuclear mask if it exists
+         if shouldMaskNuclei
+     
+             nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
+             dog_thresh = dog_thresh & nuclearMask;
+             
+ %             if shouldDisplayFigures
+ %                 figure(maskFig);
+ %                 imshowpair(nuclearMask, dog, 'montage'); 
+ %             end
+             
+         end
         
         %probability map regions usually look different from dog regions and
         %require some mophological finesse
