@@ -25,7 +25,7 @@ dogDir = dir([DogOutputFolder, '*_ch0', num2str(ch_segment), '.*']);
 
 haveProbs = any(cellfun(@(x) contains(x, 'prob'), {dogDir.name}));
 %stacks won't be indexed by _z
-haveStacks = any(cellfun(@(x) ~contains(x, '_z'), {dogDir.name}));
+haveStacks = any(cellfun(@(x) ~contains(x, '_z0'), {dogDir.name}));
 % 
 % waitbarFigure = waitbar(0, 'Segmenting spots');
 % set(waitbarFigure, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
