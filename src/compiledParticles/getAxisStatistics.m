@@ -203,7 +203,7 @@ for ChN=1:NChannels
         
         %%
         %Calculate the mean for all AP bins
-        [MeanVectorAll{ChN},SDVectorAll{ChN},NParticlesAll{ChN}, MeanVector3DAll{ChN}] =...
+        [MeanVectorAll{ChN},SDVectorAll{ChN},NParticlesAll{ChN}, ~, MeanVector3DAll{ChN}] =...
             AverageTraces(FrameInfo,CompiledParticles{ChN});
         
         %Now find the different maxima in each nc
