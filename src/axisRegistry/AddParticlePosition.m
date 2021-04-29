@@ -13,7 +13,6 @@ function [Particles, SpotFilter] = AddParticlePosition(Prefix, varargin)
 %                       embyro images
 % 'NoAP': Just adds X and Y information
 % 'SelectChannel': Prompts user to select the channel to use for alignment
-% 'optionalResults':
 % 'yToManualAlignmentPrompt':
 % 'correctDV': If you want the DV shift calculated
 %
@@ -35,38 +34,10 @@ cleanupObj = onCleanup(@myCleanupFun);
 
 
 %Default set of variables to save
-saveVars={'coordA','coordP','coordAZoom','coordPZoom'};
+saveVars = {'coordA','coordP','coordAZoom','coordPZoom'};
 
-
-SkipAlignment=false;
-ManualAlignment=true;
-NoAP=false;
-SelectChannel=0;
-InvertHis=false;
-optionalResults = '';
-yToManualAlignmentPrompt = false;
-correctDV = false;
-
-
-for i=1:length(varargin)
-    switch varargin{i}
-        case {'SkipAlignment'}
-            disp('Skipping alignment step')
-            SkipAlignment=1;
-        case {'ManualAlignment'}
-            ManualAlignment=true;
-        case {'NoAP'}
-            NoAP=1;
-        case {'SelectChannel'}
-            SelectChannel=1;
-        case {'optionalResults'}
-            optionalResults = varargin{i+1};
-        case {'yToManualAlignmentPrompt'}
-            yToManualAlignmentPrompt = 1;
-        case {'correctDV'}
-            correctDV = true;
-    end
-end
+[SkipAlignment, ManualAlignment, NoAP, SelectChannel,...
+   InvertHis, yToManualAlignmentPrompt, correctDV] = getAddParticlePositionOptions(varargin);
 
 liveExperiment = LiveExperiment(Prefix);
 
@@ -84,18 +55,18 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'Particles', 'SpotFilter')
     load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots')
     
-    %Create the particle array. This is done so that we can support multiple
-    %channels. Also figure out the number of channels
+    % Create the particle array. This is done so that we can support multiple
+    % channels. Also figure out the number of channels
     if iscell(Particles)
-        NChannels=length(Particles);
+        NChannels = length(Particles);
     else
-        Particles={Particles};
-        Spots={Spots};
-        NChannels=1;
+        Particles = {Particles};
+        Spots = {Spots};
+        NChannels = 1;
     end
     
-    %Now, get the particle positions (if they're not there already).
-    for ChN=1:NChannels
+    % Now, get the particle positions (if they're not there already).
+    for ChN = 1:NChannels
         Particles = addPositionsToParticles(Particles, Spots, ChN);
     end
     
@@ -785,40 +756,6 @@ try
 catch
     warning('failed to add AP positions to nuclear structures.')
 end
-
-
-end
-
-function ChannelToLoad = determineChannelToLoad(SelectChannel, Channels)
-
-if SelectChannel
-    list = string(Channels);
-    [indx,tf] = listdlg('PromptString','Select the channel to use for alignment:','ListString',list);
-    ChannelToLoad = indx;
-else
-    % From now, we will use a better way to define the channel for
-    % alignment (used for cross-correlation).
-    % Find channels with ":Nuclear"
-    ChannelToLoadTemp= contains([Channels(1),Channels(2),Channels(3)],'nuclear','IgnoreCase',true);
-    
-    % Define the Channel to load, for calculating the cross-correlation
-    % In future, we can think about combining multiple channels for
-    % calculating the cross-correlation to get more accurate estimates.
-    % For now, let's pick only one channel for this. For multiple
-    % channels, let's first pick the first channel. This can be fine in
-    % most cases, since we normally use lower wavelength for sth we
-    % care more, or we get better signal from those.
-    if sum(ChannelToLoadTemp) && sum(ChannelToLoadTemp)==1
-        ChannelToLoad=find(ChannelToLoadTemp);
-    elseif sum(ChannelToLoadTemp) && length(ChannelToLoadTemp)>=2
-        ChannelToLoad=find(ChannelToLoadTemp);
-        ChannelToLoad = ChannelToLoad(1);
-    else
-        error('No histone channel found. Was it defined in MovieDatabase as :Nuclear or :InvertedNuclear?')
-    end
-    
-end
-
 
 
 end
