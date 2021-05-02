@@ -28,23 +28,42 @@ end
 
 if ~exist('PlottingColors', 'var')
     PlottingColors = 'default';
-elseif  ~strcmp(lower(PlottingColors), 'default')  & ~strcmp(lower(PlottingColors), 'pboc')
+elseif ~strcmp(lower(PlottingColors), 'default')  & ~strcmp(lower(PlottingColors), 'pboc')
     error('Invalid choice of plotting colors. Can use either "default", "pboc", or "gradient".') % change to error
 end
 if ~exist('TraceType', 'var')
-    TraceType = 'anaphasealigned';
-elseif ~strcmp(lower(TraceType), 'fluo3d') & ~strcmp(lower(TraceType), 'fluo')  & ~strcmp(lower(TraceType), 'anaphasealigned')& ~strcmp(lower(TraceType), 'anaphasealigned3d')
-    error('Invalid choice of trace type. Can use either "fluo", "fluo3d", "anaphasealigned", or "anaphasealigned3d".') % change to error
+    TraceType = 'AnaphaseAligned';
+elseif  ~strcmp(lower(TraceType), 'tbinned')  & ~strcmp(lower(TraceType), 'anaphasealigned') &...
+        ~strcmp(lower(TraceType), 'anaphasealigned3d') &  ~strcmp(lower(TraceType), 'tbinned3d')  & ...
+        ~strcmp(lower(TraceType), 'fluo') &  ~strcmp(lower(TraceType), 'fluo3d')  & ...
+        ~strcmp(lower(TraceType), 'unaligned') &  ~strcmp(lower(TraceType), 'unaligned3d')
+    error('Invalid choice of trace type. Can use either "tbinned" or "anaphasealigned".') % change to error
 end
 
+if strcmpi(TraceType, 'anaphasealigned')
+    TraceType = 'AnaphaseAligned';
+elseif strcmpi(TraceType, 'anaphasealigned3d')
+    TraceType = 'AnaphaseAligned3D';
+elseif strcmpi(TraceType, 'fluo') | strcmpi(TraceType, 'unaligned')
+    TraceType = 'Unaligned';
+elseif strcmpi(TraceType, 'fluo3d') | strcmpi(TraceType, 'unaligned3d')
+    TraceType = 'Unaligned3D';
+elseif strcmpi(TraceType, 'tbinned')
+    TraceType = 'Tbinned';
+elseif strcmpi(TraceType, 'tbinned3d')
+    TraceType = 'Tbinned3D';
+end
+
+%%
 
 if IncludeFits
     FitString = 'Fitted';
 else
     FitString = '';
 end
-Temp_obs = this.Temp_obs(this.ProcessedExperiments);
-Temp_sps = this.Temp_sps(this.ProcessedExperiments);
+Temp_obs = this.Temp_obs;
+Temp_sp = this.Temp_sps;
+
 
 if strcmp(lower(PlottingColors), 'default')
     [~, colors] = getColorPalettes();
@@ -52,51 +71,60 @@ elseif strcmp(lower(PlottingColors), 'pboc')
     [colors, ~] = getColorPalettes();
 end
 %%
-if strcmpi(TraceType, 'anaphasealigned')
-    traceName = 'AnaphaseAligned';
-elseif strcmpi(TraceType, 'anaphasealigned3d')
-    traceName = 'AnaphaseAligned3D';
-elseif strcmpi(TraceType, 'fluo') | strcmpi(TraceType, 'unaligned') 
-    traceName = 'Unaligned';
-elseif strcmpi(TraceType, 'fluo3d') | strcmpi(TraceType, 'unaligned3d') 
-    traceName = 'Unaligned3D';
-elseif strcmpi(TraceType, 'tbinned')
-    traceName = 'Tbinned';
-elseif strcmpi(TraceType, 'tbinned3d')
-    traceName = 'Tbinned3D';
-end
-%%
 timeSubDir = 'MeanTraces';
 Nsigfigs = 3;
 %%
-
+NumSets = length(this.ExperimentPrefixes);
 temperatures = flip(unique(this.Temp_sps(this.ProcessedExperiments)));
+NumTemperatures = length(temperatures);
+
+
 APResolution = this.Experiments{1}.APResolution;
-
 APbins = 0:APResolution:1;
+NumAPbins = length(APbins);
 
-legend_labels = this.LegendLabels(IncludedSets);
+
+legend_labels = this.LegendLabels;
 MinimumTraceCount = this.MinimumTraceCount;
-for j=1:length(IncludedSets)%length(temperatures)
-    set_idx = IncludedSets(j);
-    CurrentTemperature = this.Temp_sps(set_idx);
-    for nc_idx=1:length(this.IncludedNCs)
-        NC = this.IncludedNCs(nc_idx);
-        
-        
+
+for SetIndex=1:NumSets%length(temperatures)
+    if ~ismember(SetIndex, this.ProcessedExperiments)
+        continue
+    end
+    resultsFolder = this.Experiments{SetIndex}.resultsFolder;
+    
+    outdir2 = [resultsFolder, filesep, timeSubDir];
+    
+    if ~exist(outdir2, 'dir')
+        mkdir(outdir2)
+    end
+    
+    
+    
+    
+    CurrentTemperature = this.Temp_sps(SetIndex);
+    
+    for NC = this.IncludedNCs
+
         % Prepare Traces for plotting
         
         
         
-        NCTimes = this.MeanProfiles{set_idx}.([traceName, 'CycleFrameTimes']){NC-8};
+        NCTimes = this.MeanProfiles{SetIndex}.([TraceType, 'CycleFrameTimes']){NC-8};
         IncludedRows = 1:length(NCTimes);
-        MeanFluoMat = squeeze(this.MeanProfiles{set_idx}.([traceName, 'CycleMeanTraces'])(IncludedRows,:,NC-8));
-        StdFluoMat = squeeze(this.MeanProfiles{set_idx}.([traceName, 'CycleTraceStdErrors'])(IncludedRows,:,NC-8));
-        NumNucMat = squeeze(this.MeanProfiles{set_idx}.([traceName, 'CycleNumOnNuclei'])(IncludedRows,:,NC-8));
+        MeanFluoMat = squeeze(this.MeanProfiles{SetIndex}.([TraceType, 'CycleMeanTraces'])(IncludedRows,:,NC-8));
+        StdFluoMat = squeeze(this.MeanProfiles{SetIndex}.([TraceType, 'CycleTraceStdErrors'])(IncludedRows,:,NC-8));
+        NumNucMat = squeeze(this.MeanProfiles{SetIndex}.([TraceType, 'CycleNumOnNuclei'])(IncludedRows,:,NC-8));
         
         IncludedRows = find(sum(~isnan(MeanFluoMat),2).' > 0);
         if isempty(IncludedRows)
             continue
+        end
+        
+        IncludedColumns = find(sum(~isnan(MeanFluoMat),1).' > 0);
+        if ~isempty(IncludedColumns)
+            MinAPbin = min(IncludedColumns);
+            MaxAPbin = max(IncludedColumns);
         end
         MeanFluoMat = MeanFluoMat(IncludedRows,:);
         StdFluoMat = StdFluoMat(IncludedRows,:);
@@ -106,41 +134,46 @@ for j=1:length(IncludedSets)%length(temperatures)
         
         MaximumNCTime = max(NCTimes);
         MaxFluo = max(max(MeanFluoMat+StdFluoMat));
+        MinFluo = min(min(MeanFluoMat+StdFluoMat));
         NumFrames = length(NCTimes);
         
         
         
         
         
-        resultsFolder = this.Experiments{set_idx}.resultsFolder;
+       
         
-        outdir2 = [resultsFolder, filesep, timeSubDir];
-        
-        if ~exist(outdir2, 'dir')
-            mkdir(outdir2);
-        end
-        
-        outdir3 = [outdir2, filesep, traceName];
+        outdir3 = [outdir2, filesep, 'NC', num2str(NC)];
         
         if ~exist(outdir3, 'dir')
-            mkdir(outdir3);
+            mkdir(outdir3)
         end
         
-        outdir4 = [outdir3, filesep, datestr(now, 'yyyymmdd')];
+        
+        outdir4 = [outdir3, filesep, TraceType];
+        
+        
         if ~exist(outdir4, 'dir')
             mkdir(outdir4)
+        end
+        
+        
+        outdir5 = [outdir4, filesep, datestr(now, 'yyyymmdd')];
+        
+        if ~exist(outdir5, 'dir')
+            mkdir(outdir5)
         end
         close all
         
         
         FrameProfFig = figure(1);
-        set(FrameProfFig,'units', 'normalized', 'position',[0.01, 0.05, .6, .5]);
+        set(FrameProfFig,'units', 'normalized', 'position',[0.01, 0.05, .6, .6]);
         set(gcf,'color','w');
         FrameProfAx = axes(FrameProfFig);
         
         
         
-        temp_idx = find(temperatures == Temp_sps(this.ProcessedExperiments == set_idx));
+        temp_idx = find(temperatures == CurrentTemperature);
         if IncludeFits
             ci_plotline = fill([0, 1, 1, 0], [0, 0, max(MaxFluo*1.2,1), max(MaxFluo*1.2,1)], colors(temp_idx,:));
             ci_plotline.FaceAlpha = 0.2;
@@ -159,15 +192,19 @@ for j=1:length(IncludedSets)%length(temperatures)
             set(t_peak_plotline,'Visible','off'); %'off' or 'on'
             set(ci_plotline,'Visible','off'); %'off' or 'on'
         end
-        prof = plot(APbins, ones(1, length(APbins)), '.', 'Color', colors(temp_idx,:),  'linestyle', 'none');
-        hold on
+        
+       
         
         eb = errorbar(APbins, ones(1, length(APbins)), .1*ones(1, length(APbins)), 'vertical', 'LineStyle', 'none');
-        
+        hold on
         set(eb, 'color', colors(temp_idx,:), 'LineWidth', 1);
         set(get(get(eb, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
         %set(get(get(eb, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
         
+        
+        prof = plot(APbins, ones(1, length(APbins)),'o',...
+                'MarkerEdgeColor', [0, 0, 0], 'MarkerFaceColor', colors(temp_idx,:),...
+                'MarkerSize', 6, 'LineStyle', '-', 'Color', colors(temp_idx,:));
         
         set(eb,'Visible','off'); %'off' or 'on'
         set(prof,'Visible','off'); %'off' or 'on'
@@ -179,14 +216,15 @@ for j=1:length(IncludedSets)%length(temperatures)
         else
             xlabel('Time since NC start (min)')
         end
-        xlim([0, MaximumNCTime])
         
-        if strcmp(lower(TraceType), 'fluo') | strcmp(lower(TraceType), 'anaphasealigned')  | strcmp(lower(TraceType), 'tbinned')
+       xlim([0-0.01* max(MaximumNCTime), max(MaximumNCTime)*1.1]);
+        
+        if strcmp(lower(TraceType), 'unaligned') | strcmp(lower(TraceType), 'anaphasealigned')  | strcmp(lower(TraceType), 'tbinned')
             ylabel('Fluo (AU)')
         else
             ylabel('3D Fluo (AU)')
         end
-        ylim([0, max(MaxFluo*1.05,1)])
+        ylim([max(0, min(MinFluo*0.95)), max(MaxFluo*1.05,1)])
         %
         
         title(FrameProfAx, {'',...
@@ -195,38 +233,44 @@ for j=1:length(IncludedSets)%length(temperatures)
         
         
         if (NC == 14) & ~IncludeFits
-            legend(FrameProfAx, legend_labels(j), 'Location', 'northeast')
+            legend(FrameProfAx, legend_labels(SetIndex), 'Location', 'northeast')
         elseif (NC < 14) & ~IncludeFits
-            legend(FrameProfAx, legend_labels(j), 'Location', 'northwest')
+            legend(FrameProfAx, legend_labels(SetIndex), 'Location', 'northwest')
         end
-        for i = 1:length(APbins)
+        for i = MinAPbin:MaxAPbin
             APBinHasData = false;
-            
+            set(FrameProfAx.Children(2),'Visible','off'); %'off' or 'on'
+            set(FrameProfAx.Children(1),'Visible','off'); %'off' or 'on'
+            set(get(get(FrameProfAx.Children(1), 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
             
             
             use_idx = NumNucMat(:,i) >= this.MinimumTraceCount;
             
             
             if sum(use_idx) == 0 %| sum(DiffMeanFluoMat(i, use_idx, j) == 0)
-                FrameProfAx.Children(2).XData = NCTimes(use_idx);
-                FrameProfAx.Children(2).YData = zeros(1, length(NCTimes(use_idx)));
                 FrameProfAx.Children(1).XData = NCTimes(use_idx);
                 FrameProfAx.Children(1).YData = zeros(1, length(NCTimes(use_idx)));
-                FrameProfAx.Children(1).YPositiveDelta = zeros(1, length(NCTimes(use_idx)));
-                FrameProfAx.Children(1).YNegativeDelta = zeros(1, length(NCTimes(use_idx)));
+                FrameProfAx.Children(2).XData = NCTimes(use_idx);
+                FrameProfAx.Children(2).YData = zeros(1, length(NCTimes(use_idx)));
+                FrameProfAx.Children(2).YPositiveDelta = zeros(1, length(NCTimes(use_idx)));
+                FrameProfAx.Children(2).YNegativeDelta = zeros(1, length(NCTimes(use_idx)));
                 set(FrameProfAx.Children(1),'Visible','off'); %'off' or 'on'
                 set(FrameProfAx.Children(2),'Visible','off'); %'off' or 'on'
+                set(get(get(FrameProfAx.Children(1), 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
             else
                 APBinHasData = true;
+                set(get(get(FrameProfAx.Children(1), 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'on');
+                set(FrameProfAx.Children(1),'Visible','on'); %'off' or 'on'
+                set(FrameProfAx.Children(2),'Visible','on'); %'off' or 'on'
                 if IncludeFits
                     plot_legend_labels = cell(1, 5);
                     
-                    plot_legend_labels{1} = legend_labels{j};
+                    plot_legend_labels{1} = legend_labels{SetIndex};
                     
                     [t_vector, fit_solution, ci, pos_slope, se_pos_slope, neg_slope,...
                         se_neg_slope, time_on, se_time_on, time_off,...
                         se_time_off, time_peak, se_time_peak, R2] =...
-                        getFittedTrace(this, set_idx, i, NC, TraceType, MaximumNCTime);
+                        getFittedTrace(this, SetIndex, i, NC, TraceType, MaximumNCTime);
                     if ~isempty(t_vector)
                         
                         FrameProfAx.Children(3).YData = fit_solution;
@@ -324,12 +368,12 @@ for j=1:length(IncludedSets)%length(temperatures)
                     
                 end
                 
-                FrameProfAx.Children(2).YData = MeanFluoMat(use_idx, i);
-                FrameProfAx.Children(2).XData = NCTimes(use_idx);
                 FrameProfAx.Children(1).YData = MeanFluoMat(use_idx, i);
                 FrameProfAx.Children(1).XData = NCTimes(use_idx);
-                FrameProfAx.Children(1).YPositiveDelta = StdFluoMat(use_idx, i);
-                FrameProfAx.Children(1).YNegativeDelta  = StdFluoMat(use_idx, i);
+                FrameProfAx.Children(2).YData = MeanFluoMat(use_idx, i);
+                FrameProfAx.Children(2).XData = NCTimes(use_idx);
+                FrameProfAx.Children(2).YPositiveDelta = StdFluoMat(use_idx, i);
+                FrameProfAx.Children(2).YNegativeDelta  = StdFluoMat(use_idx, i);
                 
                 set(FrameProfAx.Children(1),'Visible','on'); %'off' or 'on'
                 set(FrameProfAx.Children(2),'Visible','on'); %'off' or 'on'
@@ -362,8 +406,8 @@ for j=1:length(IncludedSets)%length(temperatures)
                     'FontSize', 10);
             end
             
-            saveas(FrameProfFig,[outdir4, filesep,...
-                FitString,'FluoTrace_NC',num2str(NC),'_APbin', num2str(i),'.png']);
+            saveas(FrameProfFig,[outdir5, filesep,...
+                FitString,'FluoTrace_NC',num2str(NC),'_Bin', num2str(i),'.png']);
             
         end
     end

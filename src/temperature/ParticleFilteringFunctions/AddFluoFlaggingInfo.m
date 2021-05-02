@@ -17,6 +17,7 @@ DeltaFluo = [];
 for CPIndex = 1:length(CompiledParticles{ChN})
     p = CompiledParticles{ChN}(CPIndex);
     if length(p.FlaggingInfo.TrueFrames) == 1
+        CompiledParticles{ChN}(cp).FlaggingInfo.FluoApproved = ones(1, length(p.FlaggingInfo.TrueFrames));
         continue
     end
        
@@ -52,8 +53,15 @@ DeltaFluoCutoff = prctile(DeltaFluo, 99);
 for cp =1:length(CompiledParticles{ChN})
     FluoApproved = NaN(1, length(CompiledParticles{ChN}(cp).Frame));
     if length(CompiledParticles{ChN}(cp).Frame) <= 1
-        FluoApproved(1) = 1;
-        continue
+         if length(FluoApproved) == 1
+            FluoApproved(1) = 1;
+         end
+         FullFluoApproved = zeros(1, length(CompiledParticles{ChN}(cp).FlaggingInfo.TrueFrames));
+         FullFluoApproved(find(ismember(CompiledParticles{ChN}(cp).FlaggingInfo.TrueFrames, CompiledParticles{ChN}(cp).Frame))) = ...
+             FluoApproved;
+         
+         CompiledParticles{ChN}(cp).FlaggingInfo.FluoApproved = FullFluoApproved;
+         continue
     end
     for FrameIndex=2:length(CompiledParticles{ChN}(cp).Frame)
         if FrameIndex == 2
@@ -74,7 +82,7 @@ for cp =1:length(CompiledParticles{ChN})
             end
         elseif sum(FluoApproved(1:(FrameIndex-1)) == 1) > 0
             FluoApproved(FrameIndex) = -1;
-        elseif FrameIndex == max(CompiledParticles{ChN}(cp).Frame)
+        elseif FrameIndex == length(CompiledParticles{ChN}(cp).Frame)
             FluoApproved(FrameIndex) = -1;
             FluoApproved(PrevFrameIndex) = -1;
         else

@@ -10,6 +10,12 @@ if ~exist('verbose', 'var')
 end
 
 liveExperiment = LiveExperiment(Prefix);
+HasHistone = false;
+for i = 1:length(liveExperiment.Channels)
+    if contains(lower(liveExperiment.Channels{i}), 'his')
+        HasHistone = true;
+    end
+end
 APbins = 0:liveExperiment.APResolution:1;
 FrameInfo = getFrameInfo(liveExperiment);
 FrameTimes = [FrameInfo(:).Time]; % in seconds
@@ -37,21 +43,25 @@ for ChN=1:NChannels
         if CompiledParticles{ChN}(cp).schnitzcell.VelocityInfo.SchnitzHasAllFrames
             AllApproved(cp) =  1;
         end
-        if isfield('schnitzcells', 'containsFirstFrameOfCycle')
-            if CompiledParticles{ChN}(cp).schnitzcell.containsFirstFrameOfCycle
-                FirstApproved(cp) =  1;
-            end
-        else
-            if ~isempty(CompiledParticles{ChN}(cp).schnitzcell.anaphaseFrame)
-                if ~CompiledParticles{ChN}(cp).schnitzcell.inferredAnaphaseFrame
+        if HasHistone
+            if isfield('schnitzcells', 'containsFirstFrameOfCycle')
+                if CompiledParticles{ChN}(cp).schnitzcell.containsFirstFrameOfCycle
                     FirstApproved(cp) =  1;
                 end
+            else
+                if ~isempty(CompiledParticles{ChN}(cp).schnitzcell.anaphaseFrame)
+                    if ~CompiledParticles{ChN}(cp).schnitzcell.inferredAnaphaseFrame
+                        FirstApproved(cp) =  1;
+                    end
+                end
             end
+        else
+            FirstApproved(cp) =  1;
         end
         if all(CompiledParticles{ChN}(cp).FlaggingInfo.FrameApprovedFinal == 1)
             PercentageFramesApproved(cp) = 1;
         else
-           PercentageFramesApproved(cp) = sum(CompiledParticles{ChN}(cp).FlaggingInfo.FrameApprovedFinal == 1)/length(CompiledParticles{ChN}(cp).FlaggingInfo.FrameApprovedFinal);
+            PercentageFramesApproved(cp) = sum(CompiledParticles{ChN}(cp).FlaggingInfo.FrameApprovedFinal == 1)/length(CompiledParticles{ChN}(cp).FlaggingInfo.FrameApprovedFinal);
         end
         if ~isempty(find(CompiledParticles{ChN}(cp).FlaggingInfo.FrameApprovedFinal == 0, 1))
             if find(CompiledParticles{ChN}(cp).FlaggingInfo.FrameApprovedFinal == 0, 1) >...
@@ -77,12 +87,12 @@ for ChN=1:NChannels
     Unaligned3DCycleTraceStdErrors =  NaN(numFrames, length(APbins), 6);
     Unaligned3DCycleNumNuclei =  NaN(numFrames, length(APbins), 6);
     Unaligned3DCycleNumOnNuclei =  NaN(numFrames, length(APbins), 6);
-    CycleTraces = {};
-    CycleTraces3D = {};
-    MeanAPs = {};
-    ParticleAPbinIndices = {};
-    UnalignedCycleFrameTimes = {};
-    Unaligned3DCycleFrameTimes = {};
+    CycleTraces = cell(1, 6);
+    CycleTraces3D = cell(1, 6);
+    MeanAPs = cell(1, 6);
+    ParticleAPbinIndices = cell(1, 6);
+    UnalignedCycleFrameTimes = cell(1, 6);
+    Unaligned3DCycleFrameTimes =cell(1, 6);
     
     numBinnedFrames = ceil((max(FrameTimes)-FrameTimes(nc_info(6)))/deltaTbinWidth)+1;
     AnaphaseAlignedCycleMeanTraces = NaN(numBinnedFrames, length(APbins), 6);
@@ -93,10 +103,10 @@ for ChN=1:NChannels
     AnaphaseAligned3DCycleTraceStdErrors =  NaN(numBinnedFrames, length(APbins), 6);
     AnaphaseAligned3DCycleNumNuclei =  NaN(numBinnedFrames, length(APbins), 6);
     AnaphaseAligned3DCycleNumOnNuclei =  NaN(numBinnedFrames, length(APbins), 6);
-    CycleTracesWithAnaphaseAlignment = {};
-    Cycle3DTracesWithAnaphaseAlignment = {};
-    AnaphaseAlignedCycleFrameTimes = {};
-    AnaphaseAligned3DCycleFrameTimes = {};
+    CycleTracesWithAnaphaseAlignment = cell(1, 6);
+    Cycle3DTracesWithAnaphaseAlignment = cell(1, 6);
+    AnaphaseAlignedCycleFrameTimes = cell(1, 6);
+    AnaphaseAligned3DCycleFrameTimes = cell(1, 6);
     
     TbinnedCycleMeanTraces = NaN(numBinnedFrames, length(APbins), 6);
     TbinnedCycleTraceStdErrors =  NaN(numBinnedFrames, length(APbins), 6);
@@ -106,10 +116,10 @@ for ChN=1:NChannels
     Tbinned3DCycleTraceStdErrors =  NaN(numBinnedFrames, length(APbins), 6);
     Tbinned3DCycleNumNuclei =  NaN(numBinnedFrames, length(APbins), 6);
     Tbinned3DCycleNumOnNuclei =  NaN(numBinnedFrames, length(APbins), 6);
-    TbinnedCycleTraces = {};
-    Tbinned3DCycleTraces = {};
-    TbinnedCycleFrameTimes = {};
-    Tbinned3DCycleFrameTimes = {};
+    TbinnedCycleTraces = cell(1, 6);
+    Tbinned3DCycleTraces = cell(1, 6);
+    TbinnedCycleFrameTimes = cell(1, 6);
+    Tbinned3DCycleFrameTimes = cell(1, 6);
     
     
     IncludedNCs = min(CPcycles):max(CPcycles);
@@ -123,8 +133,8 @@ for ChN=1:NChannels
         
         % First calculate means for all traces with no time binning or
         % anaphase alignment.
-
- 
+        
+        
         CycleTraces{NC-8} = NaN(numFrames, length(IncludedTraceIndices));
         CycleTraces3D{NC-8} =  NaN(numFrames, length(IncludedTraceIndices));
         %CycleTraces3Derror =  zeros(numFrames, length(IncludedTraceIndices));
@@ -157,7 +167,7 @@ for ChN=1:NChannels
         Unaligned3DCycleFrameTimes{NC-8}= FrameTimes(IncludedRowsInBin3D)-min(FrameTimes(IncludedRowsInBin3D));
         CycleTraces3D{NC-8} = NC3DCycleTraces(IncludedRowsInBin3D,:);
         NC3DCycleTraces = NC3DCycleTraces(IncludedRowsInBin3D,:);
-         
+        
         NCCycleTraces(NCCycleTraces == 0) = NaN;
         NC3DCycleTraces(NC3DCycleTraces == 0) = NaN;
         
@@ -180,15 +190,21 @@ for ChN=1:NChannels
             UnalignedCycleTraceStdErrors(IncludedRowsInBin, APbinIndex, NC-8) = nanstd(NCCycleTraces(IncludedRowsInBin, IncludedColumnsInBin),0, 2)./...
                 sqrt(length(find(~isnan(NCCycleTraces(IncludedRowsInBin, IncludedColumnsInBin)))));
             UnalignedCycleNumOnNuclei(IncludedRowsInBin, APbinIndex, NC-8) = sum(~isnan(NCCycleTraces(IncludedRowsInBin, IncludedColumnsInBin)), 2);
-            Unaligned3DCycleMeanTraces(IncludedRowsInBin3D, APbinIndex, NC-8) = nanmean(NC3DCycleTraces(IncludedRowsInBin3D, IncludedColumnsInBin), 2);
-            Unaligned3DCycleTraceStdErrors(IncludedRowsInBin3D, APbinIndex, NC-8) = nanstd(NC3DCycleTraces(IncludedRowsInBin3D, IncludedColumnsInBin),0, 2)./...
-                sqrt(length(find(~isnan(NC3DCycleTraces(IncludedRowsInBin, IncludedColumnsInBin)))));
-            Unaligned3DCycleNumOnNuclei(IncludedRowsInBin, APbinIndex, NC-8) = sum(~isnan(NC3DCycleTraces(IncludedRowsInBin, IncludedColumnsInBin)), 2);
+            if ~isempty(IncludedRowsInBin3D)
+                Unaligned3DCycleMeanTraces(IncludedRowsInBin3D, APbinIndex, NC-8) = nanmean(NC3DCycleTraces(IncludedRowsInBin3D, IncludedColumnsInBin), 2);
+                Unaligned3DCycleTraceStdErrors(IncludedRowsInBin3D, APbinIndex, NC-8) = nanstd(NC3DCycleTraces(IncludedRowsInBin3D, IncludedColumnsInBin),0, 2)./...
+                    sqrt(length(find(~isnan(NC3DCycleTraces(IncludedRowsInBin, IncludedColumnsInBin)))));
+                Unaligned3DCycleNumOnNuclei(IncludedRowsInBin, APbinIndex, NC-8) = sum(~isnan(NC3DCycleTraces(IncludedRowsInBin, IncludedColumnsInBin)), 2);
+            else
+                Unaligned3DCycleMeanTraces(IncludedRowsInBin3D, APbinIndex, NC-8) =NaN;
+                Unaligned3DCycleTraceStdErrors(IncludedRowsInBin3D, APbinIndex, NC-8) = NaN;
+                Unaligned3DCycleNumOnNuclei(IncludedRowsInBin, APbinIndex, NC-8) = NaN;
+            end
             
         end
         
         
-     
+        
         
         % Do anaphase alignment and bin
         CurrentNCTraces = CycleTraces{NC-8};
@@ -289,10 +305,18 @@ for ChN=1:NChannels
             AnaphaseAlignedCycleTraceStdErrors(IncludedRowsInBin, APbinIndex, NC-8) = nanstd(AnaphaseAlignedNCCycleTraces(IncludedRowsInBin, IncludedColumnsInBin),0, 2)./...
                 sqrt(AnaphaseAlignedCycleNumOnNuclei(IncludedRowsInBin, APbinIndex, NC-8));
             
-            AnaphaseAligned3DCycleMeanTraces(IncludedRowsInBin3D, APbinIndex, NC-8) = nanmean(AnaphaseAlignedNC3DCycleTraces(IncludedRowsInBin3D, IncludedColumnsInBin), 2);
-            AnaphaseAligned3DCycleNumOnNuclei(IncludedRowsInBin, APbinIndex, NC-8) = sum(~isnan(AnaphaseAlignedNC3DCycleTraces(IncludedRowsInBin, IncludedColumnsInBin)), 2);
-            AnaphaseAligned3DCycleTraceStdErrors(IncludedRowsInBin3D, APbinIndex, NC-8) = nanstd(AnaphaseAlignedNC3DCycleTraces(IncludedRowsInBin3D, IncludedColumnsInBin),0, 2)./...
-                sqrt(AnaphaseAligned3DCycleNumOnNuclei(IncludedRowsInBin3D, APbinIndex, NC-8));
+            if ~isempty(IncludedRowsInBin3D)
+                AnaphaseAligned3DCycleMeanTraces(IncludedRowsInBin3D, APbinIndex, NC-8) = nanmean(AnaphaseAlignedNC3DCycleTraces(IncludedRowsInBin3D, IncludedColumnsInBin), 2);
+                AnaphaseAligned3DCycleNumOnNuclei(IncludedRowsInBin, APbinIndex, NC-8) = sum(~isnan(AnaphaseAlignedNC3DCycleTraces(IncludedRowsInBin, IncludedColumnsInBin)), 2);
+                AnaphaseAligned3DCycleTraceStdErrors(IncludedRowsInBin3D, APbinIndex, NC-8) = nanstd(AnaphaseAlignedNC3DCycleTraces(IncludedRowsInBin3D, IncludedColumnsInBin),0, 2)./...
+                    sqrt(AnaphaseAligned3DCycleNumOnNuclei(IncludedRowsInBin3D, APbinIndex, NC-8));
+            else
+                AnaphaseAligned3DCycleMeanTraces(IncludedRowsInBin3D, APbinIndex, NC-8) = NaN;
+                AnaphaseAligned3DCycleNumOnNuclei(IncludedRowsInBin, APbinIndex, NC-8) = NaN;
+                AnaphaseAligned3DCycleTraceStdErrors(IncludedRowsInBin3D, APbinIndex, NC-8) =NaN;
+            end
+            
+            
         end
         
         % Bin without anaphase alignment
@@ -396,11 +420,19 @@ for ChN=1:NChannels
             TbinnedCycleNumOnNuclei(IncludedRowsInBin, APbinIndex, NC-8) = sum(~isnan(TbinnedNCCycleTraces(IncludedRowsInBin, IncludedColumnsInBin)), 2);
             TbinnedCycleTraceStdErrors(IncludedRowsInBin, APbinIndex, NC-8) = nanstd(TbinnedNCCycleTraces(IncludedRowsInBin, IncludedColumnsInBin),0, 2)./...
                 sqrt(TbinnedCycleNumOnNuclei(IncludedRowsInBin, APbinIndex, NC-8));
-            Tbinned3DCycleMeanTraces(IncludedRowsInBin3D, APbinIndex, NC-8) = nanmean(TbinnedNC3DCycleTraces(IncludedRowsInBin3D, IncludedColumnsInBin), 2);
             
-            Tbinned3DCycleNumOnNuclei(IncludedRowsInBin, APbinIndex, NC-8) = sum(~isnan(TbinnedNC3DCycleTraces(IncludedRowsInBin, IncludedColumnsInBin)), 2);
-            Tbinned3DCycleTraceStdErrors(IncludedRowsInBin3D, APbinIndex, NC-8) = nanstd(TbinnedNC3DCycleTraces(IncludedRowsInBin3D, IncludedColumnsInBin),0, 2)./...
-                sqrt(Tbinned3DCycleNumOnNuclei(IncludedRowsInBin3D, APbinIndex, NC-8));
+            if ~isempty(IncludedRowsInBin3D)
+                Tbinned3DCycleMeanTraces(IncludedRowsInBin3D, APbinIndex, NC-8) = nanmean(TbinnedNC3DCycleTraces(IncludedRowsInBin3D, IncludedColumnsInBin), 2);
+                
+                Tbinned3DCycleNumOnNuclei(IncludedRowsInBin, APbinIndex, NC-8) = sum(~isnan(TbinnedNC3DCycleTraces(IncludedRowsInBin, IncludedColumnsInBin)), 2);
+                Tbinned3DCycleTraceStdErrors(IncludedRowsInBin3D, APbinIndex, NC-8) = nanstd(TbinnedNC3DCycleTraces(IncludedRowsInBin3D, IncludedColumnsInBin),0, 2)./...
+                    sqrt(Tbinned3DCycleNumOnNuclei(IncludedRowsInBin3D, APbinIndex, NC-8));
+            else
+                Tbinned3DCycleMeanTraces(IncludedRowsInBin3D, APbinIndex, NC-8) = NaN;
+                
+                Tbinned3DCycleNumOnNuclei(IncludedRowsInBin, APbinIndex, NC-8) = NaN;
+                Tbinned3DCycleTraceStdErrors(IncludedRowsInBin3D, APbinIndex, NC-8) =NaN;
+            end
         end
         
         % Check to make sure calculations make sense
@@ -440,22 +472,22 @@ for ChN=1:NChannels
     
     TestLengths1 = [size(UnalignedCycleMeanTraces, 1), size(UnalignedCycleNumNuclei, 1), size(UnalignedCycleNumOnNuclei, 1), size(UnalignedCycleTraceStdErrors, 1)];
     if ~all(TestLengths1 == TestLengths1(1))
-         disp(['Inconsistence size for fluo calculations.'])
+        disp(['Inconsistence size for fluo calculations.'])
     end
     
     TestLengths2 = [size(Unaligned3DCycleMeanTraces, 1), size(Unaligned3DCycleNumNuclei, 1), size(Unaligned3DCycleNumOnNuclei, 1), size(Unaligned3DCycleTraceStdErrors, 1)];
     if ~all(TestLengths2 == TestLengths2(1))
-         disp(['Inconsistence size for 3D fluo calculations.'])
+        disp(['Inconsistence size for 3D fluo calculations.'])
     end
     
     TestLengths3 = [size(AnaphaseAlignedCycleMeanTraces, 1), size(AnaphaseAlignedCycleNumNuclei, 1), size(AnaphaseAlignedCycleNumOnNuclei, 1), size(AnaphaseAlignedCycleTraceStdErrors, 1)];
     if ~all(TestLengths3 == TestLengths3(1))
-         disp(['Inconsistence size for anaphase aligned calculations.'])
+        disp(['Inconsistence size for anaphase aligned calculations.'])
     end
     
     TestLengths4 = [size(AnaphaseAligned3DCycleMeanTraces, 1), size(AnaphaseAligned3DCycleNumNuclei, 1), size(AnaphaseAligned3DCycleNumOnNuclei, 1), size(AnaphaseAligned3DCycleTraceStdErrors, 1)];
     if ~all(TestLengths4 == TestLengths4(1))
-         disp(['Inconsistence size for 3D anaphase aligned calculations.'])
+        disp(['Inconsistence size for 3D anaphase aligned calculations.'])
     end
     
     MeanProfiles = {};

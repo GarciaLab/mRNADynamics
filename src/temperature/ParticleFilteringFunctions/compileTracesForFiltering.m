@@ -189,30 +189,10 @@ for ChN=1:NChannels
                     CompiledParticles{ChN}(k).fittedTon = [];
                 end
                 
-                %Extract position info and general Gauss3D fit info
-                try
-                    [~,gx_vec,gy_vec,gz_vec,g_fits_cell,f3_vec,f3_raw_vec]=...
-                        getGauss3DFitInfo(k,CompiledParticles{ChN},Spots{ChN});
-                    threeDFlag = ~all(isnan(gx_vec));
-                    
-                catch
-                    
-                    warning('Didn''t have complete Gauss 3D info');
-                    threeDFlag = false;
-                    
-                end
-                
+               
                 %threeDFlag = false; %setting this to false until gaussian fits are fixed
                 
-                if threeDFlag
-                    CompiledParticles{ChN}(k).xPosGauss3D = gx_vec;
-                    CompiledParticles{ChN}(k).yPosGauss3D = gy_vec;
-                    CompiledParticles{ChN}(k).zPosGauss3D = gz_vec;
-                    CompiledParticles{ChN}(k).Fluo3DGauss = f3_vec;
-                    CompiledParticles{ChN}(k).Fluo3DRaw = f3_raw_vec;
-                    CompiledParticles{ChN}(k).zPosGauss3D = gz_vec;
-                    CompiledParticles{ChN}(k).fitParamsGauss3D = g_fits_cell;
-                end
+                
                 %Extract information from Spots about fluorescence and background
                 plotTraceSettings = PlotTraceSettings();
                 
@@ -237,6 +217,36 @@ for ChN=1:NChannels
                 CompiledParticles{ChN}(k).FluoGauss3DError = plotTraceSettings.ErrorIntegralGauss3D;
                 CompiledParticles{ChN}(k).ampdog3 = ampdog3;
                 CompiledParticles{ChN}(k).ampdog3Max = ampdog3Max;
+                
+                 %Extract position info and general Gauss3D fit info
+                try
+                    [~,gx_vec,gy_vec,gz_vec,g_fits_cell,f3_vec,f3_raw_vec]=...
+                        getGauss3DFitInfo(k,CompiledParticles{ChN},Spots{ChN});
+                    threeDFlag = ~all(isnan(gx_vec));
+                    
+                catch
+                    
+                    warning('Didn''t have complete Gauss 3D info');
+                    threeDFlag = false;
+                    
+                end
+                
+                
+                if threeDFlag
+                    CompiledParticles{ChN}(k).xPosGauss3D = gx_vec;
+                    CompiledParticles{ChN}(k).yPosGauss3D = gy_vec;
+                    CompiledParticles{ChN}(k).zPosGauss3D = gz_vec;
+                    CompiledParticles{ChN}(k).Fluo3DGauss = f3_vec;
+                    CompiledParticles{ChN}(k).Fluo3DRaw = f3_raw_vec;
+                    CompiledParticles{ChN}(k).fitParamsGauss3D = g_fits_cell;
+                else
+                    CompiledParticles{ChN}(k).xPosGauss3D  = NaN(1, length(CompiledParticles{ChN}(k).Fluo));
+                    CompiledParticles{ChN}(k).yPosGauss3D  = NaN(1, length(CompiledParticles{ChN}(k).Fluo));
+                    CompiledParticles{ChN}(k).zPosGauss3D  = NaN(1, length(CompiledParticles{ChN}(k).Fluo));
+                    CompiledParticles{ChN}(k).Fluo3DGauss  = NaN(1, length(CompiledParticles{ChN}(k).Fluo));
+                    CompiledParticles{ChN}(k).Fluo3DRaw  = NaN(1, length(CompiledParticles{ChN}(k).Fluo));
+                    CompiledParticles{ChN}(k).fitParamsGauss3D  = NaN(1, length(CompiledParticles{ChN}(k).Fluo));
+                end
                 
                 
                 

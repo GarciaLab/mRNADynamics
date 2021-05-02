@@ -36,6 +36,14 @@ classdef LTP
         
         APLengths = [];
         
+        EmbryoStats = {};
+        
+        UniqueTemperatures = [];
+        TimingCoeffs = [];
+        FluoCoeffs = [];
+        
+        FluoScalingInfo = {};
+        TimeScalingInfo = {};
         
         
     end
@@ -133,7 +141,7 @@ classdef LTP
             this = AddTFProfiles(this);
             this = AddNBFluoOffsets(this);
             this.APLengths = AddAPLengths(this);
-            
+            this = AddHealthInfo(this);
         end
         
         

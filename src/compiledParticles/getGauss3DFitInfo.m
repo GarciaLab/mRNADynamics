@@ -1,6 +1,9 @@
 function [particle_frames,gx_vec,gy_vec,gz_vec,g_fits_cell,f3_vec,f3_raw_vec]=...
     getGauss3DFitInfo(CurrentParticle,Particles,Spots)
 
+
+% Updated by GM 3/1/2021 to accomodate Nick's new fitting variables
+
 % NL 5/2/2019
 
 %First, get the different intensity values corresponding to this particle.
@@ -20,7 +23,8 @@ for i=1:length(particle_frames)
         gy_vec(i) = GaussPos(2);
         gz_vec(i) = GaussPos(3);    
         f3_vec(i) = spot.gauss3DIntensity;
-        f3_raw_vec(i) = spot.gauss3DIntensityRaw;        
+        %f3_raw_vec(i) = spot.gauss3DIntensityRaw;    
+        f3_raw_vec(i) = spot.GaussIntensity3DRaw; % GM changed 3/1/21
         % general fit info
         g_fits_cell{i} = spot.SpotFits3D;  
     end

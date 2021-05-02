@@ -4,6 +4,9 @@ function PlotLTMLogSubplotsTrapParamsVsTemp(this, parameter, outdir, varargin)
 % PlotTitle, PlottingColors, UseDifferentColors,
 % UseDiffProfiles, UsePhysicalAPLength
 IncludeFits = true;
+UseRescaledFluo = false;
+UseRescaledParamTiming = false;
+
 x = 1;
 while x <= length(varargin)
     if strcmpi(varargin{x}, 'plottitle')
@@ -17,6 +20,13 @@ while x <= length(varargin)
         x = x+1;
     elseif strcmpi(varargin{x}, 'ExcludeFits')
         IncludeFits = false;
+    elseif strcmpi(varargin{x}, 'userescaledtime') | strcmpi(varargin{x}, 'rescaletime') | ...
+            strcmpi(varargin{x}, 'rescaletiming') | strcmpi(varargin{x}, 'userescaledtiming') | ...
+            strcmpi(varargin{x}, 'userescaledparamtime') | strcmpi(varargin{x}, 'rescaleparamtime') | ...
+            strcmpi(varargin{x}, 'rescaleparamtiming') | strcmpi(varargin{x}, 'userescaledparamtiming')
+        UseRescaledParamTiming = true;
+    elseif strcmpi(varargin{x}, 'rescalefluo') | strcmpi(varargin{x}, 'userescaledfluo')
+        UseRescaledFluo = true;
     end
     x = x+1;
 end
@@ -81,6 +91,38 @@ else
 end
 
 
+if strcmpi(parameter, 'fractionons') | strcmpi(parameter, 'fractionon') 
+    UseRescaledFluo = false;
+    UseRescaledParamTiming = false;
+elseif strcmpi(parameter, 'meanspotfluos') | strcmpi(parameter, 'meanspotfluo')  | ...
+        strcmpi(parameter, 'maxfluos') | strcmpi(parameter, 'maxfluo') | ...
+        strcmpi(parameter, 'plateauheights') | strcmpi(parameter, 'plateauheight') | ...
+        strcmpi(parameter, 'mrnaproductions') | strcmpi(parameter, 'mrnaproduction') |...
+        strcmpi(parameter, 'totalmrnaproductions') | strcmpi(parameter, 'totalmrnaproduction') | ...
+        strcmpi(parameter, 'unweightedmrnaproductions') | strcmpi(parameter, 'unweightedmrnaproduction') | ...
+        strcmpi(parameter, 'unweightedtotalmrnaproductions') | strcmpi(parameter, 'unweightedtotalmrnaproduction')
+    
+    UseRescaledParamTiming = false;
+elseif strcmpi(parameter, 'timeons') | strcmpi(parameter, 'timeon') | ...
+        strcmpi(parameter, 'timeoffs') | strcmpi(parameter, 'timeoff') | ...
+        strcmpi(parameter, 'elongationtimes') | strcmpi(parameter, 'elongationtime') | ...
+        strcmpi(parameter, 'elongationrates') | strcmpi(parameter, 'elongationrate')
+    UseRescaledFluo = false;
+
+
+elseif ~(strcmpi(parameter, 'loadingrates') | strcmpi(parameter, 'loadingrate') | ...
+        strcmpi(parameter, 'initiationrates') | strcmpi(parameter, 'initiationrate') |...
+        strcmpi(parameter, 'meaninitiationrates') | strcmpi(parameter, 'meaninitiationrate') | ...
+        strcmpi(parameter, 'unloadingrates') | strcmpi(parameter, 'unloadingrate'))
+    error('Invalid choice of parameter.')
+end
+
+if UseRescaledParamTiming
+    IncludeFits = false;
+end
+
+
+
 
 %%
 if ~exist(outdir, 'dir')
@@ -90,11 +132,34 @@ end
 Temp_obs = this.Temp_obs;
 Temp_sp = this.Temp_sps;
 
+
+if UseRescaledFluo
+    FluoString = 'RescaledFluo';
+else
+    FluoString = '';
+end
+
+if UseRescaledParamTiming
+    TimingString = 'DevTime';
+else
+    TimingString = '';
+end
+
 if strcmp(lower(PlottingColors), 'default')
     [~, colors] = getColorPalettes();
 elseif strcmp(lower(PlottingColors), 'pboc')
     [colors, ~] = getColorPalettes();
 end
+
+SpecificDirString = FluoString;
+if ~isempty(TimingString)
+    if ~isempty(SpecificDirString)
+        SpecificDirString = [SpecificDirString, '_', TimingString];
+    else
+        SpecificDirString = TimingString;
+    end
+end
+
 
 %%
 
@@ -126,7 +191,7 @@ end
 
 %% Load relevant parameters into memory
 [PlottedParams, PlottedParamSEs,R2s, ylab,OutputString,GlobalPlotYmax,GlobalPlotYmin,LogPlotYmin] = ...
-    getPlottingVariables(this, parameter,  TraceType, R2bound);
+    getPlottingVariables(this, parameter,  TraceType, R2bound, UseRescaledFluo, UseRescaledParamTiming);
 
 % Calculate Plot Xlims
 
@@ -147,9 +212,16 @@ outdir2 = [outdir,filesep,OutputString];
 if ~exist(outdir2, 'dir')
     mkdir(outdir2)
 end
-outdir3 = [outdir2, filesep, TraceType];
-if ~exist(outdir3, 'dir')
-    mkdir(outdir3)
+if isempty(SpecificDirString)
+    outdir3 = [outdir2, filesep, TraceType];
+    if ~exist(outdir3, 'dir')
+        mkdir(outdir3)
+    end
+else
+    outdir3 = [outdir2, filesep, TraceType, filesep, SpecificDirString];
+    if ~exist(outdir3, 'dir')
+        mkdir(outdir3)
+    end
 end
 outdir4 = [outdir3, filesep, datestr(now, 'yyyymmdd')];
 if ~exist(outdir4, 'dir')
@@ -264,8 +336,13 @@ for nc_idx=1:length(ValidNCIndices)
         
         
         if IncludeFits
-            [fitx,fity, ci, Ea, se_Ea, LogA, se_LogA, fitR2] = ...
-                getActivationEnergyFitTraces(this, parameter, NC, APindex, TraceType);
+            if UseRescaledFluo
+                [fitx,fity, ci, Ea, se_Ea, LogA, se_LogA, fitR2] = ...
+                    getFluoAdjustedActivationEnergyFitTraces(this, parameter, NC, APindex, TraceType);
+            else
+                [fitx,fity, ci, Ea, se_Ea, LogA, se_LogA, fitR2] = ...
+                    getActivationEnergyFitTraces(this, parameter, NC, APindex, TraceType);
+            end
             if ~isempty(fity)
                 curve1 = ci(:,1).';
                 curve2 = ci(:,2).';
@@ -576,7 +653,7 @@ for nc_idx=1:length(ValidNCIndices)
     han.Title.FontWeight = 'normal';
     %try
     %
-    saveas(FrameProfFig,[outdir4, filesep,...
-        'LogSubplots', OutputString,  '_NC',num2str(NC),'.png']);
+    outpath = [outdir4, filesep,'LogSubplots', OutputString,  '_NC',num2str(NC),'.png'];
+    saveas(FrameProfFig,outpath);
 end
 close all

@@ -3,8 +3,8 @@ function CompiledNuclei = AddQCInfoToCompiledNuclei(Prefix, varargin)
 UseZInfo = true;
 UseHistoneInfo = true;
 
-x = 0;
-while x < length(varargin)
+x = 1;
+while x <= length(varargin)
     if strcmp(lower(varargin{x}), 'nozinfo')
         UseZInfo = false;
     elseif strcmp(lower(varargin{x}), 'nohistone')
@@ -30,7 +30,11 @@ xDim = liveExperiment.xDim;
 yDim = liveExperiment.yDim;
 zDim = liveExperiment.zDim;
 load([liveExperiment.resultsFolder,filesep,'CompiledNuclei.mat']);
+load([liveExperiment.resultsFolder,filesep,'HealthSummary.mat']);
 
+FinishedNuclearTracking = HealthSummary.NuclearTrackingDone;
+
+    
 
 %  Add spot fluorescence information for each particle z-stack in CompiledParticles
 
@@ -53,6 +57,8 @@ end
 if NoHistone
     UseHistoneInfo = false;
 end
+
+
 
 his_zpadding = 1;
 input_zpadding = 2;

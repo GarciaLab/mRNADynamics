@@ -13,6 +13,8 @@ SkipBinnedParamsVsAP = false;
 SkipBinnedParamsVsTemp = false;
 SkipAPSubplots = false;
 IncludeFits = true;
+UseRescaledParamTiming = false;
+UseRescaledFluo = false;
 
 subfn_varargin = {};
 x = 1;
@@ -49,6 +51,15 @@ while x <= length(varargin)
     elseif strcmp(lower(varargin{x}), 'tracetype')
         TraceType = lower(varargin{x+1});
         x = x+1;
+    elseif strcmpi(varargin{x}, 'userescaledtime') | strcmpi(varargin{x}, 'rescaletime') | ...
+            strcmpi(varargin{x}, 'rescaletiming') | strcmpi(varargin{x}, 'userescaledtiming') | ...
+            strcmpi(varargin{x}, 'userescaledparamtime') | strcmpi(varargin{x}, 'rescaleparamtime') | ...
+            strcmpi(varargin{x}, 'rescaleparamtiming') | strcmpi(varargin{x}, 'userescaledparamtiming')
+        UseRescaledParamTiming = true;
+        subfn_varargin = [subfn_varargin, 'UseRescaledParamTiming'];
+    elseif strcmpi(varargin{x}, 'rescalefluo') | strcmpi(varargin{x}, 'userescaledfluo')
+        UseRescaledFluo = true;
+        subfn_varargin = [subfn_varargin, 'UseRescaledFluo'];
     end
     x = x+1;
 end

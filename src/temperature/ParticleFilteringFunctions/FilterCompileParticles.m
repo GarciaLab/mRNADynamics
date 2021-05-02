@@ -1,6 +1,26 @@
-function [CompiledParticles] = FilterCompileParticles(Prefix)
+function [CompiledParticles] = FilterCompileParticles(Prefix, FluoString)
 %% INITIALIZE ALL SAVED VARIABLES
 % Please initialize any new variables you have added and want to save!!!!
+
+
+
+FluoOptions = {'Fluo3DGauss', 'Fluo', 'Fluo3', 'FluoGauss'};
+if ~exist('FluoString', 'var')
+    FluoString = chooseFluo(FluoOptions);
+else
+    foundmatch = false;
+    for i=1:length(FluoOptions)
+        fn = FluoOptions{i};
+        if contains(fn, FluoString)
+            foundmatch = true;
+            break
+        end
+    end
+    if ~foundmatch 
+       disp('Could not find matching fluorescence field. Please select a default fluorescence field.')
+       FluoString = chooseFluo(FluoOptions);
+    end
+end
 
 savedVariables = {};
 
@@ -305,7 +325,7 @@ end
 
 CompiledParticles = CompileParticlesForFiltering(Prefix, 'SkipAll', 'UseAll');   
 schnitzcells = getSchnitzcells(liveExperiment);
-CompiledParticles = AddQCInfoToCompiledParticles(Prefix, CompiledParticles);
+CompiledParticles = AddQCInfoToCompiledParticles(Prefix, CompiledParticles, FluoString);
 
 
 %%

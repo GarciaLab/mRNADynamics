@@ -1,5 +1,6 @@
 function [BinnedParams, BinnedSEParams, Counts, ParamTemperatures, ParamSETemperatures] = ...
     getBinnedPlottingVariables(this, PlottedParams, PlottedParamSEs,R2s, R2bound)
+%%
 if ~exist('R2s', 'var')
     R2s = ones(size(PlottedParams));
 end
@@ -7,18 +8,19 @@ if ~exist('R2bound', 'var')
     R2bound = 0;
 end
 
-temperatures = flip(unique(this.Temp_sps(this.ProcessedExperiments)));
+%%
+if isfield(this, 'UniqueTemperatures')
+    temperatures = this.UniqueTemperatures;
+else
+    temperatures = flip(unique(this.Temp_sps(this.ProcessedExperiments)));
+end
 temp_obs = this.Temp_obs;
 se_temp_obs = 0.5*ones(1, length(temp_obs));
 APResolution = this.Experiments{1}.APResolution;
 Nbins = uint8(1/APResolution+1);
 
-UseSetVector = zeros(1, size(PlottedParams, 1));
-for i = 1:length(UseSetVector)
-    if ismember(i, this.ProcessedExperiments)
-        UseSetVector(i) = 1;
-    end
-end
+UseSetVector = ismember(1:size(PlottedParams, 1), this.ProcessedExperiments);
+
 if ndims(PlottedParams) == 3
     BinnedParams = NaN(length(temperatures), Nbins, 6);
     BinnedSEParams = NaN(length(temperatures), Nbins, 6);

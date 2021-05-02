@@ -1,10 +1,9 @@
 function PlotLTPSingleTempFluoTraces(this, outdir, varargin)
 %%
 
-% PlotTitle, PlottingColors, UseDifferentColors,
-% UseDiffProfiles, UsePhysicalAPLength
 
-
+UseOffsets = false;
+NormedCycleTimes = false;
 
 x = 1;
 while x <= length(varargin)
@@ -14,12 +13,17 @@ while x <= length(varargin)
     elseif strcmp(lower(varargin{x}), 'plottingcolors')
         PlottingColors = varargin{x+1};
         x = x+1;
+    elseif strcmpi(varargin{x}, 'subtractoffsets') | strcmpi(varargin{x}, 'useoffsets') 
+        UseOffsets = true;
+    elseif strcmpi(varargin{x}, 'NormalizeCycleTimes')
+        NormedCycleTimes = true;
     elseif strcmp(lower(varargin{x}), 'tracetype')
         TraceType = lower(varargin{x+1});
         x = x+1;
     end
     x = x+1;
 end
+
 
 if ~exist('PlottingColors', 'var')
     PlottingColors = 'default';
@@ -28,23 +32,24 @@ elseif ~strcmp(lower(PlottingColors), 'gradient') & ~strcmp(lower(PlottingColors
 end
 if ~exist('TraceType', 'var')
     TraceType = 'anaphasealigned';
-elseif ~strcmp(lower(TraceType), 'unaligned') &  ~strcmp(lower(TraceType), 'anaphasealigned')& ~strcmp(lower(TraceType), 'tbinned')
-    error('Invalid choice of trace type. Can use either "unaligned", "anaphasealigned", or "tbinned".') % change to error
+elseif  ~strcmp(lower(TraceType), 'tbinned')  & ~strcmp(lower(TraceType), 'anaphasealigned')
+    error('Invalid choice of trace type. Can use either "tbinned" or "anaphasealigned".') % change to error
 end
+
+
+%%
+if strcmpi(TraceType, 'anaphasealigned')
+    TraceType = 'AnaphaseAligned';
+elseif strcmpi(TraceType, 'tbinned')
+    TraceType = 'Tbinned';
+end
+
+
+%%
 
 if ~exist(outdir, 'dir')
     mkdir(outdir)
 end
-%%
-if strcmpi(TraceType, 'anaphasealigned')
-    traceName = 'AnaphaseAligned';
-elseif strcmpi(TraceType, 'unaligned')
-    traceName = 'Unaligned';
-elseif strcmpi(TraceType, 'tbinned')
-    traceName = 'Tbinned';
-end
-
-%%
 
 
 Temp_obs = this.Temp_obs;
@@ -63,6 +68,19 @@ else
     GradString = 'Gradient';
 end
 
+if UseOffsets
+    OffsetString = 'Offset';
+else
+    OffsetString = '';
+end
+
+
+if NormedCycleTimes
+    NormString = 'Normalized';
+else
+    NormString = '';
+end
+
 
 
 %%
@@ -73,8 +91,9 @@ NumTemperatures = length(temperatures);
 
 
 APResolution = this.Experiments{1}.APResolution;
-
 APbins = 0:APResolution:1;
+NumAPbins = length(APbins);
+
 
 legend_labels = this.LegendLabels;
 MinimumTraceCount = this.MinimumNuclearCount;
@@ -96,47 +115,78 @@ end
 
 
 
-for NC=14
+for NC=this.IncludedNCs
     
+    if NormedCycleTimes & NC == 14
+        continue
+    end
     
-    for TemperatureIndex = 2%1:length(temperatures)
-        
+    for TemperatureIndex = 1:length(temperatures)
+
         CurrentTemperature = temperatures(TemperatureIndex);
         if isempty(TempMatches{TemperatureIndex})
             continue
         end
-        outdir2 = [outdir, filesep, traceName, 'T', strrep(num2str(CurrentTemperature), '.', '_'), 'C_NC', num2str(NC)];
+        outdir2 = [outdir, filesep, 'T', strrep(num2str(CurrentTemperature), '.', '_'), 'C_NC', num2str(NC)];
+        
         if ~exist(outdir2, 'dir')
             mkdir(outdir2)
         end
-        outdir3 = [outdir2, filesep, datestr(now, 'yyyymmdd')];
+        
+        if ~NormedCycleTimes
+            outdir3 = [outdir2, filesep, TraceType];
+        else
+            outdir3 = [outdir2, filesep, TraceType, '_NormalizedNCTimes'];
+        end
+      
         if ~exist(outdir3, 'dir')
             mkdir(outdir3)
+        end
+        
+        outdir4 = [outdir3, filesep, datestr(now, 'yyyymmdd')];
+        
+        if ~exist(outdir4, 'dir')
+            mkdir(outdir4)
         end
       
         
         % Prepare Traces for plotting
         MaximumNCTimes = NaN(1, length(TempMatches{TemperatureIndex}));
         MaxFluos = NaN(1, length(TempMatches{TemperatureIndex}));
-        NumFrames = NaN(1,length(TempMatches{TemperatureIndex}));
-        SetMinAllowedAP = NaN(1,length(TempMatches{TemperatureIndex}));
-        SetMaxAllowedAP = NaN(1,length(TempMatches{TemperatureIndex}));
+        MinFluos = NaN(1, length(TempMatches{TemperatureIndex}));
+        NumTimePoints = NaN(1,length(TempMatches{TemperatureIndex}));
         MeanFluoMats = cell(1, length(TempMatches{TemperatureIndex}));
         StdFluoMats = cell(1, length(TempMatches{TemperatureIndex}));
         NumNucMats = cell(1, length(TempMatches{TemperatureIndex}));
         NCTimes = cell(1, length(TempMatches{TemperatureIndex}));
+        MinAPs = NaN(1, length(TempMatches{TemperatureIndex}));
+        MaxAPs = NaN(1,length(TempMatches{TemperatureIndex}));
         
         for idx2=1:length(TempMatches{TemperatureIndex})
             idx = TempMatches{TemperatureIndex}(idx2);
             if ~ismember(idx, this.ProcessedExperiments)
                 continue
             end
-            ExpNCTimes = this.TFProfiles{idx}.([traceName, 'CycleFrameTimes']){NC-8};
+            ExpNCTimes = this.TFProfiles{idx}.([TraceType, 'CycleFrameTimes']){NC-8};
             IncludedRows = 1:length(ExpNCTimes);
-            ExpFluoMat = squeeze(this.TFProfiles{idx}.([traceName, 'CycleMeanTraces'])(IncludedRows,:,NC-8));
-            ExpStdMat = squeeze(this.TFProfiles{idx}.([traceName, 'CycleTraceStdErrors'])(IncludedRows,:,NC-8));
-            ExpNumNucMat = squeeze(this.TFProfiles{idx}.([traceName, 'CycleNumOnNuclei'])(IncludedRows,:,NC-8));
+            ExpFluoMat = squeeze(this.TFProfiles{idx}.([TraceType, 'CycleMeanTraces'])(IncludedRows,:,NC-8));
+            ExpStdMat = squeeze(this.TFProfiles{idx}.([TraceType, 'CycleTraceStdErrors'])(IncludedRows,:,NC-8));
+            ExpNumNucMat = squeeze(this.TFProfiles{idx}.([TraceType, 'CycleNumOnNuclei'])(IncludedRows,:,NC-8));
+            NCLength = this.EmbryoStats.NCDivisionInfo(idx,NC-8);
             
+            if UseOffsets 
+                IncludedRows2 = uint16(ExpNCTimes/this.time_delta+1);
+                
+                ExpOffsets = squeeze(this.SetFluoOffsets.(TraceType).mean(idx, IncludedRows2,NC-8)).';
+                ExpOffsetStd = squeeze(this.SetFluoOffsets.(TraceType).std(idx, IncludedRows2,NC-8)).';
+                ExpOffsetCount = squeeze(this.SetFluoOffsets.(TraceType).count(idx, IncludedRows2,NC-8)).';
+            end
+            
+            IncludedColumns = find(sum(~isnan(ExpFluoMat),1).' > 0);
+            if ~isempty(IncludedColumns)
+                MinAPs(idx2) = min(IncludedColumns);
+                MaxAPs(idx2) = max(IncludedColumns);
+            end
             
             IncludedRows = find(sum(~isnan(ExpFluoMat),2).' > 0);
             if isempty(IncludedRows)
@@ -145,53 +195,75 @@ for NC=14
                 NumNucMats{idx2} = [];
                 NCTimes{idx2} = [];
             else
+
                 
-                MeanFluoMats{idx2} = ExpFluoMat(IncludedRows,:);
-                StdFluoMats{idx2} = ExpStdMat(IncludedRows,:);
+           
+                
+                if ~UseOffsets
+                    MeanFluoMats{idx2} = ExpFluoMat(IncludedRows,:);
+                    StdFluoMats{idx2} = ExpStdMat(IncludedRows,:);
+                    
+                else
+                    StdErrorOffsetVector = ExpOffsetStd(IncludedRows)./sqrt(ExpOffsetCount(IncludedRows));
+                    StdErrorOffsetMat = repmat(StdErrorOffsetVector, 1, NumAPbins);
+                    FluoOffsetVector = ExpOffsets(IncludedRows);
+                    FluoOffsetMat = repmat(FluoOffsetVector, 1, NumAPbins);
+                    MeanMat = ExpFluoMat(IncludedRows,:)-FluoOffsetMat;
+                    StdMat = sqrt(ExpStdMat(IncludedRows,:).^2 + (StdErrorOffsetMat).^2);
+                    MeanFluoMats{idx2} = MeanMat;
+                    StdFluoMats{idx2} = StdMat;
+                    
+                end
                 NumNucMats{idx2} = ExpNumNucMat(IncludedRows,:);
                 
-                NCTimes{idx2} = ExpNCTimes(IncludedRows)/60;
+                if ~NormedCycleTimes
+                    NCTimes{idx2} = ExpNCTimes(IncludedRows)/60;
+                else
+                    NCTimes{idx2} = (ExpNCTimes(IncludedRows)/60)/NCLength;
+                end
                 
                 MaximumNCTimes(idx2) = max(NCTimes{idx2});
                 MaxFluos(idx2) = max(max(MeanFluoMats{idx2}+StdFluoMats{idx2}));
-                NumFrames(idx2) = length(NCTimes{idx2});
+                MinFluos(idx2) = min(min(MeanFluoMats{idx2}+StdFluoMats{idx2}));
+                NumTimePoints(idx2) = uint16(max(NCTimes{idx2})/(this.time_delta/60)+1);
             end
             
-            SetAllowedAPs = find(sum(~isnan(MeanFluoMats{idx2}), 1) > 0);
-            if ~isempty(SetAllowedAPs)
-                SetMinAllowedAP(idx2) = nanmin(SetAllowedAPs);
-                SetMaxAllowedAP(idx2) = nanmax(SetAllowedAPs);
-            end
+    
         end
         
-        if all(isnan(NumFrames))
+        if all(isnan(NumTimePoints))
             continue
         end
         
-        ObservedAPs = nanmin(SetMinAllowedAP):nanmax(SetMaxAllowedAP);
+        MinAPbin = nanmin(MinAPs);
+        MaxAPbin = nanmax(MaxAPs);
+        
+        ObservedAPs =MinAPbin:MaxAPbin;
         
         close all
         
-        eb = cell(1, length(TempMatches{TemperatureIndex}));
-        prof = cell(1, length(TempMatches{TemperatureIndex}));
+        
         FrameProfFig = figure(1);
         set(FrameProfFig,'units', 'normalized', 'position',[0.01, 0.05, .6, .6]);
         set(gcf,'color','w');
         FrameProfAx = axes(FrameProfFig);
+        eb = cell(1, length(TempMatches{TemperatureIndex}));
+        prof = cell(1, length(TempMatches{TemperatureIndex}));
+        
+        
         for idx =1:length(TempMatches{TemperatureIndex})
             
             if strcmp(lower(PlottingColors), 'gradient')
                 temp_idx = find(abs(Temp_range - Temp_obs(idx)) == min(abs(Temp_range - Temp_obs(TempMatches{TemperatureIndex}(idx)))), 1);
-                marker_idx = idx;
-                
+
             else
-                temp_idx = find(temperatures == Temp_sp(TempMatches{TemperatureIndex}(idx)));
-                marker_idx = idx;
+                temp_idx = TemperatureIndex;
+                
             end
             
-            if isempty(marker_idx)
-                marker_idx = 1;
-            end
+            marker_idx = idx;
+            
+            
             
             
             
@@ -204,7 +276,7 @@ for NC=14
             
             prof{idx} = plot(APbins, ones(1, length(APbins)), MarkerStyles{marker_idx},...
                 'MarkerEdgeColor', [0, 0, 0], 'MarkerFaceColor', colors(temp_idx,:),...
-                'MarkerSize', 8, 'LineStyle', '-', 'Color', colors(temp_idx,:));
+                'MarkerSize', 6, 'LineStyle', '-', 'Color', colors(temp_idx,:));
             
             
             set(eb{idx},'Visible','off'); %'off' or 'on'
@@ -225,17 +297,35 @@ for NC=14
         end
         
         hold off
-        if strcmp(lower(TraceType), 'anaphasealigned')
+        
+        if NormedCycleTimes
+            xlabel('Fraction of Nuclear Cycle')
+        elseif strcmpi(TraceType, 'anaphasealigned')
             xlabel('Time since anaphase (min)')
         else
             xlabel('Time since NC start (min)')
         end
-        xlim([0, nanmax(MaximumNCTimes)])
         
         
-        ylabel('Fluo (AU)')
+        if ~NormedCycleTimes
+            xlim([0-0.01* max(MaximumNCTimes), max(MaximumNCTimes)*1.1]);
+        else
+            xlim([-0.01, 1.01]);
+        end
         
-        ylim([0, nanmax(nanmax(MaxFluos)*1.1,1)])
+        
+        
+        if ~UseOffsets
+            ylabel('Fluo (AU)')
+        else
+            ylabel('Offset Fluo (AU)')
+        end
+        
+        if ~UseOffsets
+            ylim([0, max(max(MaxFluos)*1.1,1)])
+        else
+            ylim([min(min(min(min(MinFluos))*1.1,min(min(MinFluos))*0.95), 0) , max(max(MaxFluos)*1.1,1)]);
+        end
         %
         
         title(FrameProfAx, {'',...
@@ -245,11 +335,14 @@ for NC=14
         
         
         
-        for i = ObservedAPs
+        for i = MinAPbin:MaxAPbin
             APBinHasData = false;
             PlottedSets = zeros(1, NumSets, 'logical');
             for idx=1:length(TempMatches{TemperatureIndex})
-                if ~ismember(idx, this.ProcessedExperiments)
+                set(FrameProfAx.Children(end-(2*(idx-1)+1)),'Visible','off'); %'off' or 'on'
+                set(FrameProfAx.Children(end-(2*(idx-1))),'Visible','off'); %'off' or 'on'
+                set(get(get(FrameProfAx.Children(end-(2*(idx-1)+1)), 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
+                if ~ismember(TempMatches{TemperatureIndex}(idx), this.ProcessedExperiments)
                     continue
                 end
                 if isempty(NCTimes{idx})
@@ -269,7 +362,7 @@ for NC=14
                     set(get(get(FrameProfAx.Children(end-(2*(idx-1)+1)), 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
                 else
                     APBinHasData = true;
-                    PlottedSets(idx) = true;
+                    PlottedSets(TempMatches{TemperatureIndex}(idx)) = true;
                     FrameProfAx.Children(end-(2*(idx-1)+1)).YData = MeanFluoMats{idx}(use_idx, i);
                     FrameProfAx.Children(end-(2*(idx-1)+1)).XData =NCTimes{idx}(use_idx);
                     FrameProfAx.Children(end-(2*(idx-1))).YData = MeanFluoMats{idx}(use_idx, i);
@@ -284,6 +377,9 @@ for NC=14
                 end
             end
             %try
+            if ~sum(PlottedSets)
+                continue
+            end
             legend(FrameProfAx, legend_labels(PlottedSets), 'Location', 'eastoutside')
             if exist('PlotTitle', 'var')
                 title(FrameProfAx, {PlotTitle,...
@@ -296,12 +392,10 @@ for NC=14
                 
             end
             %end
-            if ~sum(PlottedSets)
-                continue
-            end
             
-            saveas(FrameProfFig,[outdir3, filesep, 'T',strrep(num2str(CurrentTemperature), '.', '_'),...
-                'C_NC',num2str(NC), GradString, 'FluoTrace',TraceType,'_', num2str(i),'.png']);
+            
+            saveas(FrameProfFig,[outdir4, filesep, GradString, NormString, OffsetString,...
+                'FluoTrace_NC',num2str(NC),'_T',strrep(num2str(CurrentTemperature), '.', '_'),'_Bin', num2str(i),'.png']);
             
         end
     end

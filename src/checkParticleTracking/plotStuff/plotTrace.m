@@ -228,7 +228,7 @@ else
     
     error2aux = plotTraceSettings.ErrorIntegral3;
     error2 = ones(length(amp2(approvedParticleFrames)),1)'.*error2aux';
-    error2 = zeros(length(amp2(approvedParticleFrames)),1)'.*error2aux';
+    %error2 = zeros(length(amp2(approvedParticleFrames)),1)'.*error2aux';
 end
 
 idata1 = amp1(approvedParticleFrames);
@@ -247,6 +247,7 @@ set(traceErrorBar2, 'XData', traceFigTimeAxis(approvedParticleFrames),...
 
 
 if ~cptState.UseTwinTraces
+    try
     traceErrorBar3 = traceFigAxes.Children(end-2);
     traceErrorBar4 = traceFigAxes.Children(end-3);
     set(traceErrorBar4, 'HandleVisibility', 'off');
@@ -255,6 +256,7 @@ if ~cptState.UseTwinTraces
     cla(traceFigAxes);
     set(traceErrorBar4, 'HandleVisibility', 'on');
     set(traceErrorBar3, 'HandleVisibility', 'on');
+    end
 end
 set(traceErrorBar2, 'HandleVisibility', 'on', 'Visible', 'on');
 set(traceErrorBar1, 'HandleVisibility', 'on', 'Visible', 'on');

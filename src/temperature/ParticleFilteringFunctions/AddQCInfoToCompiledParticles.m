@@ -1,11 +1,11 @@
-function [CompiledParticles] = AddQCInfoToCompiledParticles(Prefix, CompiledParticles, varargin)
+function [CompiledParticles] = AddQCInfoToCompiledParticles(Prefix, CompiledParticles, FluoString, varargin)
 
 UseZInfo = true;
 UseHistoneInfo = true;
 UsePositionInfo = false;
 Use2SpotPositionInfo = true;
-UseFluoInfo = true;
-FluoString = 'Fluo';
+UseFluoInfo = false;
+
 
 x = 0;
 while x < length(varargin)
@@ -55,7 +55,10 @@ end
 xDim = liveExperiment.xDim;
 yDim = liveExperiment.yDim;
 zDim = liveExperiment.zDim;
-schnitzcells = integrateHistoneFluo(Prefix, schnitzcells, FrameInfo);
+
+if ~isfield(schnitzcells, 'HistoneFluo')
+    schnitzcells = integrateHistoneFluo(Prefix, schnitzcells, FrameInfo);
+end
 
 %  Add spot fluorescence information for each particle z-stack in CompiledParticles
 
@@ -73,6 +76,9 @@ for ChN=1:length(liveExperiment.spotChannels)
         if isfield(CompiledParticles{ChN}, 'ManualFrameApproved')
             CompiledParticles{ChN}(i).FrameApproved = CompiledParticles{ChN}(i).ManualFrameApproved;
         end
+        if isfield(CompiledParticles{ChN}, 'ManualApproved')
+            CompiledParticles{ChN}(i).Approved = CompiledParticles{ChN}(i).ManualApproved;
+        end
     end
     %%
     
@@ -86,7 +92,7 @@ for ChN=1:length(liveExperiment.spotChannels)
             p.FlaggingInfo.SickNucleus = false;
         end
         
-        if p.Approved == 1
+        if p.Approved == 1 & sc.Approved == 1
             p.FlaggingInfo.ApprovedNucleus = true;
         else
             p.FlaggingInfo.ApprovedNucleus = false;
@@ -273,9 +279,13 @@ for ChN=1:length(liveExperiment.spotChannels)
         sc = p.schnitzcell;
         FI = p.FlaggingInfo;
         if FI.SickNucleus | ~FI.ApprovedNucleus
+            CompiledParticles{ChN}(i).FlaggingInfo.FrameApprovedFinal = NaN(1, length(FI.TrueFrames));
+            FrameApproved = CompiledParticles{ChN}(i).FlaggingInfo.FrameApprovedFinal(ismember(FI.TrueFrames, p.Frame));
+            CompiledParticles{ChN}(i).ManualApproved = CompiledParticles{ChN}(i).Approved ;
             CompiledParticles{ChN}(i).Approved = false;
-            CompiledParticles{ChN}(i).ManualApproved = false;
             CompiledParticles{ChN}(i).ManualFrameApproved = CompiledParticles{ChN}(i).FrameApproved;
+            CompiledParticles{ChN}(i).FrameApproved = FrameApproved;
+            
         else
             NFrames = length(FI.TrueFrames);
             FrameApprovedByFluoValue = FI.FluoApproved;

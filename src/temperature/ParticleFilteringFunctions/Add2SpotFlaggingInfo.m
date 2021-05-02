@@ -32,6 +32,9 @@ if length(CurrentTwins) == 2
     DistanceToTwin1 = NaN(1, length(Twin1.FlaggingInfo.TrueFrames));
     DistanceToTwin2 = NaN(1, length(Twin2.FlaggingInfo.TrueFrames));
     for Frame = unique([Twin1.FlaggingInfo.TrueFrames Twin2.FlaggingInfo.TrueFrames])
+        if Frame == 1
+            continue
+        end
         Twin1IDs = [Twin1IDs, CurrentTwins(1)];
         Twin2IDs = [Twin1IDs, CurrentTwins(2)];
         AllFrames = [AllFrames, Frame];
@@ -128,7 +131,14 @@ for cp =1:length(CompiledParticles{ChN})
         Pos2spotFrameApproved(DistanceToTwin < snippet_size) = -1;
     end
     if length(CompiledParticles{ChN}(cp).Frame) <= 1
-        Pos2spotFrameApproved(1) = 1;
+        if length(CompiledParticles{ChN}(cp).Frame) == 1
+            Pos2spotFrameApproved(1) = 1;
+        end
+        FullPos2spotFrameApproved = zeros(1, length(CompiledParticles{ChN}(cp).FlaggingInfo.TrueFrames));
+        FullPos2spotFrameApproved(find(ismember(CompiledParticles{ChN}(cp).FlaggingInfo.TrueFrames, CompiledParticles{ChN}(cp).Frame))) = ...
+            Pos2spotFrameApproved;
+        
+        CompiledParticles{ChN}(cp).FlaggingInfo.TwoSpotApproved = FullPos2spotFrameApproved;
         continue
     end
     for FrameIndex=2:length(CompiledParticles{ChN}(cp).Frame)

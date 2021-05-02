@@ -5,6 +5,8 @@ function PlotLTMTrapParamsVsAP(this, parameter, outdir, varargin)
 % UseDiffProfiles, UsePhysicalAPLength
 UsePhysicalAPLength = false;
 UseLines = true;
+UseRescaledFluo = false;
+UseRescaledParamTiming = false;
 
 x = 1;
 while x <= length(varargin)
@@ -21,6 +23,13 @@ while x <= length(varargin)
     elseif strcmp(lower(varargin{x}), 'tracetype')
         TraceType = lower(varargin{x+1});
         x = x+1;
+    elseif strcmpi(varargin{x}, 'userescaledtime') | strcmpi(varargin{x}, 'rescaletime') | ...
+            strcmpi(varargin{x}, 'rescaletiming') | strcmpi(varargin{x}, 'userescaledtiming') | ...
+            strcmpi(varargin{x}, 'userescaledparamtime') | strcmpi(varargin{x}, 'rescaleparamtime') | ...
+            strcmpi(varargin{x}, 'rescaleparamtiming') | strcmpi(varargin{x}, 'userescaledparamtiming')
+        UseRescaledParamTiming = true;
+    elseif strcmpi(varargin{x}, 'rescalefluo') | strcmpi(varargin{x}, 'userescaledfluo')
+        UseRescaledFluo = true;
     end
     x = x+1;
 end
@@ -49,6 +58,34 @@ else
     error('Invalid choice of trace type. Can use either "fluo", "fluo3d", "anaphasealigned", or "anaphasealigned3d".') % change to error
 end
 
+
+%%
+if strcmpi(parameter, 'fractionons') | strcmpi(parameter, 'fractionon') 
+    UseRescaledFluo = false;
+    UseRescaledParamTiming = false;
+elseif strcmpi(parameter, 'meanspotfluos') | strcmpi(parameter, 'meanspotfluo')  | ...
+        strcmpi(parameter, 'maxfluos') | strcmpi(parameter, 'maxfluo') | ...
+        strcmpi(parameter, 'plateauheights') | strcmpi(parameter, 'plateauheight') | ...
+        strcmpi(parameter, 'mrnaproductions') | strcmpi(parameter, 'mrnaproduction') |...
+        strcmpi(parameter, 'totalmrnaproductions') | strcmpi(parameter, 'totalmrnaproduction') | ...
+        strcmpi(parameter, 'unweightedmrnaproductions') | strcmpi(parameter, 'unweightedmrnaproduction') | ...
+        strcmpi(parameter, 'unweightedtotalmrnaproductions') | strcmpi(parameter, 'unweightedtotalmrnaproduction')
+    
+    UseRescaledParamTiming = false;
+elseif strcmpi(parameter, 'timeons') | strcmpi(parameter, 'timeon') | ...
+        strcmpi(parameter, 'timeoffs') | strcmpi(parameter, 'timeoff') | ...
+        strcmpi(parameter, 'elongationtimes') | strcmpi(parameter, 'elongationtime') | ...
+        strcmpi(parameter, 'elongationrates') | strcmpi(parameter, 'elongationrate')
+    UseRescaledFluo = false;
+
+
+elseif ~(strcmpi(parameter, 'loadingrates') | strcmpi(parameter, 'loadingrate') | ...
+        strcmpi(parameter, 'initiationrates') | strcmpi(parameter, 'initiationrate') |...
+        strcmpi(parameter, 'meaninitiationrates') | strcmpi(parameter, 'meaninitiationrate') | ...
+        strcmpi(parameter, 'unloadingrates') | strcmpi(parameter, 'unloadingrate'))
+    error('Invalid choice of parameter.')
+end
+
 %%
 
 if ~exist(outdir, 'dir')
@@ -59,8 +96,18 @@ if UsePhysicalAPLength
 else
     PhysicalAPString = '';
 end
-Temp_obs = this.Temp_obs;
-Temp_sp = this.Temp_sps;
+
+if UseRescaledFluo
+    FluoString = 'RescaledFluo';
+else
+    FluoString = '';
+end
+
+if UseRescaledParamTiming
+    TimingString = 'DevTime';
+else
+    TimingString = '';
+end
 
 if strcmp(lower(PlottingColors), 'default')
     [~, colors] = getColorPalettes();
@@ -69,14 +116,42 @@ elseif strcmp(lower(PlottingColors), 'pboc')
     [colors, ~] = getColorPalettes();
     GradString = '';
 else
-    Temp_range = 15:0.1:max(Temp_obs);
+    Temp_range = 15:0.1:max(this.Temp_obs);
     colors = jet(length(Temp_range));
     FractionalTempRange = (Temp_range-min(Temp_range))/(max(Temp_range)-min(Temp_range));
     GradString = 'Gradient';
 end
 
-%%
+SpecificDirString = FluoString;
+if ~isempty(TimingString)
+    if ~isempty(SpecificDirString)
+        SpecificDirString = [SpecificDirString, '_', TimingString];
+    else
+        SpecificDirString = TimingString;
+    end
+end
 
+if ~isempty(PhysicalAPString)
+    if ~isempty(SpecificDirString)
+        SpecificDirString = [SpecificDirString, '_', PhysicalAPString];
+    else
+        SpecificDirString = PhysicalAPString;
+    end
+end
+
+if ~isempty(GradString)
+    if ~isempty(SpecificDirString)
+        SpecificDirString = [SpecificDirString, '_', GradString];
+    else
+        SpecificDirString = GradString;
+    end
+end
+    
+
+
+%%
+Temp_obs = this.Temp_obs;
+Temp_sp = this.Temp_sps;
 R = this.R;
 R2bound = this.R2bound;
 
@@ -105,7 +180,7 @@ end
 
 %% Load relevant parameters into memory
 [PlottedParams, PlottedParamSEs,R2s, ylab,OutputString,GlobalPlotYmax,GlobalPlotYmin,LogPlotYmin] = ...
-    getPlottingVariables(this, parameter,  TraceType, R2bound);
+    getPlottingVariables(this, parameter,  TraceType, R2bound, UseRescaledFluo, UseRescaledParamTiming);
 
 % Calculate Plot Xlims
 ParamMatCopy = PlottedParams;
@@ -132,13 +207,14 @@ outdir2 = [outdir,filesep,OutputString];
 if ~exist(outdir2, 'dir')
     mkdir(outdir2)
 end
-if isempty(PhysicalAPString)
+
+if isempty(SpecificDirString)
     outdir3 = [outdir2, filesep, TraceType];
     if ~exist(outdir3, 'dir')
         mkdir(outdir3)
     end
 else
-    outdir3 = [outdir2, filesep, TraceType, '_', PhysicalAPString];
+    outdir3 = [outdir2, filesep, TraceType, filesep, SpecificDirString];
     if ~exist(outdir3, 'dir')
         mkdir(outdir3)
     end
@@ -321,8 +397,8 @@ for NCIndex=1:length(this.IncludedNCs)
             'FontSize', 14);
     end
     
-    saveas(FrameProfFig,[outdir4, filesep,...
-        OutputString, '_NC',num2str(NC),'.png']);
+    outpath = [outdir4, filesep,OutputString, '_NC',num2str(NC),'.png'];
+    saveas(FrameProfFig,outpath);
     
     
 end

@@ -8,6 +8,7 @@ displayFigures = false;
 nWorkers = 8;
 keepPool = true;
 save_flag = true;
+forceOneSpot = false;
 % nSpots = 2;
 
 for i = 1:length(varargin)
@@ -23,6 +24,8 @@ for i = 1:length(varargin)
         segmentSpots = true;  
     elseif strcmpi(varargin{i}, 'noSave')
         save_flag = false;
+    elseif strcmpi(varargin{i}, '1spot')
+        forceOneSpot = true;
     elseif strcmpi(varargin{i}, 'nWorkers')
         nWorkers = varargin{i+1};
     elseif strcmpi(varargin{i}, 'keepPool')
@@ -49,6 +52,8 @@ if ~segmentSpots
     Spots = getSpots(liveExperiment);
 end
 startParallelPool(nWorkers, displayFigures, keepPool);
+p = gcp();
+parfevalOnAll(gcp(), @warning, 0, 'off', 'MATLAB:singularMatrix');
 
 %% %%%%%%%%%%%%%%%%%%%%% Clean up Spots Structure %%%%%%%%%%%%%%%%%%%%%%%%%
 % NL: implement this once I know which fields I'm adding
@@ -75,8 +80,12 @@ for ch = liveExperiment.spotChannels
     % if this is TF cluster data, 1. For all transcription spots we assume
     % 2    
     inputChannels = liveExperiment.inputChannels;  
+    if ~forceOneSpot
     nSpots = 2;
     if any(inputChannels==ch)
+        nSpots = 1;
+    end
+    else
         nSpots = 1;
     end
     
@@ -125,7 +134,7 @@ for ch = liveExperiment.spotChannels
                 send(q, frameIndex); %update the waitbar
             end
         else
-            parfor frameIndex = 1:length(preFrameIndex)
+           parfor frameIndex = 1:length(preFrameIndex)
                 frame = preFrameIndex(frameIndex);
                 imStack = getMovieFrame(liveExperiment, frame, ch);
                 preSpots(frameIndex) = spotFittingLoop(SpotsCh(frame).Fits(preIndexVec(preFrameVec==frame)), liveExperiment, imStack, [], nSpots);
@@ -155,10 +164,10 @@ for ch = liveExperiment.spotChannels
     q = parallel.pool.DataQueue;
     afterEach(q, @nUpdateWaitbar);
     p = 1;
-    
+   
     % iterate through all spots    
     if ~isempty(movieMatCh)
-        parfor frame = 1:numFrames %frames                
+        parfor frame = 1:numFrames %frames    
             imStack = movieMatCh(:, :, :, frame);
             
             SpotsCh(frame) = spotFittingLoop(SpotsCh(frame).Fits, liveExperiment, imStack, spotDims, nSpots);
@@ -166,7 +175,7 @@ for ch = liveExperiment.spotChannels
             send(q, frame); %update the waitbar
         end
     else
-        parfor frame = 1:numFrames %frames                
+        parfor frame = 1:numFrames %frames   
             imStack = getMovieFrame(liveExperiment, frame, ch);
             
             SpotsCh(frame) = spotFittingLoop(SpotsCh(frame).Fits, liveExperiment, imStack, spotDims, nSpots);
@@ -198,7 +207,7 @@ if save_flag
     try close(waitbarFigure); end
     
 end
-    
+%     
 function nUpdateWaitbarPre(~)
     try waitbar(p/numSamples, waitbarFigure); end
     p = p + 1;

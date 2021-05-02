@@ -2,7 +2,7 @@ function CompiledNuclei = FilterCompileNuclearProtein(Prefix, FluoLabel, varargi
 %liveExperiment = LiveExperiment(Prefix);
 
 liveExperiment = LiveExperiment(Prefix);
-SummarizeEmbryoHealth(Prefix);
+SummarizeEmbryoHealth(Prefix, false);
 CompiledNuclei = CompileNuclearProteinFlexFluo(Prefix);
 if ~exist('FluoLabel', 'var')
     CompiledNuclei = SetDefaultFluo(Prefix);

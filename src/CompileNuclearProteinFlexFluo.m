@@ -1,7 +1,7 @@
 function CompiledNuclei = CompileNuclearProteinFlexFluo(Prefix, varargin)
 % date created: 9/25/20
 % author: Gabriella Martini
-% date last modified: 10/7/20
+% date last modified: 3/3/21
 
 
 %This code gives me the input
@@ -68,7 +68,7 @@ if ~isempty(varargin)
     x = 1;
     while x <= length(varargin)
         switch varargin{x}
-
+            
             case{'radii'}
                 radii = varargin{x+1};
                 x = x+1;
@@ -77,8 +77,8 @@ if ~isempty(varargin)
                 x = x+1;
             otherwise
                 error('invalid arguments passed')
-            end
-            x = x+1;
+        end
+        x = x+1;
     end
 end
 
@@ -125,7 +125,7 @@ end
 % end - Added by GM 9/25/20
 
 load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
-    
+
 
 numFrames = length(FrameInfo);
 
@@ -153,7 +153,7 @@ fullEmbryo = exist([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'], 'fi
 
 
 
-%% 
+%%
 
 
 
@@ -182,13 +182,13 @@ Distances = [sqrt((coordAZoom(2)-1).^2+(coordAZoom(1)-1).^2),...
     sqrt((coordAZoom(2)-1).^2+(coordAZoom(1)-ZoomImageSize(2)).^2),...
     sqrt((coordAZoom(2)-ZoomImageSize(1)).^2+(coordAZoom(1)-1).^2)];
 Angles=[atan2((1-coordAZoom(2)),...
-         (-coordAZoom(1))),...
-         atan2((ZoomImageSize(1)-coordAZoom(2)),...
-         (ZoomImageSize(2)-coordAZoom(1))),...
-         atan2((1-coordAZoom(2)),...
-         (ZoomImageSize(2)-coordAZoom(1))),...
-         atan2((ZoomImageSize(1)-coordAZoom(2)),...
-         (1-coordAZoom(1)))];
+    (-coordAZoom(1))),...
+    atan2((ZoomImageSize(1)-coordAZoom(2)),...
+    (ZoomImageSize(2)-coordAZoom(1))),...
+    atan2((1-coordAZoom(2)),...
+    (ZoomImageSize(2)-coordAZoom(1))),...
+    atan2((ZoomImageSize(1)-coordAZoom(2)),...
+    (1-coordAZoom(1)))];
 DVlimits = Distances.*sin(Angles-APAngle)/APLength;
 
 DVBinMinIdx = round(min(min(DVlimits))/APResolution)-1;
@@ -202,20 +202,20 @@ DVbinID = DVBinMin:APResolution:DVBinMax;
 %     %zero
 %     Angles=atan2((double(schnitzcells(i).ceny)-coordAZoom(2)),...
 %         (double(schnitzcells(i).cenx)-coordAZoom(1)));
-% 
+%
 %     %Distance between the points and the A point
 %     Distances=sqrt((coordAZoom(2)-double(schnitzcells(i).ceny)).^2+(coordAZoom(1)-double(schnitzcells(i).cenx)).^2);
 %     APPositions=Distances.*cos(Angles-APAngle);
 %     schnitzcells(i).APpos=APPositions/APLength;
-% 
+%
 %     %Determine the distance perpendicular to the AP axis. This is a
 %     %proxy for a DV axis.
-% 
+%
 %     schnitzcells(i).DVpos=Distances.*sin(Angles-APAngle);
-% 
+%
 % end
 
-%% 
+%%
 
 
 
@@ -251,7 +251,7 @@ schnitzcells = filterSchnitz(schnitzcells, [ liveExperiment.yDim, liveExperiment
 
 
 
-%% 
+%%
 
 %Now get the nuclear information for those that were approved
 NZSlices=size(schnitzcells(1).Fluo,2);
@@ -302,20 +302,20 @@ for i=1:length(schnitzcells)
         end
         
         if sum(FrameFilter)
-           
+            
             %Copy the filtered information
-%             if isfield(schnitzcells, 'P')
-%                 CompiledNuclei(k).P=schnitzcells(i).P;
-%                 CompiledNuclei(k).E=schnitzcells(i).E;
-%                 CompiledNuclei(k).D=schnitzcells(i).D;
-%             end
+            %             if isfield(schnitzcells, 'P')
+            %                 CompiledNuclei(k).P=schnitzcells(i).P;
+            %                 CompiledNuclei(k).E=schnitzcells(i).E;
+            %                 CompiledNuclei(k).D=schnitzcells(i).D;
+            %             end
             CompiledNuclei(k).Frames=uint16(schnitzcells(i).frames(FrameFilter));
             CompiledNuclei(k).xPos=single(schnitzcells(i).cenx(FrameFilter));
             CompiledNuclei(k).yPos=single(schnitzcells(i).ceny(FrameFilter));
             CompiledNuclei(k).Radius=single(schnitzcells(i).len(FrameFilter));
             CompiledNuclei(k).cellno=uint16(schnitzcells(i).cellno(FrameFilter));
             CompiledNuclei(k).nc=schnitzcells(i).cycle;
-           
+            
             %Save the information about the original schnitz
             CompiledNuclei(k).schnitz=uint16(i);
             
@@ -331,7 +331,7 @@ for i=1:length(schnitzcells)
             if isfield(schnitzcells, 'anaphaseFrame')
                 CompiledNuclei(k).timeSinceAnaphase = double(schnitzcells(i).timeSinceAnaphase(FrameFilter));
                 CompiledNuclei(k).anaphaseFrame=schnitzcells(i).anaphaseFrame;
-                if ~isempty(schnitzcells(i).inferredAnaphaseFrame) 
+                if ~isempty(schnitzcells(i).inferredAnaphaseFrame)
                     if ~isnan(schnitzcells(i).inferredAnaphaseFrame)
                         CompiledNuclei(k).inferredAnaphaseFrame=logical(schnitzcells(i).inferredAnaphaseFrame);
                     else
@@ -360,8 +360,10 @@ for i=1:length(schnitzcells)
                     var1 = [FluoLabel, '_', method, '_TimeTrace'];
                     var2 = [FluoLabel, '_', method, '_FrameApproved'];
                     var3 = [FluoLabel, '_', method, '_Z'];
+                    
                     [CompiledNuclei(k).(var1), CompiledNuclei(k).(var2),...
                         CompiledNuclei(k).(var3)] = CalculateNuclearFluorescence(schnitzcells(i).(FluoLabel)(FrameFilter,:), method);
+                    
                     CompiledNuclei(k).(var1) = CompiledNuclei(k).(var1)/(pi*radii(j)^2);
                 end
                 
@@ -382,8 +384,8 @@ for i=1:length(schnitzcells)
             end
             
             
-           
-          
+            
+            
             
             %If there was only one time point and multiple channels,
             %squeeze can lead to a weird shape of the matrix
@@ -402,9 +404,9 @@ close(h)
 
 
 %% Create AP and nc filters
-% 
+%
 % %nc filters:
-% 
+%
 % %ncFilterID just tells you the identity of the different
 % %filters stored in the cell ncFilter
 % ncFilterID=[];
@@ -428,13 +430,13 @@ close(h)
 % end
 % %Add the first nc
 % ncFilterID=[min(ncFilterID)-1,ncFilterID];
-% 
-% 
+%
+%
 % %Create the filter
 % ncFilter=false(length(CompiledNuclei),length(ncFilterID));
 % for i=1:length(CompiledNuclei)
 %     if ~isempty(CompiledNuclei(i).Frames)
-%         
+%
 %         if ~isempty(CompiledNuclei(i).nc)
 %             ncFilter(i,find(CompiledNuclei(i).nc==ncFilterID))=true;
 %         else
@@ -458,23 +460,23 @@ close(h)
 %                 CompiledNuclei(i).nc=14;
 %                 ncFilter(i,ncFilterID==14)=true;
 %             end
-%             
+%
 %         end
 %     end
 % end
-% 
-% 
-% 
+%
+%
+%
 % if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV') && fullEmbryo
 %     %AP filters:
-%     
+%
 %     %Divide the AP axis into boxes of a certain AP size. We'll see which
 %     %particle falls where.
-%     
+%
 %     APbinID=0:APResolution:1;
-%     
+%
 %     APFilter=false(length(CompiledNuclei),length(APbinID));
-%     
+%
 %     for i=1:length(CompiledNuclei)
 %         APFilter(i,max(find(APbinID<=CompiledNuclei(i).MeanAP)))=true;
 %     end
@@ -482,9 +484,9 @@ close(h)
 %     APbinID = [];
 %     APFilter = [];
 % end
-% 
-% 
-% 
+%
+%
+%
 % %% Information about the cytoplasmic fluroescence
 % %If the nuclear masks are present then use them. Otherwise just calculate
 % %the median of the images as a function of time
@@ -521,22 +523,22 @@ close(h)
 
 
 %% Binning and averaging data
-% 
+%
 % if strcmpi(ExperimentAxis,'AP') || strcmpi(ExperimentAxis,'DV') && fullEmbryo
-%     
+%
 %     %Get the data for the individual particles in a matrix that has the frame
 %     %number and the particle number as dimensions. Also, get a vector that
 %     %reports the mean position.
 %     [AllTracesVector,AllTracesAP, AllTracesDV]=AllTracesNuclei(FrameInfo,CompiledNuclei);
-%     
-%     
-%     
+%
+%
+%
 %     %Mean plot for different AP positions
-%     
+%
 %     %Figure out the AP range to use
 %     MinAPIndex=1;%min(find(sum(APFilter)));
 %     MaxAPIndex=size(APFilter,2);%max(find(sum(APFilter)));
-%     
+%
 %     %Get the corresponding mean information
 %     k=1;
 %     for ap=MinAPIndex:MaxAPIndex
@@ -547,7 +549,7 @@ close(h)
 %         NParticlesAPCell{k}=NParticlesAPTemp';
 %         k=k+1;
 %     end
-%     
+%
 %     %Turn the information into useful structures
 %     if NChannels>1
 %         for ch=1:NChannels
@@ -557,7 +559,7 @@ close(h)
 %                 NParticlesAPCell2{ch,ap}=NParticlesAPCell{ap}{ch};
 %             end
 %         end
-%         
+%
 %         for ch=1:NChannels
 %             MeanVectorAP{ch}=cell2mat({MeanVectorAPCell2{ch,:}}')';
 %             SDVectorAP{ch}=cell2mat({SDVectorAPCell2{ch,:}}')';
@@ -569,26 +571,26 @@ close(h)
 %             SDVectorAPCell2{ap}=double(SDVectorAPCell{ap});
 %             NParticlesAPCell2{ap}=double(NParticlesAPCell{ap});
 %         end
-%         
+%
 %         MeanVectorAP=cell2mat(MeanVectorAPCell2);
 %         SDVectorAP=cell2mat(SDVectorAPCell2);
 %         NParticlesAP=cell2mat(NParticlesAPCell2);
 %     end
-%     
-%     
+%
+%
 % elseif strcmpi(ExperimentAxis,'NoAP')
 %     %Get the data for the individual particles in a matrix that has the frame
 %     %number and the particle number as dimensions. Also, get a vector that
 %     %reports the mean position.
 %     [AllTracesVector,AllTracesAP, AllTracesDV]=AllTracesNuclei(FrameInfo,CompiledNuclei,'NoAP');
 % end
-% 
-% 
-% 
-% 
+%
+%
+%
+%
 % %Calculate the mean for all of them
 % [MeanVectorAll,SDVectorAll,NParticlesAll]=AverageTracesNuclei(FrameInfo,CompiledNuclei);
-% 
+%
 
 % %Now find the different maxima in each nc
 %
@@ -607,26 +609,26 @@ close(h)
 % MaxFrame=[MaxFrame,NewCyclePos(i)+MaxIndex-1];
 
 %% add some things to schnitzcells for convenience
-% 
-% 
+%
+%
 % expandedAnaphaseFrames = [zeros(1,8),liveExperiment.anaphaseFrames'];
-% 
+%
 % for s = 1:length(schnitzcells)
 %     midFrame = ceil(length(schnitzcells(s).frames)/2);
 %     dif = double(schnitzcells(s).frames(midFrame)) - expandedAnaphaseFrames;
 %     cycle = find(dif>0, 1, 'last' );
 %     schnitzcells(s).cycle = uint8(cycle);
 % end
-% 
+%
 % schnitzcells = addRelativeTimeToSchnitzcells(schnitzcells, FrameInfo, expandedAnaphaseFrames);
-% 
+%
 
 
-% 
+%
 % %% Save everything
-% 
+%
 % if ~fullEmbryo
-%     
+%
 %     savedVariables = [savedVariables,...
 %         'CompiledNuclei','ElapsedTime','NewCyclePos','nc9','nc10','nc11',...
 %         'nc12','nc13','nc14','ncFilterID','ncFilter',...
@@ -647,8 +649,8 @@ close(h)
 %         'IntegrationArea'...n
 %         'DVbinID','DVFilter','MeanVectorDV','SDVectorDV','NParticlesDV',...
 %         'MinDVIndex','MaxDVIndex', 'AllTracesDV'];
-%     
-%     
+%
+%
 % end
 
 try
@@ -658,7 +660,7 @@ catch
     save([DropboxFolder,filesep,Prefix,filesep,'CompiledNuclei.mat'],...
         'CompiledNuclei','-v7.3', '-nocompression');
 end
-save2([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], Ellipses); 
+save2([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], Ellipses);
 if whos(var2str(schnitzcells)).bytes < 2E9
     save([DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat'],'schnitzcells', '-v6')
 else

@@ -1,5 +1,13 @@
 function [PlottedParams, PlottedParamSEs,R2s, ylab,OutputString,GlobalPlotYmax,GlobalPlotYmin,LogPlotYmin] = ...
-    getPlottingVariables(this, parameter,  TraceType, R2bound)
+    getPlottingVariables(this, parameter,  TraceType, R2bound, UseRescaledFluo, UseRescaledParamTiming)
+if ~exist('UseRescaledFluo', 'var')
+    UseRescaledFluo = false;
+end
+
+if ~exist('UseRescaledParamTiming', 'var')
+    UseRescaledParamTiming = false;
+end
+
 %% Load relevant parameters into memory
 InitiationRates = getTrapezoidParameters(this, 'MeanInitiationRates', TraceType, false);
 SEInitiationRates = getTrapezoidParameters(this, 'MeanInitiationRates', TraceType, true);
@@ -17,6 +25,88 @@ R2s = getTrapezoidParameters(this, 'R2s', TraceType);
 FractionOns = this.FractionOns;
 SchnitzCounts = this.SchnitzCounts;
 [MaxFluos, SEMaxFluos] = getMaxFluoMatForPlotting(this, TraceType);
+
+%%
+NumSets = length(this.ExperimentPrefixes);
+
+if UseRescaledFluo
+    temp_match_indices = NaN(1, NumSets);
+    SetFluoCoeffs = NaN(1, NumSets);
+
+    for i = NumSets
+        temp_match_indices(i) = find(round(this.UniqueTemperatures, 2) == round(this.Temp_sps(i), 2));
+        SetFluoCoeffs(i) = this.FluoCoeffs(temp_match_indices(i));
+        if ~isempty(temp_match_indices(i))
+            InitiationRates(i, :,:) = SetFluoCoeffs(i)*InitiationRates(i, :,:);
+            SEInitiationRates(i, :,:) = SetFluoCoeffs(i)*SEInitiationRates(i, :,:);
+            MeanSpotFluos(i,:,:) =  SetFluoCoeffs(i)*MeanSpotFluos(i, :,:);
+            SEMeanSpotFluos(i,:,:) =  SetFluoCoeffs(i)*SEMeanSpotFluos(i, :,:);
+            MaxFluos(i,:,:) =  SetFluoCoeffs(i)*MaxFluos(i, :,:);
+            SEMaxFluos(i,:,:) =  SetFluoCoeffs(i)*SEMaxFluos(i, :,:);
+        else
+            InitiationRates(i, :,:) = NaN(size(InitiationRates(i, :,:) ));
+            SEInitiationRates(i, :,:) = NaN(size(SEInitiationRates(i, :,:) ));
+            MeanSpotFluos(i, :,:) = NaN(size(MeanSpotFluos(i, :,:) ));
+            SEMeanSpotFluos(i, :,:) = NaN(size(SEMeanSpotFluos(i, :,:) ));
+            MaxFluos(i, :,:) = NaN(size(MaxFluos(i, :,:) ));
+            SEMaxFluos(i, :,:) = NaN(size(SEMaxFluos(i, :,:) ));
+        end
+        
+    end
+end
+
+
+
+
+if UseRescaledParamTiming
+    temp_match_indices = NaN(1, NumSets);
+    TimingCoeffs = NaN(NumSets, 6);
+    for i = 1:NumSets
+        temp_match_indices(i) = find(round(this.UniqueTemperatures, 2) == round(this.Temp_sps(i), 2));
+        if ~isempty(temp_match_indices(i))
+            for NC = 9:14
+                if NC == 14
+                    if ~isnan(this.TimeScalingInfo.PropNCDivisionInfo(temp_match_indices(i), NC-9))
+                        TimingCoeffs(i, NC-8) =  1/this.TimeScalingInfo.PropNCDivisionInfo(temp_match_indices(i), NC-9);
+                    else
+                        TimingCoeffs(i, NC-8) = this.TimingCoeffs(temp_match_indices(i));
+                    end
+                elseif ~isnan(this.TimeScalingInfo.PropNCDivisionInfo(temp_match_indices(i), NC-8))
+                     TimingCoeffs(i, NC-8) = 1/this.TimeScalingInfo.PropNCDivisionInfo(temp_match_indices(i), NC-8);
+                else
+                    TimingCoeffs(i, NC-8) = this.TimingCoeffs(temp_match_indices(i));
+                end
+                
+                InitiationRates(i, :,NC-8) = InitiationRates(i, :,NC-8)/TimingCoeffs(i, NC-8);
+                SEInitiationRates(i, :,NC-8) = SEInitiationRates(i, :,NC-8)/TimingCoeffs(i, NC-8);
+                TimeOns(i, :,NC-8) = TimeOns(i, :,NC-8)*TimingCoeffs(i, NC-8);
+                SETimeOns(i, :,NC-8) = SETimeOns(i, :,NC-8)*TimingCoeffs(i, NC-8);
+                TimeOffs(i, :,NC-8) = TimeOffs(i, :,NC-8)*TimingCoeffs(i, NC-8);
+                SETimeOffs(i, :,NC-8) = SETimeOffs(i, :,NC-8)*TimingCoeffs(i, NC-8);
+                ElongationTimes(i, :,NC-8) = ElongationTimes(i, :,NC-8)*TimingCoeffs(i, NC-8);
+                SEElongationTimes(i, :,NC-8) = SEElongationTimes(i, :,NC-8)*TimingCoeffs(i, NC-8);
+                UnloadingRates(i, :,NC-8) = UnloadingRates(i, :,NC-8)/TimingCoeffs(i, NC-8);
+                SEUnloadingRates(i, :,NC-8) = SEUnloadingRates(i, :,NC-8)/TimingCoeffs(i, NC-8);
+
+            end
+        else
+            InitiationRates(i, :,:) = NaN(size(InitiationRates(i, :,:) ));
+            SEInitiationRates(i, :,:) = NaN(size(SEInitiationRates(i, :,:) ));
+            TimeOns(i, :,:) = NaN(size(TimeOns(i, :,:) ));
+            SETimeOns(i, :,:) = NaN(size(SETimeOns(i, :,:) ));
+            TimeOffs(i, :,:) = NaN(size(TimeOffs(i, :,:) ));
+            SETimeOffs(i, :,:) = NaN(size(SETimeOffs(i, :,:) ));
+            ElongationTimes(i, :,:) = NaN(size(ElongationTimes(i, :,:) ));
+            SEElongationTimes(i, :,:) = NaN(size(SEElongationTimes(i, :,:) ));
+            UnloadingRates(i, :,:) = NaN(size(UnloadingRates(i, :,:) ));
+            SEUnloadingRates(i, :,:) = NaN(size(SEUnloadingRates(i, :,:) ));
+        end
+    end
+    
+end
+
+
+
 %%
 if strcmpi(parameter, 'fractionons') | strcmpi(parameter, 'fractionon') 
     OutputString = 'FractionOn';
@@ -37,7 +127,11 @@ elseif strcmpi(parameter, 'meanspotfluos') | strcmpi(parameter, 'meanspotfluo')
     R2s = ones(size(PlottedParams));
     R2s(isnan(PlottedParams)) = NaN;
     R2s(SchnitzCounts < this.MinimumSchnitzCount)  = 0;
-    ylab = 'mean spot fluorescence (AU)';
+    if UseRescaledFluo
+        ylab = 're-scaled mean spot fluo. (AU)';
+    else
+        ylab = 'mean spot fluorescence (AU)';
+    end
      [~, ~, GlobalPlotYmax, GlobalPlotYmin] =...
         getGlobalYlims(PlottedParams, PlottedParamSEs, R2s, R2bound);
     GlobalPlotYmax = GlobalPlotYmax*1.05;
@@ -47,7 +141,11 @@ elseif strcmpi(parameter, 'timeons') | strcmpi(parameter, 'timeon')
     OutputString = 'TimeOn';
     PlottedParams = TimeOns;
     PlottedParamSEs = SETimeOns;
-    ylab = 't_{on} (min)';
+    if UseRescaledParamTiming
+        ylab = 'T-adjusted t_{on} (25ºC min)';
+    else
+        ylab = 't_{on} (min)';
+    end
      [~, ~, GlobalPlotYmax, GlobalPlotYmin] =...
         getGlobalYlims(PlottedParams, PlottedParamSEs, R2s, R2bound);
     GlobalPlotYmax = min(20, GlobalPlotYmax*1.05);
@@ -58,7 +156,11 @@ elseif strcmpi(parameter, 'timeoffs') | strcmpi(parameter, 'timeoff')
     OutputString = 'TimeOff';
     PlottedParams = TimeOffs;
     PlottedParamSEs = SETimeOffs;
-    ylab = 't_{off} (min)';
+    if UseRescaledParamTiming
+        ylab = 'T-adjusted t_{off} (25ºC min)';
+    else
+        ylab = 't_{off} (min)';
+    end
      [~, ~, GlobalPlotYmax, GlobalPlotYmin] =...
         getGlobalYlims(PlottedParams, PlottedParamSEs, R2s, R2bound);
     GlobalPlotYmax = min(60, GlobalPlotYmax*1.05);
@@ -68,7 +170,11 @@ elseif strcmpi(parameter, 'elongationtimes') | strcmpi(parameter, 'elongationtim
     OutputString = 'ElongationTime';
     PlottedParams = ElongationTimes;
     PlottedParamSEs = SEElongationTimes;
-    ylab = 'Elongation time (min)';
+    if UseRescaledParamTiming
+        ylab = 'T-adjusted elongation time (25ºC min)';
+    else
+        ylab = 'Elongation time (min)';
+    end
      [~, ~, GlobalPlotYmax, GlobalPlotYmin] =...
         getGlobalYlims(PlottedParams, PlottedParamSEs, R2s, R2bound);
     GlobalPlotYmax = min(30, GlobalPlotYmax);
@@ -78,7 +184,11 @@ elseif strcmpi(parameter, 'elongationrates') | strcmpi(parameter, 'elongationrat
     OutputString = 'ElongationRate';
     PlottedParams = this.GeneLength/ElongationTimes;
     PlottedParamSEs = PlottedParams.*SEElongationTimes./ElongationTimes;
-    ylab = 'Elongation rate (bp/min)';
+    if UseRescaledParamTiming
+        ylab = 'T-adjusted elongation rate (bp/25ºC min)';
+    else
+        ylab = 'Elongation rate (bp/min)';
+    end
     [~, ~, GlobalPlotYmax, GlobalPlotYmin] =...
         getGlobalYlims(PlottedParams, PlottedParamSEs, R2s, R2bound);
     GlobalPlotYmax = min(10000, GlobalPlotYmax);
@@ -90,7 +200,20 @@ elseif strcmpi(parameter, 'loadingrates') | strcmpi(parameter, 'loadingrate') | 
     OutputString = 'LoadingRate';
     PlottedParams = InitiationRates;
     PlottedParamSEs = SEInitiationRates;
-    ylab = 'Loading Rate (AU/min)';
+    if UseRescaledFluo
+
+        if UseRescaledParamTiming
+            ylab = 'T-adjusted re-scaled loading rate (AU/25ºC min)';
+        else
+            ylab = 're-scaled loading rate (AU/min)';
+        end
+    else
+        if UseRescaledParamTiming
+            ylab = 'T-adjusted loading rate (AU/25ºC min)';
+        else
+            ylab = 'loading rate (AU/min)';
+        end
+    end
      [~, ~, GlobalPlotYmax, GlobalPlotYmin] =...
         getGlobalYlims(PlottedParams, PlottedParamSEs, R2s, R2bound);
     GlobalPlotYmax = min(5000, GlobalPlotYmax*1.05);
@@ -100,7 +223,11 @@ elseif strcmpi(parameter, 'transcriptionwindows') | strcmpi(parameter, 'transcri
     OutputString = 'TranscriptionWindow';
     PlottedParams = TimeOffs-TimeOns;
     PlottedParamSEs = sqrt(SETimeOffs.^2+SETimeOns.^2);
-    ylab = 'Transcriotion Window Duration (min)';
+    if UseRescaledParamTiming
+        ylab = 'T-adjusted txn window (25ºC min)';
+    else
+        ylab = 'Transcriotion Window Duration (min)';
+    end
      [~, ~, GlobalPlotYmax, GlobalPlotYmin] =...
         getGlobalYlims(PlottedParams, PlottedParamSEs, R2s, R2bound);
     GlobalPlotYmax = min(60, GlobalPlotYmax*1.05);
@@ -110,7 +237,11 @@ elseif strcmpi(parameter, 'maxfluos') | strcmpi(parameter, 'maxfluo')
     OutputString = 'MaxFluos';
     PlottedParams = MaxFluos;
     PlottedParamSEs = SEMaxFluos;
-    ylab = 'Max Fluoresence (AU)';
+    if UseRescaledFluo
+        ylab = 're-scaled max fluoresence (AU)';
+    else
+        ylab = 'max fluoresence (AU)';
+    end
      [~, ~, GlobalPlotYmax, GlobalPlotYmin] =...
         getGlobalYlims(PlottedParams, PlottedParamSEs, R2s, R2bound);
     GlobalPlotYmax = GlobalPlotYmax*1.05;
@@ -122,7 +253,11 @@ elseif strcmpi(parameter, 'plateauheights') | strcmpi(parameter, 'plateauheight'
     PlottedParams = InitiationRates.*ElongationTimes;
     PlottedParamSEs = sqrt((InitiationRates.^2).*(SEElongationTimes.^2)+...
         (ElongationTimes.^2).*(SEInitiationRates.^2) );
-    ylab = 'Fitted max polymerases loaded (AU)';
+    if UseRescaledFluo
+        ylab = 're-scaled Fitted max polymerases loaded (AU)';
+    else
+        ylab = 'Fitted max polymerases loaded (AU)';
+    end
      [~, ~, GlobalPlotYmax, GlobalPlotYmin] =...
         getGlobalYlims(PlottedParams, PlottedParamSEs, R2s, R2bound);
     
@@ -133,7 +268,20 @@ elseif strcmpi(parameter, 'unloadingrates') | strcmpi(parameter, 'unloadingrate'
     OutputString = 'UnloadingRate';
     PlottedParams = -UnloadingRates;
     PlottedParamSEs = SEUnloadingRates;
-    ylab = '- unloading Rate (AU/min)';
+    if UseRescaledFluo
+
+        if UseRescaledParamTiming
+            ylab = '- T-adjusted re-scaled unloading rate (AU/25ºC min)';
+        else
+            ylab = '- re-scaled unloading Rate (AU/min)';
+        end
+    else
+        if UseRescaledParamTiming
+            ylab = '- T-adjusted unloading rate (AU/25ºC min)';
+        else
+            ylab = '- unloading Rate (AU/min)';
+        end
+    end
      [~, ~, GlobalPlotYmax, GlobalPlotYmin] =...
         getGlobalYlims(PlottedParams, PlottedParamSEs, R2s, R2bound);
     GlobalPlotYmax = min(5000, GlobalPlotYmax*1.05);
@@ -146,7 +294,11 @@ elseif strcmpi(parameter, 'mrnaproductions') | strcmpi(parameter, 'mrnaproductio
     PlottedParams = FractionOnsTemp.*InitiationRates.*(TimeOffs-TimeOns);
     PlottedParamSEs = sqrt(((FractionOnsTemp.^2).*(TimeOffs-TimeOns).^2).*(SEInitiationRates.^2)+...
         (FractionOnsTemp.^2).*(InitiationRates.^2).*(SETimeOffs.^2+SETimeOns.^2));
-    ylab = 'mean mRNA produced per cell (AU)';
+    if UseRescaledFluo
+        ylab = 're-scaled mean mRNA produced per cell (AU)';
+    else
+        ylab = 'mean mRNA produced per cell (AU)';
+    end
      [~, ~, GlobalPlotYmax, GlobalPlotYmin] =...
         getGlobalYlims(PlottedParams, PlottedParamSEs, R2s, R2bound);
     
@@ -154,12 +306,16 @@ elseif strcmpi(parameter, 'mrnaproductions') | strcmpi(parameter, 'mrnaproductio
     GlobalPlotYmin = max(0, GlobalPlotYmin*0.95);
     LogPlotYmin = max(10, GlobalPlotYmin);
 elseif strcmpi(parameter, 'unweightedmrnaproductions') | strcmpi(parameter, 'unweightedmrnaproduction') | strcmpi(parameter, 'unweightedtotalmrnaproductions') | strcmpi(parameter, 'unweightedtotalmrnaproduction')
-    OutputString = 'UnweightedTotalmRNAProduction';
+    OutputString = 'UnweightedTota lmRNAProduction';
     
     PlottedParams = InitiationRates.*(TimeOffs-TimeOns);
     PlottedParamSEs = sqrt(((TimeOffs-TimeOns).^2).*(SEInitiationRates.^2)+...
         (InitiationRates.^2).*(SETimeOffs.^2+SETimeOns.^2));
-    ylab = 'mean mRNA produced per cell (AU)';
+    if UseRescaledFluo
+        ylab = 're-scaled mean mRNA produced per cell (AU)';
+    else
+        ylab = 'mean mRNA produced per cell (AU)';
+    end
      [~, ~, GlobalPlotYmax, GlobalPlotYmin] =...
         getGlobalYlims(PlottedParams, PlottedParamSEs, R2s, R2bound);
     

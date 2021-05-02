@@ -1,0 +1,206 @@
+% segmentSpots(Prefix, Threshold, [Options])
+%
+% DESCRIPTION
+% Identify and segment individual transcription spots.
+%
+% ARGUMENTS
+% Prefix: Prefix of the data set to analyze
+% Threshold: Threshold to be used (>=). Should be kept at ~90-200 for lattice
+%           light-sheet data, and at ~5-10 for confocal data (Leica SP8).
+%           If left empty, then the code just generates the DoG files.
+% [Options]: See below.
+%
+% OPTIONS
+% 'displayFigures':   If you want to display plots and images.
+% 'Weka': For Weka machine learning.
+%
+% 'InitialFrame', N: Run the code from frame N to last frame. Defaults to first
+%                frame.
+%
+% 'LastFrame', M:     Run the code from initial frame to frame M. Defaults to all
+%                frames. It's suggested to run 5-20 frames for debugging.
+%
+% 'Shadows':    	 This option should be followed by 0, 1 or 2. This
+%                specifies the number of requisite z-planes above and/or below the
+%                brightest plane for a spot to have to pass quality control.
+% 'keepPool': Don't shut down the parallel pool when the script is done
+% running.
+% 'nWorkers': Specify the number of workers to use during parallel
+% processing
+% 'noIntegralZ':  Don't establish center slice at position that maximizes raw fluo integral
+%                 across sliding 3 z-slice window.
+% 'autoThresh': Pops up a UI to help decide on a threshhold
+% 'keepProcessedData': Keeps the ProcessedData folder for the given prefix after running segment spots
+% 'fit3D': Fit 3D Gaussians to all segmented spots (assumes 1 locus per spot).
+% 'fit3DOnly': Skip segmentation step and perform 3D fits
+% 'skipChannel': Skips segmentation of channels inputted array (e.g. [1]
+%                skips channel 1, [1, 2] skips channels 1 and 2
+% 'optionalResults': use this if you have multiple Results/Dropbox folders
+% for the same data to specify which you'll use.
+% 'nuclearMask': Use the Ellipses structure to filter out particles
+% detected outside of nuclei.
+%'track': track after running
+% 'segmentChannel': use the DoGs of one channel to segment another
+%
+% OUTPUT
+% 'Spots':  A structure array with a list of detected transcriptional loci
+% in each frame and their properties.
+% 'log.mat': A cell array containing logging data from the segmentation
+% process. There's one row per run of segmentSpots(ML) on that particular
+% dataset.
+%
+% Author (contact): Gabriella Martini (martini@berkeley.edu)
+% Created: 03/27/2021
+% Last Updated: 03/27/2021
+%
+% Documented by: Gabriella Martini (martini@berkeley.edu)
+function Spots = segment3DNanocages(Prefix, Threshold, varargin)
+
+
+
+%% Argument validation
+
+
+arguments
+    Prefix char
+    Threshold (1,:) double
+end
+
+arguments (Repeating)
+    varargin
+end
+
+
+[displayFigures, lastFrame, numShadows, keepPool, ...
+    autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData,...
+    fit3D, skipChannel, optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat,...
+    saveType, nuclearMask, DataType, track, skipSegmentation, frameRange, segmentChannel]...
+    = determineSegmentSpotsOptions(varargin{:});
+
+%validate the Threshold argument
+if isempty(Threshold)
+    Threshold = NaN;
+end
+
+
+
+
+%% Setup
+
+
+
+
+
+cleanupObj = onCleanup(@myCleanupFun);
+%this function uses persistent (static) variables to speed computation.
+%if not cleared, this could lead to errors
+clear fitSingleGaussian
+warning('off', 'MATLAB:MKDIR:DirectoryExists');
+
+
+
+
+%% Main code
+
+
+
+
+liveExperiment = LiveExperiment(Prefix);
+
+spotChannels = liveExperiment.spotChannels;
+
+[~, ~, DropboxFolder, ~, ~] = DetermineLocalFolders(Prefix, optionalResults);
+
+
+if ~isempty(DataType)
+    args = [Prefix, Threshold, varargin];
+    writeScriptArgsToDataStatus(DropboxFolder, DataType, Prefix, args, 'Found filtered threshold', 'segmentSpots')
+end
+
+FrameInfo = getFrameInfo(liveExperiment);
+
+DogOutputFolder=[liveExperiment.procFolder,filesep,'dogs',filesep];
+
+if length(dir(DogOutputFolder)) <= 2
+    error('Filtered movie files not found. Did you run FilterMovie?')
+end
+
+nSpotChannels = length(spotChannels);
+
+%make sure the user inputted the right number of thresholds
+if nSpotChannels > 1 && isempty(skipChannel) && length(Threshold) ~= nSpotChannels
+    error('You must input the correct number of thresholds.');
+end
+
+
+if lastFrame==0
+    lastFrame = numel(FrameInfo);
+end
+
+% The spot finding algorithm first segments the image into regions that are
+% above the threshold. Then, it finds global maxima within these regions by searching in a region "neighborhood"
+% within the regions.
+
+pixelSize_nm = FrameInfo(1).PixelSize * 1000;
+neighboorhood_nm = 1300;
+neighborhood_px = round(neighboorhood_nm / pixelSize_nm);
+snippetSize_px = 2 * (floor(neighboorhood_nm / (2 * pixelSize_nm))) + 1; % note that this is forced to be odd
+
+falsePositives = 0;
+
+disp('Segmenting spots...')
+Spots = cell(1, nSpotChannels);
+n = 0;
+for channelIndex = spotChannels
+    
+    n = n + 1;
+    
+    if ismember(channelIndex, skipChannel)
+        continue
+    end
+    
+    if isempty(segmentChannel)
+        segmentChannel = channelIndex;
+    end
+    
+    tic;
+    
+    [ffim, doFF] = loadSegmentSpotsFlatField(...
+        liveExperiment.userPreFolder, Prefix, spotChannels);
+    
+    
+    Spots = segment2DLoci(channelIndex, initialFrame, lastFrame, FrameInfo(1).NumberSlices, ...
+        liveExperiment.userPreFolder, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(n), neighborhood_px, ...
+        snippetSize_px, pixelSize_nm, FrameInfo(1).FileMode, [],...
+        optionalResults, gpu, saveAsMat, saveType, nuclearMask, autoThresh, segmentChannel);
+    
+    Spots = segmentNanocagesZTracking(pixelSize_nm, Spots);
+    
+    [falsePositives, Spots] = findBrightestNanocageZ(numShadows,...
+            useIntegralCenter, 0, Spots);
+    timeElapsed = toc;
+    
+end
+
+if nSpotChannels == 1 && iscell(Spots)
+    Spots = Spots{1};
+end
+
+mkdir([DropboxFolder, filesep, Prefix]);
+if whos(var2str(Spots)).bytes < 2E9
+    save([DropboxFolder, filesep, Prefix,...
+        filesep, 'Spots.mat'], 'Spots', '-v6');
+else
+    save([DropboxFolder, filesep, Prefix,...
+        filesep, 'Spots.mat'], 'Spots', '-v7.3', '-nocompression');
+end
+
+if ~keepPool
+    try  %#ok<TRYNC>
+        poolobj = gcp('nocreate');
+        delete(poolobj);
+    end
+end
+
+
+end

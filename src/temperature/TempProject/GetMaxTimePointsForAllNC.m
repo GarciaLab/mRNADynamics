@@ -23,5 +23,5 @@ NumNuclei = this.TFProfiles{SetIndex}.([traceName, 'CycleNumOnNuclei']);
 CycleTimes = this.TFProfiles{SetIndex}.([traceName, 'CycleFrameTimes']);
 
 
-NCTimes = CycleTimes{6}/60;
+NCTimes = CycleTimes{end}/60;
 MaxTimePoints = min( max(NCTimes)/(this.time_delta/60)+1, size(MeanProfileTraces, 1));

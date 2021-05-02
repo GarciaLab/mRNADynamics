@@ -20,7 +20,7 @@ function [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrame
   NFrames = NPlanes./NSlices/NChannels;
 
   %Get rid of the last frame as it is always incomplete because that's when we stopped it
-  NFrames = NFrames - 1;
-  NPlanes = NPlanes - (NSlices * NChannels);
+  NFrames = NFrames;% - 1; % GM for importing standard candles
+  NPlanes = NPlanes;% - (NSlices * NChannels);% GM for importing standard candles
   Frame_Times = zeros(1, sum(NFrames.*NSlices));
 end

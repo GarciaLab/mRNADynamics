@@ -1,10 +1,8 @@
-function this = CalculateMeanSpotFluo(this, deltaTbinWidth, MinTimePoints, verbose)
-if ~exist('deltaTbinWidth', 'var')
-    deltaTbinWidth = 30;
-end
-if ~exist('MinTimePoints', 'var')
-    MinTimePoints = 5;
-end
+function this = CalculateMeanSpotFluo(this, verbose)
+deltaTbinWidth = this.time_delta;
+MinTimePoints = this.MinimumTimePoints;
+
+
 if ~exist('verbose', 'var')
     verbose = true;
 end

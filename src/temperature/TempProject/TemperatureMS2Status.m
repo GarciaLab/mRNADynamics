@@ -76,7 +76,7 @@ classdef TemperatureMS2Status
     methods
         % Constructor
         function this = TemperatureMS2Status(dataType,Prefix)
-
+            
             dataStatusFilename = 'DataStatus.*';    %This naming convention is now enforced inside findDataStatus.m
             
             % Get all Dropbox/Results folders
@@ -110,7 +110,7 @@ classdef TemperatureMS2Status
             % Load all Project Prefixes and find
             allPrefixes = getProjectPrefixes(dataType);
             ColIndex = find(ismember(allPrefixes, Prefix))+1;
-
+            
             %%
             % Add Zoom Info
             ZoomIndex = find(contains(dataStatusRownames, 'Zoom'));
@@ -159,6 +159,9 @@ classdef TemperatureMS2Status
             end
             hasStitchedEmbryoImagesIndex = find(contains(dataStatusRownames, 'StitchFullEmbryoImages'));
             hSEI = dataTypeTabContents{hasStitchedEmbryoImagesIndex, ColIndex};
+            if ismissing(hSEI)
+                     this.hasStitchedFullEmbryoImages = 0;
+            else
             if isdatetime(hSEI)
                 hSEIstring = datestr(hSEI);
                 hSEIdate = hSEI;
@@ -175,6 +178,7 @@ classdef TemperatureMS2Status
                 this.StitchedEmbryoImagesDate = hSEI;
             elseif ismissing(hSEI)
                 this.hasStitchedFullEmbryoImages = 0;
+            end
             end
             % Store ExportedTIFs info
             hasExportedTIFsIndex = find(contains(dataStatusRownames, 'ExportedTIFs'));
@@ -259,22 +263,27 @@ classdef TemperatureMS2Status
             hasTrackedNucleiIndex = find(contains(dataStatusRownames, 'TrackNuclei'));
             if ~isempty(hasTrackedNucleiIndex)
                 hTN = dataTypeTabContents{hasTrackedNucleiIndex, ColIndex};
-                if isdatetime(hTN)
-                    hTNstring = datestr(hTN);
-                    hTNdate = hTN;
+                if ismissing(hTN)
+                    this.hasTrackedNuclei = 0;
                 else
-                    hTNstring = hTN;
-                    hTNdate = [];
-                end
-                if contains(lower(hTNstring), 'yes') |  contains(lower(hTNstring), 'done')
-                    this.hasTrackedNuclei = 1;
-                elseif contains(lower(hTNstring), 'no')
-                    this.hasTrackedNuclei = 0;
-                elseif isdatetime(hTN)
-                    this.hasTrackedNuclei = 1;
-                    this.TrackedNucleiDate = hTN;
-                elseif ismissing(hTN)
-                    this.hasTrackedNuclei = 0;
+                    
+                    if isdatetime(hTN)
+                        hTNstring = datestr(hTN);
+                        hTNdate = hTN;
+                    else
+                        hTNstring = hTN;
+                        hTNdate = [];
+                    end
+                    if contains(lower(hTNstring), 'yes') |  contains(lower(hTNstring), 'done')
+                        this.hasTrackedNuclei = 1;
+                    elseif contains(lower(hTNstring), 'no')
+                        this.hasTrackedNuclei = 0;
+                    elseif isdatetime(hTN)
+                        this.hasTrackedNuclei = 1;
+                        this.TrackedNucleiDate = hTN;
+                    elseif ismissing(hTN)
+                        this.hasTrackedNuclei = 0;
+                    end
                 end
             end
             
@@ -282,22 +291,26 @@ classdef TemperatureMS2Status
             hasCheckedNucleiSegmentationIndex = find(contains(dataStatusRownames, 'CheckNucleiSegmentation'));
             if ~isempty(hasCheckedNucleiSegmentationIndex)
                 hCNS = dataTypeTabContents{hasCheckedNucleiSegmentationIndex, ColIndex};
-                if isdatetime(hCNS)
-                    hCNSstring = datestr(hCNS);
-                    hCNSdate = hCNS;
+                if ismissing(hCNS)
+                    this.hasCheckedNucleiSegmentation = 0;
                 else
-                    hCNSstring = hCNS;
-                    hCNSdate = [];
-                end
-                if contains(lower(hCNSstring), 'yes') |  contains(lower(hCNSstring), 'done')
-                    this.hasCheckedNucleiSegmentation = 1;
-                elseif contains(lower(hCNSstring), 'no')
-                    this.hasCheckedNucleiSegmentation = 0;
-                elseif isdatetime(hCNS)
-                    this.hasCheckedNucleiSegmentation = 1;
-                    this.CheckedNucleiSegmentationDate = hCNS;
-                elseif ismissing(hCNS)
-                    this.hasCheckedNucleiSegmentation = 0;
+                    if isdatetime(hCNS)
+                        hCNSstring = datestr(hCNS);
+                        hCNSdate = hCNS;
+                    else
+                        hCNSstring = hCNS;
+                        hCNSdate = [];
+                    end
+                    if contains(lower(hCNSstring), 'yes') |  contains(lower(hCNSstring), 'done')
+                        this.hasCheckedNucleiSegmentation = 1;
+                    elseif contains(lower(hCNSstring), 'no')
+                        this.hasCheckedNucleiSegmentation = 0;
+                    elseif isdatetime(hCNS)
+                        this.hasCheckedNucleiSegmentation = 1;
+                        this.CheckedNucleiSegmentationDate = hCNS;
+                    elseif ismissing(hCNS)
+                        this.hasCheckedNucleiSegmentation = 0;
+                    end
                 end
             end
             
@@ -319,7 +332,7 @@ classdef TemperatureMS2Status
                 end
             end
             
-             % Store TrackmRNA info
+            % Store TrackmRNA info
             hasTrackedmRNADynamicsIndex = find(contains(dataStatusRownames, 'TrackmRNADynamics'));
             if ~isempty(hasTrackedmRNADynamicsIndex)
                 hTmD = dataTypeTabContents{hasTrackedmRNADynamicsIndex, ColIndex};
@@ -489,7 +502,7 @@ classdef TemperatureMS2Status
                     this.hasPlottedMS2FluoProfilesAP = 0;
                 end
             end
-          
+            
             
             
             % Store whether set should be included in analysis
@@ -507,7 +520,7 @@ classdef TemperatureMS2Status
                 end
             end
             
-             % Store whether set should be included in analysis
+            % Store whether set should be included in analysis
             ReadyForEnrichmentIndex = find(contains(dataStatusRownames, 'ReadyForEnrichmentAnalysis'));
             if ~isempty(ReadyForEnrichmentIndex)
                 ReadyForEnrichmentCell = dataTypeTabContents{ReadyForEnrichmentIndex, ColIndex};
@@ -530,31 +543,31 @@ classdef TemperatureMS2Status
                     this.Comments = CommentsCell;
                 end
             end
-%             [this.MinAP, this.MaxAP] = getAPrange(this);
+            %             [this.MinAP, this.MaxAP] = getAPrange(this);
             
             
         end
         
-%         
-%         function [MinAP, MaxAP] = getAPrange(this)
-%             [~,~,DropboxFolder,~,~]=...
-%                 DetermineLocalFolders;
-% 
-%             if this.hasExtractedNuclearFluoProfilesAP
-%                 load([DropboxFolder, filesep, this.Prefix, filesep, 'MeanAPposNC14_FramesNC.mat']);
-%                 load([DropboxFolder, filesep,  this.Prefix, filesep, 'NumNucAPNC14_FramesNC.mat']);
-%                 APResolution = 1/(size(MeanAP, 2)-1);
-%                 MeanAP(NumNucAP < 5) = NaN;
-%                 [~,MinAPBinIDs] = min(MeanAP, [], 2);
-%                 MinAP= (mode(MinAPBinIDs)-1)*APResolution;
-%                 [~,MaxAPBinIDs] = max(MeanAP, [], 2);
-%                 MaxAP = (mode(MaxAPBinIDs)-1)*APResolution;
-%             else
-%                 MinAP = [];
-%                 MaxAP = [];
-%             end
-%    
-%         end
+        %
+        %         function [MinAP, MaxAP] = getAPrange(this)
+        %             [~,~,DropboxFolder,~,~]=...
+        %                 DetermineLocalFolders;
+        %
+        %             if this.hasExtractedNuclearFluoProfilesAP
+        %                 load([DropboxFolder, filesep, this.Prefix, filesep, 'MeanAPposNC14_FramesNC.mat']);
+        %                 load([DropboxFolder, filesep,  this.Prefix, filesep, 'NumNucAPNC14_FramesNC.mat']);
+        %                 APResolution = 1/(size(MeanAP, 2)-1);
+        %                 MeanAP(NumNucAP < 5) = NaN;
+        %                 [~,MinAPBinIDs] = min(MeanAP, [], 2);
+        %                 MinAP= (mode(MinAPBinIDs)-1)*APResolution;
+        %                 [~,MaxAPBinIDs] = max(MeanAP, [], 2);
+        %                 MaxAP = (mode(MaxAPBinIDs)-1)*APResolution;
+        %             else
+        %                 MinAP = [];
+        %                 MaxAP = [];
+        %             end
+        %
+        %         end
         
     end
 end

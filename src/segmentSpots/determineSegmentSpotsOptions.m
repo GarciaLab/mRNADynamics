@@ -113,6 +113,6 @@ end
 
 frameRange = [initialFrame, lastFrame]; 
 
-startParallelPool(nWorkers, displayFigures, keepPool);
+startParallelPool(nWorkers, displayFigures, keepPool); 
     
 end

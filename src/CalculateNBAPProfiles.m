@@ -10,6 +10,13 @@ if ~exist('verbose', 'var')
 end
 
 liveExperiment = LiveExperiment(Prefix);
+HasHistone = false;
+for i = 1:length(liveExperiment.Channels)
+    if contains(lower(liveExperiment.Channels{i}), 'his')
+       HasHistone = true;
+    end
+end
+
 APbins = 0:liveExperiment.APResolution:1;
 FrameInfo = getFrameInfo(liveExperiment);
 FrameTimes = [FrameInfo(:).Time]; % in seconds
@@ -42,16 +49,20 @@ for cn=1:length(CompiledNuclei)
     if CompiledNuclei(cn).VelocityInfo.SchnitzHasAllFrames
         AllApproved(cn) =  1;
     end
-    if isfield('schnitzcells', 'containsFirstFrameOfCycle')
-        if CompiledNuclei(cn).containsFirstFrameOfCycle
-            FirstApproved(cn) =  1;
-        end
-    else
-        if ~isempty(CompiledNuclei(cn).anaphaseFrame)
-            if ~CompiledNuclei(cn).inferredAnaphaseFrame
+    if HasHistone
+        if isfield('schnitzcells', 'containsFirstFrameOfCycle')
+            if CompiledNuclei(cn).containsFirstFrameOfCycle
                 FirstApproved(cn) =  1;
             end
+        else
+            if ~isempty(CompiledNuclei(cn).anaphaseFrame)
+                if ~CompiledNuclei(cn).inferredAnaphaseFrame
+                    FirstApproved(cn) =  1;
+                end
+            end
         end
+    else
+        FirstApproved(cn) =  1;
     end
     if all(CompiledNuclei(cn).FlaggingInfo.FrameApprovedFinal == 1)
         PercentageFramesApproved(cn) = 1;
@@ -82,30 +93,30 @@ UnalignedCycleMeanTraces = NaN(numFrames, length(APbins), 6);
 UnalignedCycleTraceStdErrors =  NaN(numFrames, length(APbins), 6);
 UnalignedCycleNumNuclei =  NaN(numFrames, length(APbins), 6);
 UnalignedCycleNumOnNuclei =  NaN(numFrames, length(APbins), 6);
-CycleTraces = {};
-MeanAPs = {};
-ParticleAPbinIndices = {};
-UnalignedCycleFrameTimes = {};
+CycleTraces = cell(1, 6);
+MeanAPs =  cell(1, 6);
+ParticleAPbinIndices =  cell(1, 6);
+UnalignedCycleFrameTimes = cell(1, 6);
 
 numBinnedFrames = ceil((max(FrameTimes)-FrameTimes(nc_info(6)))/deltaTbinWidth)+1;
 AnaphaseAlignedCycleMeanTraces = NaN(numBinnedFrames, length(APbins), 6);
 AnaphaseAlignedCycleTraceStdErrors =  NaN(numBinnedFrames, length(APbins), 6);
 AnaphaseAlignedCycleNumNuclei =  NaN(numBinnedFrames, length(APbins), 6);
 AnaphaseAlignedCycleNumOnNuclei =  NaN(numBinnedFrames, length(APbins), 6);
-CycleTracesWithAnaphaseAlignment = {};
-AnaphaseAlignedCycleFrameTimes = {};
+CycleTracesWithAnaphaseAlignment = cell(1, 6);
+AnaphaseAlignedCycleFrameTimes =  cell(1, 6);
 
 TbinnedCycleMeanTraces = NaN(numBinnedFrames, length(APbins), 6);
 TbinnedCycleTraceStdErrors =  NaN(numBinnedFrames, length(APbins), 6);
 TbinnedCycleNumNuclei =  NaN(numBinnedFrames, length(APbins), 6);
 TbinnedCycleNumOnNuclei =  NaN(numBinnedFrames, length(APbins), 6);
-TbinnedCycleTraces = {};
-TbinnedCycleFrameTimes = {};
+TbinnedCycleTraces =  cell(1, 6);
+TbinnedCycleFrameTimes = cell(1, 6);
 
 
 IncludedNCs = min(CNcycles):max(CNcycles);
 %%
-for k = 1:length(IncludedNCs)
+for k =1:length(IncludedNCs)
     NC = IncludedNCs(k);
     IncludedTraceIndices = find((CNcycles == NC) & (FirstApproved == 1) &...
         (ApprovedCount == 1) & (HasMinimumTimePoints == 1) & (PercentageFramesApproved >= .7));

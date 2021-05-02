@@ -1,4 +1,6 @@
-function this = FitTrapezoidsForMeanMS2Traces(this, SetIndex, NC, APindex, TraceType, UseWeights, alpha)
+function this = FitTrapezoidsForMeanMS2Traces(this, SetIndex, NC, APindex, TraceType)
+
+alpha = this.alpha;
 
 [MeanTrace, StdErrorTrace, NCTimes] = GetSpecifiedTracesForFitting(this, SetIndex, NC, APindex, TraceType);
 
@@ -13,7 +15,7 @@ if length(MeanTrace) >= this.MinimumTimePoints
     SmoothedTrace = smooth(MeanTrace, span);%, 'loess');
     PositiveFitIncludedIndices = GetIndicesForPositiveSlopeFit(SmoothedTrace);
     
-    if (length(PositiveFitIncludedIndices)>= this.MinimumFittingPoints) & ~UseWeights
+    if (length(PositiveFitIncludedIndices)>= this.MinimumFittingPoints) 
         [pos_fitresult,pos_gof1,pos_out1] = fit(NCTimes(PositiveFitIncludedIndices).',MeanTrace(PositiveFitIncludedIndices).','poly1');
         pos_slope = pos_fitresult.p1;
         ci = confint(pos_fitresult, alpha);
@@ -50,7 +52,7 @@ if length(MeanTrace) >= this.MinimumTimePoints
     
     NegativeFitIncludedIndices = GetIndicesForNegativeSlopeFit(SmoothedTrace);
     if NC < 14
-        if (length(NegativeFitIncludedIndices)>= this.MinimumFittingPoints) & ~UseWeights
+        if (length(NegativeFitIncludedIndices)>= this.MinimumFittingPoints)
             [neg_fitresult,neg_gof1,neg_out1] = fit(NCTimes(NegativeFitIncludedIndices).',MeanTrace(NegativeFitIncludedIndices).','poly1');
             neg_slope = neg_fitresult.p1;
             ci = confint(neg_fitresult, alpha);

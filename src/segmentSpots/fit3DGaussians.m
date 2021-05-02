@@ -146,7 +146,7 @@ function  fitInfo = fit3DGaussians(snip3D, PixelSize, zStep, spotDims, nSpots, g
     
     % estimate error in integral calculations numeriucally...this is faster
     % than doing it symbolically in matlab    
-    FitCI = nlparci(GaussFit, residual, 'jacobian', jacobian);      
+    FitCI = nlparci(GaussFit, residual, 'jacobian', jacobian);     
     FitDeltas = diff(FitCI') / 2 / 1.96;
     
     % Reorder if necessary

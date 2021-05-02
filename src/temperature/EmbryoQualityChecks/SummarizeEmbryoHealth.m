@@ -13,7 +13,7 @@ nucleusDiameters = zeros(1, 6);
 for nc=9:14
     nucleusDiameters(nc-8) = getDefaultParameters(FrameInfo,[['d', num2str(nc)]])/PixelSize; % in pixels
 end
-AddNuclearPosition(Prefix);
+%AddNuclearPosition(Prefix);
 DetermineNucleiEndFrames(Prefix);
 schnitzcells = CalculateNuclearMovement(Prefix);
 schnitzcycles = [schnitzcells(:).cycle];
@@ -25,6 +25,7 @@ if ~isfield(schnitzcells, 'Approved')
 end
 %% Initialize HealthSummaryInfo
 HealthSummary = {};
+HealthSummary.NuclearTrackingDone = false;
 HealthSummary.SchnitzCount = NaN(1, 5);
 HealthSummary.FractionSickNuclei = NaN(1, 5);
 HealthSummary.FractionRejectedNuclei = NaN(1,5);
@@ -48,10 +49,23 @@ HealthSummary.StdTotalYDisplacement = NaN(1,5);
 HealthSummary.StdTotalDisplacement = NaN(1,5);
 HealthSummary.StdDisplacementPerSecond = NaN(1,5);
 [NCDivisionInfo,DivisionStdInfo] = CalculateSchnitzDivisionCycleTimes(Prefix);
-HealthSummary.NCDivisionInfo = NCDivisionInfo;
-HealthSummary.DivisionStdInfo = DivisionStdInfo;
+HealthSummary.NCDivisionInfo = [NCDivisionInfo NaN];
+HealthSummary.DivisionStdInfo = [DivisionStdInfo NaN];
 HealthSummary.APboundaries = NaN(1,2);
 
+
+
+%%
+if isfield(schnitzcells, 'Checked')
+    ApprovedFlagArray = [schnitzcells(:).Approved];
+    CheckedFlagArray = [schnitzcells(:).Checked];
+    CyclesArray =  [schnitzcells(:).Checked];
+    FinishedNuclearTracking = (ApprovedFlagArray == 1) | (CheckedFlagArray == 1) | (CyclesArray == min(CyclesArray)) ;
+    if sum(FinishedNuclearTracking)/length(FinishedNuclearTracking) > .99
+        HealthSummary.NuclearTrackingDone = true;
+    end
+end
+    
 
 %%
 for NC = max(min(schnitzcycles), 10):max(schnitzcycles)

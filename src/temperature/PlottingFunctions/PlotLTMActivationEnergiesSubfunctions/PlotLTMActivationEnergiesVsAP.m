@@ -1,11 +1,13 @@
 function PlotLTMActivationEnergiesVsAP(this, parameter, outdir, varargin)
 %%
-
+UseRescaledFluo = false;
 x = 1;
 while x <= length(varargin)
     if strcmp(lower(varargin{x}), 'plottitle')
         PlotTitle = varargin{x+1};
         x = x+1;
+    elseif strcmpi(varargin{x}, 'userescaledfluo')
+        UseRescaledFluo = true;
     elseif strcmp(lower(varargin{x}), 'tracetype')
         TraceType = lower(varargin{x+1});
         x = x+1;
@@ -53,6 +55,10 @@ elseif strcmpi(parameter, 'MaxFluos') | strcmpi(parameter, 'MaxFluo')
     parameter = 'MaxFluos';
 end
 
+if UseRescaledFluo & ~(strcmpi(parameter, 'MaxFluos') | strcmpi(parameter, 'PlateauHeights') | strcmpi(parameter, 'LoadingRates'))
+    error('Invalid combination of parameter and useRescaledFluo')
+end
+
 %%
 
 if ~exist(outdir, 'dir')
@@ -91,7 +97,7 @@ Nsigfigs = 3;
 
 %% Load relevant parameters into memory
 [ActivationEnergies, SEActivationEnergies, LogAs, SELogAs, R2s, PlotTitle] =...
-    getActivationEnergyMatrices(this, parameter, TraceType);
+    getActivationEnergyMatrices(this, parameter, TraceType, UseRescaledFluo);
 % Calculate Plot Xlims
 
 ObservedAPbins =  (sum(~isnan(ActivationEnergies),2) > 0).';
@@ -100,6 +106,7 @@ NumAPbins = length(IncludedAPbins);
 IncludedNCs = 9:14;
 ObservedNCs =  (sum(~isnan(ActivationEnergies),1) > 0).';
 IncludedNCs = IncludedNCs(ObservedNCs);
+
 
 ActivationEnergies = ActivationEnergies(ObservedAPbins,:);
 ActivationEnergies = ActivationEnergies(:,ObservedNCs);
@@ -118,15 +125,18 @@ PlotXmax = min([1, APResolution*(find(ObservedAPbins > 0, 1, 'last')+1)]);
 
 GlobalPlotYmin = min(min(ActivationEnergies-SEActivationEnergies));
 GlobalPlotYmax = max(max(ActivationEnergies+SEActivationEnergies));
-
-
+%GlobalPlotYmax = 20;
 
 %%
 outdir2 = [outdir,filesep,'ActivationEnergies'];
 if ~exist(outdir2, 'dir')
     mkdir(outdir2)
 end
-outdir3 = [outdir2,filesep,parameter];
+if ~UseRescaledFluo
+    outdir3 = [outdir2,filesep,parameter];
+else
+    outdir3 = [outdir2,filesep,'Rescaled',parameter];
+end
 if ~exist(outdir3, 'dir')
     mkdir(outdir3)
 end
@@ -157,10 +167,11 @@ for NCIndex=1:length(IncludedNCs)
     FrameProfAx = axes(FrameProfFig);
     for APIndex =1:NumAPbins
         ColIndex = find(abs(R_range-R2s(APIndex, NCIndex)) == min(abs(R_range-R2s(APIndex, NCIndex))));
+        
         if isempty(ColIndex)
             continue
         end
-        
+        ColIndex = 1;
         MarkerIndex = 1;
         if isempty(MarkerIndex)
             MarkerIndex = length(MarkerStyles);
@@ -199,14 +210,14 @@ for NCIndex=1:length(IncludedNCs)
         title(FrameProfAx,  ['Nuclear Cycle ',num2str(NC)], 'FontSize', 14)
     end
     
-    map = colormap(colors);
-    h = colorbar;
-    % %set(h, 'ylim', [min(Prefix_temp_obs) max(Prefix_temp_obs)])
-    hold off
-    colorTitleHandle = get(h,'Title');
-    titleString = 'R^2';
-    set(colorTitleHandle ,'String',titleString, 'FontSize', 14);
-    h.FontSize = 14;
+%     map = colormap(colors);
+%     h = colorbar;
+%     % %set(h, 'ylim', [min(Prefix_temp_obs) max(Prefix_temp_obs)])
+%     hold off
+%     colorTitleHandle = get(h,'Title');
+%     titleString = 'R^2';
+%     set(colorTitleHandle ,'String',titleString, 'FontSize', 14);
+%     h.FontSize = 14;
     
     
     saveas(FrameProfFig,[outdir5, filesep,...
@@ -244,6 +255,7 @@ for NCIndex=1:length(IncludedNCs)
         if isempty(ColIndex)
             continue
         end
+        ColIndex = 1;
         
         MarkerIndex = NCIndex;
         if isempty(MarkerIndex)
@@ -290,13 +302,13 @@ if exist('PlotTitle', 'var')
     
 end
 map = colormap(colors);
-h = colorbar;
-% %set(h, 'ylim', [min(Prefix_temp_obs) max(Prefix_temp_obs)])
-hold off
-colorTitleHandle = get(h,'Title');
-titleString = 'R^2';
-set(colorTitleHandle ,'String',titleString, 'FontSize', 14);
-h.FontSize = 14;
+% h = colorbar;
+% % %set(h, 'ylim', [min(Prefix_temp_obs) max(Prefix_temp_obs)])
+% hold off
+% colorTitleHandle = get(h,'Title');
+% titleString = 'R^2';
+% set(colorTitleHandle ,'String',titleString, 'FontSize', 14);
+% h.FontSize = 14;
 %%
 APticks = PlotXmin:APResolution:(PlotXmax+(length(IncludedNCs)-1)*(PlotXmax-PlotXmin));
 xticks(APticks)
@@ -318,4 +330,3 @@ saveas(FrameProfFig,[outdir5, filesep,parameter, '_ActivationEnergies.png']);
 
 
 %%
-close all

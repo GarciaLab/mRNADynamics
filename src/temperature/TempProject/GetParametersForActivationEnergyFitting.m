@@ -95,7 +95,7 @@ x_setpoint = x_setpoint(IncludedSets);
 y = y(IncludedSets);
 y_err = y_err(IncludedSets);
 
-x = 1./(this.R*(x+273));
+x = 1./(this.R*(x+273.15));
 y = log(y);
 y_err = abs(y_err./y);
 
