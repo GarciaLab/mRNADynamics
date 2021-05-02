@@ -3,3 +3,4 @@
 *.mdmp
 *.log
 src/utilities/vmStressTester.m
+matlab.mat
