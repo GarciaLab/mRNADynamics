@@ -15,6 +15,7 @@ function [FrameInfo,AllLSMImages,NSlices, NPlanes, NFrames,Frame_Times,NChannels
 
     % Figure out the number of slices in each series
     NSlices(LSMIndex) = str2double(LSMMeta.getPixelsSizeZ(0));
+    
     % Number of channels
     if LSMIndex == 1 %NL: assuming all series have same # of channels for consistency with LIF mode
       NChannels = LSMMeta.getChannelCount(0);
