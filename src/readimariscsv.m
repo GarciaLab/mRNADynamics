@@ -1,6 +1,6 @@
-function [schnitzcells, Ellipses] = readimariscsv()
+function [schnitzcells, Ellipses] = readimariscsv(positionFile)
 %%
-T = readtable("P:\Liz\MATLAB\Data\RawDynamicsData\2020-11-26\h2bmScar-MCPmed\ImarisResult\h2bmScar-MCPmed_Statistics\h2bmScar-MCPmed_Position.csv");
+T = readtable(positionFile);
 
 %drop needless features
 T = removevars(T, {'Unit', 'Category', 'Collection', 'Var10'});
