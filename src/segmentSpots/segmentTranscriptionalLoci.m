@@ -128,7 +128,6 @@ isZPadded = size(movieMat, 3) ~= zSize;
 % afterEach(q, @nUpdateWaitbar);
 % p = 1;
 parfor currentFrame = initialFrame:lastFrame
-    fprintf('Frame: %d/%d - Start\n', currentFrame, lastFrame);
     % neeed for parfor compatibility
     size(Ellipses);
     % this is just to send a hint to parfor to classify Ellipses variable correctly.
@@ -153,11 +152,9 @@ parfor currentFrame = initialFrame:lastFrame
             '_ch', iIndex(ch_segment, 2)];
         
         if exist([dogStackFile, '.mat'], 'file')
-            % fprintf('Frame: %d/%d - Loading stackFile (.mat)\n', currentFrame, lastFrame);
             dogStack = load([dogStackFile,'.mat'], 'dogStack');
             dogStack = dogStack.dogStack;
         elseif exist([dogStackFile, '.tif'], 'file')
-            % fprintf('Frame: %d/%d - Loading stackFile (.tif)\n', currentFrame, lastFrame);
             dogStack = imreadStack2([dogStackFile, '.tif'], yDim, xDim, zDim);
         else
             error('Cannot find any dogs in the ProcessedData folder. Are they missing or incorrectly named?')
@@ -253,11 +250,9 @@ parfor currentFrame = initialFrame:lastFrame
                 Spots(currentFrame).Fits = [Spots(currentFrame).Fits, Fits];
                 
             end
-            fprintf('Frame: %d/%d, z: %d/%d - n_spots: %d\n', currentFrame, lastFrame, zIndex, zSize, n_spots);
         end
     end
 %     send(q, currentFrame);
-    fprintf('Frame: %d/%d - end.\n', currentFrame, lastFrame);
 end
 
 % 
