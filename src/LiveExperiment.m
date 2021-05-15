@@ -18,6 +18,8 @@ classdef LiveExperiment
         isUnhealthy = false;
         
         anaphaseFrames = [0; 0; 0; 0; 0; 0];
+
+        experimentName = '';
         
         
     end
@@ -121,8 +123,8 @@ classdef LiveExperiment
                 ~, ~, ~, movieDatabase]= DetermineLocalFolders(this.Prefix);
             
             dateString = this.Prefix(1:10);
-            experimentName = this.Prefix(12:length(this.Prefix));
-            rawSubFolder = [dateString,filesep,experimentName];
+            this.experimentName = this.Prefix(12:length(this.Prefix));
+            rawSubFolder = [dateString,filesep,this.experimentName];
             
             liveFolderIndex = strfind(lower(this.userPreFolder), lower('LivemRNA'))...
                 +  length('livemRNA') - 1;

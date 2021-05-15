@@ -39,7 +39,46 @@ function FrameInfo = processLSMData(Folder, RawDataFiles, FrameInfo,...
       [FFPaths, FFToUse, LSMFF] = findFlatFieldInformation(Folder);
       % Proceed accordingly
       processFlatFieldInformation(Prefix, OutputFolder, FFPaths, FFToUse, LSMFF);
-      
+
+      imarisFolder = [RawDataFiles.folder, filesep, 'ImarisResult'];
+      if isfolder(imarisFolder)
+          disp('Imaris results folder detected. Will get spots info from Imaris.')
+          
+          positionsFile = [imarisFolder, filesep, liveExperiment.experimentName, '_Statistics', filesep, liveExperiment.experimentName, '_Position.csv'];
+          if isfile(positionsFile)
+            disp('Parsing Imaris position file...')
+
+            % JP: filenames for testing, this is WIP
+            DropboxFolder = liveExperiment.userResultsFolder;
+            ellipsesFile = [DropboxFolder,filesep,Prefix,filesep,'Ellipses_imaris.mat'];
+            schnitzcellsFile = [DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin_imaris.mat']; 
+
+            % Liz says: The entire image stack is 200 pixels in x, 444 in y and 100 in z (again will change in future datasets).
+            % The x and y resolutions is 0.234 microns per pixel and z is 0.5 microns per pixel, but this will change in future datasets.
+            % I looked up this information in the Zeiss software, but hopefully it's available in the metadata. 
+            % JP: it is, in FrameInfo:
+
+            % LinesPerFrame: 444
+            % PixelsPerLine: 200
+            % NumberSlices: 100
+            % FileMode: 'LSMExport'
+            % PixelSize: 0.2341
+            % ZStep: 0.5000
+            % Time: 1.4797e+04
+
+            [schnitzcells, Ellipses] = readimariscsv(positionsFile, FrameInfo(1).PixelSize, FrameInfo(1).PixelSize, FrameInfo(1).ZStep);
+
+
+            save2(ellipsesFile, Ellipses); 
+            save2(schnitzcellsFile, schnitzcells); 
+
+            disp('Saved imaris-based .mat files as *_imaris.mat files in DynamicsResults folder.');
+          else
+            error(['Imaris folder does not contain positions file at ', positionsFile]);
+          end
+          
+      end
+
       if nuclearGUI
 
         chooseAnaphaseFrames(...

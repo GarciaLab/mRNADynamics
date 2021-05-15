@@ -147,7 +147,6 @@ parfor currentFrame = initialFrame:lastFrame
             num2str(currentFrame), '...']); end
     
     if haveStacks
-        
         dogStackFile = [DogOutputFolder, dogStr, Prefix, '_',...
             iIndex(currentFrame, 3),...
             '_ch', iIndex(ch_segment, 2)];
@@ -156,8 +155,7 @@ parfor currentFrame = initialFrame:lastFrame
             dogStack = load([dogStackFile,'.mat'], 'dogStack');
             dogStack = dogStack.dogStack;
         elseif exist([dogStackFile, '.tif'], 'file')
-            dogStack = imreadStack2([dogStackFile, '.tif'], yDim,...
-                xDim, zDim);
+            dogStack = imreadStack2([dogStackFile, '.tif'], yDim, xDim, zDim);
         else
             error('Cannot find any dogs in the ProcessedData folder. Are they missing or incorrectly named?')
         end
@@ -207,12 +205,10 @@ parfor currentFrame = initialFrame:lastFrame
         thresholdOrderOfMagnitude = floor(log10(Threshold))
         
         if thresholdOrderOfMagnitude < maxDogOrderOfMagnitude
-            disp('WARNING: Threshold probably too low, resulting in out of memory errors.');
+            fprintf('WARNING: Threshold probably too low, resulting in out of memory errors.\n');
         elseif thresholdOrderOfMagnitude > maxDogOrderOfMagnitude
-            disp('WARNING: Threshold probably too high, nothing will be detected.');
+            fprintf('WARNING: Threshold probably too high, nothing will be detected.\n');
         end
-        
-        
         
         dog_thresh = dog >= Threshold;
         
@@ -240,7 +236,6 @@ parfor currentFrame = initialFrame:lastFrame
         [dog_label, n_spots] = bwlabel(dog_thresh);
         centroids = regionprops(dog_thresh, 'centroid');
         
-        
         if n_spots ~= 0
             
             for spotIndex = 1:n_spots
@@ -255,13 +250,9 @@ parfor currentFrame = initialFrame:lastFrame
                 Spots(currentFrame).Fits = [Spots(currentFrame).Fits, Fits];
                 
             end
-            
         end
-        
     end
-    
 %     send(q, currentFrame);
-    
 end
 
 % 
