@@ -85,25 +85,45 @@ function [schnitzcells, Ellipses] = readimariscsv(positionFile, pixelXSize, pixe
     % convert table to struct, this should basically match schnitzcells as if they were produced by TrackNuclei. 
     schnitzcells = table2struct(T_groupedByID);
 
-    %Now, we'll make Ellipses by grouping by the Time column 
+    % Now, we'll make Ellipses by grouping the original imaris table but by the Time column 
     T_groupedByTime = groupsummary(T, 'Time', @(x) {x});
 
-    %We need to place the resulting data into the exact format of Ellipses
-    Ellipses = cell(length(timevec), 1);
-    for frame = 1:height(T_groupedByTime)
-        val = T_groupedByTime.(3)(frame);
-        vec = val{1};
-        Ellipses{frame} = nan(numel(vec), 1);
-        for col = 3:width(T_groupedByTime)
-            val = T_groupedByTime.(col)(frame);
-            vec = val{1};
-            Ellipses{frame}(:, col-2) = vec;
-        end
-       
-    end
+    T_groupedByTime = renamevars(T_groupedByTime,...
+        ["fun1_PositionX", "fun1_PositionY", "fun1_PositionZ", "fun1_TrackID", "fun1_ID"],...
+        ["cenx", "ceny", "cenz", "TrackID", "ID"]);
 
-    %Note that the orders the columns within each Ellipses cell may be wrong 
-    %and they should be reordered. Plus some appending needs to be done to make
-    %the width of each matrix 8 or 9. Also, ditto about conversion from um to
-    %pixels.
+
+    % We need to place the resulting data into the exact format of Ellipses
+    Ellipses = cell(height(T_groupedByTime), 1);
+    for frame = 1:height(T_groupedByTime)
+        val = T_groupedByTime.cenx(frame);
+        vec = val{1};
+        Ellipses{frame} = zeros(numel(vec), 1);
+
+        val = T_groupedByTime.cenx(frame);
+        val = convertSizeToPixels(val, pixelSizes.cenx);
+        vec = val{1}
+        Ellipses{frame}(:, 1) = vec;
+
+        val = T_groupedByTime.ceny(frame);
+        val = convertSizeToPixels(val, pixelSizes.ceny);
+        vec = val{1}
+        Ellipses{frame}(:, 2) = vec;
+
+        % nonsense values I'm stil hardcoding.
+        % how should we deterime radius for zebrafish data? should it be provided from imaris (or the user)?
+        % is getDiameters.m of any use here?
+        Ellipses{frame}(:, 3) = 9.3983;
+        Ellipses{frame}(:, 4) = 9.3983;
+
+        Ellipses{frame}(:, 5) = zeros(numel(vec), 1);
+        Ellipses{frame}(:, 6) = zeros(numel(vec), 1);
+        Ellipses{frame}(:, 7) = zeros(numel(vec), 1);
+        Ellipses{frame}(:, 8) = zeros(numel(vec), 1);
+
+        % shoudl we use imaris ID here (8948, 8949, etc), or index of schnitzcells arrays (1, 2, 3...)?
+        val = T_groupedByTime.ID(frame);
+        vec = val{1}
+        Ellipses{frame}(:, 9) = vec;
+    end
 end
