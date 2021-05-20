@@ -1,6 +1,7 @@
-function [schnitzcells, Ellipses] = readimariscsv(positionFile, pixelXSize, pixelYSize, pixelZSize)
+function [schnitzcells, Ellipses] = readimariscsv(imarisStatisticsFolder, positionFile, pixelXSize, pixelYSize, pixelZSize)
 
     arguments
+        imarisStatisticsFolder char
         positionFile char
         pixelXSize double
         pixelYSize double
@@ -10,6 +11,7 @@ function [schnitzcells, Ellipses] = readimariscsv(positionFile, pixelXSize, pixe
     pixelSizes.cenx = pixelXSize;
     pixelSizes.ceny = pixelYSize;
     pixelSizes.cenz = pixelZSize;
+
 
     % first 3 rows in imaris CSV are blank and/or file header
     % we want to start parsing for column names at row 3 (zero-based, so it's row 4 of the file)
@@ -85,12 +87,24 @@ function [schnitzcells, Ellipses] = readimariscsv(positionFile, pixelXSize, pixe
     % convert table to struct, this should basically match schnitzcells as if they were produced by TrackNuclei. 
     schnitzcells = table2struct(T_groupedByID);
 
-    % Now, we'll make Ellipses by grouping the original imaris table but by the Time column 
-    T_groupedByTime = groupsummary(T, 'Time', @(x) {x});
+    % Now, we'll make Ellipses.
+    % We start by reading all ellipsoid raw info from imaris CSV files
+    [A, B, C] = readImarisEllipsoidTables(imarisStatisticsFolder);
 
-    T_groupedByTime = renamevars(T_groupedByTime,...
-        ["fun1_PositionX", "fun1_PositionY", "fun1_PositionZ", "fun1_TrackID", "fun1_ID"],...
-        ["cenx", "ceny", "cenz", "TrackID", "ID"]);
+    % combine (join) all three tables of ellipsoid axis lenghts A, B andC into one table for convenience
+    TJoin = join(A, B);
+    TJoin = join(TJoin, C);
+
+    % also, join the ellipsoid info to the positions table, to gather all info into one big table
+    T_withoutMissing = rmmissing(T);
+    
+    % join all data by time, trackID, and ID columns
+    TJoin_all = join(T_withoutMissing, TJoin, 'LeftKeys', [4,5,6], 'RightKeys', [2,3,4]);
+    
+    % now we group all this info by the Time column 
+    T_groupedByTime = groupsummary(TJoin_all, 'Time', @(x) {x});
+
+    T_groupedByTime = renamevars(T_groupedByTime, ["fun1_PositionX", "fun1_PositionY", "fun1_PositionZ", "fun1_TrackID", "fun1_ID", "fun1_EllipsoidAxisLengthA", "fun1_EllipsoidAxisLengthB", "fun1_EllipsoidAxisLengthC"],["cenx", "ceny", "cenz", "TrackID", "ID", "axisA", "axisB", "axisC"]);
 
 
     % We need to place the resulting data into the exact format of Ellipses
@@ -102,19 +116,22 @@ function [schnitzcells, Ellipses] = readimariscsv(positionFile, pixelXSize, pixe
 
         val = T_groupedByTime.cenx(frame);
         val = convertSizeToPixels(val, pixelSizes.cenx);
-        vec = val{1}
+        vec = val{1};
         Ellipses{frame}(:, 1) = vec;
 
         val = T_groupedByTime.ceny(frame);
         val = convertSizeToPixels(val, pixelSizes.ceny);
-        vec = val{1}
+        vec = val{1};
         Ellipses{frame}(:, 2) = vec;
 
-        % nonsense values I'm stil hardcoding.
-        % how should we deterime radius for zebrafish data? should it be provided from imaris (or the user)?
-        % is getDiameters.m of any use here?
-        Ellipses{frame}(:, 3) = 9.3983;
-        Ellipses{frame}(:, 4) = 9.3983;
+        val = T_groupedByTime.axisA(frame);
+        vec = val{1};
+        Ellipses{frame}(:, 3) = vec;
+
+
+        val = T_groupedByTime.axisB(frame);
+        vec = val{1};
+        Ellipses{frame}(:, 4) = vec;
 
         Ellipses{frame}(:, 5) = zeros(numel(vec), 1);
         Ellipses{frame}(:, 6) = zeros(numel(vec), 1);
@@ -123,7 +140,7 @@ function [schnitzcells, Ellipses] = readimariscsv(positionFile, pixelXSize, pixe
 
         % shoudl we use imaris ID here (8948, 8949, etc), or index of schnitzcells arrays (1, 2, 3...)?
         val = T_groupedByTime.ID(frame);
-        vec = val{1}
+        vec = val{1};
         Ellipses{frame}(:, 9) = vec;
     end
 end

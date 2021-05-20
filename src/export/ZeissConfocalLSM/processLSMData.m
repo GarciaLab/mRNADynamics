@@ -44,7 +44,8 @@ function FrameInfo = processLSMData(Folder, RawDataFiles, FrameInfo,...
       if isfolder(imarisFolder)
           disp('Imaris results folder detected. Will get spots info from Imaris.')
           
-          positionsFile = [imarisFolder, filesep, liveExperiment.experimentName, '_Statistics', filesep, liveExperiment.experimentName, '_Position.csv'];
+          imarisStatisticsFolder = [imarisFolder, filesep, liveExperiment.experimentName, '_Statistics'];
+          positionsFile = [imarisStatisticsFolder, filesep, liveExperiment.experimentName, '_Position.csv'];
           if isfile(positionsFile)
             disp('Parsing Imaris position file...')
 
@@ -66,7 +67,7 @@ function FrameInfo = processLSMData(Folder, RawDataFiles, FrameInfo,...
             % ZStep: 0.5000
             % Time: 1.4797e+04
 
-            [schnitzcells, Ellipses] = readimariscsv(positionsFile, FrameInfo(1).PixelSize, FrameInfo(1).PixelSize, FrameInfo(1).ZStep);
+            [schnitzcells, Ellipses] = readimariscsv(imarisStatisticsFolder, positionsFile, FrameInfo(1).PixelSize, FrameInfo(1).PixelSize, FrameInfo(1).ZStep);
 
 
             save2(ellipsesFile, Ellipses); 
