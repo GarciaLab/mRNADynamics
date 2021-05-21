@@ -74,15 +74,13 @@ function [schnitzcells, Ellipses] = readimariscsv(imarisStatisticsFolder, positi
                         ratio = 1;
                     end
 
+                    % convert all positions from um to voxels, according to voxel size metadata
                     T_groupedByID.(col)(row) = convertSizeToPixels(T_groupedByID.(col)(row), ratio);
                 end
             end
         end
         
     end
-
-    % convert all positions from um to voxels, according to voxel size metadata
-
 
     % convert table to struct, this should basically match schnitzcells as if they were produced by TrackNuclei. 
     schnitzcells = table2struct(T_groupedByID);
@@ -139,8 +137,9 @@ function [schnitzcells, Ellipses] = readimariscsv(imarisStatisticsFolder, positi
         Ellipses{frame}(:, 8) = zeros(numel(vec), 1);
 
         % shoudl we use imaris ID here (8948, 8949, etc), or index of schnitzcells arrays (1, 2, 3...)?
-        val = T_groupedByTime.ID(frame);
-        vec = val{1};
+        TrackID = T_groupedByTime.TrackID(frame);
+        [~,IndexInSchnitzcells] = ismember(TrackID{1},T_groupedByID.TrackID);
+        vec = IndexInSchnitzcells;
         Ellipses{frame}(:, 9) = vec;
     end
 end
