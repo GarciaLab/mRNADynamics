@@ -51,8 +51,8 @@ function FrameInfo = processLSMData(Folder, RawDataFiles, FrameInfo,...
 
             % JP: filenames for testing, this is WIP
             DropboxFolder = liveExperiment.userResultsFolder;
-            ellipsesFile = [DropboxFolder,filesep,Prefix,filesep,'Ellipses_imaris.mat'];
-            schnitzcellsFile = [DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin_imaris.mat']; 
+            ellipsesFile = [DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'];
+            schnitzcellsFile = [DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat']; 
 
             % Liz says: The entire image stack is 200 pixels in x, 444 in y and 100 in z (again will change in future datasets).
             % The x and y resolutions is 0.234 microns per pixel and z is 0.5 microns per pixel, but this will change in future datasets.
@@ -73,7 +73,7 @@ function FrameInfo = processLSMData(Folder, RawDataFiles, FrameInfo,...
             save2(ellipsesFile, Ellipses); 
             save2(schnitzcellsFile, schnitzcells); 
 
-            disp('Saved imaris-based .mat files as *_imaris.mat files in DynamicsResults folder.');
+            disp('Saved imaris-based Ellipses and schnitzcells files in DynamicsResults folder.');
           else
             error(['Imaris folder does not contain positions file at ', positionsFile]);
           end
