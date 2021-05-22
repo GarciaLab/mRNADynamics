@@ -82,9 +82,31 @@ function [schnitzcells, Ellipses] = readimariscsv(imarisStatisticsFolder, positi
         
     end
 
-    % convert table to struct, this should basically match schnitzcells as if they were produced by TrackNuclei. 
-    schnitzcells = table2struct(T_groupedByID);
-
+    
+    % add legacy columns for backwards compatibility
+    % also add non critical values as zeros or empty arrays
+    tableHeight = height(T_groupedByID);
+    emptyArrays = cell(tableHeight,1);
+    zeroValues = zeros(tableHeight, 1);
+    
+    T_groupedByID.P = emptyArrays;
+    T_groupedByID.E = emptyArrays;
+    T_groupedByID.D = emptyArrays;
+    T_groupedByID.len = emptyArrays;
+    T_groupedByID.cellno = emptyArrays;
+    
+    T_groupedByID.AlreadyUsed = zeroValues;
+    T_groupedByID.ExtendedIntoFutureAlready = zeroValues;
+    T_groupedByID.StitchedTo = emptyArrays;
+    T_groupedByID.StitchedFrom = emptyArrays;
+    T_groupedByID.cycle = zeroValues;
+    T_groupedByID.timeSinceAnaphase = emptyArrays;
+    T_groupedByID.catchedAnaphase = zeroValues;
+    
+    % let's put the columns in the same order TrackNuclei puts them,
+    % just in case.
+    T_groupedByID = movevars(T_groupedByID,{'P', 'E', 'D', 'frames', 'cenx', 'ceny', 'len', 'cellno', 'AlreadyUsed', 'ExtendedIntoFutureAlready', 'StitchedTo', 'StitchedFrom', 'cycle', 'timeSinceAnaphase', 'catchedAnaphase'},'Before',1);
+    
     % Now, we'll make Ellipses.
     % We start by reading all ellipsoid raw info from imaris CSV files
     [A, B, C] = readImarisEllipsoidTables(imarisStatisticsFolder);
@@ -142,4 +164,11 @@ function [schnitzcells, Ellipses] = readimariscsv(imarisStatisticsFolder, positi
         vec = IndexInSchnitzcells;
         Ellipses{frame}(:, 9) = vec;
     end
+
+    
+    % convert table to struct, this should basically match schnitzcells as if they were produced by TrackNuclei. 
+    % we already used TrackID column for Ellipses generation, we can now
+    % remove it and other unwanted columns before generating the struct
+    T_groupedByID = removevars(T_groupedByID, {'TrackID', 'GroupCount', 'ImarisID', 'cenz'});
+    schnitzcells = table2struct(T_groupedByID);
 end
