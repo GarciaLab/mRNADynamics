@@ -158,17 +158,23 @@ function [schnitzcells, Ellipses] = readimariscsv(imarisStatisticsFolder, positi
         Ellipses{frame}(:, 7) = zeros(numel(vec), 1);
         Ellipses{frame}(:, 8) = zeros(numel(vec), 1);
 
-        % shoudl we use imaris ID here (8948, 8949, etc), or index of schnitzcells arrays (1, 2, 3...)?
         TrackID = T_groupedByTime.TrackID(frame);
         [~,IndexInSchnitzcells] = ismember(TrackID{1},T_groupedByID.TrackID);
         vec = IndexInSchnitzcells;
         Ellipses{frame}(:, 9) = vec;
+        
+        % we add z as a non-standard 10th column to Ellipses for now
+        % JP: still have to check backwards compatibility of doing this
+        val = T_groupedByTime.cenz(frame);
+        val = convertSizeToPixels(val, pixelSizes.cenz);
+        vec = val{1};
+        Ellipses{frame}(:, 10) = vec;
     end
 
     
     % convert table to struct, this should basically match schnitzcells as if they were produced by TrackNuclei. 
     % we already used TrackID column for Ellipses generation, we can now
     % remove it and other unwanted columns before generating the struct
-    T_groupedByID = removevars(T_groupedByID, {'TrackID', 'GroupCount', 'ImarisID', 'cenz'});
+    T_groupedByID = removevars(T_groupedByID, {'TrackID', 'GroupCount', 'ImarisID'});
     schnitzcells = table2struct(T_groupedByID);
 end

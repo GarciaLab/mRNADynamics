@@ -13,14 +13,15 @@ function [Particles,SpotFilter]=AssignParticle2Nucleus(...
 
 %From here on, "New" means "CurrentFrame" for both the nuclei and
 %particles.
-[NewSpotsX,NewSpotsY]=SpotsXYZ(Spots(CurrentFrame));
+[NewSpotsX,NewSpotsY,NewSpotsZ]=SpotsXYZ(Spots(CurrentFrame));
 
 if ~isempty(NewSpotsX)
 
     %Get the position of the nuclei in this frame
-    NewEllipsesXY=Ellipses{CurrentFrame}(:,[1,2]);
-    NewEllipsesX=NewEllipsesXY(:,1);
-    NewEllipsesY=NewEllipsesXY(:,2);
+    NewEllipsesXYZ=Ellipses{CurrentFrame}(:,[1,2,10]);
+    NewEllipsesX=NewEllipsesXYZ(:,1);
+    NewEllipsesY=NewEllipsesXYZ(:,2);
+    NewEllipsesZ=NewEllipsesXYZ(:,3);
 
     %This is to keep track of already-assigned particles
     NewParticlesFlag=ones(size(NewSpotsX));
@@ -31,9 +32,10 @@ if ~isempty(NewSpotsX)
 
     for j=1:length(NewSpotsX)
 
-        newSpotPos = [NewSpotsX(j), NewSpotsY(j)]*PixelSize;
-        newEllipsePos =[NewEllipsesX, NewEllipsesY]*PixelSize;
-        
+        newSpotPos = [NewSpotsX(j), NewSpotsY(j), NewSpotsZ(j)]*PixelSize;
+        % JP: is it correct to use PixelSize for Z or should we use ZStep?
+
+        newEllipsePos =[NewEllipsesX, NewEllipsesY, NewEllipsesZ]*PixelSize;        
         Distance(j,:) = vecnorm(newSpotPos - newEllipsePos, 2, 2);
 
     end
