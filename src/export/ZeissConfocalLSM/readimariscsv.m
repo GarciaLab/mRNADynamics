@@ -1,6 +1,7 @@
-function [schnitzcells, Ellipses] = readimariscsv(positionFile, pixelXSize, pixelYSize, pixelZSize)
+function [schnitzcells, Ellipses] = readimariscsv(imarisStatisticsFolder, positionFile, pixelXSize, pixelYSize, pixelZSize)
 
     arguments
+        imarisStatisticsFolder char
         positionFile char
         pixelXSize double
         pixelYSize double
@@ -10,6 +11,7 @@ function [schnitzcells, Ellipses] = readimariscsv(positionFile, pixelXSize, pixe
     pixelSizes.cenx = pixelXSize;
     pixelSizes.ceny = pixelYSize;
     pixelSizes.cenz = pixelZSize;
+
 
     % first 3 rows in imaris CSV are blank and/or file header
     % we want to start parsing for column names at row 3 (zero-based, so it's row 4 of the file)
@@ -72,6 +74,7 @@ function [schnitzcells, Ellipses] = readimariscsv(positionFile, pixelXSize, pixe
                         ratio = 1;
                     end
 
+                    % convert all positions from um to voxels, according to voxel size metadata
                     T_groupedByID.(col)(row) = convertSizeToPixels(T_groupedByID.(col)(row), ratio);
                 end
             end
@@ -79,31 +82,93 @@ function [schnitzcells, Ellipses] = readimariscsv(positionFile, pixelXSize, pixe
         
     end
 
-    % convert all positions from um to voxels, according to voxel size metadata
+    
+    % add legacy columns for backwards compatibility
+    % also add non critical values as zeros or empty arrays
+    tableHeight = height(T_groupedByID);
+    emptyArrays = cell(tableHeight,1);
+    zeroValues = zeros(tableHeight, 1);
+    
+    T_groupedByID.P = emptyArrays;
+    T_groupedByID.E = emptyArrays;
+    T_groupedByID.D = emptyArrays;
+    T_groupedByID.len = emptyArrays;
+    T_groupedByID.cellno = emptyArrays;
+    
+    T_groupedByID.AlreadyUsed = zeroValues;
+    T_groupedByID.ExtendedIntoFutureAlready = zeroValues;
+    T_groupedByID.StitchedTo = emptyArrays;
+    T_groupedByID.StitchedFrom = emptyArrays;
+    T_groupedByID.cycle = zeroValues;
+    T_groupedByID.timeSinceAnaphase = emptyArrays;
+    T_groupedByID.catchedAnaphase = zeroValues;
+    
+    % let's put the columns in the same order TrackNuclei puts them,
+    % just in case.
+    T_groupedByID = movevars(T_groupedByID,{'P', 'E', 'D', 'frames', 'cenx', 'ceny', 'len', 'cellno', 'AlreadyUsed', 'ExtendedIntoFutureAlready', 'StitchedTo', 'StitchedFrom', 'cycle', 'timeSinceAnaphase', 'catchedAnaphase'},'Before',1);
+    
+    % Now, we'll make Ellipses.
+    % We start by reading all ellipsoid raw info from imaris CSV files
+    [A, B, C] = readImarisEllipsoidTables(imarisStatisticsFolder);
+
+    % combine (join) all three tables of ellipsoid axis lenghts A, B andC into one table for convenience
+    TJoin = join(A, B);
+    TJoin = join(TJoin, C);
+
+    % also, join the ellipsoid info to the positions table, to gather all info into one big table
+    T_withoutMissing = rmmissing(T);
+    
+    % join all data by time, trackID, and ID columns
+    TJoin_all = join(T_withoutMissing, TJoin, 'LeftKeys', [4,5,6], 'RightKeys', [2,3,4]);
+    
+    % now we group all this info by the Time column 
+    T_groupedByTime = groupsummary(TJoin_all, 'Time', @(x) {x});
+
+    T_groupedByTime = renamevars(T_groupedByTime, ["fun1_PositionX", "fun1_PositionY", "fun1_PositionZ", "fun1_TrackID", "fun1_ID", "fun1_EllipsoidAxisLengthA", "fun1_EllipsoidAxisLengthB", "fun1_EllipsoidAxisLengthC"],["cenx", "ceny", "cenz", "TrackID", "ID", "axisA", "axisB", "axisC"]);
 
 
-    % convert table to struct, this should basically match schnitzcells as if they were produced by TrackNuclei. 
-    schnitzcells = table2struct(T_groupedByID);
-
-    %Now, we'll make Ellipses by grouping by the Time column 
-    T_groupedByTime = groupsummary(T, 'Time', @(x) {x});
-
-    %We need to place the resulting data into the exact format of Ellipses
-    Ellipses = cell(length(timevec), 1);
+    % We need to place the resulting data into the exact format of Ellipses
+    Ellipses = cell(height(T_groupedByTime), 1);
     for frame = 1:height(T_groupedByTime)
-        val = T_groupedByTime.(3)(frame);
+        val = T_groupedByTime.cenx(frame);
         vec = val{1};
-        Ellipses{frame} = nan(numel(vec), 1);
-        for col = 3:width(T_groupedByTime)
-            val = T_groupedByTime.(col)(frame);
-            vec = val{1};
-            Ellipses{frame}(:, col-2) = vec;
-        end
-       
+        Ellipses{frame} = zeros(numel(vec), 1);
+
+        val = T_groupedByTime.cenx(frame);
+        val = convertSizeToPixels(val, pixelSizes.cenx);
+        vec = val{1};
+        Ellipses{frame}(:, 1) = vec;
+
+        val = T_groupedByTime.ceny(frame);
+        val = convertSizeToPixels(val, pixelSizes.ceny);
+        vec = val{1};
+        Ellipses{frame}(:, 2) = vec;
+
+        val = T_groupedByTime.axisA(frame);
+        vec = val{1};
+        Ellipses{frame}(:, 3) = vec;
+
+
+        val = T_groupedByTime.axisB(frame);
+        vec = val{1};
+        Ellipses{frame}(:, 4) = vec;
+
+        Ellipses{frame}(:, 5) = zeros(numel(vec), 1);
+        Ellipses{frame}(:, 6) = zeros(numel(vec), 1);
+        Ellipses{frame}(:, 7) = zeros(numel(vec), 1);
+        Ellipses{frame}(:, 8) = zeros(numel(vec), 1);
+
+        % shoudl we use imaris ID here (8948, 8949, etc), or index of schnitzcells arrays (1, 2, 3...)?
+        TrackID = T_groupedByTime.TrackID(frame);
+        [~,IndexInSchnitzcells] = ismember(TrackID{1},T_groupedByID.TrackID);
+        vec = IndexInSchnitzcells;
+        Ellipses{frame}(:, 9) = vec;
     end
 
-    %Note that the orders the columns within each Ellipses cell may be wrong 
-    %and they should be reordered. Plus some appending needs to be done to make
-    %the width of each matrix 8 or 9. Also, ditto about conversion from um to
-    %pixels.
+    
+    % convert table to struct, this should basically match schnitzcells as if they were produced by TrackNuclei. 
+    % we already used TrackID column for Ellipses generation, we can now
+    % remove it and other unwanted columns before generating the struct
+    T_groupedByID = removevars(T_groupedByID, {'TrackID', 'GroupCount', 'ImarisID', 'cenz'});
+    schnitzcells = table2struct(T_groupedByID);
 end
