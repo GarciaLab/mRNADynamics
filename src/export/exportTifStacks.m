@@ -1,5 +1,5 @@
 function exportTifStacks(AllImages, imagingModality, NChannels, NFrames, NSlices,...
-  Prefix, moviePrecision, hisPrecision,...
+  Prefix,...
   nuclearGUI, ProjectionType, Channels, ReferenceHist, skipNuclearProjection,zslicesPadding)
 
   
@@ -18,6 +18,11 @@ function exportTifStacks(AllImages, imagingModality, NChannels, NFrames, NSlices
 
   ySize = size(AllImages{1}{1,1}, 1);
   xSize = size(AllImages{1}{1,1}, 2);
+  
+  % set movie and his precision if necessary
+  moviePrecision = class(AllImages{1}{1,1});
+  hisPrecision = class(AllImages{1}{1,1});
+  
   BlankImage = zeros(ySize, xSize, moviePrecision);
 
   hisMat = zeros(ySize, xSize, sum(NFrames), hisPrecision);

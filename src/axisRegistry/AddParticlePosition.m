@@ -255,6 +255,7 @@ if ~NoAP
         %In principle, we would be comparing PixelSizeFullEmbryo==PixelSizeFullEmbryoMid
         %However, some issues of machine precision made this not work
         %sometimes.
+%         pixelSizeFlag = abs(PixelSizeFullEmbryoSurf/PixelSizeFullEmbryoMid-1)>0.01;
         if abs(PixelSizeFullEmbryoSurf/PixelSizeFullEmbryoMid-1)>0.01
             error('The surface and midsaggital images were not taken with the same pixel size')
         end
@@ -293,6 +294,16 @@ if ~NoAP
             SurfImage = bfopen([DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoSurf.tif']);
             SurfImage = SurfImage{1}{1};
         end
+        
+%         %% If the surf and Midsag images have different pixel sizes, interpolate and crop the larger of the two
+%         if pixelSizeFlag
+%             rsFactor = PixelSizeFullEmbryoSurf/PixelSizeFullEmbryoMid;
+%             midSize = size(ImageTempMid{1,1}{1,1});
+%             % initialize a blank to use
+%             surfNew = zeros(midSize);
+%             % generate reference vectors
+%             [in_vec_x, in_vec_y] = meshgrid(1:midSize(1),1:midSize(2));
+%         end
         %%
         %Rotates the full embryo image to match the rotation of the zoomed
         %time series

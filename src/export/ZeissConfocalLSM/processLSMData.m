@@ -8,9 +8,6 @@ function FrameInfo = processLSMData(Folder, RawDataFiles, FrameInfo,...
     disp('Exporting movie file...');
     
     cleanupObj = onCleanup(@myCleanupFun);
-
-    moviePrecision = 'uint16';
-    hisPrecision = 'uint16';
     
     %Load the reference histogram for the fake histone channel
     load('ReferenceHist.mat', 'ReferenceHist');    
@@ -20,11 +17,21 @@ function FrameInfo = processLSMData(Folder, RawDataFiles, FrameInfo,...
         
     % get basic info
     NSeries = length(RawDataFiles);      
-    
+        
     if ~skipExtraction
       % This chunk makes FrameInfo                     
       [FrameInfo,AllLSMImages,NSlices, ~, NFrames,~,NChannels] ...
         = getZeissFrameInfo(RawDataFiles,NSeries,FrameInfo,zslicesPadding);
+      
+      % pop channels up a level
+      if iscell(Channels{1})
+          Channels = [Channels{:}];
+      end
+      NChannelsAlt = find(~cellfun(@isempty,Channels),1,'last');
+      if NChannelsAlt~=NChannels
+          warning(['issue with NChannels metadata extraction. Reseting to ' num2str(NChannelsAlt)])
+          NChannels = NChannelsAlt;
+      end
       
       % save FrameInfo
       liveExperiment = LiveExperiment(Prefix);
@@ -32,11 +39,12 @@ function FrameInfo = processLSMData(Folder, RawDataFiles, FrameInfo,...
       
       % this function exports tif z stacks
       exportTifStacks(AllLSMImages, 'LSM', NChannels, NFrames, NSlices, Prefix, ...
-          moviePrecision, hisPrecision, nuclearGUI, ProjectionType, Channels, ReferenceHist, ...
+          nuclearGUI, ProjectionType, Channels, ReferenceHist, ...
           skipNuclearProjection,zslicesPadding)           
-      
+            
       % Look for flat field images
       [FFPaths, FFToUse, LSMFF] = findFlatFieldInformation(Folder);
+      
       % Proceed accordingly
       processFlatFieldInformation(Prefix, OutputFolder, FFPaths, FFToUse, LSMFF);
 
