@@ -11,8 +11,11 @@ Particles2=[];
 
 %I'm telling AssignParticle2Nucleus to leave any unassigned particles in
 %fad2 nevertheless. I hope this is not screwing up the indexing.
+% JP: because some changes to process LSM data from Imaris, I have to provide a Z pixel resolution too.
+% I'm setting it the same as x/y resolution for backwards compatilibity here. Should actually be ZStep,
+% but I think this code will not be affected by this since it run on 2D anyways.
 [Particles2,fad2,Dummy]=AssignParticle2Nucleus(schnitzcells,Ellipses,Particles2,fad2,fad2,...
-    TargetFrame,PixelSize,SearchRadius);
+    TargetFrame,PixelSize,PixelSize, SearchRadius);
 
 
 if ~isempty(Particles2)

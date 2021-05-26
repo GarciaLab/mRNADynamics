@@ -1,7 +1,7 @@
 function [sortByFrame, sortByLength, ForCompileAll, SpeedMode, SisterMode, ...
     ncRange, projectionMode, plot3DGauss, NC, ...
     startNC, endNC, optionalResults, nWorkers, fish,...
-    noHisOverlay, multiView, preStructs, preMovie, UseCompiledParticles] = determineCheckParticleTrackingOptions(varargin)
+    noHisOverlay, multiView, preStructs, preMovie, UseCompiledParticles, useProjectionInHistoneOverlay] = determineCheckParticleTrackingOptions(varargin)
 %DETERMINEOPTIONS Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -32,6 +32,8 @@ multiView = false;
 preStructs = {};
 preMovie = false;
 UseCompiledParticles = false; % added by GM 12/10/20
+
+useProjectionInHistoneOverlay = true;
 
 
 % these variables are meaningless if ncRange is 0
@@ -79,6 +81,8 @@ for i=1:length(varargin)
             startNC = ['nc' num2str(varargin{i+1})];
             endNC = ['nc' num2str(varargin{i+1} + 1)]; % Not including the next nc
         end
+    elseif strcmpi(varargin{i},'noHisProjection')
+        useProjectionInHistoneOverlay = false;
     end
 end
 

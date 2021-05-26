@@ -129,6 +129,12 @@ classdef CPTState < handle
                 this.UseCompiledParticles = false;
             end
         end
+
+        function currentSlice = getCurrentNuclearSlice(this)
+            % JP: I'm hardcoding channel 1 as nuclear for Imaris testing,
+            % will fix it later.
+            currentSlice = this.liveExperiment.getMovieSlice(this.CurrentFrame, 1, this.CurrentZ);
+        end
         
         function numParticles = numParticles(this)
             numParticles = length(this.Particles{this.CurrentChannelIndex});
