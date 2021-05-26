@@ -42,14 +42,13 @@ function FrameInfo = processLSMData(Folder, RawDataFiles, FrameInfo,...
 
       imarisFolder = [RawDataFiles.folder, filesep, 'ImarisResult'];
       if isfolder(imarisFolder)
-          disp('Imaris results folder detected. Will get spots info from Imaris.')
+          disp('Imaris results folder detected. Will get nuclear tracking info from Imaris.')
           
           imarisStatisticsFolder = [imarisFolder, filesep, liveExperiment.experimentName, '_Statistics'];
           positionsFile = [imarisStatisticsFolder, filesep, liveExperiment.experimentName, '_Position.csv'];
           if isfile(positionsFile)
             disp('Parsing Imaris position file...')
 
-            % JP: filenames for testing, this is WIP
             DropboxFolder = liveExperiment.userResultsFolder;
             ellipsesFile = [DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'];
             schnitzcellsFile = [DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat']; 

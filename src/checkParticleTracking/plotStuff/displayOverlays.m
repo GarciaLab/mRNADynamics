@@ -1,6 +1,6 @@
 function displayOverlays(overlayAxes, cptState, SpeedMode, ShowThreshold2,...
     Overlay, numFrames, UseSchnitz, ZoomRange, fish, multiAx,...
-    HisOverlayFigAxes, ImageHisMat)
+    HisOverlayFigAxes, ImageHisMat, useProjectionInHistoneOverlay)
 
 EllipseHandle = [];
 EllipseHandleYellow = [];
@@ -202,7 +202,14 @@ end
 if cptState.UseHistoneOverlay
 
     if isempty(cptState.DisplayRange)
-        HisOverlayImageMat=cat(3,mat2gray(ImageHisMat),mat2gray(cptState.ImageMat),zeros(size(cptState.ImageMat)));
+        
+        if useProjectionInHistoneOverlay
+            histoneImageComponent = mat2gray(ImageHisMat);
+        else
+            histoneImageComponent = cptState.getCurrentNuclearSlice();
+        end
+
+        HisOverlayImageMat=cat(3,histoneImageComponent,mat2gray(cptState.ImageMat),zeros(size(cptState.ImageMat)));
     else
         HisOverlayImageMat=cat(3,mat2gray(ImageHisMat,double(cptState.DisplayRange)),mat2gray(cptState.ImageMat),zeros(size(cptState.ImageMat)));
     end
