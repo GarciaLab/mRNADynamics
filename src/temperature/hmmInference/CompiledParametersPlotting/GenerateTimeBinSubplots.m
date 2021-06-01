@@ -7,6 +7,7 @@ useRescaledTiming = false;
 useRescaledFluo = false;
 useRescaledParamTiming = false;
 includeRescaling = true;
+PrescaledBins = false;
 
 x = 1;
 while x <= length(varargin)
@@ -22,6 +23,8 @@ while x <= length(varargin)
         includeRescaling = false;
     elseif strcmpi(varargin{x}, 'ExcludeFits')
         IncludeFits = false;
+    elseif strcmpi(varargin{x}, 'prescaledbins')
+        PrescaledBins = true;
     end
     x = x+1;
 end
@@ -44,7 +47,13 @@ R = 8.314*10^(-3); % kJ mol^-1 K^-1
 APResolution = 0.025;
 APbins = (0:APResolution:1)*100;
 
-CompiledParameters = CompileParameters(ResultsPaths, includeRescaling);
+CompiledParameters = CompileParameters(ResultsPaths, includeRescaling, PrescaledBins);
+ReferenceTemperature = CompiledParameters.RefTemperature;
+if single(round(ReferenceTemperature, 0)) == single(ReferenceTemperature)
+    TemperatureString = sprintf('%.0f ', ReferenceTemperature);
+else
+    TemperatureString = sprintf('%.1f ', ReferenceTemperature);
+end
 NumSets = size(CompiledParameters.InitiationRates, 1);
 HasSingleTimeBin = all(CompiledParameters.nTimebins == 1);
 
@@ -93,10 +102,11 @@ NumAPbins = MaxAPbin-MinAPbin + 1;
 
 cmap = brewermap(NumAPbins,'Spectral');
 
+
 SubplotPositionInfo = GetSubplotPositioningParameters(NumTimeBins, true, false, false);
-hmmVarStrings = { 'InitiationRates','Durations', 'Frequencies','BurstCycleTimes',...
-    'InitiationRates','Durations', 'Frequencies','BurstCycleTimes'};
-useLogVector = [false, false, false, false, true, true, true, true];
+hmmVarStrings = { 'InitiationRates','Durations', 'Frequencies','BurstCycleTimes','MeanInitiationRates',...
+    'InitiationRates','Durations', 'Frequencies','BurstCycleTimes','MeanInitiationRates'};
+useLogVector = [false, false, false, false,false, true, true, true, true,true];
 
 
 %%
@@ -109,9 +119,9 @@ for i = 1:length(hmmVarStrings)
     close all
     [MeanValues, StdErrors, TimeVector, Ymax, Ymin, YLabel, OutString, LogYmax, LogYmin] = ...
         GetPlottingMats(CompiledParameters, hmmVarStrings{i}, useRescaledTiming,...
-        useRescaledFluo,useRescaledParamTiming, SubplotPositionInfo.SubplotDims(1));
+        useRescaledFluo,useRescaledParamTiming, SubplotPositionInfo.SubplotDims(1),ReferenceTemperature);
     
-    if IncludeFits & ~strcmpi(hmmVarStrings{i}, 'BurstCycleTimes')
+    if IncludeFits & ~(strcmpi(hmmVarStrings{i}, 'BurstCycleTimes') | strcmpi(hmmVarStrings{i}, 'MeanInitiationRates'))
         [ActivationEnergies, SEActivationEnergies, LogAs, SELogAs, R2s, PlotTitle] =...
             getHMMActivationEnergyMatrices(CompiledParameters, hmmVarStrings{i}, useRescaledFluo, useRescaledTiming);
     end
@@ -152,7 +162,7 @@ for i = 1:length(hmmVarStrings)
         set(FigHandle, 'CurrentAxes', FigAx{TimeIndex});
         hold(FigAx{TimeIndex}, 'on');
         
-        if IncludeFits & ~strcmpi(hmmVarStrings{i}, 'BurstCycleTimes')
+        if IncludeFits & ~(strcmpi(hmmVarStrings{i}, 'BurstCycleTimes') | strcmpi(hmmVarStrings{i}, 'MeanInitiationRates'))
             Ea_vals = squeeze(ActivationEnergies(TimeBin,:));
             Ea_val_errs = squeeze(SEActivationEnergies(TimeBin,:));
             LogA_vals = squeeze(LogAs(TimeBin,:));
@@ -229,12 +239,14 @@ for i = 1:length(hmmVarStrings)
         %xlim([(MinAPbin-2)*APResolution*100 (MaxAPbin)*APResolution*100])
         TimeInterval = TimeVector(1)*2;
         HalfTimeInterval = TimeVector(1);
-        if ~useRescaledTiming
-            subtitle = strcat('$t =  ',sprintf('%.1f ', TimeVector(TimeBin)-HalfTimeInterval),'\,\textup{--}\,',sprintf('%.1f ', TimeVector(TimeBin)+HalfTimeInterval),'\, \textrm{m}$');
-            title(subtitle, 'Interpreter', 'latex', 'FontSize', 14);
-        else
-            subtitle = strcat('$\bar{t} =  ',sprintf('%.1f ', TimeVector(TimeBin)-HalfTimeInterval),'\,\textup{--}\,',sprintf('%.1f ', TimeVector(TimeBin)+HalfTimeInterval),'\, \textrm{m}$');
-            title(subtitle, 'Interpreter', 'latex', 'FontSize', 14);
+        if NumTimeBins > 1
+            if ~useRescaledTiming
+                subtitle = strcat('$t =  ',sprintf('%.1f ', TimeVector(TimeBin)-HalfTimeInterval),'\,\textup{--}\,',sprintf('%.1f ', TimeVector(TimeBin)+HalfTimeInterval),'\, \textrm{m}$');
+                title(subtitle, 'Interpreter', 'latex', 'FontSize', 14);
+            else
+                subtitle = strcat('$\bar{t} =  ',sprintf('%.1f ', TimeVector(TimeBin)-HalfTimeInterval),'\,\textup{--}\,',sprintf('%.1f ', TimeVector(TimeBin)+HalfTimeInterval),'\, \textrm{m}$');
+                title(subtitle, 'Interpreter', 'latex', 'FontSize', 14);
+            end
         end
         
         
@@ -276,10 +288,10 @@ for i = 1:length(hmmVarStrings)
     hold off
     set(LegendAx,'Fontsize',16)
     
-    if strcmpi(hmmVarStrings{i}, 'initiationrates')
-        OutFileName = [LogString, FluoString, RescaledString,FitString,ParamString, 'TimeBinSubplots_', OutString,'.png'];
+    if strcmpi(hmmVarStrings{i}, 'initiationrates') | strcmpi(hmmVarStrings{i}, 'meaninitiationrates')
+        OutFileName = [LogString, FluoString, RescaledString,FitString,ParamString, 'TimeBinSubplots_', OutString,'VsTemp.png'];
     else
-        OutFileName = [LogString, RescaledString,FitString,ParamString, 'TimeBinSubplots_', OutString,'.png'];
+        OutFileName = [LogString, RescaledString,FitString,ParamString, 'TimeBinSubplots_', OutString,'VsTemp.png'];
     end
     
     saveas(FigHandle,[outdir, OutFileName])

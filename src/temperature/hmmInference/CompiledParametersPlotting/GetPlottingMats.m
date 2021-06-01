@@ -1,7 +1,20 @@
 function [MeanValues, StdErrors, TimeVector, Ymax, Ymin, YLabel, OutString, LogYmax, LogYmin] = ...
-    GetPlottingMats(CompiledParameters, hmmVarString, UseRescaledTiming, UseRescaledFluo, UseRescaledParamTiming, nrows)
+    GetPlottingMats(CompiledParameters, hmmVarString, UseRescaledTiming, UseRescaledFluo,...
+    UseRescaledParamTiming, nrows, ReferenceTemperature)
+
+if ~exist('ReferenceTemperature', 'var')
+    ReferenceTemperature = 25;
+end
+
+if single(round(ReferenceTemperature, 0)) == single(ReferenceTemperature)
+    TempString = sprintf('%.0f ', ReferenceTemperature);
+else
+    TempString = sprintf('%.1f ', ReferenceTemperature);
+end
 
 shortYlabel = false;
+
+
 
 if nrows > 2
     shortYlabel = true;
@@ -44,13 +57,15 @@ if strcmpi(hmmVarString, 'duration') | strcmpi(hmmVarString, 'durations') | ...
         if ~UseRescaledParamTiming
             YLabel = 'burst duration (min)';
         else
-            YLabel = 'burst duration (25ºC min)';
+            
+            YLabel = ['burst duration (',TempString,'ºC min)'];
+            
         end
     else
         if ~UseRescaledParamTiming
             YLabel = 'burst dur. (m)';
         else
-            YLabel = 'burst dur. (25ºC m)';
+            YLabel = ['burst dur. (',TempString,'ºC m)'];
         end
     end
     
@@ -85,13 +100,13 @@ elseif strcmpi(hmmVarString, 'frequency') | strcmpi(hmmVarString, 'frequencies')
         if ~UseRescaledParamTiming
             YLabel = 'burst frequency (1/min)';
         else
-            YLabel = 'burst frequency (1/25ºC min)';
+            YLabel = ['burst frequency (1/',TempString,'ºC min)'];
         end
     else
         if ~UseRescaledParamTiming
             YLabel = 'burst freq. (1/m)';
         else
-            YLabel = 'burst freq. (1/25ºC m)';
+            YLabel = ['burst freq. (1/',TempString,'ºC m)'];
         end
     end
     
@@ -139,11 +154,11 @@ elseif strcmpi(hmmVarString, 'initiationrate') | strcmpi(hmmVarString, 'initiati
         if ~UseRescaledFluo & ~UseRescaledParamTiming
             YLabel = 'initiation rate (au/min)';
         elseif ~UseRescaledFluo
-            YLabel = 'initiation rate (au/25ºC min)';
+            YLabel = ['initiation rate (au/',TempString,'ºC min)'];
         elseif ~UseRescaledParamTiming
             YLabel = 'scaled init. rate (au/min)';
         else
-            YLabel = 'scaled init. rate (au/25ºC min)';
+            YLabel = ['scaled init. rate (au/',TempString,'ºC min)'];
         end
     else
         if ~UseRescaledFluo & ~UseRescaledParamTiming
@@ -151,9 +166,9 @@ elseif strcmpi(hmmVarString, 'initiationrate') | strcmpi(hmmVarString, 'initiati
         elseif ~UseRescaledParamTiming
             YLabel = 'scaled init. rate (au/m)';
         elseif ~UseRescaledFluo
-            YLabel = 'init. rate (au/25ºC  m)';
+            YLabel = ['init. rate (au/',TempString,'ºC  m)'];
         else
-             YLabel = 'scaled init. rate (au/25ºC m)';
+             YLabel = ['scaled init. rate (au/',TempString,'ºC m)'];
         end
     end
     
@@ -197,13 +212,13 @@ elseif strcmpi(hmmVarString, 'cycletime') | strcmpi(hmmVarString, 'cycletimes') 
         if ~UseRescaledParamTiming
             YLabel = 'burst cycle time (min)';
         else
-            YLabel = 'burst cycle time (25ºC min)';
+            YLabel = ['burst cycle time (',TempString,'ºC min)'];
         end
     else
         if ~UseRescaledParamTiming
             YLabel = 'cycle time (m)';
         else
-            YLabel = 'cycle time (25ºC m)';
+            YLabel = ['cycle time (',TempString,'ºC m)'];
         end
     end
     
@@ -268,11 +283,11 @@ elseif strcmpi(hmmVarString, 'meaninitiationrate') | strcmpi(hmmVarString, 'mean
         if ~UseRescaledFluo & ~UseRescaledParamTiming
             YLabel = 'mean loading rate (au/min)';
         elseif ~UseRescaledFluo
-            YLabel = 'mean loading rate (au/25ºC min)';
+            YLabel = ['mean loading rate (au/',TempString,'ºC min)'];
         elseif ~UseRescaledParamTiming
             YLabel = 'scaled mean loading rate (au/min)';
         else
-            YLabel = 'scaled mean loading rate (au/25ºC min)';
+            YLabel = ['scaled mean loading rate (au/',TempString,'ºC min)'];
         end
     else
         if ~UseRescaledFluo & ~UseRescaledParamTiming
@@ -280,9 +295,9 @@ elseif strcmpi(hmmVarString, 'meaninitiationrate') | strcmpi(hmmVarString, 'mean
         elseif ~UseRescaledParamTiming
             YLabel = 'scaled mean loading rate (au/m)';
         elseif ~UseRescaledFluo
-            YLabel = 'mean loading rate (au/25ºC  m)';
+            YLabel = ['mean loading rate (au/',TempString,'ºC  m)'];
         else
-             YLabel = 'scaled mean loading rate (au/25ºC m)';
+             YLabel = ['scaled mean loading rate (au/',TempString,'ºC m)'];
         end
     end
     

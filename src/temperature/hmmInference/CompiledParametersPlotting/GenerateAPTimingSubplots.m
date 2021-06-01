@@ -10,6 +10,8 @@ end
 useRescaledTiming = false;
 useRescaledFluo = false;
 useRescaledParamTiming = false;
+PrescaledBins = false;
+
 
 x = 1;
 while x <= length(varargin)
@@ -20,10 +22,13 @@ while x <= length(varargin)
         useRescaledFluo = true;
     elseif strcmpi(varargin{x}, 'rescaleparamtiming') | strcmpi(varargin{x}, 'rescaleparametertiming') |...
         strcmpi(varargin{x}, 'userescaledparamtiming') | strcmpi(varargin{x}, 'userescaledparametertiming')   
-        useRescaledParamTiming = true;
+        useRescaledParamTiming = true; 
+    elseif strcmpi(varargin{x}, 'prescaledbins')
+        PrescaledBins = true;
     end
     x = x+1;
 end
+
 
 
 
@@ -34,7 +39,13 @@ R = 8.314*10^(-3); % kJ mol^-1 K^-1
 APResolution = 0.025;
 APbins = (0:APResolution:1)*100;
 
-CompiledParameters = CompileParameters(ResultsPaths);
+CompiledParameters = CompileParameters(ResultsPaths, true, PrescaledBins);
+ReferenceTemperature = CompiledParameters.RefTemperature;
+if single(round(ReferenceTemperature, 0)) == single(ReferenceTemperature)
+    TemperatureString = sprintf('%.0f ', ReferenceTemperature);
+else
+    TemperatureString = sprintf('%.1f ', ReferenceTemperature);
+end
 NumSets = size(CompiledParameters.InitiationRates, 1);
 NumTemperatures = length(CompiledParameters.UniqueTemperatures);
 
@@ -73,9 +84,10 @@ if max(IncludedTimeBins) > 1
 else
     cmap = flipud(brewermap(2,'Spectral'));
 end
-
+cmap = brewermap(10,'Spectral');
+cmap = [cmap(2:3,:);cmap(8:10,:)];
 SubplotPositionInfo = GetSubplotPositioningParameters(NumAPbins);
-hmmVarStrings = { 'InitiationRates','Durations', 'Frequencies','BurstCycleTimes'};
+hmmVarStrings = { 'InitiationRates','Durations', 'Frequencies','BurstCycleTimes','MeanInitiationRates'};
 %%
 for i = 1:length(hmmVarStrings)
     close all
@@ -85,7 +97,8 @@ for i = 1:length(hmmVarStrings)
         %%
         
         [MeanValues, StdErrors, TimeVector, Ymax, Ymin, YLabel, OutString, LogYmax, LogYmin] = ...
-            GetPlottingMats(CompiledParameters, hmmVarStrings{i}, useRescaledTiming, useRescaledFluo,useRescaledParamTiming, SubplotPositionInfo.SubplotDims(1));
+            GetPlottingMats(CompiledParameters, hmmVarStrings{i}, useRescaledTiming, useRescaledFluo,...
+            useRescaledParamTiming, SubplotPositionInfo.SubplotDims(1),ReferenceTemperature);
         dt = TimeVector(2)-TimeVector(1);
         
         ValidTimePoints = TimeVector(find(sum((squeeze(sum(~isnan(MeanValues), 1))), 2).' > 0));
@@ -161,7 +174,7 @@ for i = 1:length(hmmVarStrings)
             if ~useRescaledTiming & ~useRescaledParamTiming
                 xlabel('Time (min)')
             else
-                xlabel({'Rescaled Time', ' (min. at 25 ºC)'})
+                xlabel({'Rescaled Time', [' (min. at ',TemperatureString,' ºC)']})
             end
             
             ylabel(YLabel)
@@ -205,10 +218,10 @@ for i = 1:length(hmmVarStrings)
         hold off
         set(LegendAx,'Fontsize',16)
         
-        if strcmpi(hmmVarStrings{i}, 'initiationrates')
-            OutFileName = [FluoString, RescaledString,ParamString, 'APTimingSubplots_', OutString,'.png'];
+        if strcmpi(hmmVarStrings{i}, 'initiationrates') | strcmpi(hmmVarStrings{i}, 'meaninitiationrates') 
+            OutFileName = [FluoString, RescaledString,ParamString, 'APTimingSubplots_', OutString,'VsTime.png'];
         else
-            OutFileName = [RescaledString,ParamString, 'APTimingSubplots_', OutString,'.png'];
+            OutFileName = [RescaledString,ParamString, 'APTimingSubplots_', OutString,'VsTime.png'];
         end
         
 

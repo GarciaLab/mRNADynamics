@@ -52,7 +52,9 @@ if includeLegend
     SubplotPositionInfo.LegendSubplots = (1:SubplotPositionInfo.SubplotDims(1))*SubplotPositionInfo.SubplotDims(2);
    
     % SubFigDims(1)
-    if SubplotPositionInfo.SubplotDims(2) < 4
+    if SubplotPositionInfo.SubplotDims(2) <= 2
+        SubplotPositionInfo.SubFigDims(1) = 0.5;
+    elseif (SubplotPositionInfo.SubplotDims(2) >= 3) & (SubplotPositionInfo.SubplotDims(2) < 4)
         SubplotPositionInfo.SubFigDims(1) = 0.7;
     elseif (SubplotPositionInfo.SubplotDims(2) >= 4) & (SubplotPositionInfo.SubplotDims(2) < 6)
         SubplotPositionInfo.SubFigDims(1) = 0.85;
@@ -70,7 +72,9 @@ if includeLegend
     end
     
     % LegendXPosition
-    if SubplotPositionInfo.SubplotDims(2) < 4
+    if SubplotPositionInfo.SubplotDims(2) <= 2
+        SubplotPositionInfo.LegendXPosition = 0.85;
+    elseif SubplotPositionInfo.SubplotDims(2) == 3
         SubplotPositionInfo.LegendXPosition = 0.88;
     elseif (SubplotPositionInfo.SubplotDims(2) >= 4) & (SubplotPositionInfo.SubplotDims(2) <  7)
         SubplotPositionInfo.LegendXPosition = 0.91;
@@ -95,7 +99,9 @@ if includeLegend
     end
     
     % SubplotBottomEdge
-    if SubplotPositionInfo.SubplotDims(1) < 4
+    if SubplotPositionInfo.SubplotDims(1)== 1
+        SubplotPositionInfo.SubplotBottomEdge = 0.15;
+    elseif SubplotPositionInfo.SubplotDims(1) < 4
         if hasTitle
             SubplotPositionInfo.SubplotBottomEdge = 0.15;
         else
@@ -107,7 +113,11 @@ if includeLegend
     
     % SubplotTopEdge
     if SubplotPositionInfo.SubplotDims(1) == 1
-        SubplotPositionInfo.SubplotTopEdge = 0.15;
+        if hasTitle
+            SubplotPositionInfo.SubplotTopEdge = 0.15;
+        else
+            SubplotPositionInfo.SubplotTopEdge = 0.05;
+        end
     elseif (SubplotPositionInfo.SubplotDims(1) >= 2) & (SubplotPositionInfo.SubplotDims(1) < 4)
         if ~forTheoryPlots & hasTitle
            SubplotPositionInfo.SubplotTopEdge = 0.15; 
@@ -121,7 +131,11 @@ if includeLegend
     end
     
     % SubplotLeftEdge
-    SubplotPositionInfo.SubplotLeftEdge = 0.06;
+    if SubplotPositionInfo.SubplotDims(2) <= 2 
+        SubplotPositionInfo.SubplotLeftEdge = 0.1;
+    else
+        SubplotPositionInfo.SubplotLeftEdge = 0.06;
+    end
     
     % SubplotRightEdge
     SubplotPositionInfo.SubplotRightEdge = 0.03;

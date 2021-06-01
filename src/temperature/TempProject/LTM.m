@@ -118,7 +118,7 @@ classdef LTM
             if exist('MinimumBinCount', 'var')
                 this.MinimumBinCount = MinimumBinCount;
             else
-                this.MinimumBinCount = 2;
+                this.MinimumBinCount = 1;
             end
             if exist('MinimumSchnitzCount', 'var')
                 this.MinimumSchnitzCount = MinimumSchnitzCount;

@@ -7,6 +7,7 @@ useRescaledTiming = false;
 useRescaledFluo = false;
 useRescaledParamTiming = false;
 includeRescaling = true;
+PrescaledBins = false;
 
 x = 1;
 while x <= length(varargin)
@@ -20,11 +21,14 @@ while x <= length(varargin)
         useRescaledParamTiming = true;
     elseif strcmpi(varargin{x}, 'excluderescaling')
         includeRescaling = false;
+    elseif strcmpi(varargin{x}, 'prescaledbins')
+        PrescaledBins = true;
     elseif strcmpi(varargin{x}, 'ExcludeFits')
         IncludeFits = false;
     end
     x = x+1;
 end
+
 
 if useRescaledParamTiming
     IncludeFits = false;
@@ -44,7 +48,14 @@ R = 8.314*10^(-3); % kJ mol^-1 K^-1
 APResolution = 0.025;
 APbins = (0:APResolution:1)*100;
 
-CompiledParameters = CompileParameters(ResultsPaths, includeRescaling);
+CompiledParameters = CompileParameters(ResultsPaths, includeRescaling, PrescaledBins);
+ReferenceTemperature = CompiledParameters.RefTemperature;
+if single(round(ReferenceTemperature, 0)) == single(ReferenceTemperature)
+    TemperatureString = sprintf('%.0f ', ReferenceTemperature);
+else
+    TemperatureString = sprintf('%.1f ', ReferenceTemperature);
+end
+
 NumSets = size(CompiledParameters.InitiationRates, 1);
 HasSingleTimeBin = all(CompiledParameters.nTimebins == 1);
 
@@ -96,9 +107,9 @@ else
 end
 
 SubplotPositionInfo = GetSubplotPositioningParameters(NumAPbins);
-hmmVarStrings = { 'InitiationRates','Durations', 'Frequencies','BurstCycleTimes',...
-    'InitiationRates','Durations', 'Frequencies','BurstCycleTimes'};
-useLogVector = [false, false, false, false, true, true, true, true];
+hmmVarStrings = { 'InitiationRates','Durations', 'Frequencies','BurstCycleTimes','MeanInitiationRates',...
+    'InitiationRates','Durations', 'Frequencies','BurstCycleTimes','MeanInitiationRates'};
+useLogVector = [false, false, false, false,false, true, true, true, true,true];
 
 
 %%
@@ -111,9 +122,9 @@ for i = 1:length(hmmVarStrings)
     close all
     [MeanValues, StdErrors, TimeVector, Ymax, Ymin, YLabel, OutString, LogYmax, LogYmin] = ...
         GetPlottingMats(CompiledParameters, hmmVarStrings{i}, useRescaledTiming,...
-        useRescaledFluo,useRescaledParamTiming, SubplotPositionInfo.SubplotDims(1));
+        useRescaledFluo,useRescaledParamTiming, SubplotPositionInfo.SubplotDims(1), ReferenceTemperature);
     
-    if IncludeFits & ~strcmpi(hmmVarStrings{i}, 'BurstCycleTimes')
+    if IncludeFits & ~(strcmpi(hmmVarStrings{i}, 'BurstCycleTimes') | strcmpi(hmmVarStrings{i}, 'MeanInitiationRates'))
         [ActivationEnergies, SEActivationEnergies, LogAs, SELogAs, R2s, PlotTitle] =...
             getHMMActivationEnergyMatrices(CompiledParameters, hmmVarStrings{i}, useRescaledFluo, useRescaledTiming);
     end
@@ -151,7 +162,7 @@ for i = 1:length(hmmVarStrings)
         hold on
         PlottedTimes = zeros(1, length(TimeVector), 'logical');
         
-        if IncludeFits & ~strcmpi(hmmVarStrings{i}, 'BurstCycleTimes')
+        if IncludeFits & ~(strcmpi(hmmVarStrings{i}, 'BurstCycleTimes') | strcmpi(hmmVarStrings{i}, 'MeanInitiationRates'))
             Ea_vals = squeeze(ActivationEnergies(:,APbin)).';
             Ea_val_errs = squeeze(SEActivationEnergies(:,APbin)).';
             LogA_vals = squeeze(LogAs(:,APbin)).';
@@ -237,6 +248,10 @@ for i = 1:length(hmmVarStrings)
         set(FigAx{APindex} ,'Fontsize',14)
         if ~useLogVector(i)
             xlim([16, 29])
+            xticks([17.5 20 22.5 25 27.5])
+%             if SubplotPositionInfo.SubplotDims(2) >= 5
+%                 xtickangle(20)
+%             end
             xlabel('Temperature (ºC)')
         else
             xlim([.3975 .415])
@@ -262,6 +277,7 @@ for i = 1:length(hmmVarStrings)
         %     ylim([DurYmin, DurYmax])
         
         grid on
+        box on
         hold off
         
     end
@@ -279,7 +295,7 @@ for i = 1:length(hmmVarStrings)
         h.Ticks = 1.5:max(IncludedTimeBins)+0.5;
         h.TickLabels = TimeVector(1:max(IncludedTimeBins));
         if useRescaledTiming | useRescaledParamTiming
-            ylabel(h,'dev time cohort (normalized minutes into nc14)')
+            ylabel(h,['dev time cohort (',TemperatureString,'ºC normalized minutes into nc14)'])
         else
             ylabel(h,'time cohort (minutes into nc14)')
         end
@@ -287,10 +303,10 @@ for i = 1:length(hmmVarStrings)
     hold off
     set(LegendAx,'Fontsize',16)
     
-    if strcmpi(hmmVarStrings{i}, 'initiationrates')
-        OutFileName = [LogString, FluoString, RescaledString,FitString,ParamString, 'APSubplots_', OutString,'.png'];
+    if strcmpi(hmmVarStrings{i}, 'initiationrates') | strcmpi(hmmVarStrings{i}, 'meaninitiationrates') 
+        OutFileName = [LogString, FluoString, RescaledString,FitString,ParamString, 'APSubplots_', OutString,'VsTemp.png'];
     else
-        OutFileName = [LogString, RescaledString,FitString,ParamString, 'APSubplots_', OutString,'.png'];
+        OutFileName = [LogString, RescaledString,FitString,ParamString, 'APSubplots_', OutString,'VsTemp.png'];
     end
     
     saveas(FigHandle,[outdir, OutFileName])

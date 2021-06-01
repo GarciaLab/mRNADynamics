@@ -924,7 +924,7 @@ else
     
     
 end
-
+CompiledParameters.RefTemperature = RefTemperature;
 CompiledParameters = AddHmmActivationEnergies(CompiledParameters, includeRescaling);
 
 

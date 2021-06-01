@@ -132,7 +132,7 @@ for TimeIndex=1:length(IncludedTimeBins)
     prof = cell(1, NumAPbins);
     close all
     FrameProfFig = figure(1);
-    set(FrameProfFig,'units', 'normalized', 'position',[0.01, 0.05, .9, .7]);
+    set(FrameProfFig,'units', 'normalized', 'position',[0.01, 0.05, .35, .4]);
     set(gcf,'color','w');
     FrameProfAx = axes(FrameProfFig);
     for APIndex =1:NumAPbins
@@ -163,21 +163,21 @@ for TimeIndex=1:length(IncludedTimeBins)
     
     grid on
     
-    xlabel('Fraction Embryo Length')
+    xlabel('Position (x/L)')
     
     xlim([PlotXmin, PlotXmax])
     
     ylabel('Activation Energy (kj/mol)')
     ylim([GlobalPlotYmin, GlobalPlotYmax])
-    
-    FrameProfAx.YAxis.FontSize = 14;
-    FrameProfAx.XAxis.FontSize = 14;
-    
-    if exist('PlotTitle', 'var')
-        title(FrameProfAx, {PlotTitle,[num2str(IncludedTimeBins(TimeIndex)),' min']}, 'FontSize', 14)
-    else
-        title(FrameProfAx,  [num2str(IncludedTimeBins(TimeIndex)),' min'], 'FontSize', 14)
-    end
+    ylim([20 80])
+    FrameProfAx.YAxis.FontSize = 16;
+    FrameProfAx.XAxis.FontSize = 16;
+%     
+%     if exist('PlotTitle', 'var')
+%         title(FrameProfAx, {PlotTitle,[num2str(IncludedTimeBins(TimeIndex)),' min']}, 'FontSize', 14)
+%     else
+%         title(FrameProfAx,  [num2str(IncludedTimeBins(TimeIndex)),' min'], 'FontSize', 14)
+%     end
     
     %     map = colormap(colors);
     %     h = colorbar;

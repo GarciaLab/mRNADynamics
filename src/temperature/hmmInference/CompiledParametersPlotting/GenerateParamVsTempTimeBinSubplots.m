@@ -7,6 +7,7 @@ useRescaledTiming = false;
 useRescaledFluo = false;
 useRescaledParamTiming = false;
 includeRescaling = true;
+PrescaledBins = false;
 
 x = 1;
 while x <= length(varargin)
@@ -22,6 +23,8 @@ while x <= length(varargin)
         includeRescaling = false;
     elseif strcmpi(varargin{x}, 'ExcludeFits')
         IncludeFits = false;
+    elseif strcmpi(varargin{x}, 'prescaledbins')
+        PrescaledBins = true;
     end
     x = x+1;
 end
@@ -44,7 +47,13 @@ R = 8.314*10^(-3); % kJ mol^-1 K^-1
 APResolution = 0.025;
 APbins = (0:APResolution:1)*100;
 
-CompiledParameters = CompileParameters(ResultsPaths, includeRescaling);
+CompiledParameters = CompileParameters(ResultsPaths, true, PrescaledBins);
+ReferenceTemperature = CompiledParameters.RefTemperature;
+if single(round(ReferenceTemperature, 0)) == single(ReferenceTemperature)
+    TemperatureString = sprintf('%.0f ', ReferenceTemperature);
+else
+    TemperatureString = sprintf('%.1f ', ReferenceTemperature);
+end
 NumSets = size(CompiledParameters.InitiationRates, 1);
 HasSingleTimeBin = all(CompiledParameters.nTimebins == 1);
 
@@ -96,9 +105,9 @@ else
 end
 
 
-hmmVarStrings = { 'InitiationRates','Durations', 'Frequencies','BurstCycleTimes',...
-    'InitiationRates','Durations', 'Frequencies','BurstCycleTimes'};
-useLogVector = [false, false, false, false, true, true, true, true];
+hmmVarStrings = { 'InitiationRates','Durations', 'Frequencies','BurstCycleTimes','MeanInitiationRates',...
+    'InitiationRates','Durations', 'Frequencies','BurstCycleTimes','MeanInitiationRates'};
+useLogVector = [false, false, false, false,false, true, true, true, true,true];
 
 
 
@@ -113,12 +122,12 @@ for i = 1:length(hmmVarStrings)
     close all
     [MeanValues, StdErrors, TimeVector, Ymax, Ymin, YLabel, OutString, LogYmax, LogYmin] = ...
         GetPlottingMats(CompiledParameters, hmmVarStrings{i}, useRescaledTiming,...
-        useRescaledFluo,useRescaledParamTiming, SubplotPositionInfo.SubplotDims(1));
+        useRescaledFluo,useRescaledParamTiming, SubplotPositionInfo.SubplotDims(1), ReferenceTemperature);
     
     
 
     
-    if IncludeFits & ~strcmpi(hmmVarStrings{i}, 'BurstCycleTimes')
+    if IncludeFits & ~(strcmpi(hmmVarStrings{i}, 'BurstCycleTimes') | strcmpi(hmmVarStrings{i}, 'MeanInitiationRates'))
         [ActivationEnergies, SEActivationEnergies, LogAs, SELogAs, R2s, PlotTitle] =...
             getHMMActivationEnergyMatrices(CompiledParameters, hmmVarStrings{i}, useRescaledFluo, useRescaledTiming);
     end
@@ -157,7 +166,8 @@ for i = 1:length(hmmVarStrings)
         MaxAPbinValue = max(APbin_y_vals(~isnan(APbin_y_vals)));
         MinAPbinValue = min(APbin_y_vals(~isnan(APbin_y_vals)));
         
-        MaxAPbinValue = max([MaxAPbinValue*1.3, MaxAPbinValue*0.7]);
+        
+        MaxAPbinValue = max([MaxAPbinValue*1.1, MaxAPbinValue*0.9]);
         MinAPbinValue = min([MinAPbinValue*1.1, MinAPbinValue*0.9]);
         
         APbinYmax = paramYinterval*ceil(MaxAPbinValue/paramYinterval);
@@ -209,7 +219,7 @@ for i = 1:length(hmmVarStrings)
             hold(FigAx{TimeIndex}, 'on')
             hold on
             
-            if IncludeFits & ~strcmpi(hmmVarStrings{i}, 'BurstCycleTimes')
+            if IncludeFits & ~(strcmpi(hmmVarStrings{i}, 'BurstCycleTimes') | strcmpi(hmmVarStrings{i}, 'MeanInitiationRates'))
                 Ea_val = ActivationEnergies(TimeBin,APbin);
                 Ea_val_err = SEActivationEnergies(TimeBin,APbin);
                 LogA_val = LogAs(TimeBin,APbin);
@@ -295,7 +305,7 @@ for i = 1:length(hmmVarStrings)
             box on
             hold off
             
-            if IncludeFits & ~strcmpi(hmmVarStrings{i}, 'BurstCycleTimes') & ~isempty(legend_label)
+            if IncludeFits & ~(strcmpi(hmmVarStrings{i}, 'BurstCycleTimes') | strcmpi(hmmVarStrings{i}, 'MeanInitiationRates'))
                 if (~useLogVector(i) & ~strcmpi(hmmVarStrings{i}, 'durations')) | (useLogVector(i) & strcmpi(hmmVarStrings{i}, 'durations'))
                     LegendAxes{TimeIndex} = legend(legend_label, 'Interpreter', 'latex', 'FontSize', 10, 'Location', 'northwest');
                 else
@@ -303,10 +313,10 @@ for i = 1:length(hmmVarStrings)
                 end
             end
         end
-        if strcmpi(hmmVarStrings{i}, 'initiationrates')
-            OutFileName = [LogString, FluoString, RescaledString,FitString,ParamString, 'TimeSubplotsAP',num2str(APbin),'_', OutString,'.png'];
+        if strcmpi(hmmVarStrings{i}, 'initiationrates') | strcmpi(hmmVarStrings{i}, 'meaninitiationrates') 
+            OutFileName = [LogString, FluoString, RescaledString,FitString,ParamString, 'TimeSubplotsAP',num2str(APbin),'_', OutString,'VsTemp.png'];
         else
-            OutFileName = [LogString, RescaledString,FitString,ParamString, 'TimeSubplotsAP',num2str(APbin),'_', OutString,'.png'];
+            OutFileName = [LogString, RescaledString,FitString,ParamString, 'TimeSubplotsAP',num2str(APbin),'_', OutString,'VsTemp.png'];
         end
         
         sgtitle(['AP: ', num2str(round(APbins(APbin)/100, 2))], 'FontSize', 18, 'FontWeight', 'bold')

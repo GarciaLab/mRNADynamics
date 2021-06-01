@@ -5,7 +5,7 @@ useRescaledTiming = false;
 useRescaledFluo = false;
 useRescaledParamTiming = false;
 includeRescaling = true;
-
+PrescaledBins = false;
 
 x = 1;
 while x <= length(varargin)
@@ -21,6 +21,8 @@ while x <= length(varargin)
         useRescaledParamTiming = true;
     elseif strcmpi(varargin{x}, 'excluderescaling') 
         includeRescaling = false;
+     elseif strcmpi(varargin{x}, 'prescaledbins')
+        PrescaledBins = true;
     end
     x = x+1;
 end
@@ -38,7 +40,14 @@ R = 8.314*10^(-3); % kJ mol^-1 K^-1
 APResolution = 0.025;
 APbins = (0:APResolution:1)*100;
 
-CompiledParameters = CompileParameters(ResultsPaths, includeRescaling);
+
+CompiledParameters = CompileParameters(ResultsPaths, true, PrescaledBins);
+ReferenceTemperature = CompiledParameters.RefTemperature;
+if single(round(ReferenceTemperature, 0)) == single(ReferenceTemperature)
+    TemperatureString = sprintf('%.0f ', ReferenceTemperature);
+else
+    TemperatureString = sprintf('%.1f ', ReferenceTemperature);
+end
 NumSets = size(CompiledParameters.InitiationRates, 1);
 HasSingleTimeBin = all(CompiledParameters.nTimebins == 1);
 
@@ -88,9 +97,9 @@ else
 end
 
 SubplotPositionInfo = GetSubplotPositioningParameters(NumSets);
-hmmVarStrings = { 'InitiationRates','Durations', 'Frequencies','BurstCycleTimes',...
-    'InitiationRates','Durations', 'Frequencies','BurstCycleTimes'};
-useLogVector = [false, false, false, false, true, true, true, true];
+hmmVarStrings = { 'InitiationRates','Durations', 'Frequencies','BurstCycleTimes','MeanInitiationRates',...
+    'InitiationRates','Durations', 'Frequencies','BurstCycleTimes','MeanInitiationRates'};
+useLogVector = [false, false, false, false,false, true, true, true, true,true];
 
 
 %%
@@ -103,7 +112,7 @@ for i = 1:length(hmmVarStrings)
     close all
     [MeanValues, StdErrors, TimeVector, Ymax, Ymin, YLabel, OutString, LogYmax, LogYmin] = ...
         GetPlottingMats(CompiledParameters, hmmVarStrings{i},useRescaledTiming,...
-        useRescaledFluo, useRescaledParamTiming, SubplotPositionInfo.SubplotDims(1));
+        useRescaledFluo, useRescaledParamTiming, SubplotPositionInfo.SubplotDims(1),ReferenceTemperature);
     
     FigAx = cell(1, NumSets);
     
@@ -229,7 +238,7 @@ for i = 1:length(hmmVarStrings)
         h.Ticks = 1.5:max(IncludedTimeBins)+0.5;
         h.TickLabels = TimeVector(1:max(IncludedTimeBins));
         if useRescaledTiming | useRescaledParamTiming
-            ylabel(h,'dev time cohort (normalized minutes into nc14)')
+            ylabel(h,['dev time cohort (',TemperatureString,' minutes into nc14)'])
         else
             ylabel(h,'time cohort (minutes into nc14)')
         end
@@ -238,7 +247,7 @@ for i = 1:length(hmmVarStrings)
     set(LegendAx,'Fontsize',16)
     
     
-    if strcmpi(hmmVarStrings{i}, 'initiationrates')
+    if strcmpi(hmmVarStrings{i}, 'initiationrates') | strcmpi(hmmVarStrings{i}, 'meaninitiationrates') 
         OutFileName = [LogString, FluoString, RescaledString,ParamString, 'ProjectSubplots_', OutString,'.png'];
     else
         OutFileName = [LogString, RescaledString, ParamString,'ProjectSubplots_', OutString,'.png'];

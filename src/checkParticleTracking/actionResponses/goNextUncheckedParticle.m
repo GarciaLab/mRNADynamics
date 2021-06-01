@@ -1,7 +1,11 @@
 function [lineFit, CurrentParticle, CurrentFrame, ManualZFlag, DisplayRange, TwinParticle] =...
-    goNextUncheckedParticle(CurrentParticle, CurrentChannelIndex, HideApprovedFlag, Particles)
+    goNextUncheckedParticle(CurrentParticle, CurrentChannelIndex, HideApprovedFlag, Particles, UseTwinTraces)
 %GONEXTPARTICLE Summary of this function goes here
 %   Detailed explanation goes here
+
+if ~exist('UseTwinTraces', 'var')
+    UseTwinTraces = false;
+end
 
 lineFit = 0; % the initial rise was not fitted!
 fitApproved = 0; % the initial rise fit was not approved!
@@ -37,7 +41,7 @@ end
 
 
 [CurrentParticle,CurrentFrame, ManualZFlag, TwinParticle] = ...
-    changeParticle(NextParticle, Particles, numParticles, CurrentChannelIndex);
+    changeParticle(NextParticle, Particles, numParticles, CurrentChannelIndex, UseTwinTraces);
 
 DisplayRange=[];
 

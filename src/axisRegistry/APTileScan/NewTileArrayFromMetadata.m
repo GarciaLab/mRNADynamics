@@ -34,10 +34,15 @@ function tile_array = NewTileArrayFromMetadata(Prefix, ID)
     [rawDataPath, ~, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
         Channel3] = readMovieDatabase(Prefix,'rootFolder', rootFolder);
     [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta);
-    if sum(NFrames)~=0
+    try
+    if sum(NFrames > 0)~=0
         [Frame_Times, First_Time] = obtainFrameTimes(XMLFolder, seriesPropertiesXML, NSeries, NFrames, NSlices, NChannels);
         [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices, NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML);
     else
+        InitialStackTime = [];
+        zPosition = [];
+    end
+    catch
         InitialStackTime = [];
         zPosition = [];
     end

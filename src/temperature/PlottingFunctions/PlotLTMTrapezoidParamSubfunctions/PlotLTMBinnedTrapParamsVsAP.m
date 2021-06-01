@@ -4,7 +4,7 @@ function PlotLTMBinnedTrapParamsVsAP(this, parameter, outdir, varargin)
 % PlotTitle, PlottingColors, UseDifferentColors,
 % UseDiffProfiles, UsePhysicalAPLength
 UsePhysicalAPLength = false;
-UseLines = true;
+UseLines = false;
 UseRescaledFluo = false;
 UseRescaledParamTiming = false;
 
@@ -37,7 +37,8 @@ end
 
 if ~exist('PlottingColors', 'var')
     PlottingColors = 'default';
-elseif ~strcmpi(PlottingColors, 'gradient') &~strcmp(lower(PlottingColors), 'default')  & ~strcmp(lower(PlottingColors), 'pboc')
+    PlottingColors = 'spectral';
+elseif ~strcmpi(PlottingColors, 'gradient') &~strcmp(lower(PlottingColors), 'default')  & ~strcmp(lower(PlottingColors), 'pboc')& ~strcmp(lower(PlottingColors), 'spectral')
     error('Invalid choice of plotting colors. Can use either "default", "pboc", or "gradient".') % change to error
 end
 if ~exist('TraceType', 'var')
@@ -109,8 +110,18 @@ else
 end
 Temp_obs = this.Temp_obs;
 Temp_sp = this.Temp_sps;
+temperatures = flip(unique(this.Temp_sps(this.ProcessedExperiments)));
+NumTemperatures = length(temperatures);
 
-if strcmp(lower(PlottingColors), 'default') | strcmp(lower(PlottingColors), 'gradient')
+if strcmp(lower(PlottingColors), 'spectral')
+    colors = brewermap(10,'Spectral');
+    colors = [colors(2:3,:);colors(8:10,:)];
+
+    %colormap(cmap);
+    %colors =  brewermap(NumTemperatures,'Spectral');
+    
+    GradString = '';
+elseif strcmp(lower(PlottingColors), 'default') | strcmp(lower(PlottingColors), 'gradient')
     [~, colors] = getColorPalettes();
     GradString = '';
 elseif strcmp(lower(PlottingColors), 'pboc')
@@ -263,25 +274,27 @@ for SetIndex =1:NumTemperatures
     
 end
 
-grid on 
+grid on
+box on 
+set(FrameProfAx ,'Fontsize',18)
 hold off
 if ~UsePhysicalAPLength
-    xlabel('Fraction Embryo Length')
+    xlabel('Fraction Embryo Length (x/L)')
 else
     xlabel('Distance from the Anterior Pole (\mum)')
 end
 xlim([PlotXmin, PlotXmax])
-
+xlim([.1, .475])
 ylabel(ylab)
 ylim([GlobalPlotYmin, GlobalPlotYmax])
-
+ylim([2 12])
 FrameProfAx.YAxis.FontSize = 14; 
 FrameProfAx.XAxis.FontSize = 14; 
-title(FrameProfAx, ['Nuclear Cycle '], 'FontSize', 14);
+%title(FrameProfAx, ['Nuclear Cycle '], 'FontSize', 14);
 
 %%
 
-for NCIndex=1:length(this.IncludedNCs)
+for NCIndex=4:4%1:length(this.IncludedNCs)
     NC = this.IncludedNCs(NCIndex);
     
     
@@ -364,11 +377,11 @@ for NCIndex=1:length(this.IncludedNCs)
         continue
     end
     %try
-    if exist('PlotTitle', 'var')
-        title(FrameProfAx, {PlotTitle,['Nuclear Cycle ',num2str(NC)]}, 'FontSize', 14)
-    else
-        title(FrameProfAx,  ['Nuclear Cycle ',num2str(NC)], 'FontSize', 14)
-    end
+%     if exist('PlotTitle', 'var')
+%         title(FrameProfAx, {PlotTitle,['Nuclear Cycle ',num2str(NC)]}, 'FontSize', 14)
+%     else
+%         title(FrameProfAx,  ['Nuclear Cycle ',num2str(NC)], 'FontSize', 14)
+%     end
     
         
     hlegend = legend(legend_labels(PlottedSets), 'Location', 'eastoutside',...

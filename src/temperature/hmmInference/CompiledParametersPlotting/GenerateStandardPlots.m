@@ -13,8 +13,8 @@ UseSharedYAxisInit = false;
 
 APResolution = 0.025;
 APbins = (0:APResolution:1)*100;
+CompiledParameters = CompileParameters(ResultsPaths, true);
 
-CompiledParameters = CompileParameters(ResultsPaths);
 NumSets = size(CompiledParameters.InitiationRates, 1);
 
 

@@ -246,7 +246,7 @@ set(traceErrorBar2, 'XData', traceFigTimeAxis(approvedParticleFrames),...
     'YData', idata2,'YNegativeDelta', error2, 'YPositiveDelta', error2, 'HandleVisibility', 'off');
 
 
-if ~cptState.UseTwinTraces
+if cptState.UseTwinTraces
     try
     traceErrorBar3 = traceFigAxes.Children(end-2);
     traceErrorBar4 = traceFigAxes.Children(end-3);
@@ -257,6 +257,12 @@ if ~cptState.UseTwinTraces
     set(traceErrorBar4, 'HandleVisibility', 'on');
     set(traceErrorBar3, 'HandleVisibility', 'on');
     end
+else
+   try
+
+    cla(traceFigAxes);
+
+    end 
 end
 set(traceErrorBar2, 'HandleVisibility', 'on', 'Visible', 'on');
 set(traceErrorBar1, 'HandleVisibility', 'on', 'Visible', 'on');
