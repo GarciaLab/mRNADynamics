@@ -214,9 +214,14 @@ parfor currentFrame = initialFrame:lastFrame
         
          % apply nuclear mask if it exists
          if shouldMaskNuclei
-     
-             nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
-             dog_thresh = dog_thresh & nuclearMask;
+
+            if liveExperiment.hasCustomMasks
+                nuclearMask = liveExperiment.getNuclearMask(currentFrame, zIndex);
+            else    
+                nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
+            end
+
+            dog_thresh = dog_thresh & nuclearMask;
              
  %             if shouldDisplayFigures
  %                 figure(maskFig);
