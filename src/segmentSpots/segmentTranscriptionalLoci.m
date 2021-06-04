@@ -200,9 +200,9 @@ parfor currentFrame = initialFrame:lastFrame
             %im = im.*ffim;
         end
         
-        maxMaxDog = max(max(dog))
-        maxDogOrderOfMagnitude = floor(log10(maxMaxDog))
-        thresholdOrderOfMagnitude = floor(log10(Threshold))
+        maxMaxDog = max(max(dog));
+        maxDogOrderOfMagnitude = floor(log10(maxMaxDog));
+        thresholdOrderOfMagnitude = floor(log10(Threshold));
         
         if thresholdOrderOfMagnitude < maxDogOrderOfMagnitude
             fprintf('WARNING: Threshold probably too low, resulting in out of memory errors.\n');

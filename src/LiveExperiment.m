@@ -182,7 +182,7 @@ classdef LiveExperiment
             this.hasMovieMatFile = exist([this.preFolder, filesep, Prefix, '_movieMatCh1.mat'], 'file');
             this.hasHisMatFile = exist([this.preFolder, filesep, Prefix, '_hisMat.mat'], 'file');
 
-            this.hasCustomMasks = exist([this.rawFolder, filesep, 'masks'], 'dir');
+            this.hasCustomMasks = isfolder([this.rawFolder, filesep, 'masks']);
 
             
             [~, this.experimentType, this.experimentAxis, ~, ~, this.APResolution,...
@@ -261,13 +261,15 @@ classdef LiveExperiment
         function nuclearMask = getNuclearMask(this, frameNumber, zIndex)
             % T00_Z000
             % TO-DO format frameNumber as 2 digits and zIndez as 3 digits
-            maskFilePath = [this.rawFolder, filesep, 'masks', filesep, this.experimentName, 'T', frameNumber, '_Z', zIndex];
+            T = sprintf('%02d', frameNumber);
+            Z = sprintf('%03d', zIndex);
+            maskFilePath = [this.rawFolder, filesep, 'masks', filesep, this.experimentName, '_T', T, '_Z', Z, '.tif'];
             
             disp(['Reading nuclear mask from file: ', maskFilePath]);
 
             nuclearMask = imread(maskFilePath);
-
-            % TO-DO should this be cast to boolean to force a mask with just 1s and 0s?
+            
+            nuclearMask = cast(nuclearMask, 'logical');
         end
         
         function out = getMovieMat(this)
