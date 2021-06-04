@@ -259,8 +259,6 @@ classdef LiveExperiment
         end
         
         function nuclearMask = getNuclearMask(this, frameNumber, zIndex)
-            % T00_Z000
-            % TO-DO format frameNumber as 2 digits and zIndez as 3 digits
             T = sprintf('%02d', frameNumber);
             Z = sprintf('%03d', zIndex);
             maskFilePath = [this.rawFolder, filesep, 'masks', filesep, this.experimentName, '_T', T, '_Z', Z, '.tif'];
