@@ -10,7 +10,9 @@ FrameInfo = getFrameInfo(liveExperiment);
 
 gpu = 'noGPU';
 
-DogOutputFolder = strrep([ProcPath, filesep, Prefix, '_', filesep, 'dogs'], '\\', '\');
+%DogOutputFolder = strrep([ProcPath, filesep, Prefix, '_', filesep, 'dogs'], '\\', '\');
+%Jake: new changes
+DogOutputFolder = strrep([PreProcPath, filesep, Prefix, filesep, 'diff_gauss_optokni'], '\\', '\');
 mkdir(DogOutputFolder)
 
 if contains(filterType, '_3D','IgnoreCase',true)
@@ -48,6 +50,8 @@ format = [FrameInfo(1).LinesPerFrame, FrameInfo(1).PixelsPerLine, zSize];
 
 %2 spot 2 color will break this
 dogMat = zeros(format(1),format(2), zSize, numFrames,  'uint16');
+%Jake: new change
+%dogMat = zeros(format(1),format(2), zSize+2, numFrames,  'uint16');
 
 for ch = spotChannels
     
@@ -78,7 +82,7 @@ for ch = spotChannels
             end
             
             if strcmpi(filterType, 'Difference_of_Gaussian')
-                %dogMat(:, :,:,currentFrame) = uint16((filterImage(imStack, filterType, sigmas,...
+       %Jake: this is new change         %dogMat(:, :,:,currentFrame) = uint16((filterImage(imStack, filterType, sigmas,...
                 %    'filterSize',filterSize, 'zStep', zStep) + 100) * 100);
                 dogMat(:, :,:,currentFrame) = uint16((filterImage(imStack, filterType, sigmas,...
                     'filterSize',filterSize, 'zStep', zStep)));
@@ -89,7 +93,9 @@ for ch = spotChannels
             
             if saveAsStacks
                 dogStack = dogMat(:, :, :, currentFrame);
-                dogStackFile = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(currentFrame, 3),...
+                %dogStackFile = [DogOutputFolder, filesep, dogStr, Prefix, '_', iIndex(currentFrame, 3),...
+                %Jake: new changes
+                dogStackFile = [DogOutputFolder, filesep, Prefix, '_', iIndex(currentFrame, 3),...
                     nameSuffix,'.tif'];
                 for z = 1:zSize
                     slice = dogStack(:, :, z);

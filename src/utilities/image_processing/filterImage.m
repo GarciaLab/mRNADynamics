@@ -12,6 +12,8 @@ function [im, successFlag] = filterImage(im, filterType, sigmas, varargin)
 zStep = 400; %nm/voxel
 rad = 3; %rule of thumb is kernel size is 3x the Gaussian sigma
 sigmaZ = 280 / zStep; %280 nm. don't remember why i picked this, but it works for my data -AR
+%Jake: new change
+%sigmaZ = 0.05;
 filterSizeZ = ceil(sigmaZ*rad);
 
 successFlag = true;
