@@ -61,6 +61,8 @@ classdef CPTState < handle
         projectionMode
         
         UseCompiledParticles
+        
+        displayOnlyCurrentZEllipses
     end
     
     methods

@@ -259,11 +259,11 @@ classdef LiveExperiment
         end
         
         function nuclearMask = getNuclearMask(this, frameNumber, zIndex)
-            T = sprintf('%02d', frameNumber);
-            Z = sprintf('%03d', zIndex);
+            T = sprintf('%02d', frameNumber - 1);
+            Z = sprintf('%03d', zIndex - 1);
             maskFilePath = [this.rawFolder, filesep, 'masks', filesep, this.experimentName, '_T', T, '_Z', Z, '.tif'];
             
-            disp(['Reading nuclear mask from file: ', maskFilePath]);
+            % disp(['Reading nuclear mask from file: ', maskFilePath]);
 
             nuclearMask = imread(maskFilePath);
             
