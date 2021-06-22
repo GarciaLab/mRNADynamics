@@ -145,11 +145,13 @@ function [schnitzcells, Ellipses] = readimariscsv(imarisStatisticsFolder, positi
         Ellipses{frame}(:, 2) = vec;
 
         val = T_groupedByTime.axisA(frame);
+        val = convertSizeToPixels(val, pixelSizes.cenx);
         vec = val{1};
         Ellipses{frame}(:, 3) = vec;
 
 
         val = T_groupedByTime.axisB(frame);
+        val = convertSizeToPixels(val, pixelSizes.ceny);
         vec = val{1};
         Ellipses{frame}(:, 4) = vec;
 
