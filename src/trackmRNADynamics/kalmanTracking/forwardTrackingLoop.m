@@ -61,7 +61,7 @@ function [forwardTracks, trackingOptions] = forwardTrackingLoop(forwardTracks, t
         [assignments, unassignedTracks, unassignedDetections] = ...
                     makeParticleTrackAssignment(forwardTracks, SpotMeasurements(:,trackingOptions.trackingIndices), ...
                     continuedNCFlag*trackingOptions.matchCostMaxForward(Channel), NewSpotNuclei,...
-                    [], [], earlyFlags);
+                    [], [], earlyFlags, trackingOptions);
     end
 
     % make new entries for spots that were not assigned to existing
@@ -72,7 +72,7 @@ function [forwardTracks, trackingOptions] = forwardTrackingLoop(forwardTracks, t
 
     % update existing tracks that had no match this frame
     forwardTracks = updateUnassignedParticleTracks(forwardTracks, unassignedTracks,...
-              trackingOptions.maxUnobservedFrames(Channel));          
+              trackingOptions.maxUnobservedFrames(Channel),trackingOptions,CurrentFrame,1);          
 
     % update tracks that matched with a new particle
     forwardTracks = updateAssignedParticleTracks(...

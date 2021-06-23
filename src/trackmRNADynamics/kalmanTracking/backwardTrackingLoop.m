@@ -53,7 +53,7 @@ function [backwardTracks, trackingOptions] = backwardTrackingLoop(backwardTracks
     [assignments, unassignedTracks, unassignedDetections] = ...
                 makeParticleTrackAssignment(backwardTracks, SpotMeasurements(:,trackingOptions.trackingIndices), ...
                 continuedNCFlag*trackingOptions.matchCostMaxBackward(Channel), NewSpotNuclei,...
-                activeSpotIndices, activeParticleIndices,earlyFlags);
+                activeSpotIndices, activeParticleIndices,earlyFlags, trackingOptions);
 
     % update mapping vec     
     if ~isempty(assignments)
@@ -78,7 +78,7 @@ function [backwardTracks, trackingOptions] = backwardTrackingLoop(backwardTracks
 
     % update existing tracks that had no match this frame
     backwardTracks = updateUnassignedParticleTracks(backwardTracks, unassignedTracks, ...
-            trackingOptions.maxUnobservedFrames(Channel));          
+            trackingOptions.maxUnobservedFrames(Channel),trackingOptions,CurrentFrame,0);          
 
     % update tracks that matched with a new particle
     backwardTracks = updateAssignedParticleTracks(...

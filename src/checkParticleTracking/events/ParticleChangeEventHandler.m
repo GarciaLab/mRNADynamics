@@ -8,7 +8,7 @@ function keyInputHandler = ParticleChangeEventHandler(cptState)
                     'Move to particle');
                 ParticleJump = str2double(ParticleJump{1});
             catch
-                ParticleJump = CurrentParticle;
+                ParticleJump = cptState.CurrentParticle;
             end
             
             [cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag] = ...

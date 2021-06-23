@@ -11,7 +11,11 @@ function [Particles, trackingOptions, SpotFilter] = ParticleTrackingKalman(...
 
   % get experiment type  
   FrameInfo = getFrameInfo(liveExperiment);
-  schnitzcells = getSchnitzcells(liveExperiment); % this will be empty and ignored if no nucleus info    
+  if trackingOptions.useHistone
+      schnitzcells = getSchnitzcells(liveExperiment); % this will be empty and ignored if no nucleus info    
+  else
+      schnitzcells = [];
+  end
   
   % get vector indicating stage position in Z
   zPosStage = zeros(1,length(FrameInfo));
