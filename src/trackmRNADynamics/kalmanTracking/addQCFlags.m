@@ -61,9 +61,12 @@ function [Particles, trackingOptions] = addQCFlags(Particles, liveExperiment, tr
           %%% automatically disapprove of frames. Exclude things that have
           %%% been manually reviewed
           UpdateFlags = ~Particles{Channel}(p).ManuallyReviewed;
-          Particles{Channel}(p).FrameApproved(UpdateFlags) = Particles{Channel}(p).FrameApproved(UpdateFlags) & ...
-            ~Particles{Channel}(p).SpotlogLFlags(UpdateFlags)' & ~Particles{Channel}(p).earlyFlags(UpdateFlags) & ...
-            ~Particles{Channel}(p).NucleusBoundaryFlags(UpdateFlags);                   
+          % NL 2021-06-22: commenting this out for now
+%           Particles{Channel}(p).FrameApproved(UpdateFlags) = Particles{Channel}(p).FrameApproved(UpdateFlags) & ...
+%             ~Particles{Channel}(p).SpotlogLFlags(UpdateFlags)' & ~Particles{Channel}(p).earlyFlags(UpdateFlags) & ...
+%             ~Particles{Channel}(p).NucleusBoundaryFlags(UpdateFlags);                   
+
+          Particles{Channel}(p).FrameApproved(UpdateFlags) = true(1,sum(UpdateFlags));
 
           %%% calculatemean number of disapproved frames
           Particles{Channel}(p).FlaggedFraction = mean(~Particles{Channel}(p).FrameApproved&~Particles{Channel}(p).ManuallyReviewed);
