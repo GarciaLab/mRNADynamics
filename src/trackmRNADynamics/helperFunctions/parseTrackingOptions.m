@@ -12,7 +12,7 @@ function trackingOptions = parseTrackingOptions(Spots, liveExperiment, trackingO
   trackingOptions.trackingIndices = 1:3;  
   
   % set default linking cost
-  trackingOptions.matchCostDefault = -10*log(3e-5);
+  trackingOptions.matchCostDefault = -15*log(3e-5);
   
   % set max connection distance
   trackingOptions.maxConnectedDistance = 15/liveExperiment.pixelSize_um;
