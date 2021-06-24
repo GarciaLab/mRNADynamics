@@ -21,12 +21,6 @@ CurrentParticleIndex = cptState.getCurrentParticleIndex();
 xTrace = x(CurrentParticleIndex);
 yTrace = y(CurrentParticleIndex);
 
-% get inferred particle position
-currentParticle = cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle);
-xTraceInf = currentParticle.xPosInf(currentParticle.framesFull == cptState.CurrentFrame);
-yTraceInf = currentParticle.yPosInf(currentParticle.framesFull == cptState.CurrentFrame);
-zTraceInf = currentParticle.zPosInf(currentParticle.framesFull == cptState.CurrentFrame);
-
 ApprovedParticles = [cptState.getCurrentChannelParticles().Approved];
 
 % Approved particles
@@ -48,10 +42,7 @@ end
 % within the brightest z-slice and may differ from the position
 % shown in the snippet image, which is centered at the position with
 % the current z-slice.
-hold on
-plot(overlayAxes,xTrace,yTrace,'og','LineWidth',2.5)
-plot(overlayAxes,xTraceInf,yTraceInf,'xb','LineWidth',2.5)
-% plot(overlayAxes,xTrace-1,yTrace-1,'sr','LineWidth',2.5)
+plot(overlayAxes,xTrace,yTrace,'og')
 hold(overlayAxes,'off')
 
 if isfield(cptState.FrameInfo, 'nc')
@@ -223,9 +214,7 @@ if cptState.UseHistoneOverlay
         plot(HisOverlayFigAxes,xNonFlagged,yNonFlagged,'ow')
         plot(HisOverlayFigAxes,xApproved,yApproved,'ob')
     end
-    hold on
-    plot(HisOverlayFigAxes,xTrace,yTrace,'og','LineWidth',2.5)
-    plot(HisOverlayFigAxes,xTraceInf,yTraceInf,'xb','LineWidth',2.5)
+    plot(HisOverlayFigAxes,xTrace,yTrace,'og')
     hold(HisOverlayFigAxes,'off')
 
     if ShowThreshold2

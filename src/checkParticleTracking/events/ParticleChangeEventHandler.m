@@ -8,7 +8,7 @@ function keyInputHandler = ParticleChangeEventHandler(cptState)
                     'Move to particle');
                 ParticleJump = str2double(ParticleJump{1});
             catch
-                ParticleJump = cptState.CurrentParticle;
+                ParticleJump = CurrentParticle;
             end
             
             [cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag] = ...
@@ -30,7 +30,20 @@ function keyInputHandler = ParticleChangeEventHandler(cptState)
                 toNearestParticle(cptState.Spots, ...
                 cptState.Particles, cptState.CurrentFrame, cptState.CurrentChannelIndex,...
                 cptState.UseHistoneOverlay, cptState.schnitzcells);
-        
+        elseif cc == '|'
+            % Moves to clicked particle and stays on current frame. Added
+            % by G. Martini on 11/23/20
+            [cptState.CurrentParticle, ~, cptState.ManualZFlag] =...
+                toNearestParticle(cptState.Spots, ...
+                cptState.Particles, cptState.CurrentFrame, cptState.CurrentChannelIndex,...
+                cptState.UseHistoneOverlay, cptState.schnitzcells);
+        elseif cc == ')'
+            % Switches nuclear association to clicked particle and switches to the first frame for that particle.
+            % Added by G. Martini on 11/23/20
+            [cptState.Particles, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag] =...
+                changeParticleAssociatedWithNucleus(cptState.Spots, cptState.Particles, cptState.CurrentParticle,...
+                cptState.CurrentFrame, cptState.CurrentChannelIndex, cptState.UseHistoneOverlay, cptState.schnitzcells)
+
         elseif cc == 'u'
             [x2, ~, ~] = SpotsXYZ(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame));
             
@@ -49,6 +62,10 @@ function keyInputHandler = ParticleChangeEventHandler(cptState)
             [cptState.lineFitted, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag, cptState.DisplayRange] = ...
                 goPreviousParticle(cptState.CurrentParticle, cptState.CurrentChannelIndex, cptState.HideApprovedFlag, cptState.Particles);
 
+        elseif (cc == 'v') & (cptState.CurrentParticle < cptState.numParticles())
+            [cptState.lineFitted, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag, cptState.DisplayRange] = ...
+                goNextUncheckedParticle(cptState.CurrentParticle, cptState.CurrentChannelIndex, cptState.HideApprovedFlag, cptState.Particles);
+        
         elseif cc == 'i'
             warning(' AR 1/15/18: This is currently deprecated. Talk to HG if you need this function.')
         end

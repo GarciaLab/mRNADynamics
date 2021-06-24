@@ -18,14 +18,6 @@ function keyInputHandler = FrameChangeEventHandler(cptState)
         elseif (cc == '<') %#ok<*AND2>%Move backward five frames
             cptState.PreviousFrame = cptState.CurrentFrame;
             [cptState.CurrentFrame, cptState.ManualZFlag] = changeFrame(cptState.CurrentFrame - 5, numValidFrames);
-            
-        elseif (cc == '"') %Move forward five frames
-            cptState.PreviousFrame = cptState.CurrentFrame;
-            [cptState.CurrentFrame, cptState.ManualZFlag] = changeToFlaggedFrame(cptState.CurrentFrame + 1 : numValidFrames, cptState);
-
-        elseif (cc == ':') %#ok<*AND2>%Move backward five frames
-            cptState.PreviousFrame = cptState.CurrentFrame;
-            [cptState.CurrentFrame, cptState.ManualZFlag] = changeToFlaggedFrame(1 : cptState.CurrentFrame - 1, cptState);
  
         elseif cc == 'j'
             cptState.PreviousFrame = cptState.CurrentFrame;
@@ -55,12 +47,12 @@ function keyInputHandler = FrameChangeEventHandler(cptState)
         
         elseif cc == 'e'
             % Approve/Disapprove a frame within a trace
-            cptState.Particles{cptState.CurrentChannelIndex}...
-                (cptState.CurrentParticle).FrameApproved(cptState.Particles{cptState.CurrentChannelIndex}...
+            cptState.Particles{cptState.CurrentChannel}...
+                (cptState.CurrentParticle).FrameApproved(cptState.Particles{cptState.CurrentChannel}...
                 (cptState.CurrentParticle).Frame == cptState.CurrentFrame) = ...
                 ...
-                ~cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).FrameApproved(...
-                cptState.Particles{cptState.CurrentChannelIndex}(cptState.CurrentParticle).Frame == cptState.CurrentFrame);
+                ~cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).FrameApproved(...
+                cptState.Particles{cptState.CurrentChannel}(cptState.CurrentParticle).Frame == cptState.CurrentFrame);
         end
     end
 

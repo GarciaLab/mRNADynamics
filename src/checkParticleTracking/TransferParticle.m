@@ -1,5 +1,5 @@
 function [SpotFilter,Particles]=...
-    TransferParticle(Spots,SpotFilter,Particles,CurrentFrame,IndexOutput,FrameInfo)
+    TransferParticle(Spots,SpotFilter,Particles,CurrentFrame,IndexOutput)
 
 %First, approve the particle
 SpotFilter(CurrentFrame,IndexOutput)=1;
@@ -17,8 +17,7 @@ z=z(IndexOutput);
 Particles(end+1).Frame=CurrentFrame;
 Particles(end).Index=IndexOutput;
 Particles(end).Approved=false;
-Particles(end).FrameApproved=true;
-Particles(end).ManuallyReviewed=true;
+ Particles(end).FrameApproved=true;
 
  %HG + AR: We deleted this because we don't assign xPos and yPos for the
  %Particles that are detected in the first place.%AR 8/16/2018- reinstated
@@ -26,8 +25,3 @@ Particles(end).ManuallyReviewed=true;
 Particles(end).xPos=x;
 Particles(end).yPos=y;
 Particles(end).zPos=z;
-
-if isfield(Particles,'zPosDetrended') %if isfield(FrameInfo,'zPosition') && 
-    stagePosZ = [FrameInfo.zPosition]./[FrameInfo.ZStep];
-    Particles(end).zPosDetrended=stagePosZ(CurrentFrame);
-end

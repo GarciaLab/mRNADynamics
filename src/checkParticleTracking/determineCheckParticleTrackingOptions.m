@@ -1,7 +1,7 @@
-function [sortByFrame, sortByLength, sortByFlags, ForCompileAll, SpeedMode, SisterMode, ...
+function [sortByFrame, sortByLength, ForCompileAll, SpeedMode, SisterMode, ...
     ncRange, projectionMode, plot3DGauss, NC, ...
     startNC, endNC, optionalResults, nWorkers, fish,...
-    noHisOverlay, multiView, preStructs, preMovie] = determineCheckParticleTrackingOptions(varargin)
+    noHisOverlay, multiView, preStructs, preMovie, UseCompiledParticles] = determineCheckParticleTrackingOptions(varargin)
 %DETERMINEOPTIONS Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -31,7 +31,8 @@ noHisOverlay = false;
 multiView = false;
 preStructs = {};
 preMovie = false;
-sortByFlags = false;
+UseCompiledParticles = false; % added by GM 12/10/20
+
 
 % these variables are meaningless if ncRange is 0
 NC = -1;
@@ -43,8 +44,6 @@ for i=1:length(varargin)
         sortByFrame=false;
     elseif strcmpi(varargin{i},'sortByLength')
         sortByLength=true;
-    elseif strcmpi(varargin{i},'sortByFlags')
-        sortByFlags=true;
     elseif strcmpi(varargin{i},'nWorkers')
         nWorkers = varargin{i+1};
     elseif strcmpi(varargin{i},'preMovie')
@@ -63,6 +62,8 @@ for i=1:length(varargin)
         SisterMode = true;
     elseif strcmpi(varargin{i}, 'preLoad')
         preStructs = varargin{i+1};
+    elseif strcmpi(varargin{i}, 'UseCompiledParticles')
+        UseCompiledParticles = true;
     elseif strcmpi(varargin{i}, 'optionalResults')
         optionalResults = varargin{i+1};
         elseif strcmpi(varargin{i}, 'fish')

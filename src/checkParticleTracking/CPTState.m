@@ -5,7 +5,6 @@ classdef CPTState < handle
         
         Spots
         Particles
-        trackingOptions
         SpotFilter
         schnitzcells
         FrameInfo
@@ -52,6 +51,7 @@ classdef CPTState < handle
         UseHistoneOverlay
         ImageHis
         HideApprovedFlag
+        mvTitleSwitch
         
         nameSuffix
         
@@ -59,16 +59,17 @@ classdef CPTState < handle
         plot3DGauss
         
         projectionMode
+        
+        UseCompiledParticles
     end
     
     methods
         function this = CPTState(liveExperiment, Spots, Particles, SpotFilter, schnitzcells, Ellipses,...
-                FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode)
+                FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode, UseCompiledParticles)
             
             this.liveExperiment = liveExperiment;
             this.Spots = Spots;
             this.Particles = Particles;
-            this.trackingOptions = getTrackingOptions(liveExperiment);
             this.SpotFilter = SpotFilter;
             this.schnitzcells = schnitzcells;
             this.FrameInfo = FrameInfo;
@@ -113,13 +114,20 @@ classdef CPTState < handle
             this.DisplayRangeSpot = [];
             this.UseHistoneOverlay = UseHistoneOverlay;
             this.HideApprovedFlag = 0;
+            this.mvTitleSwitch = false;
             
             this.nameSuffix = '';
             
             this.nWorkers = nWorkers;
-            this.plot3DGauss = isfield(Spots{this.CurrentChannelIndex}(1).Fits,'GaussIntensity3DRaw');
+            this.plot3DGauss = plot3DGauss;
             
             this.projectionMode = projectionMode;
+            
+            if exist('UseCompiledParticles', 'var')
+                this.UseCompiledParticles = UseCompiledParticles;
+            else
+                this.UseCompiledParticles = false;
+            end
         end
         
         function numParticles = numParticles(this)
@@ -329,11 +337,6 @@ classdef CPTState < handle
         
         function updateCurrentParticleIndex(this)
             this.CurrentParticleIndex = this.getCurrentParticleIndex();
-        end
-        
-        function updateManualReviewStatus(this)
-            this.Particles{this.CurrentChannelIndex}(this.CurrentParticle).ManuallyReviewed(...
-              this.Particles{this.CurrentChannelIndex}(this.CurrentParticle).Frame==this.CurrentFrame) = 1;
         end
     end
 end
