@@ -41,12 +41,12 @@ function [assignments, unassignedTracks, unassignedDetections, costArray] = ...
 %             error('check')
 %           end
           % NL: adding in sanity constraint on xy drift here         
-          last_xy = particleTracks(particleIDs(k)).MeasurementVec(end,1:2);
-          xy_options = measurements(detectionIDs,1:2);
-          r_dist = sqrt(sum((last_xy - xy_options).^2,2))';
-          
-          % remove unrealiztic options
-          costArray(k, r_dist>trackingOptions.maxConnectedDistance) = Inf;
+%           last_xy = particleTracks(particleIDs(k)).MeasurementVec(end,1:2);
+%           xy_options = measurements(detectionIDs,1:2);
+%           r_dist = sqrt(sum((last_xy - xy_options).^2,2))';
+%           
+%           % remove unrealiztic options
+%           costArray(k, r_dist>trackingOptions.maxConnectedDistance) = Inf;
       end      
      
       % perform pairwise matching

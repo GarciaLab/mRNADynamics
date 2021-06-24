@@ -9,7 +9,7 @@ function trackingOptions = parseTrackingOptions(Spots, liveExperiment, trackingO
   
   % designate which observables to use for tracking (stick with position
   % for now)
-  trackingOptions.trackingIndices = 1:3;  
+  trackingOptions.trackingIndices = 1:2;  
   
   % set default linking cost
   trackingOptions.matchCostDefault = -15*log(3e-5);
