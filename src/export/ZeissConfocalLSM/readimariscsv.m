@@ -155,15 +155,28 @@ function [schnitzcells, Ellipses] = readimariscsv(imarisStatisticsFolder, positi
         vec = val{1};
         Ellipses{frame}(:, 4) = vec;
 
+        % column number 5 is the ellipses orientation angle, used in notEllipseCPT.m
+        % to calculate angle "ang" by doing "pi - column5"
+        % TO-DO grab orientation information from Imaris, if available.
         Ellipses{frame}(:, 5) = zeros(numel(vec), 1);
         Ellipses{frame}(:, 6) = zeros(numel(vec), 1);
         Ellipses{frame}(:, 7) = zeros(numel(vec), 1);
         Ellipses{frame}(:, 8) = zeros(numel(vec), 1);
 
+        % we register here in Ellipses the indexes corresponding to where the nuclei are in schnitzcells structure
         TrackID = T_groupedByTime.TrackID(frame);
-        [~,IndexInSchnitzcells] = ismember(TrackID{1},T_groupedByID.TrackID);
+        [~,IndexInSchnitzcells] = ismember(TrackID{1}, T_groupedByID.TrackID);
         vec = IndexInSchnitzcells;
         Ellipses{frame}(:, 9) = vec;
+
+        % and here we do the oposite, we register in schnitzcells where the nuclei are in ellipses structure
+        TrackIDFromSchnitzcells = T_groupedByID.TrackID;
+        [~,IndexInEllipses] = ismember(TrackIDFromSchnitzcells, TrackID{1});
+        vec = IndexInEllipses;
+        %C = arrayfun(@(a, b) [a, b], T_groupedByID.cellno, vec, 'UniformOutput', false);
+        C = cellfun(@concatArrayElement, T_groupedByID.cellno, num2cell(vec), 'UniformOutput', false);
+        T_groupedByID.cellno = C;
+
         
         % we add z as a non-standard 10th column to Ellipses for now
         % JP: still have to check backwards compatibility of doing this
