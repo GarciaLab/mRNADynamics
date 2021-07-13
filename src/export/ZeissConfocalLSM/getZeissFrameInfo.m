@@ -5,6 +5,7 @@ function [FrameInfo,AllLSMImages,NSlices, NPlanes, NFrames,Frame_Times,NChannels
   for LSMIndex = 1:NSeries        
     Folder = RawDataFiles(LSMIndex).folder;
     %Load the file using BioFormats
+    fprintf("Reading LSM File series #%d/%d\n", LSMIndex, NSeries);
     LSMImages = bfopen([Folder, filesep, RawDataFiles(LSMIndex).name]);
     FileCreationDate = RawDataFiles(LSMIndex).datenum;
     
