@@ -40,7 +40,7 @@ function FrameInfo = processLSMData(Folder, RawDataFiles, FrameInfo,...
       % Proceed accordingly
       processFlatFieldInformation(Prefix, OutputFolder, FFPaths, FFToUse, LSMFF);
 
-      imarisFolder = [RawDataFiles.folder, filesep, 'ImarisResult'];
+      imarisFolder = [RawDataFiles(1).folder, filesep, 'ImarisResult'];
       if isfolder(imarisFolder)
           disp('Imaris results folder detected. Will get nuclear tracking info from Imaris.')
           
