@@ -1,9 +1,10 @@
 function [A, B, C] = readImarisEllipsoidTables(imarisStatisticsFolder)
 
-	ellipsoidFilePrefix = 'Ellipsoid_Axis_Length_';
+	ellipsoidFilePrefix = '*Ellipsoid_Axis_Length_';
 
 	function ellipsoidTable = readEllipsoidFile(suffix)
-		ellipsesFilePath = [imarisStatisticsFolder, filesep, ellipsoidFilePrefix, suffix, '.csv'];
+		D = dir([imarisStatisticsFolder, filesep, ellipsoidFilePrefix, suffix, '.csv']);
+	    ellipsesFilePath = [D(1).folder, filesep, D(1).name];
 	    opts = detectImportOptions(ellipsesFilePath);
 	    opts.VariableNamesLine = 3;
 

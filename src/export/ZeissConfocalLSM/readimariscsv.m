@@ -1,12 +1,15 @@
-function [schnitzcells, Ellipses] = readimariscsv(imarisStatisticsFolder, positionFile, pixelXSize, pixelYSize, pixelZSize)
+function [schnitzcells, Ellipses, lastFrameNumber] = readimariscsv(frameNumberOffset, imarisStatisticsFolder, positionFile, pixelXSize, pixelYSize, pixelZSize)
 
     arguments
+        frameNumberOffset double
         imarisStatisticsFolder char
         positionFile char
         pixelXSize double
         pixelYSize double
         pixelZSize double
     end
+
+    fprintf('About to parse Imaris CSV data with frame offset %d\n', frameNumberOffset);
 
     pixelSizes.cenx = pixelXSize;
     pixelSizes.ceny = pixelYSize;
@@ -19,14 +22,21 @@ function [schnitzcells, Ellipses] = readimariscsv(imarisStatisticsFolder, positi
     opts.VariableNamesLine = 3;
 
     T = readtable(positionFile, opts);
+    
+    % offset to use overall frame numbering.
+    % See comment in the code that calls this function.
+    T.Time = T.Time + frameNumberOffset;
+    % after offset, save what is our current last frame number
+    % this will be the offset for the next file
+    lastFrameNumber = max(T.Time);
 
     % drop needless features
     T = removevars(T, {'Unit', 'Category', 'Collection'});
 
     % groupby nucleus ID and aggregate into a list.
     % @(x) {x} function handle has the effect of returning the same element,
-    % so the effect is that a list is created. Other optionw when grouping by are functions
-    % like 'sum', 'mean', 'average', etc. But in this case, we wan the actual aggregation of values.
+    % so the effect is that a list is created. Other options when grouping-by are functions
+    % like 'sum', 'mean', 'average', etc. But in this case, we want the actual aggregation of values.
     T_groupedByID = groupsummary(T, 'TrackID', @(x) {x});
 
     % colums created by group by with a custom function handle will be named fun1_etc
@@ -114,11 +124,17 @@ function [schnitzcells, Ellipses] = readimariscsv(imarisStatisticsFolder, positi
     % combine (join) all three tables of ellipsoid axis lenghts A, B andC into one table for convenience
     TJoin = join(A, B);
     TJoin = join(TJoin, C);
+    
+    % we need to offset time data in these tables as well
+    % so it matches the offset we applied before to the Positions table
+    TJoin.Time = TJoin.Time + frameNumberOffset;
 
-    % also, join the ellipsoid info to the positions table, to gather all info into one big table
+    % remove rows with missing column values
     T_withoutMissing = rmmissing(T);
     
-    % join all data by time, trackID, and ID columns
+    % now join the ellipsoid info to the positions table, to gather
+    % all info into one big table.
+    % we join all data by time, trackID, and ID columns
     TJoin_all = join(T_withoutMissing, TJoin, 'LeftKeys', [4,5,6], 'RightKeys', [2,3,4]);
     
     % now we group all this info by the Time column 

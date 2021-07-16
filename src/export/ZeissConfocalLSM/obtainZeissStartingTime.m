@@ -11,12 +11,12 @@ function StartingTime = obtainZeissStartingTime(Folder, LSMIndex, LSMMeta2, NDig
 
     %Get the number of days since 1/1/0000
     if isempty(TimeStampString)
-        disp('StartTime was not present in CZI metadata. Using file creation date as start date')
+        disp('StartTime was not present in CZI metadata. Using file creation date as start date');
         % JP we "fake" an experiment start date since CZI does not appear
         % to have this info, just relative timestamps.
         % FileCreationDate is a datenum, we need to reformat it
         % as the code downstream expects it ('2020-11-26T00:00:00')
-        TimeStamp = datetime(FileCreationDate, 'ConvertFrom', 'datenum')
+        TimeStamp = datetime(FileCreationDate, 'ConvertFrom', 'datenum');
     else
         TimeStamp = datetime(TimeStampString(1:19),'InputFormat','yyyy-MM-dd''T''HH:mm:ss');
     end
