@@ -24,5 +24,9 @@ function ellipseHandle = notEllipseCPT(cptState, color, pointsToDraw, overlayAxe
     
     hold(overlayAxes, 'on')
 	ellipseHandle = notEllipse(ra, rb, ang, x0, y0, color, pointsToDraw, overlayAxes);
-	hold(overlayAxes, 'off')
+    %amount = size(x0);
+    %for j = 1:amount
+    %    drawellipse(overlayAxes, 'Center',[x0(j),y0(j)],'SemiAxes',[ra(j),rb(j)],'StripeColor',color, 'InteractionsAllowed', 'none');
+    %end
+    hold(overlayAxes, 'off')
 end

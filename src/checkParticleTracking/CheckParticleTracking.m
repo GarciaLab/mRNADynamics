@@ -383,8 +383,11 @@ end
 plotTraceSettings = PlotTraceSettings(UseCompiledParticles);
 
 
+
 %% Main loop - start
-while (currentCharacter ~= 'x')
+function keyWasPressed(aKey)
+    fprintf('Key %s was pressed\n', aKey);
+    fprintf('Current character is %s \n', currentCharacter);
     
     cptState.coatChannel = getCoatChannel(Channel1, Channel2, Channel3);
     
@@ -516,7 +519,9 @@ while (currentCharacter ~= 'x')
     %%
     set(0, 'CurrentFigure', Overlay);
     
-    currentCharacter = getUserKeyInput(Overlay);
+    % currentCharacter = getUserKeyInput(Overlay);
+
+
     
     frameChangeKeyInput(currentCharacter);
     zSliceChangeKeyInput(currentCharacter);
@@ -535,12 +540,31 @@ while (currentCharacter ~= 'x')
 end
 %% Main loop - end
 
-% save after exiting the main loop - the user pressed 'x'
+function saveAndExit()
+    % save after exiting the main loop - the user pressed 'x'
+    disp('Save and exit.');
 
-saveChanges(numSpotChannels, cptState, DataFolder, FilePrefix, DropboxFolder);
+    saveChanges(numSpotChannels, cptState, DataFolder, FilePrefix, DropboxFolder);
 
-disp(['(Left off at Particle #', num2str(cptState.CurrentParticle), ')'])
+    disp(['(Left off at Particle #', num2str(cptState.CurrentParticle), ')'])
 
-CheckNucleiModified(cptState, DropboxFolder, Prefix, fish)
+    CheckNucleiModified(cptState, DropboxFolder, Prefix, fish);
+end
+
+function x = anonKeyPressedCallback(src, event)
+    x = event.Key; % event.Character also works, review difference later
+    currentCharacter = x;
+    if x ~= 'x'
+        keyWasPressed(x);
+    else
+        saveAndExit();
+        close(Overlay);
+    end
+end
+
+keyWasPressed(1); % force the first execution so everyting renders at startup
+Overlay.KeyPressFcn = @anonKeyPressedCallback;
+
+
 
 end

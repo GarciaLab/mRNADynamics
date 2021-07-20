@@ -233,11 +233,11 @@ if cptState.UseHistoneOverlay
 
     if UseSchnitz
 
-        copyobj(EllipseHandle,HisOverlayFigAxes)
-        copyobj(EllipseHandleBlue,HisOverlayFigAxes)
-        copyobj(EllipseHandleGreen,HisOverlayFigAxes)
-        copyobj(EllipseHandleWhite,HisOverlayFigAxes)
-        copyobj(EllipseHandleYellow,HisOverlayFigAxes)
+        %copyobj(EllipseHandle,HisOverlayFigAxes)
+        %copyobj(EllipseHandleBlue,HisOverlayFigAxes)
+        %copyobj(EllipseHandleGreen,HisOverlayFigAxes)
+        %copyobj(EllipseHandleWhite,HisOverlayFigAxes)
+        %copyobj(EllipseHandleYellow,HisOverlayFigAxes)
 
     end
 
