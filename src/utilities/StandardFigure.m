@@ -39,7 +39,7 @@ for i=1:length(PlotHandle)
                 (~isempty(strmatch(LineStyle,'--')))|...
                 (~isempty(strmatch(LineStyle,'-.')))|...
                 (~isempty(strmatch(LineStyle,'-o')))
-            set(PlotHandle(i),'LineWidth',1)
+            set(PlotHandle(i),'LineWidth',1.5)
         end
     end
 
@@ -63,21 +63,21 @@ for i=1:length(PlotHandle)
     end
 
     %Color section
-    if strcmp(get(PlotHandle(i),'Type'),'hggroup')
-        try ChangeColorPBoC2(PlotHandle(i),'FaceColor')
-        end
-        try ChangeColorPBoC2(PlotHandle(i),'Color')
-        end
-    elseif strcmp(get(PlotHandle(i),'Type'),'errorbar')
-        ChangeColorPBoC2(PlotHandle(i),'Color')
-        ChangeColorPBoC2(PlotHandle(i),'MarkerFace')
-    elseif strcmp(get(PlotHandle(i),'Type'),'line')
-        ChangeColorPBoC2(PlotHandle(i),'Color')
-        ChangeColorPBoC2(PlotHandle(i),'MarkerFace')
-    elseif strcmp(get(PlotHandle(i),'Type'),'histogram')
-        ChangeColorPBoC2(PlotHandle(i),'FaceColor')
-        
-    else
+%     if strcmp(get(PlotHandle(i),'Type'),'hggroup')
+%         try ChangeColorPBoC2(PlotHandle(i),'FaceColor')
+%         end
+%         try ChangeColorPBoC2(PlotHandle(i),'Color')
+%         end
+%     elseif strcmp(get(PlotHandle(i),'Type'),'errorbar')
+%         ChangeColorPBoC2(PlotHandle(i),'Color')
+%         ChangeColorPBoC2(PlotHandle(i),'MarkerFace')
+%     elseif strcmp(get(PlotHandle(i),'Type'),'line')
+%         ChangeColorPBoC2(PlotHandle(i),'Color')
+%         ChangeColorPBoC2(PlotHandle(i),'MarkerFace')
+%     elseif strcmp(get(PlotHandle(i),'Type'),'histogram')
+%         ChangeColorPBoC2(PlotHandle(i),'FaceColor')
+%         
+%     else
 %          if ~strcmpi(get(PlotHandle(i),'Type'),'image')
 %              %Why do I have this auto thingy?
 %              if isempty(strmatch(get(PlotHandle(i),'Color'),'auto'))
@@ -93,7 +93,7 @@ for i=1:length(PlotHandle)
 %                  ChangeColorPBoC2(PlotHandle(i),'MarkerFaceColor')
 %              end
 %          end
-    end
+%     end
 
 %     
 %     
@@ -176,10 +176,10 @@ elseif Journal==2
     set(AxisHandle,'FontSize',20,'FontName','Lucida Sans Regular')
  else
 %     set(gca,'Position',[0.1300    0.1100    0.7750    0.8150])
-    set(get(AxisHandle,'XLabel'),'FontSize',17,'FontName','Lucida Sans Regular')
-    set(get(AxisHandle,'YLabel'),'FontSize',17,'FontName','Lucida Sans Regular')
-    set(get(AxisHandle,'ZLabel'),'FontSize',17,'FontName','Lucida Sans Regular')
-    set(AxisHandle,'FontSize',15,'FontName','Lucida Sans Regular')
+    set(get(AxisHandle,'XLabel'),'FontSize',17,'FontName','Arial')
+    set(get(AxisHandle,'YLabel'),'FontSize',17,'FontName','Arial')
+    set(get(AxisHandle,'ZLabel'),'FontSize',17,'FontName','Arial')
+    set(AxisHandle,'FontSize',15,'FontName','Arial')
 % else
 %     set(get(AxisHandle,'XLabel'),'FontSize',24,'FontName','Arial')
 %     set(get(AxisHandle,'YLabel'),'FontSize',24,'FontName','Arial')

@@ -9,13 +9,15 @@ for i=1:length(PlotHandle)
     %Line style
     
     if ~strcmpi(get(PlotHandle(i),'Type'),'scatter') && ~strcmpi(get(PlotHandle(i),'Type'),'image')
-        LineStyle=get(PlotHandle(i),'LineStyle');
-        if (~isempty(strmatch(LineStyle,'-')))|...
-                (~isempty(strmatch(LineStyle,'--')))|...
-                (~isempty(strmatch(LineStyle,'-.')))|...
-                (~isempty(strmatch(LineStyle,'-o')))
-            set(PlotHandle(i),'LineWidth',1)
-        end
+       if isfield(PlotHandle(i),'LineStyle')
+            LineStyle=get(PlotHandle(i),'LineStyle');
+            if (~isempty(strmatch(LineStyle,'-')))|...
+                    (~isempty(strmatch(LineStyle,'--')))|...
+                    (~isempty(strmatch(LineStyle,'-.')))|...
+                    (~isempty(strmatch(LineStyle,'-o')))
+                set(PlotHandle(i),'LineWidth',1)
+            end
+       end
     end
     
 

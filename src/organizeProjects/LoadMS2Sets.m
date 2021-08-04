@@ -204,15 +204,15 @@ for i=1:length(readyPrefixes)
             end
             
             %Linear slope fit results
-            if exist([dropboxFolder,filesep,currPrefix,filesep,'MeanLinearFits.mat'],'file')
-                MeanLinearFits(i)=load([dropboxFolder,filesep,currPrefix,filesep,'MeanLinearFits.mat']);
-            end
+%             if exist([dropboxFolder,filesep,currPrefix,filesep,'MeanLinearFits.mat'],'file')
+%                 MeanLinearFits(i)=load([dropboxFolder,filesep,currPrefix,filesep,'MeanLinearFits.mat']);
+%             end
             
             % Fit results from the MeanFitAPAsymmetric.m
-            if exist([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsV2.mat'],'file')
-                MeanFitsV2(i)=load([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsV2.mat']);
-            else
-            end
+%             if exist([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsV2.mat'],'file')
+%                 MeanFitsV2(i)=load([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsV2.mat']);
+%             else
+%             end
             
             % Fit results from the MeanFitAPAsymmetric.m
             if exist([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsAsymmetric.mat'],'file')
@@ -222,16 +222,16 @@ for i=1:length(readyPrefixes)
             
             
             % Fit results from the FitTiltedTrapezoids_4Clicks.m
-            if exist([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsV3.mat'],'file')
-                MeanFitsV3(i)=load([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsV3.mat']);
-            else
-            end
+%             if exist([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsV3.mat'],'file')
+%                 MeanFitsV3(i)=load([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsV3.mat']);
+%             else
+%             end
             
             %Fit results using MeanFitsMCMC
-            if exist([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsMCMC.mat'],'file')
-                MeanFitsMCMC(i)=load([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsMCMC.mat']);
-            else
-            end
+%             if exist([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsMCMC.mat'],'file')
+%                 MeanFitsMCMC(i)=load([dropboxFolder,filesep,currPrefix,filesep,'MeanFitsMCMC.mat']);
+%             else
+%             end
             %Fit results using InputOutputFits
             if inputOutputFits
                 if exist([dropboxFolder,filesep,currPrefix,filesep,'InputOutputFits_',...

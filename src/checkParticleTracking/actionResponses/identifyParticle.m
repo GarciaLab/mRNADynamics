@@ -40,7 +40,8 @@ if ~isempty(ConnectPosition)
 
         %Now, find its associated particle
         for i=1:numParticles
-            if ~isempty(Particles{CurrentChannel}(i).Nucleus)
+            if isfield(Particles{CurrentChannel}(i),'Nucleus')&&...
+                    ~isempty(Particles{CurrentChannel}(i).Nucleus)
                 AssignedNuclei(i)=Particles{CurrentChannel}(i).Nucleus;
             else
                 AssignedNuclei(i)=nan;
