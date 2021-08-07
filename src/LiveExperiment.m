@@ -20,6 +20,8 @@ classdef LiveExperiment
         anaphaseFrames = [0; 0; 0; 0; 0; 0];
 
         experimentName = '';
+
+        hasCustomMasks = false;
         
         
     end
@@ -179,6 +181,9 @@ classdef LiveExperiment
             this.hasRawStacks = exist([this.preFolder, 'stacks'], 'dir');
             this.hasMovieMatFile = exist([this.preFolder, filesep, Prefix, '_movieMatCh1.mat'], 'file');
             this.hasHisMatFile = exist([this.preFolder, filesep, Prefix, '_hisMat.mat'], 'file');
+
+            this.hasCustomMasks = isfolder([this.rawFolder, filesep, 'masks']);
+
             
             [~, this.experimentType, this.experimentAxis, ~, ~, this.APResolution,...
                 Channel1, Channel2,~, ~,  ~, ~, ~,...
@@ -253,7 +258,17 @@ classdef LiveExperiment
             Channels = filteredChannels;
         end
         
-        
+        function nuclearMask = getNuclearMask(this, frameNumber, zIndex)
+            T = sprintf('%02d', frameNumber - 1);
+            Z = sprintf('%03d', zIndex - 1);
+            maskFilePath = [this.rawFolder, filesep, 'masks', filesep, this.experimentName, '_T', T, '_Z', Z, '.tif'];
+            
+            % disp(['Reading nuclear mask from file: ', maskFilePath]);
+
+            nuclearMask = imread(maskFilePath);
+            
+            nuclearMask = cast(nuclearMask, 'logical');
+        end
         
         function out = getMovieMat(this)
             

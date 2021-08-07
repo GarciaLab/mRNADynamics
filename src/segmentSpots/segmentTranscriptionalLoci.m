@@ -200,9 +200,9 @@ parfor currentFrame = initialFrame:lastFrame
             %im = im.*ffim;
         end
         
-        maxMaxDog = max(max(dog))
-        maxDogOrderOfMagnitude = floor(log10(maxMaxDog))
-        thresholdOrderOfMagnitude = floor(log10(Threshold))
+        maxMaxDog = max(max(dog));
+        maxDogOrderOfMagnitude = floor(log10(maxMaxDog));
+        thresholdOrderOfMagnitude = floor(log10(Threshold));
         
         if thresholdOrderOfMagnitude < maxDogOrderOfMagnitude
             fprintf('WARNING: Threshold probably too low, resulting in out of memory errors.\n');
@@ -214,9 +214,14 @@ parfor currentFrame = initialFrame:lastFrame
         
          % apply nuclear mask if it exists
          if shouldMaskNuclei
-     
-             nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
-             dog_thresh = dog_thresh & nuclearMask;
+
+            if liveExperiment.hasCustomMasks
+                nuclearMask = liveExperiment.getNuclearMask(currentFrame, zIndex);
+            else    
+                nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
+            end
+
+            dog_thresh = dog_thresh & nuclearMask;
              
  %             if shouldDisplayFigures
  %                 figure(maskFig);

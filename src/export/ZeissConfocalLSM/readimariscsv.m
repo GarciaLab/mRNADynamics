@@ -1,12 +1,15 @@
-function [schnitzcells, Ellipses] = readimariscsv(imarisStatisticsFolder, positionFile, pixelXSize, pixelYSize, pixelZSize)
+function [schnitzcells, Ellipses, lastFrameNumber] = readimariscsv(frameNumberOffset, imarisStatisticsFolder, positionFile, pixelXSize, pixelYSize, pixelZSize)
 
     arguments
+        frameNumberOffset double
         imarisStatisticsFolder char
         positionFile char
         pixelXSize double
         pixelYSize double
         pixelZSize double
     end
+
+    fprintf('About to parse Imaris CSV data with frame offset %d\n', frameNumberOffset);
 
     pixelSizes.cenx = pixelXSize;
     pixelSizes.ceny = pixelYSize;
@@ -19,14 +22,21 @@ function [schnitzcells, Ellipses] = readimariscsv(imarisStatisticsFolder, positi
     opts.VariableNamesLine = 3;
 
     T = readtable(positionFile, opts);
+    
+    % offset to use overall frame numbering.
+    % See comment in the code that calls this function.
+    T.Time = T.Time + frameNumberOffset;
+    % after offset, save what is our current last frame number
+    % this will be the offset for the next file
+    lastFrameNumber = max(T.Time);
 
     % drop needless features
     T = removevars(T, {'Unit', 'Category', 'Collection'});
 
     % groupby nucleus ID and aggregate into a list.
     % @(x) {x} function handle has the effect of returning the same element,
-    % so the effect is that a list is created. Other optionw when grouping by are functions
-    % like 'sum', 'mean', 'average', etc. But in this case, we wan the actual aggregation of values.
+    % so the effect is that a list is created. Other options when grouping-by are functions
+    % like 'sum', 'mean', 'average', etc. But in this case, we want the actual aggregation of values.
     T_groupedByID = groupsummary(T, 'TrackID', @(x) {x});
 
     % colums created by group by with a custom function handle will be named fun1_etc
@@ -114,11 +124,17 @@ function [schnitzcells, Ellipses] = readimariscsv(imarisStatisticsFolder, positi
     % combine (join) all three tables of ellipsoid axis lenghts A, B andC into one table for convenience
     TJoin = join(A, B);
     TJoin = join(TJoin, C);
+    
+    % we need to offset time data in these tables as well
+    % so it matches the offset we applied before to the Positions table
+    TJoin.Time = TJoin.Time + frameNumberOffset;
 
-    % also, join the ellipsoid info to the positions table, to gather all info into one big table
+    % remove rows with missing column values
     T_withoutMissing = rmmissing(T);
     
-    % join all data by time, trackID, and ID columns
+    % now join the ellipsoid info to the positions table, to gather
+    % all info into one big table.
+    % we join all data by time, trackID, and ID columns
     TJoin_all = join(T_withoutMissing, TJoin, 'LeftKeys', [4,5,6], 'RightKeys', [2,3,4]);
     
     % now we group all this info by the Time column 
@@ -145,30 +161,51 @@ function [schnitzcells, Ellipses] = readimariscsv(imarisStatisticsFolder, positi
         Ellipses{frame}(:, 2) = vec;
 
         val = T_groupedByTime.axisA(frame);
+        val = convertSizeToPixels(val, pixelSizes.cenx);
         vec = val{1};
         Ellipses{frame}(:, 3) = vec;
 
 
         val = T_groupedByTime.axisB(frame);
+        val = convertSizeToPixels(val, pixelSizes.ceny);
         vec = val{1};
         Ellipses{frame}(:, 4) = vec;
 
+        % column number 5 is the ellipses orientation angle, used in notEllipseCPT.m
+        % to calculate angle "ang" by doing "pi - column5"
+        % TO-DO grab orientation information from Imaris, if available.
         Ellipses{frame}(:, 5) = zeros(numel(vec), 1);
         Ellipses{frame}(:, 6) = zeros(numel(vec), 1);
         Ellipses{frame}(:, 7) = zeros(numel(vec), 1);
         Ellipses{frame}(:, 8) = zeros(numel(vec), 1);
 
-        % shoudl we use imaris ID here (8948, 8949, etc), or index of schnitzcells arrays (1, 2, 3...)?
+        % we register here in Ellipses the indexes corresponding to where the nuclei are in schnitzcells structure
         TrackID = T_groupedByTime.TrackID(frame);
-        [~,IndexInSchnitzcells] = ismember(TrackID{1},T_groupedByID.TrackID);
+        [~,IndexInSchnitzcells] = ismember(TrackID{1}, T_groupedByID.TrackID);
         vec = IndexInSchnitzcells;
         Ellipses{frame}(:, 9) = vec;
+
+        % and here we do the oposite, we register in schnitzcells where the nuclei are in ellipses structure
+        TrackIDFromSchnitzcells = T_groupedByID.TrackID;
+        [~,IndexInEllipses] = ismember(TrackIDFromSchnitzcells, TrackID{1});
+        vec = IndexInEllipses;
+        %C = arrayfun(@(a, b) [a, b], T_groupedByID.cellno, vec, 'UniformOutput', false);
+        C = cellfun(@concatArrayElement, T_groupedByID.cellno, num2cell(vec), 'UniformOutput', false);
+        T_groupedByID.cellno = C;
+
+        
+        % we add z as a non-standard 10th column to Ellipses for now
+        % JP: still have to check backwards compatibility of doing this
+        val = T_groupedByTime.cenz(frame);
+        val = convertSizeToPixels(val, pixelSizes.cenz);
+        vec = val{1};
+        Ellipses{frame}(:, 10) = vec;
     end
 
     
     % convert table to struct, this should basically match schnitzcells as if they were produced by TrackNuclei. 
     % we already used TrackID column for Ellipses generation, we can now
     % remove it and other unwanted columns before generating the struct
-    T_groupedByID = removevars(T_groupedByID, {'TrackID', 'GroupCount', 'ImarisID', 'cenz'});
+    T_groupedByID = removevars(T_groupedByID, {'TrackID', 'GroupCount', 'ImarisID'});
     schnitzcells = table2struct(T_groupedByID);
 end
