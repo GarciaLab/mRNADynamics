@@ -159,7 +159,8 @@ imwrite(uint16(MidImage),[DropboxFolder,filesep,Prefix,filesep,'APDetection',fil
 imwrite(uint16(SurfImage),[DropboxFolder,filesep,Prefix,filesep,'APDetection',filesep,'FullEmbryoSurf.tif'],'compression','none');
 
 %Now, use them to find the embryo mask
-embMask = getEmbryoMaskLive(MidImage, 50);
+liveExperiment = LiveExperiment(Prefix);
+embMask = getEmbryoMaskLive(MidImage, liveExperiment.pixelSize_um);
 
 
 %This code came from Michael's code
@@ -197,6 +198,16 @@ else
     coordP_rot=(ext(3,:)+ext(4,:))/2;
     coordA_rot=(ext(7,:)+ext(8,:))/2;
 
+    % Calculate distances from centroid. In general Aneteriod will fall
+    % further from centroid
+    distA = sqrt(sum((coordA_rot-Props.Centroid).^2));
+    distP = sqrt(sum((coordP_rot-Props.Centroid).^2));
+    if distP > distA
+        coordP_rot_temp = coordP_rot;
+        coordP_rot = coordA_rot;
+        coordA_rot = coordP_rot_temp;
+    end
+    
     if FlipAP
         temp = coordA_rot;
         coordA_rot = coordP_rot;
@@ -246,6 +257,9 @@ plot(coordP(1),coordP(2),'r.','MarkerSize',20);
 hold off
 saveas(gcf, [DropboxFolder,filesep,Prefix,filesep,'APEmbryo.tif']);
 close(diagFigure);
+
+% save embryo mask
+save([DropboxFolder,filesep,Prefix,filesep,'EmbryoMask.mat'],'embMask');
 
 if CC.NumObjects~=1 || CorrectAxis
     CorrectAPAxis(Prefix);

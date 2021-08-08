@@ -187,21 +187,26 @@ if ~NoAP
         %Figure out the different channels
         %NuclearChannel=contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true);
         
-        
-        if any(contains([Channel1,Channel2,Channel3],'nuclear','IgnoreCase',true))
-            if SelectChannel
-                HisChannel = ChannelToLoad;
-                InvertHis=0;
-            elseif ~any(contains([Channel1,Channel2,Channel3],'inverted','IgnoreCase',true))
-                HisChannel = ChannelToLoad;
-                InvertHis=0;
-            elseif any(contains([Channel1,Channel2,Channel3],'inverted','IgnoreCase',true))
-                HisChannel= ChannelToLoad;
-                InvertHis=1;
-            else
-                error('You should check the MovieDatabase.csv to see whether ":Nuclear" or "invertedNuclear" is plugged into your channels.')
-            end
+        nuclearChannels = contains({Channel1,Channel2,Channel3},'nuclear','IgnoreCase',true);
+        nuclearChannelIndices = find(nuclearChannels);
+        invertedChannels = contains({Channel1,Channel2,Channel3},'inverted','IgnoreCase',true);
+        if ~any(nuclearChannels)
+            error('You should check the MovieDatabase.csv to see whether ":Nuclear" or "invertedNuclear" is plugged into your channels.')
         end
+%         if any(contains({Channel1,Channel2,Channel3},'nuclear','IgnoreCase',true))
+%             if SelectChannel
+%                 HisChannel = ChannelToLoad;
+%                 InvertHis=0;
+%             elseif ~any(contains([Channel1,Channel2,Channel3],'inverted','IgnoreCase',true))
+%                 HisChannel = ChannelToLoad;
+%                 InvertHis=0;
+%             elseif any(contains([Channel1,Channel2,Channel3],'inverted','IgnoreCase',true))
+%                 HisChannel= ChannelToLoad;
+%                 InvertHis=1;
+%             else
+%                 error('You should check the MovieDatabase.csv to see whether ":Nuclear" or "invertedNuclear" is plugged into your channels.')
+%             end
+%         end
         
         %Find the zoomed movie pixel size
         D=dir([rawPrefixPath,'*.',FileMode(1:3)]);
@@ -227,8 +232,8 @@ if ~NoAP
         end
         
         surfFile = [fullEmbryoPath,filesep,D(end).name];
-        ImageTemp=bfopen(surfFile);
-        MetaFullEmbryo= ImageTemp{:, 4};
+        ImageTempRaw=bfopen(surfFile);
+        MetaFullEmbryo= ImageTempRaw{:, 4};
         PixelSizeFullEmbryoSurf=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0) );
         try
             PixelSizeFullEmbryoSurf=str2double(MetaFullEmbryo.getPixelsPhysicalSizeX(0).value);
@@ -263,31 +268,46 @@ if ~NoAP
         
         %How many channels and slices do we have?
         NChannelsMeta=MetaFullEmbryo.getChannelCount(0);
-        NSlices=str2double(MetaFullEmbryo.getPixelsSizeZ(0));
-        clear MaxTemp
-        
-        %Do a maximum projection
-        
+%         NSlices=str2double(MetaFullEmbryo.getPixelsSizeZ(0));                       
+
         %Look for the image with the largest size. In this way, we avoid
         %loading individual tiles in the case of a tile scan.
+        
+%         if any(strcmp(FileMode,{'LIFExport','LSM'}))
+            ImageTemp = ImageTempRaw{1,1};
+%         end
         for i=1:size(ImageTemp,1)
-            SizesImages(i)=size(ImageTemp{i,1}{1,1},1);
-        end
-        [~,ImageCellToUse]=max(SizesImages);
-        
-        
-        %By looking at the last image we make sure we're avoiding the
-        %individual tiles if we're dealing with tile scan
-        for i=HisChannel:NChannelsMeta:size(ImageTemp{ImageCellToUse,1},1)
-            MaxTemp(:,:,i)=ImageTemp{ImageCellToUse,1}{i,1};
+            ImageSizes(i)=size(ImageTemp{i,1},1);
         end
         
-        if InvertHis
-            SurfImage=MaxTemp(:,:,HisChannel+round(NSlices/2)*NChannelsMeta);
-        else
-            SurfImage=max(MaxTemp,[],3);
-        end
+        [MaxSize,~]=max(ImageSizes);
+        ElligibleImages = find(ImageSizes==MaxSize); %NL 2021-08-07: we want to use all images that are elligible 
         
+        projectionTemp = [];
+        % generate projections for each relevant channel
+        for n = 1:length(nuclearChannelIndices)
+            TempChannel = nuclearChannelIndices(n);
+            InvertFlag = invertedChannels(TempChannel)==1;
+            iter = 1;
+            MaxTemp = [];
+        
+            % iterate through and store slices
+            for i=TempChannel:NChannelsMeta:length(ImageSizes)
+                if ismember(i,ElligibleImages)
+                    MaxTemp(:,:,iter)=ImageTemp{i,1};
+                    iter = iter + 1;
+                end
+            end
+            i_slice = mat2gray(mean(MaxTemp,3))*255;
+            if InvertFlag
+                i_mask = getEmbryoMaskLive(i_slice,liveExperiment.pixelSize_um);
+                i_slice(~i_mask) = 255;
+                i_slice = imcomplement(i_slice);
+            end
+            projectionTemp(:,:,n) = i_slice;
+        end
+        SurfImage = mean(double(projectionTemp),3);
+
         %For Nikon spinnind disk data load the stitched surface image that
         %was made by FindAPAxisFullEmbryo
         if strcmp(FileMode,'DSPIN')
@@ -453,7 +473,7 @@ if ~NoAP
             %             try
             %                 C = gather(normxcorr2(gpuArray(im1), gpuArray(im2)));
             %             catch
-            C = normxcorr2(im1, im2);
+            C = normxcorr2(imgaussfilt(im1,2), imgaussfilt(im2,2));
             %             end
             
             [Max2,MaxRows]=max(C);
