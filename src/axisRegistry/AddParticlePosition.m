@@ -473,8 +473,22 @@ if ~NoAP
             %             try
             %                 C = gather(normxcorr2(gpuArray(im1), gpuArray(im2)));
             %             catch
-            C = normxcorr2(imgaussfilt(im1,2), imgaussfilt(im2,2));
+            C_raw = normxcorr2(imgaussfilt(im1,2), imgaussfilt(im2,2));            
             %             end
+            % apply mask to make sure we're not finding stuff outside the
+            % embryo
+            [i_mask, blurSigma] = getEmbryoMaskLive(im2,liveExperiment.pixelSize_um/ZoomRatio);
+            i_mask_dil = false(size(C_raw));
+            
+            x_ref = ceil(size(im1,2)/2);
+            y_ref = ceil(size(im1,1)/2);
+            
+            i_mask_dil(y_ref+1:size(i_mask,1)+y_ref,x_ref+1:size(i_mask,2)+x_ref) = i_mask;
+            se = strel('disk',2*blurSigma);
+            i_mask_dil = imdilate(i_mask_dil,se);
+            
+            C = C_raw;
+            C(~i_mask_dil) = 0;
             
             [Max2,MaxRows]=max(C);
             [~,MaxColumn]=max(Max2);
@@ -529,8 +543,8 @@ if ~NoAP
                     round(ColumnsResized/2-ColumnsZoom/2+ShiftColumn*ZoomRatio):...
                     round(ColumnsResized/2+ColumnsZoom/2-1+ShiftColumn*ZoomRatio);
             else
-                RowsResizedRange=1:RowsResized;
-                ColumnsResizedRange=1:ColumnsResized;
+                RowsResizedRange=1:size(ZoomImage,1);%RowsResized;
+                ColumnsResizedRange=1:size(ZoomImage,2);%ColumnsResized;
             end
             
             
