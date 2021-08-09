@@ -477,15 +477,15 @@ if ~NoAP
             %             end
             % apply mask to make sure we're not finding stuff outside the
             % embryo
-            [i_mask, blurSigma] = getEmbryoMaskLive(im2,liveExperiment.pixelSize_um/ZoomRatio);
-            i_mask_dil = false(size(C_raw));
+            [i_mask, ~] = getEmbryoMaskLive(im2,liveExperiment.pixelSize_um/ZoomRatio);
+            i_mask2 = false(size(C_raw));
             
             x_ref = ceil(size(im1,2)/2);
             y_ref = ceil(size(im1,1)/2);
             
-            i_mask_dil(y_ref+1:size(i_mask,1)+y_ref,x_ref+1:size(i_mask,2)+x_ref) = i_mask;
-            se = strel('disk',3*blurSigma);
-            i_mask_dil = imdilate(i_mask_dil,se);
+            i_mask2(y_ref+1:size(i_mask,1)+y_ref,x_ref+1:size(i_mask,2)+x_ref) = i_mask;
+            se = strel('disk',x_ref);
+            i_mask_dil = imdilate(i_mask2,se);
             
             C = C_raw;
             C(~i_mask_dil) = 0;
