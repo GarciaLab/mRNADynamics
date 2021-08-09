@@ -484,7 +484,7 @@ if ~NoAP
             y_ref = ceil(size(im1,1)/2);
             
             i_mask_dil(y_ref+1:size(i_mask,1)+y_ref,x_ref+1:size(i_mask,2)+x_ref) = i_mask;
-            se = strel('disk',2*blurSigma);
+            se = strel('disk',3*blurSigma);
             i_mask_dil = imdilate(i_mask_dil,se);
             
             C = C_raw;
