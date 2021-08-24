@@ -2,7 +2,7 @@ function [I_mask, blurSigma] =getEmbryoMaskLive(I,pixelSize_um)
 
     % NL: rewrote this on 2021-08-07
     max_dist = round(50/pixelSize_um); % maximum distance mask can be from center
-    blurSigma = round(5/pixelSize_um);
+    blurSigma = round(2/pixelSize_um);
     % blur
     I_blurred = imgaussfilt(double(I),blurSigma);
     % find threshold
