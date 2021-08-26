@@ -1,4 +1,4 @@
-function [Particles, Spots, NChannels] = loadParticlesIfExists(DropboxFolder)
+function [Particles, Spots, SpotFilter, NChannels] = loadParticlesIfExists(DropboxFolder, Prefix)
 	if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
 	    load([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'Particles', 'SpotFilter')
 	    load([DropboxFolder,filesep,Prefix,filesep,'Spots.mat'], 'Spots')
@@ -11,6 +11,7 @@ function [Particles, Spots, NChannels] = loadParticlesIfExists(DropboxFolder)
 	        Particles = {Particles};
 	        Spots = {Spots};
 	        NChannels = 1;
+	        SpotFilter = {SpotFilter};
 	    end
 	    
 	    % Now, get the particle positions (if they're not there already).
@@ -19,16 +20,17 @@ function [Particles, Spots, NChannels] = loadParticlesIfExists(DropboxFolder)
 	    end
 	    
 	    if isfield(Particles{ChN}, 'DVpos')
-	        warning('Particles.mat already has DV positions stored. They will be rewritten')
+	        warning('Particles.mat already has DV positions stored. They will be rewritten');
 	    end
 	    if isfield(Particles{ChN}, 'APpos')
-	        warning('Particles.mat already has AP positions stored. They will be rewritten')
+	        warning('Particles.mat already has AP positions stored. They will be rewritten');
 	    end
 	else
-		Particles = []
-		Spots = []
-		NChannels = []
-	    warning('No Particles.mat found. Just updating APDetection.mat')
+		Particles = [];
+		Spots = [];
+		NChannels = [];
+		SpotFilter = [];
+	    warning('No Particles.mat found. Just updating APDetection.mat');
 	end
 
 end

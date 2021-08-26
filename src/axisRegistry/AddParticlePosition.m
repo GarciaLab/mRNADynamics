@@ -49,7 +49,7 @@ Channel3 = liveExperiment.Channel3;
 
 APResolution = liveExperiment.APResolution;
 
-[Particles, Spots, NChannels] = loadParticlesIfExists(DropboxFolder);
+[Particles, Spots, SpotFilter, NChannels] = loadParticlesIfExists(DropboxFolder, Prefix);
 
 % See if we had any lineage/nuclear information
 hisDir=dir([PreProcPath,filesep,Prefix,filesep,'*his*']);
@@ -255,11 +255,11 @@ if ~NoAP
     
     %Get the information about the AP axis as well as the image shifts
     %used for the stitching of the two halves of the embryo
-    load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+    loadMatFile([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'], true);
     
     
     %Make a folder to store the images
-    mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection'])
+    mkdir([DropboxFolder,filesep,Prefix,filesep,'APDetection']);
     
     
     hisMat = getHisMat(liveExperiment);
