@@ -105,7 +105,8 @@ if ~skipExtraction
 
     % this function exports tif z stacks
     exportTifStacks(LIFImages, 'LIF', NChannels, NFrames, NSlices, Prefix, ...
-        moviePrecision, hisPrecision, nuclearGUI,...
+        ...moviePrecision, hisPrecision,
+        nuclearGUI,...
         ProjectionType, Channels, ReferenceHist, skipNuclearProjection, zslicesPadding)  
 
     if nuclearGUI
