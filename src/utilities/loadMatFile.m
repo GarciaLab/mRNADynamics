@@ -9,7 +9,7 @@ function F = loadMatFile(filepath, loadWholeFile)
 	varlist = whos(F);
 	if loadWholeFile
 		command = sprintf('load(''%s'')', filepath);
-		evalin('base', command);
+		evalin('caller', command);
 		
 		varnames = extractfield(varlist, 'name');
 		varnamesStrArray = convertCharsToStrings(varnames);
