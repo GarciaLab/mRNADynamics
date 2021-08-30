@@ -59,7 +59,7 @@ else
     histoneChannelPresent = false;
 end
 
-% isn't getMicroscope the same as DetermineFileMode?
+% Isn't getMicroscope the same as DetermineFileMode?
 [FileMode, EmbryoName, projectDate] = getMicroscope(Prefix);
 
 
