@@ -1,4 +1,4 @@
-function Frame_Times = getFrameTimesFromBioFormats(LIFMeta, NSlices)
+function Frame_Times = getFrameTimesFromBioFormats(LIFMeta, NSlices, NFrames)
 
 import loci.common.DateTools;
 
@@ -13,7 +13,12 @@ for seriesIndex = 0:nSeries-1
     
     nPlanes = LIFMeta.getPlaneCount(seriesIndex);
     
-    nPlanes = nPlanes - (NSlices(seriesIndex+1)*nChannels);
+    % Allow for export of datasets with only one time point
+    if max(NFrames) ~= 1
+        nPlanes = nPlanes - (NSlices(seriesIndex+1)*nChannels);
+    else
+        warning('Dataset with only one time point detected. Keeping last frame.')
+    end
     
     if nPlanes > 0
         seriesStamp = LIFMeta.getImageAcquisitionDate(seriesIndex);

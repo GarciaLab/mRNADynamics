@@ -77,7 +77,7 @@ if ~skipExtraction
 
             case 'bioformats'
 
-                Frame_Times = getFrameTimesFromBioFormats(LIFMeta, NSlices);
+                Frame_Times = getFrameTimesFromBioFormats(LIFMeta, NSlices, NFrames);
 
             otherwise, error('what?');
 
