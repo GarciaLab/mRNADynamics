@@ -1,6 +1,35 @@
 function ms2ClusterDistances = pairwiseDistMS2Clusters(Prefix)
+%
+% DESCRIPTION
+% This function takes segmented MS2 spots and TF clusters (using the
+% Spots.m structure) and calculates the pairwise distances between the 
+% MS2 spot in a nucleus and all clusters detected in the same nucleus.
+%
+% Note: This function currently only works for 1spot data
+%
+%
+% INPUT ARGUMENTS
+% Prefix: prefix for this experiment
+% 
+% OPTIONS
+% N/A
+%
+% OUTPUT
+% ms2ClusterDistances: A structure containing the pairwise distances  
+%                      between an MS2 spot and all TF clusters detected,
+%                      for each nucleus and time frame.
+%
+% ms2ClusterDistances.mat: MATLAB file containing the ms2ClusterDistances
+%                          structure, saved to a subdirectory, entitled
+%                          'clusterAnalysis', within your Results folder
+%                          (aka, your 'DropboxFolder')
+%
+%
+% Author (contact): Meghan Turner (meghan_turner@berkeley.edu)
+% Created: 08/12/2020
+% Last Updated: 11/08/2021
+%
 
-% Prefix = '2019-11-26-2xDl_Venus_snaBAC_MCPmCherry_Leica_Zoom45_21uW14uW_01';
 liveExperiment = LiveExperiment(Prefix);
 
 nCh = numel(liveExperiment.spotChannels);
