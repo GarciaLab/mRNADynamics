@@ -1,0 +1,114 @@
+#@ File(label="Input directory", description="Select the directory with input images", style="directory") inputDir
+#@ File(label="Output directory", description="Select the output directory", style="directory") outputDir
+#@ File(label="Weka model", description="Select the Weka model to apply") modelPath
+#@ String(label="Prefix") Prefix
+#@ Integer(label="Number of workers") numWorkers
+#@ Integer(label="Initial frame", value=1) initialFrame
+#@ Integer(label="Last frame") lastFrame
+#@ Integer(label="Channel") channel
+
+import trainableSegmentation.WekaSegmentation;
+import trainableSegmentation.utils.Utils;
+import ij.io.FileSaver;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.process.ImageProcessor;
+import java.lang.Math;
+
+//argument validation
+//remove white spaces 
+Prefix = Prefix.trim();
+
+// starting time
+startTime = System.currentTimeMillis()/1000;
+// calculate probabilities?
+resultMode = "Probabilities";
+getProbs = resultMode.equals( "Probabilities" );
+// create segmentator
+segmentator = new WekaSegmentation(true);
+// load classifier
+segmentator.loadClassifier( modelPath.getCanonicalPath() );
+
+
+// This filter will only include files ending with the right channel
+FileFilter filter = new FileFilter() {
+        //@Override
+        public boolean accept(File file) {
+            return file.getName().contains("_ch0" + Integer.toString(channel));
+        }
+    };
+
+// This is how to apply the filter
+listOfFiles = inputDir.listFiles(filter);
+
+
+
+// get list of input images
+//listOfFiles = inputDir.listFiles();
+
+if (lastFrame == 0) {
+	lastFrame = listOfFiles.length;
+}
+
+
+for (i = initialFrame-1; i < lastFrame; i++ )
+{
+	IJ.log("Processing frame: " + (i+1) + "..." );
+	IJ.log("Filename: " + listOfFiles[i].getName());
+	
+    // process only files (do not go into sub-folders)
+    if( listOfFiles[ i ].isFile() )
+    {
+        // try to read file as image
+        image = IJ.openImage( listOfFiles[i].getCanonicalPath() );
+        if( image != null )
+        {                   
+            // apply classifier and get results (0 indicates number of threads is auto-detected)
+            result = segmentator.applyClassifier( image, numWorkers, getProbs );
+ 
+            if( !getProbs )
+                // assign same LUT as in GUI
+                result.setLut( Utils.getGoldenAngleLUT() );
+
+
+			//let's get rid of the slices we don't like
+
+			ImageStack result_class1 = new ImageStack(result.getWidth(), result.getHeight());
+			
+			for (j = 1; j <= result.getStackSize(); j++) {
+				
+      			if (Math.floorMod(j,2) != 0) {
+      				//addslice accepts an imageprocessor object as input, 
+					//so we'll stuff result into one of those
+      				//and imageprocesser requires an imagestack, so we'll stuff
+      				//result into that 
+      				stack = result.getStack();
+      				ip = stack.getProcessor(j);
+      				
+      				//for compatibility, we'll offset and multiply the image to get a max value of 10k and min of 100. 
+      				double scale = 10000.0;
+     
+      				ip.multiply(scale);
+      				
+      				result_class1.addSlice(ip);
+      			}
+			}
+			 
+    		ImagePlus result = new ImagePlus("Classification result", result_class1);
+        
+             
+            // save result as TIFF in output folder
+            outputFileName = "prob" + listOfFiles[ i ].getName().replaceFirst("[.][^.]+$", "") + ".tif";
+            new FileSaver( result ).saveAsTiff( outputDir.getPath() + File.separator + outputFileName );
+  
+            // force garbage collection (important for large images)
+            result = null; 
+            image = null;
+            System.gc();
+        }
+    }
+}
+// print elapsed time
+estimatedTime = (System.currentTimeMillis()/1000) - startTime;
+IJ.log( "** Finished processing folder in " + estimatedTime + " s **" );

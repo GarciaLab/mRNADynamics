@@ -1,0 +1,62 @@
+#@ File(label="Input directory", description="Select the directory with input images", style="directory") inputDir
+#@ Integer(label="Channel") channel
+
+import ij.io.FileSaver;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.process.ImageProcessor;
+import java.lang.Math;
+import ij.plugin.Concatenator;
+
+
+// starting time
+startTime = System.currentTimeMillis()/1000;
+
+
+// This filter will only include files ending with the right channel
+FileFilter filter = new FileFilter() {
+        //@Override
+        public boolean accept(File file) {
+            return file.getName().contains("_ch0" + Integer.toString(channel));
+        }
+    };
+
+// This is how to apply the filter
+listOfFiles = inputDir.listFiles(filter);
+
+
+lastFrame = listOfFiles.length;
+
+ImagePlus result = new ImagePlus(); 
+
+
+concatenator = new Concatenator();
+
+for (i = 0; i < lastFrame; i++ )
+{
+	IJ.log("Loading frame: " + (i+1) + "..." );
+	IJ.log("Filename: " + listOfFiles[i].getName());
+	
+    // process only files (do not go into sub-folders)
+    if( listOfFiles[ i ].isFile() )
+    {
+        // try to read file as image
+        image = IJ.openImage( listOfFiles[i].getCanonicalPath() );
+        
+        if (i == 0) {
+        	result = image;
+        } else {
+        	result = concatenator.concatenate(result, image, false);                                                                                       
+        }
+
+        // force garbage collection (important for large images)
+        image = null;
+        System.gc();
+        
+    }
+}
+result.show();
+// print elapsed time
+estimatedTime = (System.currentTimeMillis()/1000) - startTime;
+IJ.log( "** Finished processing folder in " + estimatedTime + " s **" );
