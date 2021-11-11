@@ -485,6 +485,8 @@ classdef LiveExperiment
                 for z = 1:this.zDim
                     out(:, :, z) = getMovieSlice(this, frame, channel, z);
                 end
+            else
+                error('The PreProcessed file for this frame doesn''t exist.')
             end
             out = double(out);
         end
