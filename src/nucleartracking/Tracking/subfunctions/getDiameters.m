@@ -40,7 +40,13 @@ catch
     for f = 1:nFrames
         nc = find(extendedAnaphaseFrames > f, 1) - 1;
         if isempty(nc)
-            ncFrames(f:nFrames) = max(ncFrames) + 1;
+            % MT, 2021-12-06: Quick, inelegant fix to allow for nuclei 
+            % segmentation of single frames
+            if nFrames == 1
+                ncFrames = nCycles;
+            else
+                ncFrames(f:nFrames) = max(ncFrames) + 1;
+            end
             break;
         else
             ncFrames(f) = nc;

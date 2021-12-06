@@ -24,6 +24,10 @@ trackingStartingPoints = round(0.5*(indMitosis(2:end-1,1) + [1; indMitosis(2:end
 if size(indMitosis,1) > 1
     trackingStartingPoints(end+1) = ...
         min(numberOfFrames, round(indMitosis(end-1,2) + delta_time_tracking));
+% MT, 2021-12-06: Quick, inelegant fix to allow for nuclei 
+% segmentation of single frames
+elseif numberOfFrames == 1
+    trackingStartingPoints = 1;
 end
     
 end

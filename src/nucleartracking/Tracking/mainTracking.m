@@ -304,7 +304,15 @@ if ~exist('centers','var') || isempty(centers)
     if useMultithresh
         embryoMask = getMultithreshEmbryoMask(FrameInfo, names, diameters);
     end
-    for j = 1:(size(indMitosis,1)-1)
+    
+    % MT, 2021-12-06: Quick, inelegant fix to allow for nuclei 
+    % segmentation of single frames
+    if nFrames == 1
+        endCount = 1;
+    else
+        endCount = size(indMitosis,1)-1;
+    end
+    for j = 1:endCount
         
         % Segment interphases
         
