@@ -8,7 +8,8 @@ schnitzcellsOld = schnitzcells;
 
 for f = 1:length(Ellipses)
    
-   assert( size(Ellipses{f}, 2) > 8 )
+   error_message = 'Ellipses structure missing a column. Did you accidentally select ''noTrack''?';
+   assert( size(Ellipses{f}, 2) > 8, error_message)
 
     
    strayEllipseIndexes = find(Ellipses{f}(:, 9) == 0);
