@@ -119,6 +119,10 @@ while (currentCharacter~='x')
         SliceIndex=SliceIndex+1;
     elseif (ct~=0)&(currentCharacter==',')&(SliceIndex>1)
         SliceIndex=SliceIndex-1;
+    elseif (ct~=0)&(currentCharacter=='>')&(StackIDs(SliceIndex)<max(StackIDs))
+        SliceIndex=find(StackIDs == StackIDs(SliceIndex)+1, 1);
+    elseif (ct~=0)&(currentCharacter=='<')&(StackIDs(SliceIndex)>1)
+        SliceIndex=find(StackIDs == StackIDs(SliceIndex)-1, 1);
     elseif (ct~=0)&(currentCharacter=='s')
         save([liveExperiment.resultsFolder,filesep,'UseSliceInfo.mat'],'UseSliceInfo', '-v6');
         disp('UseSliceInfo saved.');
@@ -126,6 +130,12 @@ while (currentCharacter~='x')
         UseSliceInfo(SliceIndex) = true;
     elseif (ct~=0)&(currentCharacter=='n')
         UseSliceInfo(SliceIndex) = false;
+    elseif (ct~=0)& (currentCharacter=='N')
+        InStack = StackIDs == StackIDs(SliceIndex);
+        UseSliceInfo(InStack) = false;
+    elseif (ct~=0)& (currentCharacter=='Y')
+        InStack = StackIDs == StackIDs(SliceIndex);
+        UseSliceInfo(InStack) = true;
    
         
     end

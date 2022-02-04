@@ -1,5 +1,6 @@
 function projection = calculateProjection(...
-    projectionType, nSlices, imageStack, varargin)
+    projectionType, nSlices, imageStack,varargin)
+
 
 % Calculate projection for a nuclear channel
 lowerSlice = 1;
@@ -18,8 +19,10 @@ end
 %     lowerSlice = varargin{2};
 % end
 
-imageStack = imageStack(:, :, lowerSlice:upperSlice);
-    
+if strcmpi(projectionType, 'medianprojection') | strcmpi(projectionType, 'maxprojection') |...
+        strcmpi(projectionType, 'middleprojection') | strcmpi(projectionType, 'midsumprojection')
+    imageStack = imageStack(:, :, lowerSlice:upperSlice);
+end
 
 if strcmpi(projectionType, 'medianprojection')
     projection = median(imageStack, 3);

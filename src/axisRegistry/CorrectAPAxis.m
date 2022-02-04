@@ -179,9 +179,13 @@ saveVars = [saveVars, 'coordA', 'coordP'];
 if exist('xShift', 'var')
     saveVars = [saveVars, 'xShift'];
 end
-if exist('xShift1', 'var')
-    saveVars = [saveVars, 'xShift1'];
+if exist('coordD', 'var')
+    saveVars = [saveVars, 'coordD'];
 end
+if exist('coordV', 'var')
+    saveVars = [saveVars, 'coordV'];
+end
+
 
 save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],saveVars{:});
 %Redo the diagnostic plots

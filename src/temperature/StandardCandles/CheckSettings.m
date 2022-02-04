@@ -11,7 +11,7 @@ rawDataFolder = [fileparts(fileparts(fileparts( liveExperiment.preFolder))),...
 
 [LIFImages, LIFMeta] = loadLIFFile(rawDataFolder);
 [NSeries, NFrames, NSlices,...
-        NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta);
+        NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta, {liveExperiment.experimentType});
 SubFolderLineAverageRegex = '_LA(?<LANumber>[0-9]+)';
 LARegexNames = regexp(foldersplit.subfolder, SubFolderLineAverageRegex, 'names');
 try

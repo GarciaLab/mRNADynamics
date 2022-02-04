@@ -1,4 +1,7 @@
-function [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta)
+function [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta, ExperimentType)
+    if ~exist('ExperimentType', 'var')
+        ExperimentType =  {''};
+    end
   
   NSeries = LIFMeta.getImageCount();
   
@@ -20,7 +23,9 @@ function [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrame
   NFrames = NPlanes./NSlices/NChannels;
 
   %Get rid of the last frame as it is always incomplete because that's when we stopped it
-  NFrames = NFrames - 1; % GM: Comment out for importing for importing standard candles
-  NPlanes = NPlanes- (NSlices * NChannels);% GM: Comment out for importing standard candles
+  if ~strcmpi(ExperimentType{1}, 'StandardCandles') &  ~strcmpi( ExperimentType{1},'IH')
+    NFrames = NFrames - 1; % GM: Comment out for importing for importing standard candles
+    NPlanes = NPlanes- (NSlices * NChannels);% GM: Comment out for importing standard candles
+  end
   Frame_Times = zeros(1, sum(NFrames.*NSlices));
 end

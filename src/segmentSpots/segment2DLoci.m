@@ -97,10 +97,13 @@ display(['Spot intensity threshold: ', num2str(Threshold)])
 
 isZPadded = size(movieMat, 3) ~= zSize;
 
+
 q = parallel.pool.DataQueue;
 afterEach(q, @nUpdateWaitbar);
+
 p = 1;
 parfor currentFrame = initialFrame:lastFrame
+%for currentFrame = initialFrame:lastFrame
     if ~isempty(movieMat_channel)
         imStack = movieMat_channel(:, :, :, currentFrame);
     else
@@ -131,8 +134,9 @@ parfor currentFrame = initialFrame:lastFrame
     end
     
     TempZSize = size(dogStack, 3);
-    for zIndex = 1:TempZSize
-        
+    % UNDO
+    %for zIndex = 1:TempZSize
+    for zIndex = 2:TempZSize   
         
         im = imStack(:, :, zIndex);
         
@@ -221,12 +225,12 @@ parfor currentFrame = initialFrame:lastFrame
         end
         
     end
-    
+
     send(q, currentFrame);
     
 end
 
-% % %
+
 try close(waitbarFigure); catch; end
 
     function nUpdateWaitbar(~)

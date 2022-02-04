@@ -21,7 +21,7 @@ for seriesIndex = 1:NSeries
             Time = char(TimeStamp.getAttribute('Time'));
             Milli = char(TimeStamp.getAttribute('MiliSeconds'));
         end
-        
+        try
         if contains(Time, 'AM')
             time_in_days = datenum(strcat(Date, '-', Time, '-', Milli), 'mm/dd/yyyy-HH:MM:SS AM-FFF');
         elseif contains(Time, 'PM')
@@ -31,6 +31,9 @@ for seriesIndex = 1:NSeries
         end
         
         Frame_Times(frameTimesIndex) = time_in_days;
+        catch
+            Frame_Times(frameTimesIndex) = datenum('01/01/1900-12:00:00', 'mm/dd/yyyy-HH:MM:SS');
+        end
         
         frameTimesIndex = frameTimesIndex + 1;
         

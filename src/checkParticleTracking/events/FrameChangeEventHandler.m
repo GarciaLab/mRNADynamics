@@ -32,6 +32,16 @@ function keyInputHandler = FrameChangeEventHandler(cptState)
             [cptState.CurrentFrame, cptState.ManualZFlag] = changeFrame(iJump, numValidFrames);
 
             cptState.DisplayRange = [];
+        elseif cc == '/'
+            cptState.PreviousFrame = cptState.CurrentFrame;
+            CurrentFrame = nextFrameSegment(cptState.Particles, cptState.CurrentChannel, ...
+                cptState.CurrentParticle, cptState.CurrentFrame);
+            [cptState.CurrentFrame, cptState.ManualZFlag] = changeFrame(CurrentFrame, numValidFrames);
+        elseif cc == '?'
+            cptState.PreviousFrame = cptState.CurrentFrame;
+            CurrentFrame = previousFrameSegment(cptState.Particles, cptState.CurrentChannel, ...
+                cptState.CurrentParticle, cptState.CurrentFrame);
+            [cptState.CurrentFrame, cptState.ManualZFlag] = changeFrame(CurrentFrame, numValidFrames);
 
         elseif (cc == '''') & (cptState.CurrentFrame < cptState.numValidFrames())
             % Move to the next skipped frame within the particle

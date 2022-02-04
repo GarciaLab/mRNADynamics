@@ -1,4 +1,4 @@
-% ExportDataForLivemRNA([Options])
+% ExportDataForImmunostain([Options])
 %
 % DESCRIPTION
 % %This function grabs individual z-stacks and splits them in
@@ -77,8 +77,8 @@
 %
 %The idea of (4) being in Dropbox is that I don't need to be synchronizing
 %the part related to the manual analysis.
-
-function Prefix = ExportDataForLivemRNA(varargin)
+% 
+function Prefix = ExportDataForImmunostain(varargin)
 
 cleanupObj = onCleanup(@myCleanupFun);
 clear LiveExperiment;
@@ -99,12 +99,7 @@ warning('off', 'MATLAB:MKDIR:DirectoryExists');
     Channel3] = readMovieDatabase(Prefix,'rootFolder', rootFolder);
 
 Channels = {Channel1, Channel2, Channel3};
-
-if ~isempty(dataType)
-     args = varargin;
-     writeScriptArgsToDataStatus(DropboxFolder,...
-         dataType, Prefix, args, 'Ran ExportDataFor', 'ExportDataForLivemRNA')
-end
+%%
 
 %   if ~isempty(rootFolder)
     [D, FileMode] = DetermineFileMode(rawDataFolder);
@@ -122,49 +117,142 @@ DropboxFolderName = [DropboxFolder, filesep, Prefix];
 disp(['Creating folder: ', DropboxFolderName]);
 mkdir(DropboxFolderName);
 
+load('ReferenceHist.mat', 'ReferenceHist');
+
   %Generate FrameInfo
   FrameInfo = struct('LinesPerFrame', {}, 'PixelsPerLine', {}, ...
     'NumberSlices', {}, 'ZStep', {}, 'FileMode', {}, ...
     'PixelSize', {});
 
-  %Extract channel information
-  %This information will be stored in FrameInfo for use by subsequent parts
-  %of the code. Note, however, that the channels are also extracted in this
-  %code for each data type. I should integrate this.
-  if strcmpi(FileMode, 'OMETIFF')
-    disp('OMETIFF FileMode')
-    FrameInfo = processOMETIFFData(rawDataFolder, D, FrameInfo, ProjectionType, Channel1, Channel2, Prefix, OutputFolder);
-  elseif strcmpi(FileMode, 'TIF')
+ %%
+ liveExperiment = LiveExperiment(Prefix);
+disp('Exporting movie file...');
 
-    FrameInfo = process2PhotonPrincetonData(rawDataFolder, D, FrameInfo, Channel2, OutputFolder);
-  elseif strcmpi(FileMode, 'LAT')
-    FrameInfo = processLatticeLightSheetData(rawDataFolder, D, Channel1, Channel2, ProjectionType, Prefix, OutputFolder);
+resultsFolder = liveExperiment.resultsFolder;
 
-  elseif strcmpi(FileMode, 'LSM')
-    FrameInfo = processLSMData(rawDataFolder, D, FrameInfo, ...
-    Channels, ProjectionType, Prefix, OutputFolder,nuclearGUI,...
-    skipExtraction);
+moviePrecision = 'uint16';
+hisPrecision = 'uint16';
 
-  elseif strcmpi(FileMode, 'LIFExport')
-    FrameInfo = processLIFExportMode(rawDataFolder, ProjectionType, Channels, Prefix, ...
-      OutputFolder, PreferredFileNameForTest, nuclearGUI, skipExtraction,...
-      skipNuclearProjection, ExperimentType);
 
-  elseif strcmpi(FileMode, 'DSPIN') || strcmpi(FileMode, 'DND2')
-    %Nikon spinning disk confocal mode - TH/CS 2017
-    FrameInfo = processSPINandND2Data(rawDataFolder, D, FrameInfo, ExperimentType, Channel1, Channel2, rawDataPath, Prefix, OutputFolder, DropboxFolder);
-  end
+%Load the reference histogram for the fake histone channel
+% load('ReferenceHist.mat', 'ReferenceHist');
 
-  doFrameSkipping(SkipFrames, FrameInfo, OutputFolder);
+markandfind = true;
 
-  if ~skipExtraction
-      %Save the information about the various frames
-      save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo', '-v6');
-  end
-  
-  %make folders we'll need later
-  DogOutputFolder=[ProcPath,filesep,Prefix, '_', filesep, 'dogs',filesep];
-  mkdir(DogOutputFolder);
+[XMLFolder, seriesPropertiesXML, seriesXML] = getSeriesFiles(rawDataFolder);
+
+
+try
+    if contains(seriesPropertiesXML(1).name, 'Mark_and_Find')
+        markandfind = true;
+    end
+catch % do nothing
+end
+
+[LIFImages, LIFMeta] = loadLIFFile(rawDataFolder);
+ %Obtains frames information
+ [NSeries, NFrames, NSlices,...
+     NPlanes, NChannels, Frame_Times] = getFrames(LIFMeta, ExperimentType);
+ 
+ %use the old method(exported from lasx) if the files are exported
+ %already. if they're not, just use bioformats. the lasx method is being
+ %deprecated.
+ if ~isempty(XMLFolder)
+     timeStampRetrievalMethod = 'lasx';
+ else
+     timeStampRetrievalMethod = 'bioformats';
+ end
+ 
+ if sum(NFrames)~=0
+     
+     switch timeStampRetrievalMethod
+         
+         
+         case 'manual'
+             
+             xml_file = [liveExperiment.rawFolder, filesep, 'lifMeta.xml'];
+             
+             if ~exist(xml_file, 'file')
+                 generateLIFMetaDataXML(Prefix, xml_file);
+             end
+             
+             Frame_Times = getTimeStampsFromLifXML(xml_file);
+             
+         case 'lasx'
+             
+             Frame_Times = obtainFrameTimes(XMLFolder, seriesPropertiesXML,...
+                 NSeries, NFrames, NSlices, NChannels);
+             
+         case 'bioformats'
+             
+             Frame_Times = getFrameTimesFromBioFormats(LIFMeta, NSlices);
+             
+         otherwise, error('what?');
+             
+     end
+ end
+ 
+ [InitialStackTime, zPosition] = getFirstSliceTimestamp(NSlices,...
+     NSeries, NPlanes, NChannels, Frame_Times, XMLFolder, seriesXML);
+ 
+ FrameInfo = recordFrameInfo(NFrames, NSlices, InitialStackTime, LIFMeta, zPosition);
+ 
+ if markandfind
+     FrameInfo = repmat(FrameInfo, NSeries, 1);
+ end
+ 
+ save([resultsFolder, filesep, 'FrameInfo.mat'], 'FrameInfo', '-v6');
     
 
-end
+ if sum(NFrames) == 0
+     NFrames = ~NFrames;
+ end
+    
+%Obtains frames information
+[NSeries, NSlices,NPlanes,...
+    NChannels, NReplicates] = getMarkAndFindInfo(LIFMeta, ExperimentType);
+
+MarkAndFindInfo.NSeries = NSeries;
+MarkAndFindInfo.NSlices = NSlices;
+MarkAndFindInfo.NPlanes = NPlanes;
+MarkAndFindInfo.NChannels = NChannels;
+MarkAndFindInfo.NReplicates = NReplicates;
+  save([DropboxFolder, filesep, Prefix, filesep, 'MarkAndFindInfo.mat'], 'MarkAndFindInfo', '-v6');
+
+%use the old method(exported from lasx) if the files are exported
+%already. if they're not, just use bioformats. the lasx method is being
+%deprecated.
+%Find the flat field (FF) information
+LIFExportMode_flatFieldImage(LIFMeta,...
+    rawDataFolder, PreProcPath, Prefix, PreferredFileNameForTest);
+
+
+
+% this function exports tif z stacks
+
+exportImmunostainTIFStacks(LIFImages, 'LIF', NChannels, NReplicates, NSlices,...
+    Prefix, moviePrecision, hisPrecision)
+
+
+chooseIHProjections(...
+    Prefix,'ProjectionType',ProjectionType,...
+    'ReferenceHist',ReferenceHist);
+
+
+    
+
+
+
+disp('Movie files exported.');
+
+ 
+ 
+ 
+ %%
+ 
+ %make folders we'll need later
+ DogOutputFolder=[ProcPath,filesep,Prefix, '_', filesep, 'dogs',filesep];
+ mkdir(DogOutputFolder);
+    
+
+%end

@@ -85,3 +85,5 @@ function exportTifStacks(AllImages, imagingModality, NChannels, NFrames, NSlices
   end
 
   try close(waitbarFigure); catch; end
+  
+  
