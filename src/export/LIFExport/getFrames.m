@@ -20,7 +20,11 @@ function [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrame
   NFrames = NPlanes./NSlices/NChannels;
 
   %Get rid of the last frame as it is always incomplete because that's when we stopped it
-  NFrames = NFrames - 1;
-  NPlanes = NPlanes - (NSlices * NChannels);
-  Frame_Times = zeros(1, sum(NFrames.*NSlices));
+  % Make exception if the dataset has only one frame - assume that was
+  % on purpose and it is a full z-stack
+  if NFrames(1) ~= 1
+      NFrames = NFrames - 1;
+      NPlanes = NPlanes - (NSlices * NChannels);
+  end
+  Frame_Times = zeros(1, sum(NFrames .* NSlices));
 end

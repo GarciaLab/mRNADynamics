@@ -13,7 +13,14 @@ for seriesIndex = 0:nSeries-1
     
     nPlanes = LIFMeta.getPlaneCount(seriesIndex);
     
-    nPlanes = nPlanes - (NSlices(seriesIndex+1)*nChannels);
+    % Get rid of the last frame as it is always incomplete because that's 
+    % when we stopped it ...
+    % Make exception if the dataset has only one frame - assume that was
+    % on purpose and it is a full z-stack       
+    nFrames = nPlanes./NSlices/nChannels;
+    if nFrames ~= 1
+        nPlanes = nPlanes - (NSlices(seriesIndex+1)*nChannels);
+    end
     
     if nPlanes > 0
         seriesStamp = LIFMeta.getImageAcquisitionDate(seriesIndex);
