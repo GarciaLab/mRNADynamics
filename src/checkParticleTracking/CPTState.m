@@ -53,7 +53,8 @@ classdef CPTState < handle
         UseHistoneOverlay
         ImageHis
         HideApprovedFlag
- 
+        mvTitleSwitch
+        
         nameSuffix
  
         nWorkers
@@ -61,13 +62,14 @@ classdef CPTState < handle
  
         projectionMode
         
-        frameLevelFields
-        qcFlagFields
+        UseCompiledParticles
+        
+        displayOnlyCurrentZEllipses
     end
     
     methods
-        function this = CPTState(Spots, Particles, SimParticles, HMMParticles, RawParticles, ParticleStitchInfo, SpotFilter, schnitzcells, Ellipses,...
-                FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode)
+        function this = CPTState(liveExperiment, Spots, Particles, SpotFilter, schnitzcells, Ellipses,...
+                FrameInfo, UseHistoneOverlay, nWorkers, plot3DGauss, projectionMode, UseCompiledParticles)
             
             this.Spots = Spots;
             this.Particles = Particles;
@@ -119,7 +121,8 @@ classdef CPTState < handle
             this.DisplayRangeSpot = [];
             this.UseHistoneOverlay = UseHistoneOverlay;
             this.HideApprovedFlag = 0;
- 
+            this.mvTitleSwitch = false;
+            
             this.nameSuffix = '';
  
             this.nWorkers = nWorkers;
@@ -127,12 +130,17 @@ classdef CPTState < handle
  
             this.projectionMode = projectionMode;
             
-            this.frameLevelFields = [{'xPos'} {'yPos'} {'zPosDetrended'} {'NucleusDist'} {'zPos'} ...
-              {'ncDistFlags'} {'distShiftFlags'} {'fragmentFlags'} {'earlyFlags'} {'Index'} {'Frame'} {'FrameApproved'}...
-              {'ncDistFlagsOrig'} {'distShiftFlagsOrig'} {'fragmentFlagsOrig'} {'earlyFlagsOrig'} {'numNeighbors'} {'FrameApprovedOrig'}...
-              ]; % NL adding this for ease of bookKeeping
-            
-            this.qcFlagFields = [{'fragmentFlags'},{'distShiftFlags'},{'ncDistFlags'},{'earlyFlags'}]; %,{'linkCostFlags'}];              
+            if exist('UseCompiledParticles', 'var')
+                this.UseCompiledParticles = UseCompiledParticles;
+            else
+                this.UseCompiledParticles = false;
+            end
+        end
+
+        function currentSlice = getCurrentNuclearSlice(this)
+            % JP: I'm hardcoding channel 1 as nuclear for Imaris testing,
+            % will fix it later.
+            currentSlice = this.liveExperiment.getMovieSlice(this.CurrentFrame, 1, this.CurrentZ);
         end
  
         function numParticles = numParticles(this)

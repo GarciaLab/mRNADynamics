@@ -53,11 +53,13 @@ function tile_array = NewTileArrayFromMetadata(Prefix, ID)
 
     framesIndex = 1;
     tiles = {};
+    zstacks = {};
     for n=1:NTiles
         ImageSlices = generateHisSlicesTileScan(LIFImages, NSlices(n),...
             NChannels, fiducialChannel, framesIndex, n);
         temp = max(ImageSlices, [], 3);
-        tiles{n} = temp;
+        zstacks{n} = uint16(ImageSlices);
+        tiles{n} = uint16(temp);
     end
 
 
@@ -75,10 +77,12 @@ function tile_array = NewTileArrayFromMetadata(Prefix, ID)
     dx = round(abs((uxpos(xdim)-uxpos(xdim-1))/PixelSize_m), 0);
     dy = round(abs((uypos(ydim)-uypos(ydim-1))/PixelSize_m), 0);
     tile_array.tiles = tiles;
+    tile_array.zstacks = zstacks;
     tile_array.rows = {};
     tile_array.cols = {};
     tile_array.grid_positions = {};
     tile_array.imgs = {};
+    tile_array.use_tiles = [];
     sigma = .6/PixelSize;
     for i=1:NTiles
         ri = round((xpos(i)-uxpos(1))/PixelSize_m, 0)+1;
@@ -88,7 +92,9 @@ function tile_array = NewTileArrayFromMetadata(Prefix, ID)
         tile_array.rows{i} = ri;
         tile_array.cols{i} = ci;
         tile_array.grid_positions{i} = [gri, gci];
-        tile_array.imgs{i} = imgaussfilt(tiles{i}, sigma);
+        tile_array.imgs{i} = imfilter(tiles{i},... 
+            fspecial('gaussian', 2, 1), 'symmetric');
+        tile_array.use_tiles{i} = true;
     end
 
     tile_array.prevrows = {};

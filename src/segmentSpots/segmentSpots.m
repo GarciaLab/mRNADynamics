@@ -5,8 +5,11 @@
 %
 % ARGUMENTS
 % Prefix: Prefix of the data set to analyze
-% Threshold: Threshold to be used (>=). Should be kept at ~90-200 for lattice
-%           light-sheet data, and at ~5-10 for confocal data (Leica SP8).
+% Threshold: Threshold to be used (>=). For 8-bit images (color values go from 0 to 255)
+%           should be kept at ~90-200 for lattice light-sheet data,
+%           and at ~5-10 for confocal data (Leica SP8).
+%           For 16-bit images (color values go from 0 to 65535) the numbers are orders
+%           of magnitude larger, in the order of thousands.
 %           If left empty, then the code just generates the DoG files.
 % [Options]: See below.
 %
@@ -164,11 +167,10 @@ if ~skipSegmentation
 
         [ffim, doFF] = loadSegmentSpotsFlatField(PreProcPath, Prefix, spotChannels);
         
-        
-        [tempSpots, dogs] = segmentTranscriptionalLoci(nCh, spotChannels, channelIndex, initialFrame, lastFrame, zSize, ...
-            PreProcPath, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(n), neighborhood_px, ...
-            snippetSize_px, pixelSize_nm, microscope, [],...
-             filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, nuclearMask, autoThresh);
+        tempSpots = segmentTranscriptionalLoci(channelIndex, initialFrame, lastFrame, FrameInfo(1).NumberSlices, ...
+            liveExperiment.userPreFolder, Prefix, DogOutputFolder, displayFigures, doFF, ffim, Threshold(n), neighborhood_px, ...
+            snippetSize_px, pixelSize_nm, FrameInfo(1).FileMode, [],...
+             filterMovieFlag, optionalResults, gpu, saveAsMat, saveType, nuclearMask, autoThresh, segmentChannel);
 
         tempSpots = segmentSpotsZTracking(pixelSize_nm,tempSpots);
 

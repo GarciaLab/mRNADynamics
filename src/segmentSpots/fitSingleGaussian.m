@@ -13,10 +13,10 @@ m = max(snippet(:));
 %let's cache this for efficiency
 %realized caching does weird stuff in parpools
 %gonna disable that til i figure out why. 
-persistent y x
-if isempty(y), [y,x] = meshgrid(1:size(snippet,2), 1:size(snippet,1)); end
+% persistent y x
+% if isempty(y), [y,x] = meshgrid(1:size(snippet,2), 1:size(snippet,1)); end
 
-% [y,x] = meshgrid(1:xDim, 1:yDim);
+[y,x] = meshgrid(1:xDim, 1:yDim);
 
 med = median(snippet(:));
 %fits: [amplitude, x position, x width, y position, y width, offset, angle]
@@ -39,10 +39,12 @@ lb_offset = 1/10; %this is empirical. corresponds to a weak background of 1 pixe
 lb = [0, 0, 0, -1, 0, 0,lb_offset, 0, 0];
 ub = [m*1.5, xDim, yDim, 1,...
     xDim, yDim, m, med/2, med/2];
+% 
+% %let's cache this for efficiency
+% persistent lsqOptions 
+% if isempty(lsqOptions), lsqOptions=optimset('Display','none'); end
 
-%let's cache this for efficiency
-persistent lsqOptions 
-if isempty(lsqOptions), lsqOptions=optimset('Display','none'); end
+lsqOptions=optimset('Display','none');
 
 [single_fit, ~, residual, ~, ~, ~, jacobian] = lsqnonlin(singleGaussian, ...
     initial_parameters,lb,ub, lsqOptions);

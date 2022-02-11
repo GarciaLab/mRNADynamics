@@ -46,7 +46,8 @@
 % with blank images so every generates series has the same amount
 % 'nuclearGUI': accepts true (default) or false if you want to open the
 % nuclear channel / anaphase frame choosing GUI 
-%
+% 'skipNuclearProjection': only extract channels 
+% 
 % OUTPUT
 % Exported tif images are placed in the PreProcessedData folder and divided
 % into a nuclear channel for tracking/protein quantification and a channel
@@ -80,10 +81,7 @@
 function Prefix = ExportDataForLivemRNA(varargin)
 
 cleanupObj = onCleanup(@myCleanupFun);
-clear getMovieMat;
-clear getHisMat;
-clear hisMat;
-clear movieMat;
+clear LiveExperiment;
 
 warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
@@ -93,8 +91,7 @@ warning('off', 'MATLAB:MKDIR:DirectoryExists');
 
   [Prefix, SkipFrames, ProjectionType, PreferredFileNameForTest, ~,...
     generateTifStacks, nuclearGUI, skipExtraction, rootFolder, zslicesPadding,...
-    dataType, exportNuclearProjections,...
-    exportMovieFiles, ignoreCh3, shouldTrackNuclei] = ...
+    dataType, skipNuclearProjection] = ...
     ...
     exportDataForLivemRNA_processInputParameters(varargin{:});
 
@@ -144,13 +141,14 @@ mkdir(DropboxFolderName);
     FrameInfo = processLatticeLightSheetData(rawDataFolder, D, Channel1, Channel2, ProjectionType, Prefix, OutputFolder);
 
   elseif strcmpi(FileMode, 'LSM')
-    FrameInfo = processLSMData(rawDataFolder, D, FrameInfo, ExperimentType, ...
-    Channels, ProjectionType, Prefix, OutputFolder,nuclearGUI, zslicesPadding);
+    FrameInfo = processLSMData(rawDataFolder, D, FrameInfo, ...
+    Channels, ProjectionType, Prefix, OutputFolder,nuclearGUI,...
+    skipExtraction,skipNuclearProjection,zslicesPadding);
 
   elseif strcmpi(FileMode, 'LIFExport')
     FrameInfo = processLIFExportMode(rawDataFolder, ProjectionType, Channels, Prefix, ...
       OutputFolder, PreferredFileNameForTest, nuclearGUI, skipExtraction,...
-      exportNuclearProjections, exportMovieFiles);
+      skipNuclearProjection, zslicesPadding);
 
   elseif strcmpi(FileMode, 'DSPIN') || strcmpi(FileMode, 'DND2')
     %Nikon spinning disk confocal mode - TH/CS 2017
@@ -159,7 +157,7 @@ mkdir(DropboxFolderName);
 
   doFrameSkipping(SkipFrames, FrameInfo, OutputFolder);
 
-  if exportMovieFiles
+  if ~skipExtraction
       %Save the information about the various frames
       save([DropboxFolder, filesep, Prefix, filesep, 'FrameInfo.mat'], 'FrameInfo', '-v6');
   end

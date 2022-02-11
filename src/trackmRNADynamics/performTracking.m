@@ -42,34 +42,42 @@ disp('Performing intitial particle linking...')
                 displayFigures);
 toc
 
-tic
-disp('Inferring particle motion model...')
-[HMMParticles, globalMotionModel] = track02TrainGHMM(RawParticles, [], displayFigures);
-toc
-
-% save motion model
-save([resultsFolder, filesep, 'globalMotionModel.mat'],'globalMotionModel');
-
-tic
-disp('Simulating particle tracks...')
-SimParticles = track03PredictParticlePaths(HMMParticles, FrameInfo, displayFigures);
-toc
-
-% generate master particles structure
-ParticlesFull.RawParticles = RawParticles;
-ParticlesFull.HMMParticles = HMMParticles;
-ParticlesFull.SimParticles = SimParticles;
-
-tic
-disp('Stitching particle tracks...')
-[ParticlesFull, ParticleStitchInfo, SpotFilter] = track04StitchTracks(ParticlesFull, SpotFilter, ReviewedParticlesFull, ParticleStitchInfo, Prefix,...
-                                useHistone, retrack, displayFigures);
-toc 
-
-matchCostVec = determineMatchOptions(Prefix,useHistone,matchCostMax);
+% Iterate over all channels
+h = waitbar(0, 'Performing tracking ...');
 for Channel = 1:NCh
-  Particles{Channel} = dynamicStitchBeta(ParticlesFull.FullParticles{Channel},ParticlesFull.SimParticles{Channel},...
-    ParticleStitchInfo{Channel},Prefix,matchCostVec(Channel));
+    
+    % Iterate over all frames
+
+    for CurrentFrame = 1:length(Spots{Channel})
+        waitbar(CurrentFrame/length(Spots{Channel}),h,'Performing tracking ...');
+        if isempty(app) && displayFigures
+            figure(ParticlesFig)
+            set(ParticlesFig, 'units', 'normalized', 'position', [0.01, .55, .33, .33]);
+        end
+        
+        % Get the filter for this frame
+        CurrentFrameFilter = logical(SpotFilter{Channel}(CurrentFrame,...
+            ~isnan(SpotFilter{Channel}(CurrentFrame, :))));
+        
+        xPos = displayParticlesFigure(app, particlesAxes,...
+            ParticlesFig, Spots, Channel, CurrentFrame, ...
+            CurrentFrameFilter, PreProcPath, Prefix, SpotsChannel, FrameInfo, displayFigures);
+        
+        if UseHistone
+            % we supply ZStep as Z axis resolution. this is unused by most people, unless you are dealing
+            % with 3D nuclei tracking (for example, importing it from Imaris)
+            [Particles, SpotFilter] = trackParticlesBasedOnNuclei(PreProcPath, Prefix,...
+                CurrentFrame, NDigits, app, nucAxes, Ellipses, ...
+                ExperimentType, Channel, schnitzcells, Particles, Spots,...
+                SpotFilter, PixelSize, FrameInfo(1).ZStep, SearchRadius, retrack, displayFigures);
+        else
+            [Particles] = trackParticlesBasedOnProximity(Particles, Spots,...
+                xPos, SpotFilter, Channel, CurrentFrame, PixelSize, SearchRadius,...
+                retrack, displayFigures);
+        end
+        
+    end
+    
 end
 % warning('MT: Skipping dynamicsStitchBeta because it''s broken')
 % Particles = ParticlesFull.FullParticles;
@@ -127,57 +135,7 @@ if displayFigures
           xlim([0 xDim])
           ylim([0 yDim])
           saveas(f1,[trackFigFolder 'initial_linkages_ch' num2str(Channel) '.png'])
-
-          % show simulated paths 
-          f3 = figure('Position',[0 0 1024 1024]);
-          nPlot = min([length(ParticlesFull.SimParticles{Channel}), 25]);
-          rng(123);
-          errIndices = randsample(1:length(ParticlesFull.SimParticles{Channel}),nPlot,false);  
-          hold on
-          scatter([ParticlesFull.RawParticles{Channel}.xPos],[ParticlesFull.RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',.3,'MarkerEdgeAlpha',0);
-          for i = errIndices 
-            x = ParticlesFull.SimParticles{Channel}(i).hmmModel(1).pathVec;
-            y = ParticlesFull.SimParticles{Channel}(i).hmmModel(2).pathVec;
-            dx = ParticlesFull.SimParticles{Channel}(i).hmmModel(1).sigmaVec;
-            dy = ParticlesFull.SimParticles{Channel}(i).hmmModel(2).sigmaVec;
-            r = mean([dx' dy'],2) * ones(numel(x),1);
-            viscircles([x,y],r,'Color',[0.3 0.3 0.3 0.05]);
-          end
-          for i = 1:length(ParticlesFull.RawParticles{Channel})
-            plot(ParticlesFull.RawParticles{Channel}(i).xPos,ParticlesFull.RawParticles{Channel}(i).yPos,'k');
-          end
-          for i = errIndices
-            plot(ParticlesFull.RawParticles{Channel}(i).xPos,ParticlesFull.RawParticles{Channel}(i).yPos,'LineWidth',1.5);
-          end
-
-          xlabel('x position (pixels)')
-          ylabel('y position (pixels)')
-          title(['Channel ' num2str(Channel) ': ' channelNames{Channel}])
-          set(gca,'Fontsize',14)
-          xlim([0 xDim])
-          ylim([0 yDim])
-          saveas(f3,[trackFigFolder 'projected_paths_ch' num2str(Channel) '.png'])
-
-          f4 = figure('Position',[0 0 856 856]);
-          hold on  
-          for i = 1:length(Particles{Channel})
-%             extantFilter = min(Particles{Channel}(i).Frame):max(Particles{Channel}(i).Frame);
-            plot(Particles{Channel}(i).xPos,Particles{Channel}(i).yPos,'LineWidth',1.25);
-          end
-          scatter([ParticlesFull.RawParticles{Channel}.xPos],[ParticlesFull.RawParticles{Channel}.yPos],4,'k','filled','MarkerFaceAlpha',.5,'MarkerEdgeAlpha',0);
-          % for i = 1:length(Particles{Channel})
-          %   plot(Particles{Channel}(i).xPos,Particles{Channel}(i).yPos);
-          % end
-          xlabel('x position (pixels)')
-          ylabel('y position (pixels)')
-          title(['Channel ' num2str(Channel) ': ' channelNames{Channel}])
-          set(gca,'Fontsize',14)
-          xlim([0 xDim])
-          ylim([0 yDim])
-          saveas(f4,[trackFigFolder 'final_paths_ch' num2str(Channel) '.png'])
     end
-  
-end
 
-disp('Done.')
+close(h)
 end

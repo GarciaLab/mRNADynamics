@@ -1,7 +1,8 @@
 function [sortByFrame, sortByLength, ForCompileAll, SpeedMode, SisterMode, ...
     ncRange, projectionMode, plot3DGauss, NC, ...
     startNC, endNC, optionalResults, nWorkers, fish,...
-    noHisOverlay, multiView, preStructs, preMovie] = determineCheckParticleTrackingOptions(varargin)
+    noHisOverlay, multiView, preStructs, preMovie, UseCompiledParticles, useProjectionInHistoneOverlay,...
+    displayOnlyCurrentZEllipses] = determineCheckParticleTrackingOptions(varargin)
 %DETERMINEOPTIONS Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -31,6 +32,10 @@ noHisOverlay = false;
 multiView = false;
 preStructs = {};
 preMovie = false;
+UseCompiledParticles = false; % added by GM 12/10/20
+
+useProjectionInHistoneOverlay = true;
+displayOnlyCurrentZEllipses = false;
 
 
 % these variables are meaningless if ncRange is 0
@@ -62,6 +67,8 @@ for i=1:length(varargin)
     elseif strcmpi(varargin{i}, 'preLoad')
         warning('NL:preLoad option is currently not supported')
         preStructs = varargin{i+1};
+    elseif strcmpi(varargin{i}, 'UseCompiledParticles')
+        UseCompiledParticles = true;
     elseif strcmpi(varargin{i}, 'optionalResults')
         optionalResults = varargin{i+1};
         elseif strcmpi(varargin{i}, 'fish')
@@ -77,6 +84,10 @@ for i=1:length(varargin)
             startNC = ['nc' num2str(varargin{i+1})];
             endNC = ['nc' num2str(varargin{i+1} + 1)]; % Not including the next nc
         end
+    elseif strcmpi(varargin{i},'noHisProjection')
+        useProjectionInHistoneOverlay = false;
+    elseif strcmpi(varargin{i}, 'displayOnlyCurrentZEllipses')
+        displayOnlyCurrentZEllipses = true;
     end
 end
 

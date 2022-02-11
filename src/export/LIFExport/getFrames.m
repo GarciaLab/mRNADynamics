@@ -19,12 +19,14 @@ function [NSeries, NFrames, NSlices, NPlanes, NChannels, Frame_Times] = getFrame
   %Finally, use this information to determine the number of frames in each series        
   NFrames = NPlanes./NSlices/NChannels;
 
-  %Get rid of the last frame as it is always incomplete because that's when we stopped it
-  % Make exception if the dataset has only one frame - assume that was
-  % on purpose and it is a full z-stack
-  if NFrames(1) ~= 1
+  %Get rid of the last frame as it is always incomplete because that's when
+  %we stopped it.
+  %AR 2/7/21- sometimes we actually want to keep that frame. Let's assume
+  %that if there's only one frame per series, we want to keep it. 
+  if max(NFrames) ~= 1
       NFrames = NFrames - 1;
       NPlanes = NPlanes - (NSlices * NChannels);
   end
-  Frame_Times = zeros(1, sum(NFrames .* NSlices));
+  Frame_Times = zeros(1, sum(NFrames.*NSlices));
+  
 end

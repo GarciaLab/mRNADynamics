@@ -1,4 +1,4 @@
-function Frame_Times = getFrameTimesFromBioFormats(LIFMeta, NSlices)
+function Frame_Times = getFrameTimesFromBioFormats(LIFMeta, NSlices, NFrames)
 
 import loci.common.DateTools;
 
@@ -13,13 +13,11 @@ for seriesIndex = 0:nSeries-1
     
     nPlanes = LIFMeta.getPlaneCount(seriesIndex);
     
-    % Get rid of the last frame as it is always incomplete because that's 
-    % when we stopped it ...
-    % Make exception if the dataset has only one frame - assume that was
-    % on purpose and it is a full z-stack       
-    nFrames = nPlanes./NSlices/nChannels;
-    if nFrames ~= 1
+    % Allow for export of datasets with only one time point
+    if max(NFrames) ~= 1
         nPlanes = nPlanes - (NSlices(seriesIndex+1)*nChannels);
+    else
+        warning('Dataset with only one time point detected. Keeping last frame.')
     end
     
     if nPlanes > 0

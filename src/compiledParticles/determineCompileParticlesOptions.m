@@ -10,11 +10,13 @@ varargin = varargin{1};
 %Look at the input parameters and use defaults if missing
 Prefix='';
 ForceAP=false;      %Force AP detection even if it's already there
-SkipTraces=true;   %Do not output the individual traces.
-SkipFluctuations=true;  %Do not generate the plots of correlations of fluctuations and offset
-SkipFits=true;        %Do not run and savegenerate the 
-SkipMovie=true;        %Do not generate the movie
-SkipAll=true;         %Do not do other things 
+
+SkipTraces = true;   %Do not output the individual traces.
+SkipFluctuations = true;  %Do not generate the plots of correlations of fluctuations and offset
+SkipFits = true;        %Do not run and savegenerate the 
+SkipMovie = true;        %Do not generate the movie
+SkipAll = true;         %Do not do other things 
+
 ApproveAll= true;       %Only use manually approved particles
 MinParticles=4;
 minTime = 1;
@@ -41,21 +43,25 @@ else
         if strcmpi(varargin{i},'ForceAP')
             ForceAP=1;
         elseif strcmpi(varargin{i},'SkipTraces')
-            SkipTraces=1;
+            SkipTraces=varargin{i+1};
         elseif strcmpi(varargin{i},'SkipFluctuations')
-            SkipFluctuations=1;
+            SkipFluctuations=varargin{i+1};
         elseif strcmpi(varargin{i},'SkipFits')
-            SkipFits=1;
+            SkipFits=varargin{i+1};
         elseif strcmpi(varargin{i},'SkipMovie')
-            SkipMovie=1;
+            SkipMovie=varargin{i+1};
         elseif strcmpi(varargin{i},'SkipAll')
             SkipTraces=1;
             SkipFluctuations=1;
             SkipFits=1;
             SkipMovie=1;
             SkipAll=1;
+        elseif strcmpi(varargin{i},'doCyto')
+            SkipAll=0;
         elseif strcmpi(varargin{i},'ApproveAll')
             ApproveAll=1;
+        elseif strcmpi(varargin{i},'KeepAll') % Opposite of the 'ApproveAll' flag, which is currently set to 1 by default
+            ApproveAll=0;
         elseif strcmpi(varargin{i},'noHist')
             noHist = 1;
         elseif strcmp(varargin{i},'MinParticles')

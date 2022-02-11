@@ -25,10 +25,10 @@ dogDir = dir([DogOutputFolder, '*_ch0', num2str(channelIndex), '.*']);
 
 haveProbs = any(cellfun(@(x) contains(x, 'prob'), {dogDir.name}));
 %stacks won't be indexed by _z
-haveStacks = any(cellfun(@(x) ~contains(x, '_z'), {dogDir.name}));
-
-waitbarFigure = waitbar(0, 'Segmenting spots');
-set(waitbarFigure, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
+haveStacks = any(cellfun(@(x) ~contains(x, '_z0'), {dogDir.name}));
+% 
+% waitbarFigure = waitbar(0, 'Segmenting spots');
+% set(waitbarFigure, 'units', 'normalized', 'position', [0.4, .15, .25,.1]);
 
 Spots = repmat(struct('Fits', []), 1, lastFrame);
 
@@ -91,18 +91,21 @@ yDim = liveExperiment.yDim;
 xDim = liveExperiment.xDim;
 zDim = liveExperiment.zDim;
 
-% if shouldMaskNuclei
-%     if liveExperiment.hasEllipsesFile
-%         Ellipses = getEllipses(liveExperiment);
-%         if isempty(Ellipses)
-%             disp('Don''t try to do anything to Ellipses')
-%         else
-%             Ellipses = filterEllipses(Ellipses, [yDim, xDim]);
-%         end
-%     else
-%         shouldMaskNuclei = false;
-%     end
-% end
+if shouldMaskNuclei
+    if liveExperiment.hasEllipsesFile
+        Ellipses = getEllipses(liveExperiment);
+        if isempty(Ellipses)
+            disp('Don''t try to do anything to Ellipses')
+        else
+            Ellipses = filterEllipses(Ellipses, [yDim, xDim]);
+        end
+    else
+        shouldMaskNuclei = false;
+        Ellipses = {}; % for parfor compatibility, see below.
+    end
+else
+    Ellipses = {}; % for parfor compatibility, see below.
+end
 
    
     if autoThresh
@@ -120,10 +123,16 @@ zDim = liveExperiment.zDim;
         
 isZPadded = size(movieMat, 3) ~= zSize;
 
-q = parallel.pool.DataQueue;
-afterEach(q, @nUpdateWaitbar);
-p = 1;
+% q = parallel.pool.DataQueue;
+% afterEach(q, @nUpdateWaitbar);
+% p = 1;
 parfor currentFrame = initialFrame:lastFrame
+    % neeed for parfor compatibility
+    size(Ellipses);
+    % this is just to send a hint to parfor to classify Ellipses variable correctly.
+    % otherwise, it fails saying it doesnt exist or it doesnt have the
+    % required size, even if not used by the worker.
+    % See: https://la.mathworks.com/matlabcentral/answers/570619-matlab-parfor-index-exceeds-the-number-of-array-elements
     
     imStack = movieMatCh(:, :, :, currentFrame);
 %     if shouldMaskNuclei
@@ -135,7 +144,6 @@ parfor currentFrame = initialFrame:lastFrame
             num2str(currentFrame), '...']); end
     
     if haveStacks
-        
         dogStackFile = [DogOutputFolder, dogStr, Prefix, '_',...
             iIndex(currentFrame, 3),...
             nameSuffix];
@@ -144,8 +152,7 @@ parfor currentFrame = initialFrame:lastFrame
             dogStack = load([dogStackFile,'.mat'], 'dogStack');
             dogStack = dogStack.dogStack;
         elseif exist([dogStackFile, '.tif'], 'file')
-            dogStack = imreadStack2([dogStackFile, '.tif'], yDim,...
-                xDim, zDim);
+            dogStack = imreadStack2([dogStackFile, '.tif'], yDim, xDim, zDim);
         else
             error('Cannot find any dogs in the ProcessedData folder. Are they missing or incorrectly named?')
         end
@@ -186,35 +193,50 @@ parfor currentFrame = initialFrame:lastFrame
         
         % Apply flatfield correction
         if doFF && sum(size(im)==size(ffim))
-            im = im.*ffim;
+            im = double(im).*ffim; % GM 9/3/20
+            %im = im.*ffim;
         end
         
-        im_thresh = dog >= Threshold;
+        maxMaxDog = max(max(dog));
+        maxDogOrderOfMagnitude = floor(log10(maxMaxDog));
+        thresholdOrderOfMagnitude = floor(log10(Threshold));
         
-        % apply nuclear mask if it exists
-%         if shouldMaskNuclei
-%     
-%             nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
-%             im_thresh = im_thresh & nuclearMask;
-%             
-% %             if shouldDisplayFigures
-% %                 figure(maskFig);
-% %                 imshowpair(nuclearMask, dog, 'montage'); 
-% %             end
-%             
-%         end
+        if thresholdOrderOfMagnitude < maxDogOrderOfMagnitude
+            fprintf('WARNING: Threshold probably too low, resulting in out of memory errors.\n');
+        elseif thresholdOrderOfMagnitude > maxDogOrderOfMagnitude
+            fprintf('WARNING: Threshold probably too high, nothing will be detected.\n');
+        end
+        
+        dog_thresh = dog >= Threshold;
+        
+         % apply nuclear mask if it exists
+         if shouldMaskNuclei
+
+            if liveExperiment.hasCustomMasks
+                nuclearMask = liveExperiment.getNuclearMask(currentFrame, zIndex);
+            else    
+                nuclearMask = makeNuclearMask(Ellipses{currentFrame}, [yDim xDim], radiusScale);
+            end
+
+            dog_thresh = dog_thresh & nuclearMask;
+             
+ %             if shouldDisplayFigures
+ %                 figure(maskFig);
+ %                 imshowpair(nuclearMask, dog, 'montage'); 
+ %             end
+             
+         end
         
         %probability map regions usually look different from dog regions and
         %require some mophological finesse
         if haveProbs
             se = strel('square', 3);
-            im_thresh = imdilate(im_thresh, se); %thresholding from this classified probability map can produce non-contiguous, spurious Spots{channelIndex}. This fixes that and hopefully does not combine real Spots{channelIndex} from different nuclei
-            im_thresh = im_thresh > 0;
+            dog_thresh = imdilate(dog_thresh, se); %thresholding from this classified probability map can produce non-contiguous, spurious Spots{channelIndex}. This fixes that and hopefully does not combine real Spots{channelIndex} from different nuclei
+            dog_thresh = dog_thresh > 0;
         end
         
-        [im_label, n_spots] = bwlabel(im_thresh);
-        centroids = regionprops(im_thresh, 'centroid');
-        
+        [dog_label, n_spots] = bwlabel(dog_thresh);
+        centroids = regionprops(dog_thresh, 'centroid');
         
         if n_spots ~= 0
             
@@ -222,7 +244,7 @@ parfor currentFrame = initialFrame:lastFrame
                 centroid = round(centroids(spotIndex).Centroid);
                 
                  Fits = identifySingleSpot(spotIndex,...
-                    {im,imAbove,imBelow}, im_label, dog, ...
+                    {im,imAbove,imBelow}, dog_label, dog, ...
                     neighborhood, snippet_size, pixelSize_nm, shouldDisplayFigures,...
                     graphicsHandles, microscope, 0,...
                     centroid,MLFlag, currentFrame, spotIndex, zIndex);
@@ -230,21 +252,17 @@ parfor currentFrame = initialFrame:lastFrame
                 Spots(currentFrame).Fits = [Spots(currentFrame).Fits, Fits];
                 
             end
-            
         end
-        
     end
-    
-    send(q, currentFrame);
-    
+%     send(q, currentFrame);
 end
 
-
-try close(waitbarFigure); catch; end
-
-    function nUpdateWaitbar(~)
-        try waitbar(p/lastFrame, waitbarFigure); catch; end
-        p = p + 1;
-    end
+% 
+% try close(waitbarFigure); catch; end
+% 
+%     function nUpdateWaitbar(~)
+%         try waitbar(p/lastFrame, waitbarFigure); catch; end
+%         p = p + 1;
+%     end
 
 end

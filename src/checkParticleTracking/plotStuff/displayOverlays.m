@@ -1,6 +1,6 @@
 function displayOverlays(overlayAxes, cptState, SpeedMode, ShowThreshold2,...
     Overlay, numFrames, UseSchnitz, ZoomRange, fish, multiAx,...
-    HisOverlayFigAxes, ImageHisMat)
+    HisOverlayFigAxes, ImageHisMat, useProjectionInHistoneOverlay)
 
 EllipseHandle = [];
 EllipseHandleYellow = [];
@@ -79,11 +79,11 @@ if UseSchnitz
             cptState.getCurrentParticle().Nucleus > 0
         SchnitzIndex = cptState.schnitzcells(...
             cptState.getCurrentParticle().Nucleus).frames == cptState.CurrentFrame;
-        NucleusIndex = cptState.schnitzcells(...
+        EllipsesIndex = cptState.schnitzcells(...
             cptState.getCurrentParticle().Nucleus).cellno(SchnitzIndex);
 
-        if ~isempty(NucleusIndex)
-            EllipseHandleGreen = ellipseCellCPT(cptState, NucleusIndex, 'g', 10, overlayAxes);
+        if ~isempty(EllipsesIndex)
+            EllipseHandleGreen = ellipseCellCPT(cptState, EllipsesIndex, 'g', 10, overlayAxes);
         end
 
         % Show the daughter nuclei if applicable
@@ -92,19 +92,19 @@ if UseSchnitz
         try
         if DaughterE~=0
             SchnitzIndex = find(cptState.schnitzcells(DaughterE).frames == cptState.CurrentFrame);
-            NucleusIndex = cptState.schnitzcells(DaughterE).cellno(SchnitzIndex);
+            EllipsesIndex = cptState.schnitzcells(DaughterE).cellno(SchnitzIndex);
 
-            if ~isempty(NucleusIndex)
-                EllipseHandleWhite = [EllipseHandleWhite,ellipseCellCPT(cptState, NucleusIndex, 'w', 10, overlayAxes)];
+            if ~isempty(EllipsesIndex)
+                EllipseHandleWhite = [EllipseHandleWhite,ellipseCellCPT(cptState, EllipsesIndex, 'w', 10, overlayAxes)];
             end
         end
 
         if DaughterD~=0
             SchnitzIndex = find(cptState.schnitzcells(DaughterD).frames == cptState.CurrentFrame);
-            NucleusIndex = cptState.schnitzcells(DaughterD).cellno(SchnitzIndex);
+            EllipsesIndex = cptState.schnitzcells(DaughterD).cellno(SchnitzIndex);
 
-            if ~isempty(NucleusIndex)
-                EllipseHandleWhite = [EllipseHandleWhite,ellipseCellCPT(cptState, NucleusIndex, 'w', 10, overlayAxes)];
+            if ~isempty(EllipsesIndex)
+                EllipseHandleWhite = [EllipseHandleWhite,ellipseCellCPT(cptState, EllipsesIndex, 'w', 10, overlayAxes)];
             end
         end
         catch
@@ -115,10 +115,10 @@ if UseSchnitz
             %Show the mother nucleus if applicable
             if Mother~=0
                 SchnitzIndex = cptState.schnitzcells(Mother).frames == cptState.CurrentFrame;
-                NucleusIndex = cptState.schnitzcells(Mother).cellno(SchnitzIndex);
+                EllipsesIndex = cptState.schnitzcells(Mother).cellno(SchnitzIndex);
 
-                if ~isempty(NucleusIndex)
-                    EllipseHandleYellow=ellipseCellCPT(cptState, NucleusIndex, 'y', 10, overlayAxes);
+                if ~isempty(EllipsesIndex)
+                    EllipseHandleYellow=ellipseCellCPT(cptState, EllipsesIndex, 'y', 10, overlayAxes);
                 end
             end
         catch
@@ -202,7 +202,14 @@ end
 if cptState.UseHistoneOverlay
 
     if isempty(cptState.DisplayRange)
-        HisOverlayImageMat=cat(3,mat2gray(ImageHisMat),mat2gray(cptState.ImageMat),zeros(size(cptState.ImageMat)));
+        
+        if useProjectionInHistoneOverlay
+            histoneImageComponent = mat2gray(ImageHisMat);
+        else
+            histoneImageComponent = cptState.getCurrentNuclearSlice();
+        end
+
+        HisOverlayImageMat=cat(3,histoneImageComponent,mat2gray(cptState.ImageMat),zeros(size(cptState.ImageMat)));
     else
         HisOverlayImageMat=cat(3,mat2gray(ImageHisMat,double(cptState.DisplayRange)),mat2gray(cptState.ImageMat),zeros(size(cptState.ImageMat)));
     end

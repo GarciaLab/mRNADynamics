@@ -7,10 +7,12 @@ else
     nSpotChannels = 1;
 end
 
-%check for inconsistencies between compiledparticles and schnitzcells
+% check for inconsistencies between compiledparticles and schnitzcells
+% check that all the schnitz IDs in CompiledParticles are smaller than the
+% total number of schnitz in this experiment
 for ch = 1:nSpotChannels
-    if ~isempty(CompiledParticles{ch})
-        assert( all([CompiledParticles{ch}.schnitz] <= length(schnitzcells)) )
+    if ~isempty(CompiledParticles{ch}) && isfield(CompiledParticles{ch},'schnitz')
+        assert(all([CompiledParticles{ch}.schnitz] <= length(schnitzcells)),'unaccounted schnitz')
     end
 end
 

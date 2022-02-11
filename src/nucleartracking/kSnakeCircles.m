@@ -8,6 +8,8 @@ min_rad_um = 1; % set min and max acceptable area for nucleus segmentation
 max_rad_um = 6; %this needs to be 6um for nc12. 4um for nc14
 nIterSnakes = 100;
 maxAspectRatio = 4;
+fitEllipses = true;
+shouldWatershed = true;
 
 %options must be specified as name, value pairs. unpredictable errors will
 %occur, otherwise.
@@ -49,7 +51,12 @@ kMaskRefined= gather( chenvese( ...
 %whether it should be or not automatically
 
 % kMaskRefined= imfill(kMaskRefined, 'holes');
-mask = bwareafilt(wshed(kMaskRefined), areaFilter);
+if shouldWatershed
+    mask = bwareafilt(wshed(kMaskRefined), areaFilter);
+else
+    mask = kMaskRefined;
+end
+% mask = bwareafilt(wshed(~kMaskRefined, 'checkPolarity', false), areaFilter);
 
 % mask = wshed(bwareafilt(kMaskRefined, areaFilter));
 
@@ -58,26 +65,28 @@ mask = bwareafilt(wshed(kMaskRefined), areaFilter);
 %far away regions
 % mask = imfill(bwmorph(mask, 'bridge'), 'holes');
 
-[mask, ellipseFrame] = fitEllipsesToNuclei(...
-    mask, 'areaFilter', areaFilter, 'maxAspectRatio', maxAspectRatio);
+if fitEllipses
+    [mask, ellipseFrame] = fitEllipsesToNuclei(...
+        mask, 'areaFilter', areaFilter, 'maxAspectRatio', maxAspectRatio);
+    %validate sizes. the ellipse masker handles
+    %very large objects poorly
+
+    if ~isempty(ellipseFrame)
+        largeAxisIndex = ellipseFrame(:, 3) > min(size(image))...
+            | ellipseFrame(3) > min(size(image));
+        ellipseFrame(largeAxisIndex, 3) = median(ellipseFrame(:, 3)); 
+        ellipseFrame(largeAxisIndex, 4) = median(ellipseFrame(:, 4));
+    end
+
+    %validation
+    if ~isempty(ellipseFrame)
+        assert( all(ellipseFrame(:, 5) <= 2*pi) );
+    end
+else
+    ellipseFrame = [];
+end
 
 mask = logical(mask); 
-
-
-%validate sizes. the ellipse masker handles
-%very large objects poorly
-
-if ~isempty(ellipseFrame)
-    largeAxisIndex = ellipseFrame(:, 3) > min(size(image))...
-        | ellipseFrame(3) > min(size(image));
-    ellipseFrame(largeAxisIndex, 3) = median(ellipseFrame(:, 3)); 
-    ellipseFrame(largeAxisIndex, 4) = median(ellipseFrame(:, 4));
-end
-
-%validation
-if ~isempty(ellipseFrame)
-    assert( all(ellipseFrame(:, 5) <= 2*pi) );
-end
 
 
 % figure(1); tiledlayout('flow');
