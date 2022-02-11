@@ -1,4 +1,11 @@
 function [rootFolderName, rowIndex] = getRootFolderFromMovieDatabaseContents(movieDatabase, prefix, PREFIX_SEPARATOR)
+    
+    % QC on datatype of prefix - sometimes it ends up wrapped in a cell array
+    % when we need it to be a string
+    if isa(prefix, "cell")
+    prefix = prefix{1};
+    end
+
     movieDatabaseHeaderRow = movieDatabase(1, :);
 
     dataFolderColumnIndex = findColumnIndex(movieDatabaseHeaderRow, 'DataFolder');
