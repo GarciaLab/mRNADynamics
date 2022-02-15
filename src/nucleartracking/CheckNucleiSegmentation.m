@@ -87,13 +87,12 @@ for k = 1:length(varargin)
         yToRetrackPrompt = varargin{k+1};
     elseif strcmpi(varargin{k}, 'drawTraces')
         drawTraces = true;
-    elseif strcmpi(varargin{k}, 'preLoadMovie')
-        preLoadMovie = true;
     end
 end
 
-liveExperiment = LiveExperiment(Prefix, preMovie);
+liveExperiment = LiveExperiment(Prefix);
 
+ProcPath = liveExperiment.userProcFolder;
 DropboxFolder = liveExperiment.userResultsFolder;
 
 Channel1 = liveExperiment.Channel1;
@@ -116,6 +115,16 @@ Ellipses = getEllipses(liveExperiment);
 schnitzcells = getSchnitzcells(liveExperiment);
 %Load the reference histogram for the fake histone channel
 load('ReferenceHist.mat', 'ReferenceHist')
+
+
+%i may bring this back later -AR
+if false
+    schnitzcellsFile = [liveExperiment.resultsFolder, filesep, Prefix, '_lin.mat'];
+
+    [Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
+    save2([DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'], Ellipses);
+    save2(schnitzcellsFile, schnitzcells)
+end
 
 Channels = {Channel1, Channel2, Channel3};
 
@@ -228,7 +237,7 @@ while (currentCharacter~='x')
     end
     
     PlotHandle = cell(NCentroids, 1);
-    ellipseFrame = double(Ellipses{CurrentFrame});
+    ellipseFrame = Ellipses{CurrentFrame};
     for k=1:NCentroids
         n = k;
 %         PlotHandle{k} = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
@@ -255,10 +264,8 @@ while (currentCharacter~='x')
             if schnitzInd ~= 0
 %                 set(PlotHandle{k}, 'StripeColor', clrmp(schnitzInd, :),...
 %                     'Color', clrmp(schnitzInd, :),'Linewidth', 1);
-                try
                  set(PlotHandle{k},...
                     'Color', clrmp(schnitzInd, :),'Linewidth', 1);
-                end
             else
 %                 set(PlotHandle{k}, 'StripeColor', 'w', 'Color', 'w','Linewidth', 1);
                 set(PlotHandle{k}, 'Color', 'w','Linewidth', 1);

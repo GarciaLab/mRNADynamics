@@ -23,8 +23,6 @@ InvertedChannels = [contains(Channel1, 'inverted', 'IgnoreCase', true), ...
     contains(Channel3, 'inverted', 'IgnoreCase', true)];
 AllChannels = {Channel1,Channel2,Channel3}; %Cell array of channel labels
 
-Projection = [];
-
 if nNuclearChannels ~= 0
     
     for ChannelIndex = 1:nNuclearChannels

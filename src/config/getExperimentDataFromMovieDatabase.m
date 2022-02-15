@@ -1,7 +1,7 @@
 function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
     Channel1, Channel2,Objective, Power,  DataFolder, DropboxFolderName, Comments,...
     nc9, nc10, nc11, nc12, nc13, nc14, CF, ...
-    Channel3,prophase,metaphase, anaphaseFrames, DVResolution, Temp_set, Temp_obs]...
+    Channel3,prophase,metaphase, anaphaseFrames, DVResolution]...
     ...
     = getExperimentDataFromMovieDatabase(Prefix, movieDatabase, DropboxFolder)
 
@@ -38,18 +38,6 @@ nc14 = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'nc14'));
 anaphaseFrames = [nc9; nc10; nc11; nc12; nc14];
 CF = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'CF'));
 
-% Added by GM 9/29/20 for temperature experiments 
-if ~isempty(findColumnIndex(movieDatabase(1,:), 'Temp_set'))
-    Temp_set = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Temp_set'));
-else
-    Temp_set = 0;
-end
-if ~isempty(findColumnIndex(movieDatabase(1,:), 'Temp_obs'))
-    Temp_obs = str2num(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Temp_obs'));
-else
-    Temp_obs = 0;
-end
-% 
 
 anaphaseFile = [DropboxFolder,filesep,Prefix,filesep, 'anaphaseFrames.mat'];
 if exist(anaphaseFile, 'file')

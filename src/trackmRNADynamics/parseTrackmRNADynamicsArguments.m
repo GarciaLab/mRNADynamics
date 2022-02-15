@@ -1,11 +1,10 @@
-function [app, retrack, optionalResults, displayFigures, trackByProximity] =...
+function [app, retrack, optionalResults, displayFigures] =...
     parseTrackmRNADynamicsArguments(varargin)
 
 app = {};
 retrack = false;
 optionalResults = '';
-displayFigures = false;
-trackByProximity = false;
+displayFigures = 0;
 
 for i = 2:length(varargin)
     if ~ischar(varargin{i})
@@ -19,9 +18,7 @@ for i = 2:length(varargin)
         elseif strcmpi(varargin{i}, 'optionalResults')
             optionalResults = varargin{i+1};
         elseif strcmpi(varargin{i}, 'displayFigures')
-            displayFigures = true;
-        elseif strcmpi(varargin{i}, 'trackByProximity')
-            trackByProximity = true;  
+            displayFigures = 1;
         end
     end
     

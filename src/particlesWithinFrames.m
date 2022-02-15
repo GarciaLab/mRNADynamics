@@ -1,4 +1,4 @@
-function particlesIndexes = particlesWithinFrames(Prefix, firstFrame,lastFrame, UseCompiledParticles, CurrentChannel)
+function particlesIndexes = particlesWithinFrames(Prefix, firstFrame,lastFrame)
 % particlesWithinFrames(Prefix, Particles, firstFrame, lastFrame)
 %
 % DESCRIPTION
@@ -21,28 +21,11 @@ function particlesIndexes = particlesWithinFrames(Prefix, firstFrame,lastFrame, 
 %
 % Documented by: Emma Luu (emma_luu@berkeley.edu)
 
-if ~exist('UseCompiledParticles', 'var')
-    UseCompiledParticles = false;
-end
-
 [~,~,DropboxFolder,~,~]=...
     DetermineLocalFolders(Prefix);
 DataFolder=[DropboxFolder,filesep,Prefix];
-if UseCompiledParticles
-    load([DataFolder,filesep,'CompiledParticles.mat'], 'CompiledParticles');
-    if isfield(CompiledParticles, 'CompiledParticles')
-        CompiledParticles = CompiledParticles.CompiledParticles;
-    end
-    if iscell(CompiledParticles)
-        Particles = CompiledParticles{CurrentChannel};
-    else
-        Particles = CompiledParticles;
-    end
-else
-    load([DataFolder,filesep,'Particles.mat'])\
-    particlesSize = size(Particles);
-end
-
+load([DataFolder,filesep,'Particles.mat']);
+particlesSize = size(Particles);
 
 particlesIndexes = [];
 for i = 1:particlesSize(2)

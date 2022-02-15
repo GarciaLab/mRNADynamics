@@ -67,7 +67,7 @@ firstDogStack = imreadStack([dogFolder, dogDir(1).name]);
 zPadded = zSize ~= size(firstDogStack, 3);
 
 
-haveStacks = any(~contains(string({dogDir.name}), '_z0'));
+haveStacks = any(~contains(string({dogDir.name}), '_z'));
 
 % determines which z-slices and
 %frames that we can scroll through

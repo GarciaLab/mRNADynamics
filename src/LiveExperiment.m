@@ -18,17 +18,11 @@ classdef LiveExperiment
         isUnhealthy = false;
         
         anaphaseFrames = [0; 0; 0; 0; 0; 0];
-
-        experimentName = '';
-
-        hasCustomMasks = false;
         
         
     end
     
     properties (Access = private)
-        
-        preLoadMovie = false;
         
     end
     
@@ -95,12 +89,6 @@ classdef LiveExperiment
         MS2CodePath = '';
         
         rerunParticleTrackingFlag = false;
-
-        %% Added by GM 9/29/20
-        Temp_set = 0;
-        Temp_obs = 0;
-        %% 
-        
         
     end
     
@@ -109,22 +97,18 @@ classdef LiveExperiment
         
         %%Constructors
         
-        function this = LiveExperiment(Prefix, preLoadMovie)
+        function this = LiveExperiment(Prefix)
             %livemRNAExperiment Construct an instance of this class
             
             this.Prefix = Prefix;
-            
-            if nargin > 1
-                this.preLoadMovie = preLoadMovie;
-            end
             
             [this.userRawFolder, this.userProcFolder, this.userResultsFolder,...
                 this.MS2CodePath, this.userPreFolder,...
                 ~, ~, ~, movieDatabase]= DetermineLocalFolders(this.Prefix);
             
             dateString = this.Prefix(1:10);
-            this.experimentName = this.Prefix(12:length(this.Prefix));
-            rawSubFolder = [dateString,filesep,this.experimentName];
+            experimentName = this.Prefix(12:length(this.Prefix));
+            rawSubFolder = [dateString,filesep,experimentName];
             
             liveFolderIndex = strfind(lower(this.userPreFolder), lower('LivemRNA'))...
                 +  length('livemRNA') - 1;
@@ -175,13 +159,10 @@ classdef LiveExperiment
             this.hasRawStacks = exist([this.preFolder, 'stacks'], 'dir');
             this.hasMovieMatFile = exist([this.preFolder, filesep, Prefix, '_movieMatCh1.mat'], 'file');
             this.hasHisMatFile = exist([this.preFolder, filesep, Prefix, '_hisMat.mat'], 'file');
-
-            this.hasCustomMasks = isfolder([this.rawFolder, filesep, 'masks']);
-
             
             [~, this.experimentType, this.experimentAxis, ~, ~, this.APResolution,...
                 Channel1, Channel2,~, ~,  ~, ~, ~,...
-                ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, this.DVResolution, this.Temp_set, this.Temp_obs]...
+                ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, this.DVResolution]...
                 = getExperimentDataFromMovieDatabase(this.Prefix, movieDatabase, this.userResultsFolder);
             
             this.Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
@@ -249,17 +230,7 @@ classdef LiveExperiment
             Channels = filteredChannels;
         end
         
-        function nuclearMask = getNuclearMask(this, frameNumber, zIndex)
-            T = sprintf('%02d', frameNumber - 1);
-            Z = sprintf('%03d', zIndex - 1);
-            maskFilePath = [this.rawFolder, filesep, 'masks', filesep, this.experimentName, '_T', T, '_Z', Z, '.tif'];
-            
-            % disp(['Reading nuclear mask from file: ', maskFilePath]);
-
-            nuclearMask = imread(maskFilePath);
-            
-            nuclearMask = cast(nuclearMask, 'logical');
-        end
+        
         
         function out = getMovieMat(this)
             
@@ -280,12 +251,12 @@ classdef LiveExperiment
                 FrameInfo_movie = tempInfo.FrameInfo;
                 preTifDir = dir([this.preFolder, '*_ch0*.tif']);
             end
-                        
+            loadFramesIndividually = true;
+            
             %just return an empty array if we can't load the movie.
             %leave the handling to the caller, presumably by enabling
             %sequential file loading.
-            if ~haveSufficientMemory(preTifDir) || ~this.preLoadMovie
-
+            if false%~haveSufficientMemory(preTifDir)
                 out = [];
                 return;
             end
@@ -329,11 +300,9 @@ classdef LiveExperiment
             end
             out = movieMat;
             
-            %let's reduce the memory footprint of the movie if we can
-%             if max(movieMat(:)) < 255
-%                 movieMat = uint8(movieMat);
-%             end
-            movieMat = double(movieMat);
+            if max(movieMat(:)) < 255
+                movieMat = uint8(movieMat);
+            end
             
         end
         
@@ -428,82 +397,9 @@ classdef LiveExperiment
             end
             out = hisMat;
             
-            %let's reduce the memory footprint of the movie if we can
-%             if max(hisMat(:)) < 255
-%                 hisMat = uint8(hisMat);
-%             end
-            hisMat = double(hisMat);
-            
-        end
-        
-        %this function retrieves or generates a max projection of the full
-        %movie
-        function out = getMaxMat(this)
-            
-            persistent FrameInfo_max;
-            persistent maxMat;
-            
-            tempInfo = load([this.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
-            
-            isNewMovie = isempty(FrameInfo_max) ||...
-                length([tempInfo.FrameInfo.Time]) ~= length([FrameInfo_max.Time]) || ...
-                any([tempInfo.FrameInfo.Time] ~= [FrameInfo_max.Time]) ||...
-                size(maxMat, 3) ~= this.nFrames;
-            
-            if isNewMovie
-                FrameInfo_max = tempInfo.FrameInfo;
-                movieMat = getMovieMat(this);
-                if ~isempty(movieMat)
-                    maxMat = max(movieMat(:,:,:,:,:),[],3);
-                else
-                    maxMat = [];
-                end
+            if max(hisMat(:)) < 255
+                hisMat = uint8(hisMat);
             end
-            out = squeeze(maxMat);
-            out = double(out);
-            
-        end
-        
-        function out = getMovieFrame(this, frame, channel)
-            
-            stackFile = [this.preFolder, filesep, this.Prefix, '_',...
-                iIndex(frame, this.nDigits),...
-                '_ch', iIndex(channel, 2), '.tif'];
-            
-            if exist(stackFile, 'file')
-                out = imreadStack(stackFile);
-            elseif exist([this.preFolder, filesep, this.Prefix, '_',...
-                iIndex(frame, this.nDigits),...
-                '_z', iIndex(1, 2),...
-                '_ch', iIndex(channel, 2), '.tif'], 'file')
-                
-                out = zeros(this.yDim, this.xDim, this.zDim);
-                for z = 1:this.zDim
-                    out(:, :, z) = getMovieSlice(this, frame, channel, z);
-                end
-            else
-                error('The PreProcessed file for this frame doesn''t exist.')
-            end
-            out = double(out);
-        end
-        
-        function out = getMovieSlice(this, frame, channel, slice)
-            
-            imFile = [this.preFolder, filesep, this.Prefix, '_',...
-                iIndex(frame, this.nDigits),...
-                '_z', iIndex(slice, 2),...
-                '_ch', iIndex(channel, 2), '.tif'];
-            
-            if exist(imFile, 'file')
-                out = imread(imFile);
-            elseif exist([this.preFolder, filesep, this.Prefix, '_',...
-                iIndex(frame, this.nDigits),...
-                '_ch', iIndex(channel, 2), '.tif'], 'file')
-            
-                imStack = getMovieFrame(this, frame, channel);
-                out = imStack(:, :, slice);
-            end
-            out = double(out);
             
         end
         

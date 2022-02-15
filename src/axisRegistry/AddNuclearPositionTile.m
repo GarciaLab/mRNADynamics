@@ -1,6 +1,6 @@
-function AddNuclearPositionTile(Prefix)
+function AddNuclearPosition(Prefix)
 % author: Gabriella Martini
-% date created: 1/29/19
+% date created: 12/29/19
 % date last modified: 12/31/19
 %Default set of variables to save
 

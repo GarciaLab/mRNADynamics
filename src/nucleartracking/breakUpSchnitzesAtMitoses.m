@@ -21,28 +21,17 @@ end
 
 cycleFrames = nan(1,nFrames);
 
-
-if ~any(~isnan(ncs) & ncs~=0)
-    %special case for when no anaphase is observed and the interphase
-    %observed is not nc14 
-    nc = find(~isnan(ncs), 1,'last');
-    cycleFrames(1:end) = nc;
-else
-
-    for i = 1:length(ncs)
-        if i==14 && ~isnan(ncs(i))
-            cycleFrames(ncs(i):end) = 14;
-        elseif i==14 && isnan(ncs(i))
-            %do nothing
-        elseif i==13 && isnan(ncs(i))
-            %do nothing
-        elseif ncs(i) == 0
-            cycleFrames(1:ncs(i+1)) = i;
-        elseif i~=14 && isnan(ncs(i+1))
-            cycleFrames(ncs(i):end) = i;
-        else
-            cycleFrames(ncs(i):ncs(i+1)) = i;
-        end
+for i = 1:length(ncs)
+    if i==14 && ~isnan(ncs(i))
+        cycleFrames(ncs(i):end) = 14;
+    elseif i==14 && isnan(ncs(i))
+        %do nothing
+    elseif ncs(i) == 0
+        cycleFrames(1:ncs(i+1)) = i;
+    elseif i~=14 && isnan(ncs(i+1))
+        cycleFrames(ncs(i):end) = i;
+    else
+        cycleFrames(ncs(i):ncs(i+1)) = i;
     end
 end
 

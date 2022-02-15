@@ -22,12 +22,10 @@ function mapPatserResults(path, varargin)
 % Documented by: Emma Luu(emma_luu@berkeley.edu)
 
 offset = [];
-gbIn = 'C:\Users\owner\Desktop\LivemRNA\mRNADynamics\src\bioinformatics\pib-phsp70-ms2v5-lacz.gb';  %for testing
 
 for arg = 1:length(varargin)
     if strcmpi(varargin{arg}, 'index')
         offset = varargin{arg+1};
-        gbIn = varargin{arg+2};
     end
 end
 
@@ -39,8 +37,9 @@ cutOff = regexp(t,cutOffExpression,'tokens');
 cutOffScore = str2double(char(cutOff{1}(2)));
 
 
+expression0 = '(\=erocs)';
 expression1 = 'position='; % to retrieve the location information
-s0 = regexp(tinverse, '(\=erocs)');
+s0 = regexp(tinverse, expression0);
 s1 = regexp(t, expression1); % locating all position values
 tf = {};
 s02 = cell(length(s0),1);
@@ -58,8 +57,8 @@ for i = 1:length(s0)
     tf{i} = tf{i}(z+4:end);
     tf{i} = flip(tf{i});
 end
-
-s01 = regexp(tinverse, '(\d*\.\d)(?=   \=erocs)', 'tokens');
+expression01 = '(\d*\.\d)(?=   \=erocs)';
+s01 = regexp(tinverse, expression01, 'tokens');
 values = zeros(1,length(s01));
 complementPositionCounter = 0; % on the reverse orientation
 positionCounter = 0; %on the forward orentiation
@@ -106,26 +105,6 @@ ylabel('scores')
 backslashes = strfind(path,'\');
 title(path(backslashes(length(backslashes))+1:length(path)-4),'Interpreter','none')
 standardizeFigure(ax, [], 'red');
-
-
-% make struct with results
-SiteResults = struct('TF',[],'orientation',[],'position',[],'score',[]);
-for site = 1:length(values)
-    SiteResults(site).TF = tf{site};
-    SiteResults(site).score = values(site);
-    if ismember(site,siteIndices)
-        SiteResults(site).orientation = 'forward';
-        SiteResults(site).position = location(siteIndices==site);
-    elseif ismember(site,complementSiteIndices)
-        SiteResults(site).orientation = 'reverse'; 
-        SiteResults(site).position = complementLocation(complementSiteIndices==site);
-    end
-end
-fileName = [path(1:length(path)-4),'.mat'];
-save(fileName, 'SiteResults')
-
-
-
 
 
 figure(2); % Sites versus Position
@@ -222,7 +201,7 @@ if ~isempty(offset)
 
     fileName = [path(1:length(path)-4),'.gb'];
     fid = fopen(fileName, 'w');
-    fidIn = fopen(gbIn, 'r');
+    fidIn = fopen('E:\Armando\LivemRNA\Data\Dropbox\pib-phsp70-ms2v5-lacz.gb', 'r');
 
 
     fin = fscanf(fidIn, '%c');

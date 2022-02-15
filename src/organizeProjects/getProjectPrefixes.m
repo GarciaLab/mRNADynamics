@@ -1,6 +1,6 @@
 function prefixes = getProjectPrefixes(dataType,varargin)
 
-% function allPrefixes = getProjectPrefixes(dataType,varargin)
+% function allPrefixes = getProjectPrefixes(dataType)
 %
 % DESCRIPTION
 % Returns the Prefixes for all experiments in a project tab of 
@@ -32,7 +32,7 @@ function prefixes = getProjectPrefixes(dataType,varargin)
 %
 % Author (contact): Meghan Turner (meghan_turner@berkeley.edu)
 % Created: 5/17/2020
-% Last Updated: MT 7/15/2020 in master branch of mRNADynamics git repo
+% Last Updated: N/A
 
 onlyApproved = false; 
 onlyUnapproved = false;

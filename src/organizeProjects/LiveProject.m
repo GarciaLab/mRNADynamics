@@ -20,9 +20,6 @@ classdef LiveProject
         anaphaseFramesAnnotated = [];
         
         
-        
-        
-        
     end
     
     properties (Hidden = true)
@@ -140,12 +137,6 @@ classdef LiveProject
             
                 [comparedSettings,rawSettings] = compareExperimentSettings(Project);
                 
-        end
-        
-        function customApprovedExperiments = getCustomApprovedExperiments(this, customApprovalFlag)
-            
-            customApprovedExperiments = getProjectPrefixes(this.Project, 'customApproved', customApprovalFlag);
-            
         end
         
     end

@@ -6,12 +6,8 @@ function PlotParticleTrace(cptState, plotTraceSettings, noSpline)
     Spots = cptState.getCurrentChannelSpots();
 
     GetParticleTrace(CurrentParticle, Particles, Spots, plotTraceSettings, noSpline);
-    
-    if ~plotTraceSettings.UseCompiledParticles
-        cptState.Frames = Particles(CurrentParticle).Frame;
-    else
-        cptState.Frames = Particles(CurrentParticle).FlaggingInfo.TrueFrames;
-    end
+
+    cptState.Frames = Particles(CurrentParticle).Frame;
 %{    
     for i=1:length(cptState.Frames)
         

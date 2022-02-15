@@ -1,145 +1,97 @@
-% NL: Updated this drawing heavily from processLIFExportMode
-% Last updated: 2020-09-03
+function FrameInfo = processLSMData(Folder, D, FrameInfo, ExperimentType, ...
+    Channels, ProjectionType,Prefix, OutputFolder,nuclearGUI, zslicesPadding)
+  % What type of experiment do we have?
 
-function FrameInfo = processLSMData(Folder, RawDataFiles, FrameInfo,...
-    Channels, ProjectionType, Prefix, OutputFolder,nuclearGUI,...
-    skipExtraction,skipNuclearProjection,zslicesPadding)
+    NSeries = length(D);
+    Frame_Times = []; % Store the frame information
+    AllLSMImages = cell(1, NSeries);
     
-    disp('Exporting movie file...');
-    
-    cleanupObj = onCleanup(@myCleanupFun);
-    
-    %Load the reference histogram for the fake histone channel
-    load('ReferenceHist.mat', 'ReferenceHist');    
-    
-    % initialize FrameInfo
-    FrameInfo = [];
-        
-    % get basic info
-    NSeries = length(RawDataFiles);      
-        
-    if ~skipExtraction
-      % This chunk makes FrameInfo                     
-      [FrameInfo,AllLSMImages,NSlices, ~, NFrames,~,NChannels] ...
-        = getZeissFrameInfo(RawDataFiles,NSeries,FrameInfo,zslicesPadding);
+    % preprocess data
+    waitbarFigure = waitbar(0, 'Extracting LSM images');
+    load('ReferenceHist.mat')
+    for LSMIndex = 1:NSeries
+      waitbar(LSMIndex / NSeries, waitbarFigure);
       
-      % pop channels up a level
-      if iscell(Channels{1})
-          Channels = [Channels{:}];
-      end
-      NChannelsAlt = find(~cellfun(@isempty,Channels),1,'last');
-      if NChannelsAlt~=NChannels
-          warning(['issue with NChannels metadata extraction. Reseting to ' num2str(NChannelsAlt)])
-          NChannels = NChannelsAlt;
-      end
-      
-      % save FrameInfo
-      liveExperiment = LiveExperiment(Prefix);
-      save([liveExperiment.resultsFolder,filesep,'FrameInfo.mat'], 'FrameInfo');
-      
-      % this function exports tif z stacks
-      exportTifStacks(AllLSMImages, 'LSM', NChannels, NFrames, NSlices, Prefix, ...
-          ...moviePrecision, hisPrecision, 
-          nuclearGUI, ProjectionType, Channels, ReferenceHist, ...
-          skipNuclearProjection,zslicesPadding);
-        
-      % Look for flat field images
-      [FFPaths, FFToUse, LSMFF] = findFlatFieldInformation(Folder);
-      
-      % Proceed accordingly
-      processFlatFieldInformation(Prefix, OutputFolder, FFPaths, FFToUse, LSMFF);
+      %Load the file using BioFormats
+      LSMImages = bfopen([Folder, filesep, D(LSMIndex).name]);
+      % Extract the metadata for each series
+      LSMMeta = LSMImages{:, 4}; % OME Metadata
+      LSMMeta2 = LSMImages{:, 2}; % Original Metadata
+      AllLSMImages{LSMIndex} = LSMImages{1};
 
-      imarisFolder = [RawDataFiles(1).folder, filesep, 'ImarisResult'];
-      if isfolder(imarisFolder)
-          disp('Imaris results folder detected. Will get nuclear tracking info from Imaris.')
-          
-          DropboxFolder = liveExperiment.userResultsFolder;
-          ellipsesFile = [DropboxFolder,filesep,Prefix,filesep,'Ellipses.mat'];
-          schnitzcellsFile = [DropboxFolder,filesep,Prefix,filesep,Prefix,'_lin.mat']; 
+      % Figure out the number of slices in each series
+      NSlices(LSMIndex) = str2double(LSMMeta.getPixelsSizeZ(0));
+      % Number of channels
+      NChannels(LSMIndex) = LSMMeta.getChannelCount(0);
+      % Total number of planes acquired
+      NPlanes(LSMIndex) = LSMMeta.getPlaneCount(0);
+      % Finally, use this information to determine the number of frames in
+      % each series
+      NFrames(LSMIndex) = NPlanes(LSMIndex) / NSlices(LSMIndex) / NChannels(LSMIndex);
 
-          imarisStatisticsFolder = [imarisFolder, filesep, liveExperiment.experimentName, '_Statistics'];
-          positionsFile = [imarisStatisticsFolder, filesep, liveExperiment.experimentName, '_Position.csv'];
-
-          % multi-file version of imaris data where there's a statistics subfolder with a positions file
-          % for each movie file instead of a single csv file for the whole movie
-          multiFileStats = dir([imarisFolder, filesep, '**/*Out_Position.csv']);
-          
-          if isfile(positionsFile)
-            disp('Parsing Imaris position file...')
-
-            
-
-            % Liz says: The entire image stack is 200 pixels in x, 444 in y and 100 in z (again will change in future datasets).
-            % The x and y resolutions is 0.234 microns per pixel and z is 0.5 microns per pixel, but this will change in future datasets.
-            % I looked up this information in the Zeiss software, but hopefully it's available in the metadata. 
-            % JP: it is, in FrameInfo:
-
-            % LinesPerFrame: 444
-            % PixelsPerLine: 200
-            % NumberSlices: 100
-            % FileMode: 'LSMExport'
-            % PixelSize: 0.2341
-            % ZStep: 0.5000
-            % Time: 1.4797e+04
-
-            [schnitzcells, Ellipses] = readimariscsv(0, imarisStatisticsFolder, positionsFile, FrameInfo(1).PixelSize, FrameInfo(1).PixelSize, FrameInfo(1).ZStep);
-
-            save2(ellipsesFile, Ellipses); 
-            save2(schnitzcellsFile, schnitzcells); 
-
-            disp('Saved imaris-based Ellipses and schnitzcells files in DynamicsResults folder.');
-          elseif ~isempty(multiFileStats)
-            disp('Parsing mult-file Imaris statistic data...')
-
-            % because each Imaris file corresponds to a different movie sub-file,
-            % we need to offset frame numbers to match overall frame numbering
-            % for example file 1 contains frames 1 and 2, and file 2 contains also frames 1 and 2,
-            % but for us it's file 1 = frame 1 and 2, file 2 = frames 3 and 4, and we schnitzcells and Ellipses
-            % to reflect that numbering
-            frameNumberOffset = 0;
-            
-            for positionFileIndex = 1:size(multiFileStats)
-              positionSubFile = multiFileStats(positionFileIndex);
-              fprintf('Parsing position file at %s\n', positionSubFile.name);
-              
-              % each csv processing will tell us the last frame number it referenced
-              % so we can use that to offset the frame numbers in next file
-              [partialSchnitzcells, partialEllipses, lastFrame] = readimariscsv(frameNumberOffset, positionSubFile.folder, [positionSubFile.folder, filesep, positionSubFile.name], FrameInfo(1).PixelSize, FrameInfo(1).PixelSize, FrameInfo(1).ZStep);
-
-              % append partial info from schnitcells and ellipses from sub file
-              % to the general structs
-              if (positionFileIndex == 1)
-                % it's the first file, create general variables
-                Ellipses = partialEllipses;
-                schnitzcells = partialSchnitzcells;
-              else
-                % it's not the first file, variables already exist, so we concatenate to them
-                schnitzcells = [schnitzcells; partialSchnitzcells];
-                Ellipses = [Ellipses; partialEllipses];
-              end
-
-              frameNumberOffset = lastFrame;              
-              fprintf('Last frame number was %d\n', frameNumberOffset);
-
-            end
-
-            save2(ellipsesFile, Ellipses); 
-            save2(schnitzcellsFile, schnitzcells); 
-
-          else
-            error(['Statistics files not found in Imaris folder.', positionsFile]);
-          end
-          
-
+      % Check that the acquisition wasn't stopped before the end of a
+      % cycle. If that is the case, some images in the last frame will
+      % be blank and we need to remove them.
+      if sum(sum(LSMImages{1}{end,1})) == 0
+        % Reduce the number of frames by one
+        NFrames(LSMIndex) = NFrames(LSMIndex) - 1;
+        % Reduce the number of planes by NChannels*NSlices
+        NPlanes(LSMIndex) = NPlanes(LSMIndex) - NChannels(LSMIndex) * NSlices(LSMIndex);
       end
 
-      if nuclearGUI
+      NDigits = getNDigits(NFrames, LSMIndex);
 
-        chooseAnaphaseFrames(...
-            Prefix, 'ProjectionType', ProjectionType,...
-            'ReferenceHist', ReferenceHist);
-
+      try
+          StartingTime(LSMIndex) = obtainZeissStartingTime(Folder, LSMIndex, LSMMeta2, NDigits);
+      catch
+          StartingTime(LSMIndex) = obtainZeissStartingTime(Folder, LSMIndex, LSMMeta2, NDigits+1);
       end
+      [ValueField, Frame_Times] = obtainZeissFrameTimes(LSMMeta, NSlices, LSMIndex, NPlanes, NChannels, StartingTime, Frame_Times);
+      [~, FrameInfo] = createZeissFrameInfo(LSMIndex, NFrames, NSlices, FrameInfo, LSMMeta, Frame_Times, ValueField);
     end
+    
+    
+    % We need a second pass to set the correct slices count after having
+    % processed all the series so we know the max(NSlices) number
+    % if zPadding was indicated in the arguments, we round up to the series
+    % with more z-slices (because we'll pad with blank images the other series)
+    if (zslicesPadding)
+      topZSlice = max(NSlices);
+    else
+      % if no zPadding, we round down to the series with less z-slices
+      topZSlice = min(NSlices);
+    end
+    
+    for frameInfoIndex = 1:size(FrameInfo, 2)
+      FrameInfo(frameInfoIndex).NumberSlices = topZSlice;
+    end
+  
+    try close(waitbarFigure); catch; end
+    
+    [coatChannel, histoneChannel, fiducialChannel, inputProteinChannel, FrameInfo] =...
+    LIFExportMode_interpretChannels(ExperimentType, Channels{1}, Channels{2}, Channels{3}, FrameInfo);
+
+    numberOfFrames = 1;
+    %at the moment, this doesn't work. it would be nice to correctly
+    %implement it in the future. -AR 6/25/2020
+%     if nuclearGUI
+%         [~, ProjectionType] = chooseNuclearChannels(...
+%         AllLSMImages, NSeries, NSlices, NChannels(1), NFrames, ProjectionType, Channel1, Channel2, ...
+%         Channel3, ReferenceHist);
+%     end
+    for seriesIndex = 1:NSeries
+        for framesIndex = 1:NFrames(seriesIndex) 
+
+          processMovieFrame(numberOfFrames, Prefix, OutputFolder,...
+              AllLSMImages, framesIndex, seriesIndex, NChannels(1), NSlices, ...
+              Channels, ProjectionType, ReferenceHist, zslicesPadding, 0);
+          
+          numberOfFrames = numberOfFrames + 1;
+        end
+    end
+
+    [FFPaths, FFToUse, LSMFF] = findFlatFieldInformation(Folder);
+    processFlatFieldInformation(Prefix, OutputFolder, FFPaths, FFToUse, LSMFF);
+
 end
 

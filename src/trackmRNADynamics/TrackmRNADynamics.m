@@ -35,8 +35,8 @@ disp(['Running TrackmRNADynamics on ', Prefix, '...']);
 liveExperiment = LiveExperiment(Prefix);
 makeTrackingFigures = true;
 
-[app, retrack, optionalResults, displayFigures, trackByProximity] =...
-    parseTrackmRNADynamicsArguments(varargin{:});
+% [app, retrack, optionalResults, displayFigures] =...
+%     parseTrackmRNADynamicsArguments(varargin{:});
 
 
 DropboxFolder = liveExperiment.userResultsFolder;
@@ -66,23 +66,12 @@ OutputFolder = [DropboxFolder, filesep, Prefix];
 [FrameInfo, PixelSize_um] = loadFrameInfo(OutputFolder, PreProcPath, Prefix);
 
 % Check if we have tracked the lineages of the nuclei
-if ~trackByProximity && exist([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'file')
-    UseHistone = true;
-    
-    % Load the nuclei segmentation information
-    load([DropboxFolder, filesep, Prefix, filesep, 'Ellipses.mat'], 'Ellipses')
-    
-    % Load the nuclear tracking information
-    load([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'schnitzcells')
-    
+if exist([DropboxFolder, filesep, Prefix, filesep, Prefix, '_lin.mat'], 'file')
+    useHistone = true;
 else
-    UseHistone = false;
-    schnitzcells = [];
-    Ellipses = [];
-    warning('Warning: No nuclei lineage tracking found. Proceeding with tracking particles by proximity.')
+    useHistone = false;
+    warning('Warning: No nuclei lineage tracking found. Proceeding with tracking particles only.')
 end
-
-
 
 validateExperimentTypeSupported(ExperimentType);
 

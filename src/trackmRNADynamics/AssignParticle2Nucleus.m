@@ -1,6 +1,6 @@
 function [Particles,SpotFilter]=AssignParticle2Nucleus(...
     schnitzcells,Ellipses,Particles,Spots,SpotFilter,...
-    CurrentFrame,PixelSize, PixelZSize, SpotsPerNucleus, retrack)
+    CurrentFrame,PixelSize,SpotsPerNucleus, retrack)
 
 %Find the N closest particles to each nucleus. N is determined by
 %ExperimentType (1spot, 2spots). If N>1, then the code also uses the spot
@@ -13,27 +13,14 @@ function [Particles,SpotFilter]=AssignParticle2Nucleus(...
 
 %From here on, "New" means "CurrentFrame" for both the nuclei and
 %particles.
-[NewSpotsX,NewSpotsY,NewSpotsZ]=SpotsXYZ(Spots(CurrentFrame));
+[NewSpotsX,NewSpotsY]=SpotsXYZ(Spots(CurrentFrame));
 
 if ~isempty(NewSpotsX)
-    
-    EllipsesColumnCount = size(Ellipses{CurrentFrame},2);
-    if EllipsesColumnCount == 10
-        % Using Ellipses 10th column as Z coordinates
-        hasNuclearZCoordinates = true;
-        EllipsesColumns = [1,2,10];
-    else
-        hasNuclearZCoordinates = false;
-        EllipsesColumns = [1,2];
-    end
-    
+
     %Get the position of the nuclei in this frame
-    NewEllipsesXYZ=Ellipses{CurrentFrame}(:,EllipsesColumns);
-    NewEllipsesX=NewEllipsesXYZ(:,1);
-    NewEllipsesY=NewEllipsesXYZ(:,2);
-    if hasNuclearZCoordinates
-        NewEllipsesZ=NewEllipsesXYZ(:,3);
-    end
+    NewEllipsesXY=Ellipses{CurrentFrame}(:,[1,2]);
+    NewEllipsesX=NewEllipsesXY(:,1);
+    NewEllipsesY=NewEllipsesXY(:,2);
 
     %This is to keep track of already-assigned particles
     NewParticlesFlag=ones(size(NewSpotsX));
@@ -44,14 +31,9 @@ if ~isempty(NewSpotsX)
 
     for j=1:length(NewSpotsX)
 
-        if hasNuclearZCoordinates
-            newSpotPos = [NewSpotsX(j)*PixelSize, NewSpotsY(j)*PixelSize, NewSpotsZ(j)*PixelZSize];
-            newEllipsePos =[NewEllipsesX*PixelSize, NewEllipsesY*PixelSize, NewEllipsesZ*PixelZSize];
-        else
-            newSpotPos = [NewSpotsX(j)*PixelSize, NewSpotsY(j)*PixelSize];
-            newEllipsePos =[NewEllipsesX*PixelSize, NewEllipsesY*PixelSize];
-        end
-
+        newSpotPos = [NewSpotsX(j), NewSpotsY(j)]*PixelSize;
+        newEllipsePos =[NewEllipsesX, NewEllipsesY]*PixelSize;
+        
         Distance(j,:) = vecnorm(newSpotPos - newEllipsePos, 2, 2);
 
     end

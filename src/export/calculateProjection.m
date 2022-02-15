@@ -9,7 +9,7 @@ if strcmpi(projectionType, 'middleprojection')
     lowerSlice = round(nSlices * .50);
     upperSlice =round(nSlices * .75);
 elseif strcmpi(projectionType, 'midsumprojection')
-    lowerSlice = max([1 round(nSlices * .33)]);
+    lowerSlice = round(nSlices * .33);
     upperSlice =round(nSlices * .66);
 end
 % 

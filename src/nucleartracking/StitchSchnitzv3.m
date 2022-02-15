@@ -44,7 +44,7 @@ for j=1:length(schnitzcells)
 end
 
 Original_schnitzcells = schnitzcells; % save the original state before running this script
-% save([DropboxFolder,filesep,Prefix '_PreStitched.mat'],'Original_schnitzcells');
+save([DropboxFolder,filesep,Prefix '_PreStitched.mat'],'Original_schnitzcells');
 
 nSchnitz = length(schnitzcells);
 %% Make sure the originial schintzcells struct is good:
@@ -56,7 +56,6 @@ for OGSchnitz = 1:length(schnitzcells)
     assert(length(schnitzcells(OGSchnitz).cenx) == FrameLength);
     assert(length(schnitzcells(OGSchnitz).ceny) == FrameLength);
     assert(length(schnitzcells(OGSchnitz).len) == FrameLength);
-    assert(length(schnitzcells(OGSchnitz).cellno) == FrameLength);
 end
 % disp('schnitzcells struct is good entering stitching')
 
@@ -141,7 +140,6 @@ for OGSchnitz = 1:length(schnitzcells)
     assert(length(schnitzcells(OGSchnitz).cenx) == FrameLength);
     assert(length(schnitzcells(OGSchnitz).ceny) == FrameLength);
     assert(length(schnitzcells(OGSchnitz).len) == FrameLength);
-    assert(length(schnitzcells(OGSchnitz).cellno) == FrameLength);
 end
 % disp('length of schnitzcells fields is consistent after stitching')
 
@@ -156,10 +154,8 @@ schnitzcells(SchnitzToKillIndices) = [];
 %% Save everything and break schnitzs at mitosis
 Stitched_before_breakup = schnitzcells;
 % save([DropboxFolder,filesep,Prefix '_PreBroken.mat'],'Stitched_before_breakup');
-% [Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
-[schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses);
+[Ellipses, schnitzcells] = addSchnitzIndexToEllipses(Ellipses, schnitzcells);
 [schnitzcells, Ellipses] = breakUpSchnitzesAtMitoses(schnitzcells, Ellipses, ncVector, nFrames);
-[schnitzcells, Ellipses] = correctSchnitzCellErrors(schnitzcells, Ellipses);
 save2([DropboxFolder,filesep,Prefix '_lin.mat'],schnitzcells);
 save2([DropboxFolder,filesep,'Ellipses.mat'],Ellipses);
 

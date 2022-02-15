@@ -30,7 +30,7 @@ prefixCellText = {};
 
 % Locate the prefix cells within the tab
 prefixRow = find(strcmpi(dataTypeTabContents(:,1),'prefix:'));
-prefixColumns = find(contains(...
+prefixColumns = find( contains(...
     strrep( dataTypeTabContents(prefixRow,:) , ' ', ''), 'prefix', 'IgnoreCase', true) ); 
 
 %the first column is a header

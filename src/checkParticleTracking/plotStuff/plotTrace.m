@@ -1,7 +1,7 @@
 function plotTrace(traceFigAxes, cptState, anaphaseInMins, ElapsedTime,...
     anaphase, prophase, metaphase,prophaseInMins, metaphaseInMins,Prefix,...
     numFrames, correspondingNCInfo, ExperimentType, Channels, PreProcPath, DropboxFolder,...
-    plotTraceSettings, UseCompiledParticles)
+    plotTraceSettings)
 %PLOTTRACE
 %plot traces in checkparticletracking
 
@@ -177,7 +177,7 @@ end
     if cptState.plot3DGauss && ~isnan(traceFigYLimits(2))
             setPlotsInvisible(traceFigAxes);
             ylim(traceFigAxes, [0, traceFigYLimits(2)]);
-            setPlotsVisible(traceFigAxes);            
+            setPlotsVisible(traceFigAxes);
     end
 
     
@@ -194,7 +194,7 @@ end
     if strcmpi(ExperimentType, 'inputoutput')
         yyaxis(traceFigAxes,'right')
         %now we'll plot the input protein intensity on the right-hand axis.
-        if ~isfield(cptState.schnitzcells, 'Fluo') || ~isempty(cptState.getCurrentParticle().Nucleus == 0)
+        if ~isfield(cptState.schnitzcells, 'Fluo')
                 dummy = cell(length(cptState.schnitzcells), 1);
                 [cptState.schnitzcells.Fluo] = dummy{:};
         else

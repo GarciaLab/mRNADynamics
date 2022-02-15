@@ -23,13 +23,14 @@ MeanBeadData = table('Size', [0 nvars],...
 
 
 varnames3 = {'BeadIntensity','LaserPower', 'SetID', 'Replicate','MeanIntensity',...
-    'StdIntensity', 'BeadCount'};
+    'VarIntensity', 'BeadCount'};
 vartypes3 = {'double', 'double', 'string', 'int64', 'double', 'double', 'int64'};
 nvars3 = length(varnames3);
 SummaryData = table('Size', [0 nvars3],...
     'VariableTypes', vartypes3,'VariableNames', varnames3);
 
-for i=30:30%1:length(rawDataDir)
+for i=1:length(rawDataDir)
+
 display(['i = ', num2str(i)]);
 DataDir = dir([rawDataDir(i).folder, filesep, rawDataDir(i).name, filesep, '*.lif']);
 LIFPath = fullfile(DataDir(1).folder, DataDir(1).name);
@@ -55,7 +56,6 @@ LIFMeta = LIFImages{:, 4};
 r.close();
 PixelSize = double(LIFMeta.getPixelsPhysicalSizeX(0).value);% units: microns
 radius = beadsize/PixelSize/2;
-sigma = radius/5;
 radmin = round(radius*1/2, 0);
 radmax = round(radius, 0);
 rep = 1;
@@ -94,35 +94,33 @@ for j =1:size(LIFImages, 1)
         if length(radii) == 0
             continue
         else
-            I_blurred = imgaussfilt(img,sigma, 'FilterSize', ceil(2*sigma));
-            for l=1:length(radii)
-                [xgrid, ygrid] = meshgrid(1:size(I_blurred,1), 1:size(I_blurred,2));
-                mask = ((xgrid-centers(l,1)).^2 + (ygrid-centers(l,2)).^2) <= (sigma).^2;
-                values = I_blurred(mask);
-                intensity = mean(values);
-                %intensity = I_blurred(round(centers(l,1)), round(centers(l,2)));
-                if size(TempBeadData, 1) ~= 0 && k ~= 1
-                    TempBeadData.Distance = ((TempBeadData.CenterRow-centers(l,1)).^2+...
-                        (TempBeadData.CenterCol-centers(l,2)).^2).^(1/2);
-                    MinD = min(TempBeadData.Distance(TempBeadData.z == k-1));
-                    if MinD < radii(l)
-                        index = find((TempBeadData.Distance == min(TempBeadData.Distance)));
-                        BeadID = TempBeadData.BeadID(index);
-                    else
-                        BeadID = MaxBeadID;
-                        MaxBeadID = MaxBeadID + 1;
-                    end
-                    TempBeadData.Distance = [];
-                    TempBeadData(rn,:) = {beadintensity, power,setID,rep, k, BeadID,...
-                        centers(l, 1),centers(l, 2), radii(l), intensity};
+        for l=1:length(radii)
+            [xgrid, ygrid] = meshgrid(1:size(img,1), 1:size(img,2));
+            mask = ((xgrid-centers(l,1)).^2 + (ygrid-centers(l,2)).^2) <= (radii(l)/2).^2;
+            values = img(mask);
+            intensity = mean(values);
+            if size(TempBeadData, 1) ~= 0 && k ~= 1
+                TempBeadData.Distance = ((TempBeadData.CenterRow-centers(l,1)).^2+...
+                    (TempBeadData.CenterCol-centers(l,2)).^2).^(1/2);
+                MinD = min(TempBeadData.Distance(TempBeadData.z == k-1));
+                if MinD < radii(l)
+                    index = find((TempBeadData.Distance == min(TempBeadData.Distance)));
+                    BeadID = TempBeadData.BeadID(index);
                 else
                     BeadID = MaxBeadID;
                     MaxBeadID = MaxBeadID + 1;
-                    TempBeadData(rn,:) = {beadintensity, power,setID,rep, k,BeadID,...
-                        centers(l, 1),centers(l, 2), radii(l), intensity};
                 end
-                rn = rn + 1;
+                TempBeadData.Distance = [];
+                TempBeadData(rn,:) = {beadintensity, power,setID,rep, k, BeadID,...
+                    centers(l, 1),centers(l, 2), radii(l), intensity};
+            else
+                BeadID = MaxBeadID;
+                MaxBeadID = MaxBeadID + 1;
+                TempBeadData(rn,:) = {beadintensity, power,setID,rep, k,BeadID,...
+                    centers(l, 1),centers(l, 2), radii(l), intensity};
             end
+            rn = rn + 1;
+        end
         end
         if mod(k, 21) == 0
             for bid =1:max(TempBeadData.BeadID)
@@ -140,13 +138,12 @@ for j =1:size(LIFImages, 1)
                         MeanRow,MeanCol, MeanRad, MeanI};
                 end
             end
-            % use middle 50% of beads to calculate intensity 
-            testset = TempMeanBeadData.Intensity;
+
             CondMean = mean(TempMeanBeadData.Intensity);
-            CondStd = std(TempMeanBeadData.Intensity);
+            CondVar = var(TempMeanBeadData.Intensity);
             CondCount = height(TempMeanBeadData);
             SummaryData(height(SummaryData)+1,:) = {beadintensity,power,...
-                setID, rep, CondMean,CondStd,CondCount};
+                setID, rep, CondMean,CondVar,CondCount};
             SummaryData(height(SummaryData),:)
             MeanBeadData = [MeanBeadData;TempMeanBeadData];
 

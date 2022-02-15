@@ -193,7 +193,7 @@ end
 screen_size = get(0, 'screensize');
 dim = [screen_size(3) * 0.6, screen_size(4) * 0.75];
 dimVec = [dim(1), dim(2), dim(1), dim(2)]; %to easily normalize units
-fig = uifigure('Position', [100, 100, dim(1), dim(2)], 'Name', 'Choose Histone Channels', 'Scrollable', 'on');
+fig = uifigure('Position', [100, 100, dim(1), dim(2)], 'Name', 'Choose Histone Channels');
 set(fig,'KeyPressFcn',@keycall)
 imgAxis = uiaxes(fig, 'Position', [20, 20, dim(1) - 20, dim(2) * 0.5]);
 hisPrecision = 'uint8';

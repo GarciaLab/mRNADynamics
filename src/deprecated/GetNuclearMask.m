@@ -32,7 +32,7 @@ end
 
         % Areas that are too large or too small do not correspond to single nuclei; remove
         % them.
-%         imshow(imSegmented, [])
+        imshow(imSegmented, [])
         cc=bwconncomp(imSegmented);
         if cc.NumObjects<5000
             segmentationOk = true;
