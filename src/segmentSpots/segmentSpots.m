@@ -11,42 +11,42 @@
 % [Options]: See below.
 %
 % OPTIONS
-% 'displayFigures': If you want to display plots and images.
+% 'displayFigures':   If you want to display plots and images.
 % 'Weka': For Weka machine learning.
-% 'InitialFrame', N: Run the code from frame N to last frame. Defaults to 
-%                    first frame.
-% 'LastFrame', M: Run the code from initial frame to frame M. Defaults to 
-%                 all frames. It's suggested to run 5-20 frames for 
-%                 debugging.
-% 'Shadows': This option should be followed by 0, 1 or 2. This specifies 
-%            the number of requisite z-planes above and/or below the 
-%            brightest plane for a spot to have to pass quality control.
+%
+% 'InitialFrame', N: Run the code from frame N to last frame. Defaults to first
+%                frame.
+%
+% 'LastFrame', M:     Run the code from initial frame to frame M. Defaults to all
+%                frames. It's suggested to run 5-20 frames for debugging.
+%
+% 'Shadows':    	 This option should be followed by 0, 1 or 2. This
+%                specifies the number of requisite z-planes above and/or below the
+%                brightest plane for a spot to have to pass quality control.
 % 'keepPool': Don't shut down the parallel pool when the script is done
-%             running.
+% running.
 % 'nWorkers': Specify the number of workers to use during parallel
-%             processing
-% 'noIntegralZ': Don't establish center slice at position that maximizes 
-%                raw fluo integral across sliding 3 z-slice window.
+% processing
+% 'noIntegralZ':  Don't establish center slice at position that maximizes raw fluo integral
+%                 across sliding 3 z-slice window.
 % 'autoThresh': Pops up a UI to help decide on a threshhold
-% 'keepProcessedData': Keeps the ProcessedData folder for the given prefix 
-%                      after running segment spots
+% 'keepProcessedData': Keeps the ProcessedData folder for the given prefix after running segment spots
 % 'fit3D': Fit 3D Gaussians to all segmented spots (assumes 1 locus per spot).
 % 'fit3DOnly': Skip segmentation step and perform 3D fits
 % 'skipChannel': Skips segmentation of channels inputted array (e.g. [1]
 %                skips channel 1, [1, 2] skips channels 1 and 2
 % 'optionalResults': use this if you have multiple Results/Dropbox folders
-%                    for the same data to specify which you'll use.
+% for the same data to specify which you'll use.
 % 'nuclearMask': Use the Ellipses structure to filter out particles
-%                detected outside of nuclei. 
-% 'track': track after running
-% 'segmentChannel': use the DoGs of one channel to segment another
+% detected outside of nuclei. 
+%'track': track after running
 %
 % OUTPUT
-% 'Spots': A structure array with a list of detected transcriptional loci
-%          in each frame and their properties.
+% 'Spots':  A structure array with a list of detected transcriptional loci
+% in each frame and their properties.
 % 'log.mat': A cell array containing logging data from the segmentation
-%            process. There's one row per run of segmentSpots(ML) on that 
-%            particular dataset.
+% process. There's one row per run of segmentSpots(ML) on that particular
+% dataset.
 %
 % Author (contact): Armando Reimer (areimer@berkeley.edu)
 % Created: 01/01/2016
@@ -73,7 +73,7 @@ end
 [displayFigures, lastFrame, numShadows, keepPool, ...
     autoThresh, initialFrame, useIntegralCenter, Weka, keepProcessedData,...
     fit3D, skipChannel, optionalResults, filterMovieFlag, gpu, nWorkers, saveAsMat,...
-    saveType, nuclearMask, DataType, track, skipSegmentation, frameRange, segmentChannel]...
+    saveType, nuclearMask, DataType, track, skipSegmentation, frameRange]...
     = determineSegmentSpotsOptions(varargin{:});
 
 %validate the Threshold argument
@@ -158,10 +158,6 @@ if ~skipSegmentation
     
         if ismember(channelIndex, skipChannel)
             continue
-        end
-
-        if isempty(segmentChannel)
-            segmentChannel = channelIndex;
         end
 
         tic;
