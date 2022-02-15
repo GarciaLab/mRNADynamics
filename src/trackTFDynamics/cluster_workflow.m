@@ -9,13 +9,14 @@ Prefix = '2019-11-26-2xDl_Venus_snaBAC_MCPmCherry_Leica_Zoom45_21uW14uW_01';
 ExportDataForLivemRNA(Prefix,'nuclearGUI',false)
 
 % (2) Double check that all datasets were taken using the same settings.
-% Datasets must be added to a tab in \\ResultsFolder\DataStatus.xlsx file.
-% You can compare as many tabs as you'd like, here we compare three.
+%     Datasets must be added to a tab in \\ResultsFolder\DataStatus.xlsx file.
+%     You can compare as many tabs as you'd like, here we compare three.
 data_type = {'2xDl-Ven-clusters_twiPE','2xDl-Ven-clusters_snaBAC','2xDl-Ven-clusters_hbBAC'};
 [compared_settings, raw_settings] = compareExperimentSettings(data_type);
 
-% (3) Segment the nuclei (you don't need to track for this particular analysis
-% The resulting nuclear masks are used by maskCytoplasmForWeka
+% (3) Segment the nuclei (you don't need to track for this particular
+%     analysis)
+%     The resulting nuclear masks are used by maskCytoplasmForWeka
 TrackNuclei(Prefix, 'noTrack')
 
 % (4) Correct for bleaching so you can use the same Weka classifier for the
@@ -32,6 +33,8 @@ maskCytoplasmForWeka(Prefix, 'includeChannels', channelsToMask, 'maskNormalizedI
 
 % (7) Use the mRNADynamics pipeline script, segmentSpots.m, to segment
 %      both the clusters and the MS2 transcription spots
+segmentSpots(Prefix, [5000,10015],'skipChannel',1,'fit3D');
+segmentSpots(Prefix, [5000,10015],'skipChannel',2,'fit3D');
 
 % (8) Calculate the pairwise distances between the MS2 spot in a nucleus 
 %     and all clusters detected in the same nucleus
