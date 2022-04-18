@@ -4,7 +4,8 @@ xDim = size(movingImage, 2);
 yDim = size(movingImage, 1);
 
 [movingReg.DisplacementField,~] =...
-    imregdemons(gpuArray(movingImage), gpuArray(fixedImage),100,'AccumulatedFieldSmoothing',1.0,'PyramidLevels',3);
+    imregdemons(movingImage, fixedImage,100,'AccumulatedFieldSmoothing',1.0,'PyramidLevels',3);
+%     imregdemons(gpuArray(movingImage), gpuArray(fixedImage),100,'AccumulatedFieldSmoothing',1.0,'PyramidLevels',3);
 Dx = movingReg.DisplacementField(:, :, 1); %displacement left to right
 Dy = movingReg.DisplacementField(:, :, 2); %displacement top to bottom
 
