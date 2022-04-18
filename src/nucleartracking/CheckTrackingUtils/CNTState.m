@@ -119,7 +119,11 @@ classdef CNTState < handle
                     end
                     MedFluo(i) = median(schnitzcells(this.CurrentNucleus).Fluo(i,2:this.ZSlices-1));
                     if ~isnan(MedFluo(i))
-                        MedZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == median(schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
+                        % Works for both even and odd # of z-slices
+                        [~, min_index] = min(abs(schnitzcells(this.CurrentNucleus).Fluo(i,:) - median(schnitzcells(this.CurrentNucleus).Fluo(i,:))));
+                        MedZ(i) = min_index;
+                        % Only works for odd # of z-slices
+%                         MedZ(i) = find(schnitzcells(this.CurrentNucleus).Fluo(i,:) == median(schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
                     else
                         MaxFluo(i) = 0;
                         MaxZ(i) = 1;
@@ -400,7 +404,11 @@ classdef CNTState < handle
 
                     MedFluo(i) = median(this.schnitzcells(this.CurrentNucleus).Fluo(i,2:this.ZSlices-1));
                     if ~isnan(MedFluo(i))
-                        MedZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == median(this.schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
+                        % Works for both even and odd # of z-slices
+                        [~, min_index] = min(abs(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) - median(this.schnitzcells(this.CurrentNucleus).Fluo(i,:))));
+                        MedZ(i) = min_index;
+                        % Only works for odd # of z-slices:
+%                         MedZ(i) = find(this.schnitzcells(this.CurrentNucleus).Fluo(i,:) == median(this.schnitzcells(this.CurrentNucleus).Fluo(i,:)), 1);
                     else
                         MedFluo(i) = 0;
                         MedZ(i) = 1;
