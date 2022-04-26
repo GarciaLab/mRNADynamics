@@ -570,12 +570,12 @@ CompiledParticles = addCycle(CompiledParticles, ncFrames);
 
 %Compile the nuclear fluorescence information if we have the appropriate
 %experiment type and axis
-try
+% try
     if strcmpi(ExperimentType,'inputoutput')
         if ~ROI, CompileNuclearProtein(Prefix);
         else, CompileNuclearProtein(Prefix,'ROI',ROI1,ROI2); end
     end
-catch, warning('Couldn''t run CompileNuclearProtein.'); end
+% catch, warning('Couldn''t run CompileNuclearProtein.'); end
 
 checkSchnitzcellsCompiledParticlesConsistency(schnitzcells, CompiledParticles)
 
