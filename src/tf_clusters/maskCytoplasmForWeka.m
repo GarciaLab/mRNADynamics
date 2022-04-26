@@ -55,6 +55,8 @@ function maskCytoplasmForWeka(Prefix, varargin)
 radiusScale = 1.3;
 channelsToMask = [];
 maskNormIm = false;
+gauss_smooth = true;
+sigma = 1;
 % Determine if user set non-default options
 determineMaskCytoplasmOptions;
 
@@ -109,6 +111,10 @@ for channel = channelsToMask
         %Get the raw image
         currImPath = [rawImDir{1,channel}(currFrame).folder, filesep, rawImDir{1,channel}(currFrame).name];
         imStack = loadTiffStack(currImPath); %this is the xDim x yDim x zDim image matrix
+        
+        if gauss_smooth
+            imStack = imgaussfilt3(imStack, sigma);
+        end
 
         % Make the cytoplasmic mask using the max-projected His stack
         ellipseFrame = Ellipses{currFrame};
