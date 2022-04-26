@@ -1,4 +1,4 @@
-function normalizeForBleaching(Prefix)
+function normalizeForBleaching(Prefix, channel)
 %
 % DESCRIPTION
 % This function takes all the 3D (xyz) TIFF frames from a single movie and 
@@ -30,12 +30,13 @@ function normalizeForBleaching(Prefix)
 % Last Updated: N/A
 %
 
-channel = 1;
+% channel = 1;
 % Get needed info for this experiment
 liveExperiment = LiveExperiment(Prefix);
 preProcFolder = liveExperiment.preFolder;
 
-rawImDir{channel} = dir([preProcFolder '*ch01.tif']);
+ch = num2str(channel);
+rawImDir{channel} = dir([preProcFolder '*ch0', ch, '.tif']);
 normImWritePath = [preProcFolder 'normalizedImages\'];
 mkdir(normImWritePath);
 

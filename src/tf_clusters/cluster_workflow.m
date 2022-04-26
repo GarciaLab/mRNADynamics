@@ -21,7 +21,7 @@ TrackNuclei(Prefix, 'noTrack')
 
 % (4) Correct for bleaching so you can use the same Weka classifier for the
 %     whole movie (instead of making a new classifier for each time frame)
-normalizeForBleaching(Prefix)
+normalizeForBleaching(Prefix, channel)
 
 % (5) Mask out the cytoplasm so Weka only segments clusters that are inside
 %     the nuclei
