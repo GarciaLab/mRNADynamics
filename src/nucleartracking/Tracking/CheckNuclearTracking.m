@@ -328,9 +328,10 @@ cntState.updateTraceInfo();
 blankImage = []; % dummy, to enable calling CTPState for this later  
 
 cntState.processImageMatrices(movieMat);
-    
-[cntState.schnitzcells, cntState.CurrentNucleus] =...
-    orderNuclei(cntState.numNuclei, cntState.schnitzcells, cntState.CurrentNucleus, cntState.ReorderOrientation);
+
+%MT 2022-04-28: This doesn't acknowledge the 'sortByLength' option
+% [cntState.schnitzcells, cntState.CurrentNucleus] =...
+%     orderNuclei(cntState.numNuclei, cntState.schnitzcells, cntState.CurrentNucleus, cntState.ReorderOrientation);
         %% 
     
 
