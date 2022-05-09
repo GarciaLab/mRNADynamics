@@ -86,7 +86,7 @@ if exist([DropboxFolder,filesep,Prefix,filesep,'Particles.mat'], 'file')
     for ChN=1:NChannels
         for i=1:length(Particles{ChN})
             for j=1:length(Particles{ChN}(i).Frame)
-                [x,y,z]=SpotsXYZ(Spots{ChN}(Particles{ChN}(i).Frame(j)));
+                [x,y,z]=getSpotsXYZ(Spots{ChN}(Particles{ChN}(i).Frame(j)));
                 if ~isempty(x)
                     Particles{ChN}(i).xPos(j)=x(Particles{ChN}(i).Index(j));
                     Particles{ChN}(i).yPos(j)=y(Particles{ChN}(i).Index(j));

@@ -5,7 +5,7 @@ function [ParticleOutput,IndexOutput]=...
 
 
 %Find the closest particle and its index
-[x,y]=SpotsXYZ(Spots(CurrentFrame));
+[x,y]=getSpotsXYZ(Spots(CurrentFrame));
 Distances=sqrt((x-ConnectPosition(1)).^2+(y-ConnectPosition(2)).^2);
 [~,IndexOutput]=min(Distances);
 

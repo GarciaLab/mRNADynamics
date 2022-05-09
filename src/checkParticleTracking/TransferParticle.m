@@ -8,7 +8,7 @@ SpotFilter(CurrentFrame,IndexOutput)=1;
  %Particles that are detected in the first place. %AR 8/16/2018- reinstated
  %this because it was causing bugs. 
 % %Get the position of the this particle
-[x,y,z]=SpotsXYZ(Spots(CurrentFrame));
+[x,y,z]=getSpotsXYZ(Spots(CurrentFrame));
 x=x(IndexOutput);
 y=y(IndexOutput);
 z=z(IndexOutput);

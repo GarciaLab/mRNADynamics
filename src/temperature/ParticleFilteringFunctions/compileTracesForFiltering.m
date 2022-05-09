@@ -513,8 +513,8 @@ for ChN=1:NChannels
                     for j=1:NFrames
                         subplot(TotalRows,NCols,(TotalRows-NRows)*NCols+j)
                         spotFrame = CompiledParticles{ChN}(k).Frame(j);
-                        [x,y,z]=SpotsXYZ(Spots{ChN}(spotFrame));
-                        %                             [x,y,z]=SpotsXYZ(Spots{ChN}(spotFrame), true);
+                        [x,y,z]=getSpotsXYZ(Spots{ChN}(spotFrame));
+                        %                             [x,y,z]=getSpotsXYZ(Spots{ChN}(spotFrame), true);
                         if ~isempty(x)
                             if threeDFlag
                                 xTrace = round(CompiledParticles{ChN}(k).xPosGauss3D(j));

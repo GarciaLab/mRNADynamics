@@ -178,7 +178,7 @@ for currentParticle = particlesToDoubleCheck
         
         % Finding the position in the previous frame
         previousFrame = currentFrame - 1;
-        [x,y,~]=SpotsXYZ(Spots{currentChannel}(previousFrame)); % Looking at the previous frame
+        [x,y,~]=getSpotsXYZ(Spots{currentChannel}(previousFrame)); % Looking at the previous frame
         currentParticleIndex=...
             Particles{currentChannel}(currentParticle).Index(currentFrames==previousFrame);
         previousPositionOfParticle = [x(currentParticleIndex) y(currentParticleIndex)];

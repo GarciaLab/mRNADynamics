@@ -8,7 +8,7 @@ function Particles = addPositionsToParticles(Particles, Spots, currentChannel)
     end
     for particle=1:length(Particles{currentChannel})
         for frame=1:length(Particles{currentChannel}(particle).Frame)
-            [x,y,z]=SpotsXYZ(Spots{currentChannel}(Particles{currentChannel}(particle).Frame(frame)));
+            [x,y,z]=getSpotsXYZ(Spots{currentChannel}(Particles{currentChannel}(particle).Frame(frame)));
             if ~isempty(x)
                 Particles{currentChannel}(particle).xPos(frame)=...
                     x(Particles{currentChannel}(particle).Index(frame));

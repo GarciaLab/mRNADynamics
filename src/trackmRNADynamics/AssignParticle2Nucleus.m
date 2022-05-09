@@ -13,7 +13,7 @@ function [Particles,SpotFilter]=AssignParticle2Nucleus(...
 
 %From here on, "New" means "CurrentFrame" for both the nuclei and
 %particles.
-[NewSpotsX,NewSpotsY,NewSpotsZ]=SpotsXYZ(Spots(CurrentFrame));
+[NewSpotsX,NewSpotsY,NewSpotsZ]=getSpotsXYZ(Spots(CurrentFrame));
 
 if ~isempty(NewSpotsX)
     
@@ -148,8 +148,8 @@ if ~isempty(NewSpotsX)
             PreviousParticlesX=[];
             PreviousParticlesY=[];
             for j=1:length(ParticleToAssign)
-                [PreviousSpotsX,PreviousSpotsY]=...
-                    SpotsXYZ(Spots(Particles(ParticleToAssign(j)).Frame(end)));
+                [PreviousSpotsX,PreviousSpotsY,~]=...
+                    getSpotsXYZ(Spots(Particles(ParticleToAssign(j)).Frame(end)));
                 PreviousParticlesX(j)=...
                     PreviousSpotsX(Particles(ParticleToAssign(j)).Index(end));
                 PreviousParticlesY(j)=...

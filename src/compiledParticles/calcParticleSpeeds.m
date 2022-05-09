@@ -41,7 +41,7 @@ function calcParticleSpeeds(NChannels, Particles, ...
                         Particles{currentChannel}(currentParticle).Index(frameCounter);
 
                     % getting x and y positions of the brightest z slice
-                    [x,y,z]=SpotsXYZ(Spots{currentChannel}(currentFrame));
+                    [x,y,z]=getSpotsXYZ(Spots{currentChannel}(currentFrame));
 
                     % storing x, y, and z positions in pixels relative to the image
                     % frame

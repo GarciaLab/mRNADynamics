@@ -1,4 +1,4 @@
-function [x,y,z]=SpotsXYZ(Spots, varargin)
+function [x,y,z]=getSpotsXYZ(Spots, varargin)
 
 useGauss3DCentroid = false;
 if ~isempty(varargin)

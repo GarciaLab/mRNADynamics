@@ -45,7 +45,7 @@ function keyInputHandler = ParticleChangeEventHandler(cptState)
                 cptState.CurrentFrame, cptState.CurrentChannelIndex, cptState.UseHistoneOverlay, cptState.schnitzcells)
 
         elseif cc == 'u'
-            [x2, ~, ~] = SpotsXYZ(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame));
+            [x2, ~, ~] = getSpotsXYZ(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame));
             
             if ~isempty(x2)
                 ClickedSpot = ginput(1);

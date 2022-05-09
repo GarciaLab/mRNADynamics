@@ -82,7 +82,7 @@ for Channel = 1:nCh
     end
       
     for n = 1:nFrames
-        [spotsX, spotsY, ~] = SpotsXYZ(Spots{Channel}(n));
+        [spotsX, spotsY, ~] = getSpotsXYZ(Spots{Channel}(n));
         
         rawDetectionFig = figure('Position',[0 0 1024 1024]);
         imshow(zMaxProjArray{1}(:,:,n),[])

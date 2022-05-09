@@ -394,7 +394,7 @@ while (currentCharacter ~= 'x')
     currentNC = inds(end);
     
     %Get the coordinates of all the spots in this frame
-    [x, y, z] = SpotsXYZ(cptState.getCurrentFrameSpots());
+    [x, y, z] = getSpotsXYZ(cptState.getCurrentFrameSpots());
     
     %If the approved field does not exist create it
     if ~isfield(cptState.Particles{cptState.CurrentChannelIndex}, 'Approved')

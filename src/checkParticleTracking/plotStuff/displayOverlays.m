@@ -15,7 +15,7 @@ else
 end
 
 % Get the coordinates of all the spots in this frame
-[x,y,z] = SpotsXYZ(cptState.getCurrentFrameSpots());
+[x,y,z] = getSpotsXYZ(cptState.getCurrentFrameSpots());
 % Pull out the right particle if it exists in this frame
 CurrentParticleIndex = cptState.getCurrentParticleIndex();
 xTrace = x(CurrentParticleIndex);
@@ -145,7 +145,7 @@ end
 %Show the particles that were under threshold 2.
 if ShowThreshold2
     %Get the positions of all the spots in this frame
-    [x2,y2]=SpotsXYZ(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame));
+    [x2,y2,~]=getSpotsXYZ(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame));
     %Filter those that were under threshold 2.
     CurrentSpotFilter=...
         ~logical(cptState.SpotFilter{cptState.CurrentChannelIndex}(cptState.CurrentFrame,~isnan(cptState.SpotFilter{cptState.CurrentChannelIndex}(cptState.CurrentFrame,:))));
@@ -164,8 +164,8 @@ if cptState.ZoomMode
         MinIndex=MinIndex(1);
     end
     currentChannelSpots = cptState.getCurrentChannelSpots();
-    [cptState.xForZoom,cptState.yForZoom]=...
-        SpotsXYZ(currentChannelSpots(cptState.getCurrentParticle().Frame(MinIndex)));
+    [cptState.xForZoom,cptState.yForZoom,~]=...
+        getSpotsXYZ(currentChannelSpots(cptState.getCurrentParticle().Frame(MinIndex)));
 
     cptState.xForZoom = cptState.xForZoom(cptState.getCurrentParticle().Index(MinIndex));
     cptState.yForZoom = cptState.yForZoom(cptState.getCurrentParticle().Index(MinIndex));

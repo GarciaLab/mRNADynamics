@@ -18,7 +18,7 @@ function PlotParticleTrace(cptState, plotTraceSettings, noSpline)
         CurrentFrame = Frames(i);
 
         %Get the coordinates taking the margins into account
-        [x,y,z] = SpotsXYZ(Spots(CurrentFrame));
+        [x,y,z] = getSpotsXYZ(Spots(CurrentFrame));
         
         %Pull out the right particle if it exists in this frame
         CurrentParticleIndex = Particles(CurrentParticle).Index(Particles(CurrentParticle).Frame == CurrentFrame);

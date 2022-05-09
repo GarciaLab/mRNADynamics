@@ -1,7 +1,7 @@
 function x = displayParticlesFigure(app, particlesAxes, ParticlesFig, Spots, Channel, CurrentFrame, CurrentFrameFilter, PreProcPath, Prefix, SpotsChannel, FrameInfo, displayFigures)
 
 % Get the positions of the spots in this frame
-[x, y, ~] = SpotsXYZ(Spots{Channel}(CurrentFrame));
+[x, y, ~] = getSpotsXYZ(Spots{Channel}(CurrentFrame));
 
 if displayFigures
     % Z plane to be displayed. We use the median of all particles found

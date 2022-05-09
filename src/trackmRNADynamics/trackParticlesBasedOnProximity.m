@@ -19,7 +19,7 @@ function [Particles] = trackParticlesBasedOnProximity(...
     ApprovedSpots = find(SpotFilter{Channel}(CurrentFrame, ~isnan(SpotFilter{Channel}(CurrentFrame, :))));
 
     % Get the positions of ALL spots (approved and disapproved)
-    [NewSpotsX, NewSpotsY] = SpotsXYZ(Spots{Channel}(CurrentFrame));
+    [NewSpotsX, NewSpotsY,~] = getSpotsXYZ(Spots{Channel}(CurrentFrame));
 
     if isempty(Particles{Channel})
       %Initialize the Particles structure if it doesn't exist yet
@@ -38,7 +38,7 @@ function [Particles] = trackParticlesBasedOnProximity(...
       PreviousFrameParticles = [];
       xPreviousFrameParticles = [];
       yPreviousFrameParticles = [];
-      [PreviousSpotsX, PreviousSpotsY] = SpotsXYZ(Spots{Channel}(CurrentFrame - 1));
+      [PreviousSpotsX, PreviousSpotsY, ~] = getSpotsXYZ(Spots{Channel}(CurrentFrame - 1));
 
       for j = 1:length(Particles{Channel})
 

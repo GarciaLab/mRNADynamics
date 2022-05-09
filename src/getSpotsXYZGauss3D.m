@@ -1,4 +1,4 @@
-function [x,y,z]=SpotsXYZGauss3D(Spots)
+function [x,y,z]=getSpotsXYZGauss3D(Spots)
 
 %Return the X and Y coordinate of the brightest Z of each spot in the
 %Spots structure
