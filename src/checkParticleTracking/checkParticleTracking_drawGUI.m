@@ -8,8 +8,10 @@ function [OverlayFig, overlayAxes, snippetFigAxes, rawDataAxes,...
 % This script is for W
 
 OverlayFig = figure;
-traceFig = figure;
+traceFig = figure('Name', 'Particle Traces');
 multiFig = [];
+zFig = [];
+snipFig = [];
 HisOverlayFig = [];
 HisOverlayFigAxes = [];
 traceFigAxes = [];
@@ -20,7 +22,7 @@ gaussianAxes = [];
 
 
 if UseHistoneOverlay
-    HisOverlayFig = figure;
+    HisOverlayFig = figure('Name', 'Histone Overlay');
     HisOverlayFigAxes = axes(HisOverlayFig);
 end
 
@@ -59,7 +61,7 @@ if ~fish
     end
 end
 
-zFig = figure;
+zFig = figure('Name','Z Profile');
 if ~fish
     zProfileFigAxes = subplot(1, 2, 1, 'Parent', zFig);
     zTraceAxes = subplot(1, 2, 2, 'Parent', zFig);
@@ -72,7 +74,7 @@ else
     zProfileFigAxes = axes(zFig);
 end
 
-snipFig = figure();
+snipFig = figure('Name','Spot Snippet');
 % snippetFigAxes = subplot(1, 3, 1, 'Parent', snipFig);
 snippetFigAxes = axes(snipFig);
 %   rawDataAxes = subplot(1, 3, 2, 'Parent', snipFig);
@@ -110,7 +112,7 @@ end
 
 if multiView
     
-    multiFig = figure('units', 'normalized', 'Position', [.6,.08, .8*overlayDim(2), overlayDim(2)]);
+    multiFig = figure('Name','Multi-View','units', 'normalized', 'Position', [.6,.08, .8*overlayDim(2), overlayDim(2)]);
 end
 
 end
