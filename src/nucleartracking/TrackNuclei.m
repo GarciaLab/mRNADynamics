@@ -22,7 +22,7 @@ function TrackNuclei(Prefix,varargin)
 % in the same image
 %
 % OUTPUT.
-% '*_lin.mat' : Nuclei with lineages
+% '*_lin.mat' : Nuclei with lineages, saved as struct named "schnitzcells"
 % 'Ellipses.mat' : Just nuclei
 %
 % Author (contact): Hernan Garcia (hggarcia@berkeley.edu)
