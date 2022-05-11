@@ -36,11 +36,9 @@ liveExperiment = LiveExperiment(prefix);
 preProcFolder = liveExperiment.preFolder;
 dropboxFolder = liveExperiment.userResultsFolder;
 outputFolder = [dropboxFolder, filesep, prefix];
-experimentType = liveExperiment.experimentType;
 
-[FrameInfo, PixelSize_um] = loadFrameInfo(outputFolder, preProcFolder, prefix);
-pixelSize = PixelSize_um;
-pixelZSize = FrameInfo(1).ZStep; % grab 1st frame, as they're all the same
+pixelSize = liveExperiment.pixelSize_um;
+pixelZSize = liveExperiment.zStep_um;
 
 anaphaseFrames = liveExperiment.anaphaseFrames';
 nc14 = anaphaseFrames(6);
