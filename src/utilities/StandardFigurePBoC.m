@@ -97,14 +97,29 @@ set(AxisHandle,...
     'XColor','w','YColor','w','ZColor','w',...
     'TickLength',[0.02,0.05])
 
+% MT 2022-05-12: Change the tick labels to black (but still keeps the tick
+% marks white as specified above!). See TickLabelInterpreter property in 
+% Axes Properties for details.
+for i = 1:numel(AxisHandle.XTickLabel)
+    AxisHandle.XTickLabel{i} = ['\color{black}' AxisHandle.XTickLabel{i}];
+end
+
+for i = 1:numel(AxisHandle.YTickLabel)
+    AxisHandle.YTickLabel{i} = ['\color{black}' AxisHandle.YTickLabel{i}];
+end
+
+for i = 1:numel(AxisHandle.ZTickLabel)
+    AxisHandle.ZTickLabel{i} = ['\color{black}' AxisHandle.ZTickLabel{i}];
+end
+
 %Added this so that the log tick marks wouldn't go away.
 set(gca,'XTickMode','manual')
 set(gca,'YTickMode','manual')
 
 
-set(get(AxisHandle,'XLabel'),'FontSize',15,'FontName','Lucida Sans')
-set(get(AxisHandle,'YLabel'),'FontSize',15,'FontName','Lucida Sans')
-set(get(AxisHandle,'ZLabel'),'FontSize',15,'FontName','Lucida Sans')
+set(get(AxisHandle,'XLabel'),'FontSize',15,'FontName','Lucida Sans','Color','k')
+set(get(AxisHandle,'YLabel'),'FontSize',15,'FontName','Lucida Sans','Color','k')
+set(get(AxisHandle,'ZLabel'),'FontSize',15,'FontName','Lucida Sans','Color','k')
 set(AxisHandle,'FontSize',15,'FontName','Lucida Sans')
 
 box on
