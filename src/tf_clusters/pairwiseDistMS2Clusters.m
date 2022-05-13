@@ -1,4 +1,4 @@
-function ms2ClusterDistances = pairwiseDistMS2Clusters(Prefix)
+function ms2ClusterDistances = pairwiseDistMS2Clusters(prefix, varargin)
 %
 % DESCRIPTION
 % This function takes segmented MS2 spots and TF clusters (using the
@@ -6,13 +6,15 @@ function ms2ClusterDistances = pairwiseDistMS2Clusters(Prefix)
 % MS2 spot in a nucleus and all clusters detected in the same nucleus.
 %
 % Note: This function currently only works for 1spot data
+% Note: This function defaults to only processing nc14, unless otherwise
+%       specified by the input options
 %
 %
 % INPUT ARGUMENTS
 % Prefix: prefix for this experiment
 % 
 % OPTIONS
-% N/A
+% 'nc', #: 
 %
 % OUTPUT
 % ms2ClusterDistances: A structure containing the pairwise distances  
@@ -26,144 +28,142 @@ function ms2ClusterDistances = pairwiseDistMS2Clusters(Prefix)
 %
 %
 % Author (contact): Meghan Turner (meghan_turner@berkeley.edu)
-% Created: 08/12/2020
-% Last Updated: 11/08/2021
+% Created: 2020/08/12
+% Last Updated: 2022/05/11
 %
 
-liveExperiment = LiveExperiment(Prefix);
+%% Parse input arguments
+liveExperiment = LiveExperiment(prefix);
 
-nCh = numel(liveExperiment.spotChannels);
-channels = liveExperiment.Channels;
-channelNames = cell(1,nCh);
-
-xDim = liveExperiment.xDim;
-yDim = liveExperiment.yDim;
-zDim = liveExperiment.zDim;
-nFrames = liveExperiment.nFrames;
-
-Spots = getSpots(liveExperiment);
-if ~iscell(Spots)% NL: added for backwards compatibility
-  Spots = {Spots};
+ncToAnalyze = 14;
+for i = 1:length(varargin)
+    if strcmpi(varargin{i}, 'nc')
+        ncToAnalyze = varargin{i+1};
+    end
 end
 
+% Set nc start time
+anaphaseFrames = liveExperiment.anaphaseFrames';
+nc13 = anaphaseFrames(5);
+nc14 = anaphaseFrames(6);
+
+if ncToAnalyze==13
+    ncStart = nc13;
+else
+    ncStart = nc14;
+end
+    
+
+%% Get info from LiveExperiment
+nFrames = liveExperiment.nFrames;
+% pixel sizes in um for accurate distance calculations
+pixelSize = liveExperiment.pixelSize_um;
+pixelZSize = liveExperiment.zStep_um;
+
+% channel info
+inputChannels = liveExperiment.inputChannels;
+spotChannels = liveExperiment.spotChannels;
+
+clusterChannel = intersect(inputChannels, spotChannels);
+nClusterCh = length(clusterChannel);
+
+ms2Channel = setxor(inputChannels, spotChannels);
+nMs2Ch = length(ms2Channel);
+% enforce 1 cluster + 1 MS2 channel
+if nClusterCh~=1
+    error('More than one input+spots (cluster) channel detected. This function is currently limited to processing one cluster input channel.')
+elseif nMs2Ch~=1
+    error('More than one MS2 spot channel detected. This function is currently limited to processing one transcriptional output channel.')
+end
+
+% I/O
 dropboxFolder = liveExperiment.userResultsFolder;
-resultsFolder = liveExperiment.resultsFolder;
-writeFolder = [resultsFolder filesep 'clusterAnalysis'];
+resultsFolder = [dropboxFolder, filesep, prefix];
+writeFolder = [resultsFolder filesep 'cluster_analysis'];
 if ~exist(writeFolder,'dir')
     mkdir(writeFolder)
 end
-preProcFolder = liveExperiment.preFolder;
-trackFigFolder = [dropboxFolder filesep Prefix '\TrackingFigures\'];
-ParticlesFull = getParticlesFull(liveExperiment);
 
-MS2FullParticles = ParticlesFull.FullParticles{1,2};
-TFRawParticles = ParticlesFull.RawParticles{1,1};
+%% Load cluster & particle data
+Clusters = loadClusters(resultsFolder);
 
-%% For all the nuclei that have final, full MS2 traces, get the xyz position
-% info for all raw detections of TF clusters across all time points
-nucleiWithMS2Spots = [MS2FullParticles.Nucleus];
-clusterNuclei = [TFRawParticles.Nucleus];
-numNuclei = numel(nucleiWithMS2Spots);
+[Particles, ~] = getParticles(liveExperiment);
+Particles = Particles{1,ms2Channel};
 
-% pre-allocate space in the structures
-nucleiWithClusters(numNuclei).nucleusID = [];
-nucleiWithClusters(numNuclei).frame = [];
-nucleiWithClusters(numNuclei).xPos = [];
-nucleiWithClusters(numNuclei).yPos = [];
-nucleiWithClusters(numNuclei).zPos = [];
-clustersByNucleus(numNuclei).nucleusID = [];
-ms2ByNucleus(numNuclei).nucleusID = [];
+%% For all the nuclei that have reasonable MS2 traces, get the xyz position
 
-% Loop over all nuclei with MS2 spots
-for n = 1:numNuclei
-    currNucleus = nucleiWithMS2Spots(n);
-    nucleiWithClusters(n).nucleusID = currNucleus;
-    clustersByNucleus(n).nucleusID = currNucleus;
-    ms2ByNucleus(n).nucleusID = currNucleus;
+% % Do some automated QC on MS2 traces
+% % minTraceLen = ceil((nFrames - ncStart)/2);
+% minTraceLen = 5;
+% Particles = filterParticlesForClusterAnalysis(Particles, ncStart, minTraceLen);
+
+% Get only nuclei that have both an MS2 trace & clusters detected
+nucleiWithMS2 = [Particles.Nucleus];
+if length(nucleiWithMS2)~= length(unique(nucleiWithMS2))
+    error('Non-unique nuclei in the MS2 Particles structure - this function is not designed to handle this scenario.')
+end
+nucleiWithClusters = [Clusters.Nucleus];
+nucleiWithBoth = intersect(nucleiWithMS2, nucleiWithClusters);
+numNucleiWithBoth = numel(nucleiWithBoth);
+
+% Loop over all nuclei with both MS2 spots & TF clusters
+ms2ClusterDistances(numNucleiWithBoth).nucleusID = [];  %pre-allocated for speed
+for n = 1:numNucleiWithBoth
+    currNucID = nucleiWithBoth(n);
+    ms2ClusterDistances(n).nucleusID = currNucID;
+    currClusters = Clusters(find(nucleiWithClusters == currNucID)); %#ok<FNDSB>
+    currParticle = Particles(find(nucleiWithMS2 == currNucID)); %#ok<FNDSB>
     
-    % Find the clusters in this nucleus
-    clusterNucleiIndices = find(clusterNuclei == currNucleus);
-    
-    % Get the frame, xpos, ypos, and zpos of each cluster in this nucleus
-    for i = 1:numel(clusterNucleiIndices)
-        currIndex = clusterNucleiIndices(i);
+    % Go through each frame
+    for f = 1:nFrames
+        ms2ClusterDistances(n).frames(f).frameID = f;
+        % initializing all fields in case there are no clusters/MS2 spots
+        % in this frame
+        ms2ClusterDistances(n).frames(f).xyzCoordClusters = [];
+        ms2ClusterDistances(n).frames(f).xyzCoordMS2 = [];
+        ms2ClusterDistances(n).frames(f).ms2ClusterDist = [];
+        xyzPosMS2 = [];
+        xyzPosClusters = [];
         
-        currFrames = TFRawParticles(currIndex).Frame;
-        currXPos = TFRawParticles(currIndex).xPos;
-        currYPos = TFRawParticles(currIndex).yPos;
-        currZPos = TFRawParticles(currIndex).zPos;
+        %% Figure out whether this nucleus has both an MS2 spot and 
+        % cluster(s) in this frame (less likely to have an MS2 spot)
+        clusterFrameIndex = find(currClusters.Frames == f);
+        ms2FrameIndex = find(currParticle.Frame == f);
         
-        nucleiWithClusters(n).frame = [nucleiWithClusters(n).frame, currFrames];
-        nucleiWithClusters(n).xPos = [nucleiWithClusters(n).xPos, currXPos];
-        nucleiWithClusters(n).yPos = [nucleiWithClusters(n).yPos, currYPos];
-        nucleiWithClusters(n).zPos = [nucleiWithClusters(n).zPos, currZPos];
-    end
-    
-    % Now, sort the xyz positions by frame so that we can compare to the
-    % corresponding MS2 spot
-    clustersByNucleus(n).frames(nFrames).xyzCoord = [];  %initialize to correct size
-    for t = 1:nFrames
-        % Figure out whether this nucleus has clusters in this frame
-        frameIndices = find(nucleiWithClusters(n).frame == t);
-        if ~isempty(frameIndices)
-            % Get all the xyz positions for the clusters in this frame
-            xyzPos = nan(numel(frameIndices),3);
-            for f = 1:numel(frameIndices)
-                currIndex = frameIndices(f);
-                % putting the xyz coords in a structure that will be easy 
-                % to pass directly to pdist2 later on in this script
-                xyzPos(f,1) = nucleiWithClusters(n).xPos(currIndex);
-                xyzPos(f,2) = nucleiWithClusters(n).yPos(currIndex);
-                xyzPos(f,3) = nucleiWithClusters(n).zPos(currIndex);
-            end
+        if ~isempty(ms2FrameIndex) && ~isempty(clusterFrameIndex)
+            %% Get all the xyz positions for the clusters and MS2 spot in 
+            % this frame
+            % putting the xyz coords in a structure that will be easy 
+            % to pass directly to pdist2 later on in this script
+            xyzPosMS2 = [currParticle.xPos(ms2FrameIndex)*pixelSize,...
+                         currParticle.yPos(ms2FrameIndex)*pixelSize,...
+                         currParticle.zPos(ms2FrameIndex)*pixelZSize];
+            xyzPosClusters(:,1) = currClusters.xPos{1,clusterFrameIndex}*pixelSize;
+            xyzPosClusters(:,2) = currClusters.yPos{1,clusterFrameIndex}*pixelSize;
+            xyzPosClusters(:,3) = currClusters.zPos{1,clusterFrameIndex}*pixelZSize;
             
             % Remove duplicate spot detections to minimize redundancy
             % (not sure why these aren't getting filtered out in
             % segmentSpots ... MT: TODO)
-            uniqueXYZPos = unique(xyzPos,'stable','rows');
+            uniqueXYZPosClusters = unique(xyzPosClusters,'stable','rows');
             
             % Store the coordinates by nucleus, frame
-            clustersByNucleus(n).frames(t).xyzCoord = uniqueXYZPos;
-        end
-    end
-    
-    % Get the MS2 spot coordinates into a similarly useable structure
-    ms2ByNucleus(n).frames(nFrames).xyzCoord = []; %initialize to correct size
-    currMS2Frames = MS2FullParticles(n).Frame;
-    for j = 1:numel(currMS2Frames)
-        currIndex = currMS2Frames(j);
-        
-        % putting the xyz coords in a structure that will be easy 
-        % to pass directly to pdist2 later on in this script
-        ms2Pos(1,1) = MS2FullParticles(n).xPos(j);
-        ms2Pos(1,2) = MS2FullParticles(n).yPos(j);
-        ms2Pos(1,3) = MS2FullParticles(n).zPos(j);
-        ms2ByNucleus(n).frames(currIndex).xyzCoord = ms2Pos;
-    end
-end
+            ms2ClusterDistances(n).frames(f).xyzCoordClusters = uniqueXYZPosClusters;
+            ms2ClusterDistances(n).frames(f).xyzCoordMS2 = xyzPosMS2;
 
+            ms2Coord = xyzPosMS2;
+            clusterCoords = uniqueXYZPosClusters;
 
-%% Calculate distances between the MS2 spot and all clusters in each frame 
-% and each nucleus
-ms2ClusterDistances(numNuclei).nucleusID = [];  %pre-allocated for speed
-for n = 1:numNuclei
-    currNucleus = nucleiWithMS2Spots(n);
-    ms2ClusterDistances(n).nucleusID = currNucleus;
-    
-    for f = 1:nFrames
-        ms2ClusterDistances(n).frames(f).frameID = f;
-
-        ms2Coord = ms2ByNucleus(n).frames(f).xyzCoord;
-        clusterCoords = clustersByNucleus(n).frames(f).xyzCoord;
-        
-        % Pairwise distances
-        if ~isempty(ms2Coord) && ~isempty(clusterCoords)
-            ms2ClusterDist = pdist2(ms2Coord, clusterCoords);
-            ms2ClusterDistances(n).frames(f).ms2ClusterDist = ms2ClusterDist;
-        else
-            ms2ClusterDistances(n).frames(f).ms2ClusterDist = [];   % make sure it exists even if there's nothing there
+            %% Calculate Pairwise distances
+            if ~isempty(ms2Coord) && ~isempty(clusterCoords)
+                ms2ClusterDist = pdist2(ms2Coord, clusterCoords);
+                ms2ClusterDistances(n).frames(f).ms2ClusterDist = ms2ClusterDist;
+            else
+                ms2ClusterDistances(n).frames(f).ms2ClusterDist = [];   % make sure it exists even if there's nothing there
+            end
         end
     end
 end
 
+%% Save
 save([writeFolder filesep 'ms2ClusterDistances.mat'],'ms2ClusterDistances');
