@@ -1,7 +1,7 @@
 function Clusters = sortSpotsByNuclei(prefix)
 %
 % DESCRIPTION
-% This function assigns all spots detected in an input"channel (i.e. TF 
+% This function assigns all spots detected in an input channel (i.e. TF 
 % clusters) to the closest nucleus lineage. It does NOT do any tracking of
 % the clusters. It requires that nuclear segmentation and tracking be
 % complete, but does not rely on any particle tracking code.

@@ -90,14 +90,18 @@ Clusters = loadClusters(resultsFolder);
 [Particles, ~] = getParticles(liveExperiment);
 Particles = Particles{1,ms2Channel};
 
-%% For all the nuclei that have reasonable MS2 traces, get the xyz position
 
-% % Do some automated QC on MS2 traces
-% % minTraceLen = ceil((nFrames - ncStart)/2);
-% minTraceLen = 5;
-% Particles = filterParticlesForClusterAnalysis(Particles, ncStart, minTraceLen);
+%% Quality control
+% QC for MS2 traces
+% minTraceLen = ceil((nFrames - ncStart)/2);
+minTraceLen = 15; % 3 min
+Particles = filterParticlesForClusterAnalysis(Particles, ncStart, minTraceLen);
 
-% Get only nuclei that have both an MS2 trace & clusters detected
+% QC for nuclear traces
+[~, schnitzcells] = loadNucleiSegmentationAndLineages(outputFolder, prefix);
+Clusters =  filterClustersForClusterAnalysis(Clusters, schnitzcells);
+
+%% Get only nuclei that have both an MS2 trace & clusters detected
 nucleiWithMS2 = [Particles.Nucleus];
 if length(nucleiWithMS2)~= length(unique(nucleiWithMS2))
     error('Non-unique nuclei in the MS2 Particles structure - this function is not designed to handle this scenario.')
@@ -106,7 +110,7 @@ nucleiWithClusters = [Clusters.Nucleus];
 nucleiWithBoth = intersect(nucleiWithMS2, nucleiWithClusters);
 numNucleiWithBoth = numel(nucleiWithBoth);
 
-% Loop over all nuclei with both MS2 spots & TF clusters
+%% Loop over all nuclei with both MS2 spots & TF clusters
 ms2ClusterDistances(numNucleiWithBoth).nucleusID = [];  %pre-allocated for speed
 for n = 1:numNucleiWithBoth
     currNucID = nucleiWithBoth(n);
