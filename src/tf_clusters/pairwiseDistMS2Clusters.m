@@ -98,7 +98,7 @@ minTraceLen = 15; % 3 min
 Particles = filterParticlesForClusterAnalysis(Particles, ncStart, minTraceLen);
 
 % QC for nuclear traces
-[~, schnitzcells] = loadNucleiSegmentationAndLineages(outputFolder, prefix);
+[~, schnitzcells] = loadNucleiSegmentationAndLineages(resultsFolder, prefix);
 Clusters =  filterClustersForClusterAnalysis(Clusters, schnitzcells);
 
 %% Get only nuclei that have both an MS2 trace & clusters detected
@@ -139,12 +139,24 @@ for n = 1:numNucleiWithBoth
             % this frame
             % putting the xyz coords in a structure that will be easy 
             % to pass directly to pdist2 later on in this script
-            xyzPosMS2 = [currParticle.xPos(ms2FrameIndex)*pixelSize,...
-                         currParticle.yPos(ms2FrameIndex)*pixelSize,...
-                         currParticle.zPos(ms2FrameIndex)*pixelZSize];
-            xyzPosClusters(:,1) = currClusters.xPos{1,clusterFrameIndex}*pixelSize;
-            xyzPosClusters(:,2) = currClusters.yPos{1,clusterFrameIndex}*pixelSize;
-            xyzPosClusters(:,3) = currClusters.zPos{1,clusterFrameIndex}*pixelZSize;
+            
+            % This is the right way to do this, but it generates these
+            % falsely large bins because you get a pile-up every z-step
+%             xyzPosMS2 = [currParticle.xPos(ms2FrameIndex)*pixelSize,...
+%                          currParticle.yPos(ms2FrameIndex)*pixelSize,...
+%                          currParticle.zPos(ms2FrameIndex)*pixelZSize];
+%             xyzPosClusters(:,1) = currClusters.xPos{1,clusterFrameIndex}*pixelSize;
+%             xyzPosClusters(:,2) = currClusters.yPos{1,clusterFrameIndex}*pixelSize;
+%             xyzPosClusters(:,3) = currClusters.zPos{1,clusterFrameIndex}*pixelZSize;
+            
+            % This is the wrong way to do it, b/c assumes uniform xyz pixel
+            % size, when z is much larger than xy
+            xyzPosMS2 = [currParticle.xPos(ms2FrameIndex),...
+                         currParticle.yPos(ms2FrameIndex),...
+                         currParticle.zPos(ms2FrameIndex)];
+            xyzPosClusters(:,1) = currClusters.xPos{1,clusterFrameIndex};
+            xyzPosClusters(:,2) = currClusters.yPos{1,clusterFrameIndex};
+            xyzPosClusters(:,3) = currClusters.zPos{1,clusterFrameIndex};
             
             % Remove duplicate spot detections to minimize redundancy
             % (not sure why these aren't getting filtered out in
@@ -170,4 +182,4 @@ for n = 1:numNucleiWithBoth
 end
 
 %% Save
-save([writeFolder filesep 'ms2ClusterDistances.mat'],'ms2ClusterDistances');
+save([writeFolder filesep 'ms2ClusterDistances_px.mat'],'ms2ClusterDistances');
