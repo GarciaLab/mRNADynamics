@@ -103,7 +103,9 @@ if onlyApproved || onlyUnapproved
 elseif customApproved
     % Find the row in the DataStatus tab that contains the custom approval flag 
     approvalFlagRow = find(strcmpi(dataTypeTabContents(:,1),customApprovalFlag));
-    % Contents of the approval flag row much be int booleans (1s or 0s)
+    % Contents of the approval flag row much be int booleans (1s or 0s) and
+    % CANNOT be empty
+    % If you get an error on this line, fill in any empty columns with 0s
     approvalFlagLogicalArray = cell2mat(dataTypeTabContents(approvalFlagRow,2:end));
     
     approvedPrefixes = allPrefixes(find(approvalFlagLogicalArray));
