@@ -33,12 +33,12 @@ approvedSchnitz = ([schnitzcells.Approved] ~= 0);
 schnitzIDsToKeep = find(approvedSchnitz);
 
 %% Translate that over to filtering the Cluster structure
-[~, approvedNucleiIndices] = intersect(Clusters.Nucleus, schnitzIDsToKeep,'stable');
+[~, approvedNucleiIndices,~] = intersect([Clusters.Nucleus], schnitzIDsToKeep);
 ClusterNucleiToKeep = Clusters(approvedNucleiIndices);
 
 %% Check that we found at least one particle that meets QC criteria
 filteredClusters = ClusterNucleiToKeep;
 
-if isempty(filteredParticles)
+if isempty(filteredClusters)
     error('No particles met your filtering criteria. Please adjust inputs and try again.')
 end
