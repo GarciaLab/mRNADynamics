@@ -52,37 +52,53 @@ yDim = size(snip3D,2);
 zDim = size(snip3D,3);      
 
 % initialize upper and lower parameter bounds
+xyPosBound = 0.5;
+zPosBound = 0.5;
+bkgdFluorBound = mean(snip3D(:)/2); % MT: why are are defining it this way?
+
+maxPixIntensity = max(snip3D(:));
+spotAmpUpperBound = 4*maxPixIntensity;
+
 fitInfo.upperBoundVector = [...
-    4*max(snip3D(:)), ... % Spot 1 amplitude
-    sigmaXY_guess+sigmaXY_guess_se, sigmaZ_guess+sigmaZ_guess_se,... % Spot dimensions
-    yDim+.5, xDim+.5, zDim+.5,... % Spot 1 position
-    4*max(snip3D(:)),... % Spot 2 amplitude
-    yDim+.5, xDim+.5, zDim+.5,... % Spot 2 position
-    max(snip3D(:)), ...
-    mean(snip3D(:)/2)/yDim, mean(snip3D(:)/2)/xDim, mean(snip3D(:)/2)/zDim,...        
-    mean(snip3D(:)/2)/yDim, mean(snip3D(:)/2)/xDim, mean(snip3D(:)/2)/zDim]; % background fluorescence 
+    spotAmpUpperBound, ... % (1) Spot 1 amplitude
+    sigmaXY_guess+sigmaXY_guess_se, sigmaZ_guess+sigmaZ_guess_se,... % (2-3) Spot dimensions
+    yDim+xyPosBound, xDim+xyPosBound, zDim+zPosBound,... % (4-6) Spot 1 position
+    spotAmpUpperBound,... % (7) Spot 2 amplitude
+    yDim+xyPosBound, xDim+xyPosBound, zDim+zPosBound,... % (8-10) Spot 2 position
+    maxPixIntensity, ...
+    bkgdFluorBound/yDim, bkgdFluorBound/xDim, bkgdFluorBound/zDim,...        
+    bkgdFluorBound/yDim, bkgdFluorBound/xDim, bkgdFluorBound/zDim]; % (11-17) background fluorescence 
+
+minPixIntensity = 0; 
+spotAmpLowerBound = bkgdFluorBound;
 
 fitInfo.lowerBoundVector = [...
-    mean(snip3D(:)/2), ... % Spot 1 amplitude
-    sigmaXY_guess-sigmaXY_guess_se, sigmaZ_guess-sigmaZ_guess_se,... % Spot dimensions
-    .5, .5, .5,... % Spot 1 position
-    mean(snip3D(:)/2),... % Spot 2 amplitude
-    .5, .5, .5,... % Spot 2 position
-    0,...
-    -mean(snip3D(:)/2)/yDim, -mean(snip3D(:)/2)/xDim, -mean(snip3D(:)/2)/zDim,...
-    -mean(snip3D(:)/2)/yDim, -mean(snip3D(:)/2)/xDim, -mean(snip3D(:)/2)/zDim]; % background fluorescence    
+    spotAmpLowerBound, ... % (1) Spot 1 amplitude
+    sigmaXY_guess-sigmaXY_guess_se, sigmaZ_guess-sigmaZ_guess_se,... % (2-3) Spot dimensions
+    xyPosBound, xyPosBound, zPosBound,... % (4-6) Spot 1 position
+    spotAmpLowerBound,... % (7) Spot 2 amplitude
+    xyPosBound, xyPosBound, zPosBound,... % (8-10) Spot 2 position
+    minPixIntensity,...
+    -bkgdFluorBound/yDim, -bkgdFluorBound/xDim, -bkgdFluorBound/zDim,...
+    -bkgdFluorBound/yDim, -bkgdFluorBound/xDim, -bkgdFluorBound/zDim]; % (11-17) background fluorescence    
 
 
-% initialize parameters
+% Initialize Parameters
+% If we expect only 1 spot, initialize spot1 position in the center of the
+% snip, but if we expect 2 spots, initialize position offset from center
 fitInfo.initial_parameters =[...
-    max(snip3D(:)), ... % Spot 1 amplitude
-    sigmaXY_guess, sigmaZ_guess,... % Spot dimensions
-    yDim/2-sigmaXY_guess*fitInfo.twoSpotFlag,xDim/2-sigmaXY_guess*fitInfo.twoSpotFlag, zDim/2-sigmaZ_guess*fitInfo.twoSpotFlag,... % Spot 1 position
-    max(snip3D(:)),... % Spot 2 amplitude
-    yDim/2+sigmaXY_guess,xDim/2+sigmaXY_guess, zDim/2+sigmaZ_guess,... % Spot 2 position
-    mean(snip3D(:)/2),...
+    maxPixIntensity, ... % (1) Spot 1 amplitude
+    sigmaXY_guess, sigmaZ_guess,... % (2-3) Spot dimensions
+    (yDim/2 - sigmaXY_guess*fitInfo.twoSpotFlag),...
+    (xDim/2 - sigmaXY_guess*fitInfo.twoSpotFlag),...
+    (zDim/2 - sigmaZ_guess*fitInfo.twoSpotFlag),...% (4-6) Spot 1 position
+    maxPixIntensity,... % (7) Spot 2 amplitude
+    yDim/2+sigmaXY_guess, ...
+    xDim/2+sigmaXY_guess, ...
+    zDim/2+sigmaZ_guess,... % (8-10) Spot 2 position
+    bkgdFluorBound,...
     0,0,0,...
-    0,0,0]; % background fluorescence 
+    0,0,0]; % (11-17) background fluorescence 
 
 
 % define objective function
@@ -107,7 +123,8 @@ else
                                params(11)*mesh_y.^2 + params(12)*mesh_x.^2 + params(13)*mesh_z.^2;
 
     makeOffsetSnipSE = @(params)  params(7)^2 ;
-
+    
+    % exclude spot2 parameters if we're only fitting one spot
     include_vec = ~ismember(1:17,7:10); 
 end
 
