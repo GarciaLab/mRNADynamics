@@ -1,5 +1,18 @@
 function Spots = fit3DGaussiansToAllSpots(Prefix, varargin)
-%%
+%
+% DESCRIPTION
+%
+%
+% INPUT ARGUMENTS
+% Prefix:
+%
+%
+% OPTIONS
+%
+%
+% OUTPUT
+% Author (contact): Nicholas Lammers (nlammers@berkeley.edu)
+% Created: 2021-03-04
 
 cleanupObj = onCleanup(@myCleanupFun);
 
@@ -8,7 +21,6 @@ displayFigures = false;
 nWorkers = 8;
 keepPool = true;
 save_flag = true;
-% nSpots = 2;
 
 for i = 1:length(varargin)
     if strcmpi(varargin{i}, 'displayFigures')
@@ -43,7 +55,7 @@ movieMat = getMovieMat(liveExperiment);
 disp('Done')
 
 % create dircetory
-DataFolder=[liveExperiment.resultsFolder,filesep];
+DataFolder = [liveExperiment.resultsFolder,filesep];
 
 if ~segmentSpots
     Spots = getSpots(liveExperiment);
@@ -87,12 +99,11 @@ for ch = liveExperiment.spotChannels
     p = 1;
     
     % iterate through all spots  
-    spotDims = []; % NL: Deprecated field to be removed in future
     if ~isempty(movieMatCh)
         parfor frame = 1:numFrames %frames                
             imStack = movieMatCh(:, :, :, frame);
             
-            SpotsCh(frame) = spotFittingLoop(SpotsCh(frame).Fits, liveExperiment, imStack, spotDims, nSpots);
+            SpotsCh(frame) = spotFittingLoop(SpotsCh(frame).Fits, liveExperiment, imStack, nSpots);
 
             send(q, frame); %update the waitbar
         end
@@ -100,7 +111,7 @@ for ch = liveExperiment.spotChannels
         parfor frame = 1:numFrames %frames                
             imStack = getMovieFrame(liveExperiment, frame, ch);
             
-            SpotsCh(frame) = spotFittingLoop(SpotsCh(frame).Fits, liveExperiment, imStack, spotDims, nSpots);
+            SpotsCh(frame) = spotFittingLoop(SpotsCh(frame).Fits, liveExperiment, imStack, nSpots);
 
             send(q, frame); %update the waitbar
         end

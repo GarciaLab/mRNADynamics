@@ -1,5 +1,5 @@
-function SpotsFr = spotFittingLoop(FitsFr, liveExperiment, imStack, spotDims, nSpots)
+function SpotsFr = spotFittingLoop(FitsFr, liveExperiment, imStack, nSpots)
     SpotsFr.Fits = FitsFr;
     for i = 1:length(SpotsFr.Fits)
-        SpotsFr = fitSnip3D(SpotsFr, i, liveExperiment, imStack, spotDims, nSpots);    
+        SpotsFr = fitSnip3D(SpotsFr, i, liveExperiment, imStack, nSpots);    
     end    

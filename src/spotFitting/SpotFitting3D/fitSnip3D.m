@@ -1,4 +1,4 @@
-function [spotsFrame, fitInfo] = fitSnip3D(spotsFrame, spotIndex, liveExperiment, imStack, spotDims, nSpots)
+function [spotsFrame, fitInfo] = fitSnip3D(spotsFrame, spotIndex, liveExperiment, imStack, nSpots)
 
 FrameInfo = getFrameInfo(liveExperiment);
 
@@ -17,9 +17,12 @@ xSpot = spot.xDoG(spot.z==brightestZPlane);
 ySpot = spot.yDoG(spot.z==brightestZPlane);
 
 if isfield(spot, 'snippet_size') && ~isempty(spot.snippet_size)
-    snippet_size = spot.snippet_size;
+    % spot.snippet_size is hardcoded in the main segmentSpots function to 
+    % be 1.3um, converted to pixels
+    snippet_size = spot.snippet_size; % in pixels
 else
-    snippet_size = round(1500/pixelSize_nm); % (in pixels)set to be around 1.5 um 
+    neighboorhood_nm = 1500; % in nm, set to be around 1.5 um 
+    snippet_size = round(neighboorhood_nm/pixelSize_nm); %in pixels
 end
 snippet_size = uint16(snippet_size(1));
 
@@ -40,7 +43,7 @@ yMin = single(min(yRange));
 zMin = single(min(zRange));
 
 % Perform fits
-fitInfo = fit3DGaussians(snip3D, pixelSize_nm, zStep_nm, spotDims, nSpots, []);
+fitInfo = fit3DGaussians(snip3D, pixelSize_nm, zStep_nm, nSpots, []);
 
 % add fit info
 spotsFrame.Fits(spotIndex).SpotFitInfo3D = fitInfo;%single(GaussParams1);
