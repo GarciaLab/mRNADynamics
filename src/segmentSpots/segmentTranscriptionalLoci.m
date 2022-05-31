@@ -204,10 +204,21 @@ parfor currentFrame = initialFrame:lastFrame
         maxDogOrderOfMagnitude = floor(log10(maxMaxDog));
         thresholdOrderOfMagnitude = floor(log10(Threshold));
         
-        if thresholdOrderOfMagnitude < maxDogOrderOfMagnitude
-            fprintf('WARNING: Threshold probably too low, resulting in out of memory errors.\n');
-        elseif thresholdOrderOfMagnitude > maxDogOrderOfMagnitude
-            fprintf('WARNING: Threshold probably too high, nothing will be detected.\n');
+        if isempty(MLFlag)
+            if thresholdOrderOfMagnitude < maxDogOrderOfMagnitude
+                fprintf('WARNING: Threshold probably too low, resulting in out of memory errors.\n');
+            elseif thresholdOrderOfMagnitude > maxDogOrderOfMagnitude
+                fprintf('WARNING: Threshold probably too high, nothing will be detected.\n');
+            end
+        % Since the ML threshold is usually set to 5000 (50%), which is
+        % an order of magnitude lower than the typical max of 10000 (100%),
+        % we need to be a bit more strigent with our warning criteria
+        else
+            if thresholdOrderOfMagnitude*10 < maxDogOrderOfMagnitude
+                fprintf('WARNING: Threshold probably too low, resulting in out of memory errors.\n');
+            elseif thresholdOrderOfMagnitude > maxDogOrderOfMagnitude
+                fprintf('WARNING: Threshold probably too high, nothing will be detected.\n');
+            end  
         end
         
         dog_thresh = dog >= Threshold;
