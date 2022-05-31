@@ -23,9 +23,13 @@
 % 'LastFrame', M:     Run the code from initial frame to frame M. Defaults to all
 %                frames. It's suggested to run 5-20 frames for debugging.
 %
-% 'Shadows':    	 This option should be followed by 0, 1 or 2. This
-%                specifies the number of requisite z-planes above and/or below the
-%                brightest plane for a spot to have to pass quality control.
+% 'Shadows': This option should be followed by 0, 1 or 2. This
+%            specifies the number of requisite z-planes in addition to the 
+%            brightest plane that a spot must appear in for the spot to 
+%            pass quality control. For shadows=1, that means each spot must
+%            appear in at least 2 z-planes; for shadows=2, it's 3 z-planes
+%            Default number of shadows is 1.
+%
 % 'keepPool': Don't shut down the parallel pool when the script is done
 % running.
 % 'nWorkers': Specify the number of workers to use during parallel
@@ -57,6 +61,7 @@
 % Last Updated: 8/23/2018
 %
 % Documented by: Armando Reimer (areimer@berkeley.edu)
+
 function log = segmentSpots(Prefix, Threshold, varargin)
 
 
@@ -143,7 +148,6 @@ end
 % The spot finding algorithm first segments the image into regions that are
 % above the threshold. Then, it finds global maxima within these regions by searching in a region "neighborhood"
 % within the regions.
-
 pixelSize_nm = FrameInfo(1).PixelSize * 1000;
 neighboorhood_nm = 1300;
 neighborhood_px = round(neighboorhood_nm / pixelSize_nm);
@@ -205,9 +209,11 @@ mkdir([DropboxFolder, filesep, Prefix]);
 if whos(var2str(Spots)).bytes < 2E9
     save([DropboxFolder, filesep, Prefix,...
         filesep, 'Spots.mat'], 'Spots', '-v6');
+    disp('Spots.mat saved.')
 else
     save([DropboxFolder, filesep, Prefix,...
         filesep, 'Spots.mat'], 'Spots', '-v7.3', '-nocompression');
+    disp('Spots.mat saved.')
 end
 
 if track, TrackmRNADynamics(Prefix, 'noretrack'); end
