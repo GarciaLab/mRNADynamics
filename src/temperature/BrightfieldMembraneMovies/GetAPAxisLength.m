@@ -112,11 +112,14 @@ imwrite(uint16(MidImage3),[DropboxFolder,filesep,Prefix,filesep,'APDetection',fi
 
 
 %This code came from Michael's code
-
-coordA=[1,1];
-coordP=[1,1];
-coordD=[1,1];
-coordV=[1,1];
+if isfile([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+    load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP','coordD','coordV', 'APLength','DVLength');
+else
+    coordA=[1,1];
+    coordP=[1,1];
+    coordD=[1,1];
+    coordV=[1,1];
+end
 
 %Save the AP and shift information
 
@@ -152,4 +155,4 @@ DeltaTheta = APtheta-DVtheta;
 DVLength = sqrt((coordD(1)-coordV(1))^2+(coordD(2)-coordV(2))^2)*PixelSize*abs(sin(DeltaTheta));
 
 
-save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP','coordD','coordV', 'APLength','DVLength');
+save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP','coordD','coordV', 'APLength','DVLength', 'PixelSize');

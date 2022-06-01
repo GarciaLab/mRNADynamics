@@ -1,7 +1,7 @@
 function [Date, ExperimentType, ExperimentAxis, CoatProtein, StemLoop, APResolution,...
     Channel1, Channel2,Objective, Power,  DataFolder, DropboxFolderName, Comments,...
     nc9, nc10, nc11, nc12, nc13, nc14, CF, ...
-    Channel3,prophase,metaphase, anaphaseFrames, DVResolution, Temp_set, Temp_obs]...
+    Channel3,prophase,metaphase, anaphaseFrames, DVResolution, Temp_set, Temp_obs, Channel4, Channel5]...
     ...
     = getExperimentDataFromMovieDatabase(Prefix, movieDatabase, DropboxFolder)
 
@@ -71,6 +71,18 @@ try ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel3'));
     Channel3 = { getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel3') };
 catch
     Channel3 = {'DoesNotExist'};
+end
+
+try ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel4'));
+    Channel4 = { getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel4') };
+catch
+    Channel4 = {'DoesNotExist'};
+end
+
+try ~isempty(getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel5'));
+    Channel5 = { getValueFromMovieDatabase(movieDatabase, PrefixRow, 'Channel5') };
+catch
+    Channel5 = {'DoesNotExist'};
 end
 
 % For Channel3, make this optional

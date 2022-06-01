@@ -87,6 +87,8 @@ classdef LiveExperiment
         Channel1 = '';
         Channel2 = '';
         Channel3 = '';
+        Channel4 = '';
+        Channel5 = '';
         
         MS2CodePath = '';
         
@@ -180,13 +182,16 @@ classdef LiveExperiment
             
             [~, this.experimentType, this.experimentAxis, ~, ~, this.APResolution,...
                 Channel1, Channel2,~, ~,  ~, ~, ~,...
-                ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, this.DVResolution, this.Temp_set, this.Temp_obs]...
+                ~, ~, ~, ~, ~, ~, ~, Channel3,~,~, ~, this.DVResolution, this.Temp_set, this.Temp_obs,...
+                Channel4, Channel5]...
                 = getExperimentDataFromMovieDatabase(this.Prefix, movieDatabase, this.userResultsFolder);
             
-            this.Channels = {Channel1{1}, Channel2{1}, Channel3{1}};
+            this.Channels = {Channel1{1}, Channel2{1}, Channel3{1}, Channel4{1}, Channel5{1}};
             this.Channel1 = Channel1{1};
             this.Channel2 = Channel2{1};
             this.Channel3 = Channel3{1};
+            this.Channel4 = Channel4{1};
+            this.Channel5 = Channel5{1};
             
             try
                 [this.xDim, this.yDim, this.pixelSize_nm, this.zStep_um, this.snippetSize_px,...

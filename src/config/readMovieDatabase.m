@@ -1,6 +1,6 @@
 function [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
     rawDataFolder, Prefix, ExperimentType,Channel1,Channel2,OutputFolder,...
-    Channel3, spotChannels, movieDatabaseFolder, movieDatabase]...
+    Channel3, spotChannels, movieDatabaseFolder, movieDatabase, Channel4, Channel5]...
     ...
 = readMovieDatabase(Prefix, varargin)
     
@@ -51,17 +51,26 @@ function [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath,...
     Channel1Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel1');
     Channel2Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel2');
     Channel3Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel3');
-
-
+    Channel4Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel4');
+    Channel5Column = findColumnIndex(movieDatabaseHeaderRow, 'Channel5');
     [~, PrefixRow] = getDropboxFolderFromMovieDatabase(movieDatabase, Prefix, '[\\\\/-]', optionalResults);
 
     ExperimentType = movieDatabase(PrefixRow, ExperimentTypeColumn);
     Channel1 = movieDatabase(PrefixRow, Channel1Column);
     Channel2 = movieDatabase(PrefixRow, Channel2Column);
     Channel3 = movieDatabase(PrefixRow, Channel3Column);
-    
+    Channel4 = movieDatabase(PrefixRow, Channel4Column);
+    Channel5 = movieDatabase(PrefixRow, Channel5Column);
     if isempty(Channel3)
         Channel3 = {'DoesNotExist'};
+    end
+    
+    if isempty(Channel4)
+        Channel4 = {'DoesNotExist'};
+    end
+    
+    if isempty(Channel5)
+        Channel5 = {'DoesNotExist'};
     end
     
 [rawDataPath,ProcPath,DropboxFolder,MS2CodePath, PreProcPath, ~, ~]=...

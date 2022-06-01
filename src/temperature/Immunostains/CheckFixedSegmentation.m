@@ -56,7 +56,7 @@ function CheckFixedSegmentation(Prefix, UseCustom, varargin)
 % Author (contact): uknown (hggarcia@berkeley.edu)
 % Created: XXXX-XX-XX
 % Last Updated: XXXX-XX-XX
-% Documented by: Meghan Turner (meghan_turner@berkeley.edu)
+% Documented by: Gabriella Martini (martini@berkeley.edu)
 %
 
 cleanupObj = onCleanup(@myCleanupFun);
@@ -125,6 +125,8 @@ MemImage = memMat(:,:,CurrentEmbryo);
 
 DisplayRangeHis = [min(min(HisImage)), max(max(HisImage))];
 DisplayRangeHis2 = [min(min(HisImage2)), max(max(HisImage2))];
+DisplayRangeMem = [min(min(MemImage)), max(max(MemImage))];
+
 close all
 
 FullFigure=figure(1);
@@ -153,7 +155,7 @@ tb3 = axtoolbar(originalAxes);
 tb3.Visible = 'off';
 
 imFull = imshow(HisImage2,DisplayRangeHis2,'Border','Tight','Parent',fullAxes);
-imOriginal = imshow(HisImage2,DisplayRangeHis2,'Border','Tight','Parent',originalAxes);
+imOriginal = imshow(MemImage,DisplayRangeMem,'Border','Tight','Parent',originalAxes);
 
 imOverlay = imshow(HisImage,DisplayRangeHis,'Border','Tight','Parent',overlayAxes);
 
@@ -178,13 +180,14 @@ while (currentCharacter~='x')
     
     imFull.CData = HisImage2;
     imOverlay.CData = HisImage;
+    imOriginal.CData = MemImage;
     try
         caxis(overlayAxes, DisplayRange);
         
     end
     
     try
-        caxis(originalAxes, DisplayRange);
+        caxis(originalAxes, DisplayRangeMem);
         
     end
     try
@@ -224,7 +227,7 @@ while (currentCharacter~='x')
     set(Overlay,'Name',FigureTitle)
     
     
-    imOriginal.CData = HisImage2;
+    
     
     
     
@@ -250,7 +253,7 @@ while (currentCharacter~='x')
         CurrentOctant=CurrentOctant+1;
         xRangeOctant = [OctantXs(CurrentOctant), OctantXs(CurrentOctant)+xSize/4-1];
         yRangeOctant = [OctantYs(CurrentOctant), OctantYs(CurrentOctant)+ySize/2-1];
-
+        
         xlim(overlayAxes,xRangeOctant)
         ylim(overlayAxes,yRangeOctant)
         xlim(originalAxes,xRangeOctant)
@@ -258,9 +261,13 @@ while (currentCharacter~='x')
         HisImage = hisMat(:, :, CurrentEmbryo);
         DisplayRange = [min(min(HisImage)), max(max(HisImage))];
         HisImage2 = hisMatCopy(:, :, CurrentEmbryo);
-            DisplayRange2 = [min(min(HisImage2)), max(max(HisImage2))]; 
+        
+        DisplayRange2 = [min(min(HisImage2)), max(max(HisImage2))];
+        
+        MemImage = memMat(:, :, CurrentEmbryo);
+        DisplayRangeMem = [min(min(MemImage)), max(max(MemImage))];
     elseif (ct~=0)&(currentCharacter=='.')&(CurrentOctant==8)&(CurrentEmbryo < nEmbryos)
-         NewIndex = find(1:nEmbryos > CurrentEmbryo & CompiledEmbryos.Approved, 1);
+        NewIndex = find(1:nEmbryos > CurrentEmbryo & CompiledEmbryos.Approved, 1);
         if isempty(NewIndex)
             CurrentEmbryo = nEmbryos;
         else
@@ -269,7 +276,7 @@ while (currentCharacter~='x')
         CurrentOctant = 1;
         xRangeOctant = [OctantXs(CurrentOctant), OctantXs(CurrentOctant)+xSize/4-1];
         yRangeOctant = [OctantYs(CurrentOctant), OctantYs(CurrentOctant)+ySize/2-1];
-
+        
         xlim(overlayAxes,xRangeOctant)
         ylim(overlayAxes,yRangeOctant)
         xlim(originalAxes,xRangeOctant)
@@ -277,13 +284,14 @@ while (currentCharacter~='x')
         HisImage = hisMat(:, :, CurrentEmbryo);
         DisplayRange = [min(min(HisImage)), max(max(HisImage))];
         HisImage2 = hisMatCopy(:, :, CurrentEmbryo);
-            DisplayRange2 = [min(min(HisImage2)), max(max(HisImage2))]; 
-        
+        DisplayRange2 = [min(min(HisImage2)), max(max(HisImage2))];
+        MemImage = memMat(:, :, CurrentEmbryo);
+        DisplayRangeMem = [min(min(MemImage)), max(max(MemImage))];
     elseif (ct~=0)&(currentCharacter==',')&(CurrentOctant>1)
         CurrentOctant=CurrentOctant-1;
         xRangeOctant = [OctantXs(CurrentOctant), OctantXs(CurrentOctant)+xSize/4-1];
         yRangeOctant = [OctantYs(CurrentOctant), OctantYs(CurrentOctant)+ySize/2-1];
-
+        
         xlim(overlayAxes,xRangeOctant)
         ylim(overlayAxes,yRangeOctant)
         xlim(originalAxes,xRangeOctant)
@@ -298,7 +306,7 @@ while (currentCharacter~='x')
         CurrentOctant = 8;
         xRangeOctant = [OctantXs(CurrentOctant), OctantXs(CurrentOctant)+xSize/4-1];
         yRangeOctant = [OctantYs(CurrentOctant), OctantYs(CurrentOctant)+ySize/2-1];
-
+        
         xlim(overlayAxes,xRangeOctant)
         ylim(overlayAxes,yRangeOctant)
         xlim(originalAxes,xRangeOctant)
@@ -306,7 +314,9 @@ while (currentCharacter~='x')
         HisImage = hisMat(:, :, CurrentEmbryo);
         DisplayRange = [min(min(HisImage)), max(max(HisImage))];
         HisImage2 = hisMatCopy(:, :, CurrentEmbryo);
-            DisplayRange2 = [min(min(HisImage2)), max(max(HisImage2))]; 
+        DisplayRange2 = [min(min(HisImage2)), max(max(HisImage2))];
+        MemImage = memMat(:, :, CurrentEmbryo);
+        DisplayRangeMem = [min(min(MemImage)), max(max(MemImage))];
     elseif (ct~=0)&(currentCharacter=='>')&(CurrentEmbryo < nEmbryos)
         NewIndex = find(1:nEmbryos > CurrentEmbryo & CompiledEmbryos.Approved, 1);
         if isempty(NewIndex)
@@ -317,7 +327,7 @@ while (currentCharacter~='x')
         CurrentOctant = 1;
         xRangeOctant = [OctantXs(CurrentOctant), OctantXs(CurrentOctant)+xSize/4-1];
         yRangeOctant = [OctantYs(CurrentOctant), OctantYs(CurrentOctant)+ySize/2-1];
-
+        
         xlim(overlayAxes,xRangeOctant)
         ylim(overlayAxes,yRangeOctant)
         xlim(originalAxes,xRangeOctant)
@@ -325,7 +335,9 @@ while (currentCharacter~='x')
         HisImage = hisMat(:, :, CurrentEmbryo);
         DisplayRange = [min(min(HisImage)), max(max(HisImage))];
         HisImage2 = hisMatCopy(:, :, CurrentEmbryo);
-            DisplayRange2 = [min(min(HisImage2)), max(max(HisImage2))]; 
+        DisplayRange2 = [min(min(HisImage2)), max(max(HisImage2))];
+        MemImage = memMat(:, :, CurrentEmbryo);
+        DisplayRangeMem = [min(min(MemImage)), max(max(MemImage))];
     elseif (ct~=0)&(currentCharacter=='<')&(CurrentEmbryo > 1)
         NewIndex = find(1:nEmbryos < CurrentEmbryo & CompiledEmbryos.Approved, 1,'last');
         if isempty(NewIndex)
@@ -336,7 +348,7 @@ while (currentCharacter~='x')
         CurrentOctant = 1;
         xRangeOctant = [OctantXs(CurrentOctant), OctantXs(CurrentOctant)+xSize/4-1];
         yRangeOctant = [OctantYs(CurrentOctant), OctantYs(CurrentOctant)+ySize/2-1];
-
+        
         xlim(overlayAxes,xRangeOctant)
         ylim(overlayAxes,yRangeOctant)
         xlim(originalAxes,xRangeOctant)
@@ -344,7 +356,9 @@ while (currentCharacter~='x')
         HisImage = hisMat(:, :, CurrentEmbryo);
         DisplayRange = [min(min(HisImage)), max(max(HisImage))];
         HisImage2 = hisMatCopy(:, :, CurrentEmbryo);
-            DisplayRange2 = [min(min(HisImage2)), max(max(HisImage2))]; 
+        DisplayRange2 = [min(min(HisImage2)), max(max(HisImage2))];
+        MemImage = memMat(:, :, CurrentEmbryo);
+        DisplayRangeMem = [min(min(MemImage)), max(max(MemImage))];
     elseif (ct~=0)&(currentCharacter=='j')
         iJump=input('Frame to jump to: ');
         if (floor(iJump)>0)&(iJump<=nEmbryos)
@@ -355,7 +369,7 @@ while (currentCharacter~='x')
         CurrentOctant = 1;
         xRangeOctant = [OctantXs(CurrentOctant), OctantXs(CurrentOctant)+xSize/4-1];
         yRangeOctant = [OctantYs(CurrentOctant), OctantYs(CurrentOctant)+ySize/2-1];
-
+        
         xlim(overlayAxes,xRangeOctant)
         ylim(overlayAxes,yRangeOctant)
         xlim(originalAxes,xRangeOctant)
@@ -363,7 +377,9 @@ while (currentCharacter~='x')
         HisImage = hisMat(:, :, CurrentEmbryo);
         DisplayRange = [min(min(HisImage)), max(max(HisImage))];
         HisImage2 = hisMatCopy(:, :, CurrentEmbryo);
-            DisplayRange2 = [min(min(HisImage2)), max(max(HisImage2))]; 
+        DisplayRange2 = [min(min(HisImage2)), max(max(HisImage2))];
+        MemImage = memMat(:, :, CurrentEmbryo);
+        DisplayRangeMem = [min(min(MemImage)), max(max(MemImage))];
     elseif (ct~=0)&(currentCharacter=='t')
         if ~SwitchImageType
             SwitchImageType = true;
@@ -371,14 +387,18 @@ while (currentCharacter~='x')
             HisImage = hisMat(:, :, CurrentEmbryo);
             DisplayRange = [min(min(HisImage)), max(max(HisImage))];
             HisImage2 = hisMatCopy(:, :, CurrentEmbryo);
-            DisplayRange2 = [min(min(HisImage2)), max(max(HisImage2))]; 
+            DisplayRange2 = [min(min(HisImage2)), max(max(HisImage2))];
+            MemImage = memMat(:, :, CurrentEmbryo);
+            DisplayRangeMem = [min(min(MemImage)), max(max(MemImage))];
         else
-           SwitchImageType = false;
+            SwitchImageType = false;
             hisMat = hisMatCopy;
             HisImage = hisMat(:, :, CurrentEmbryo);
             HisImage2 = hisMatCopy(:, :, CurrentEmbryo);
-            DisplayRange2 = [min(min(HisImage2)), max(max(HisImage2))]; 
-            DisplayRange = [min(min(HisImage)), max(max(HisImage))]; 
+            DisplayRange2 = [min(min(HisImage2)), max(max(HisImage2))];
+            DisplayRange = [min(min(HisImage)), max(max(HisImage))];
+            MemImage = memMat(:, :, CurrentEmbryo);
+            DisplayRangeMem = [min(min(MemImage)), max(max(MemImage))];
         end
     elseif (ct~=0)&(currentCharacter=='q')
         CompiledEmbryos.Approved(CurrentEmbryo) = true;
@@ -445,8 +465,8 @@ while (currentCharacter~='x')
     elseif (ct~=0)&(currentCharacter=='r')    %Reset the contrast
         DisplayRange=[min(min(HisImage)),max(max(HisImage))];
         
-%     elseif (ct~=0)&(currentCharacter=='d')    %Delete all ellipses in the current frame
-%         Ellipses{CurrentFrame}=[];
+        %     elseif (ct~=0)&(currentCharacter=='d')    %Delete all ellipses in the current frame
+        %         Ellipses{CurrentFrame}=[];
     elseif (ct~=0)&(currentCharacter=='D')    %Delete all ellipses in hand-drawn ROI
         roi = drawrectangle(overlayAxes);
         EllipsesCopy = Ellipses;

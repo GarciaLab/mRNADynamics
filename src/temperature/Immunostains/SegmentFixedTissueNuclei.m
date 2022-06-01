@@ -24,16 +24,6 @@ ellipse = cell(NEmbryos,1);
 
 
 %%
-embryoIndex = 10; % NC < 14
-embryoIndex = 18; % NC probably 14?
-embryoIndex = 28; % NC = 14
-embryoIndex = 37;% NC probably 14?
-embryoIndex = 66;% NC probably 14?
-embryoIndex = 67; % older NC14 with focus issues
-embryoIndex = 75; % CF but a little rumpled
-embryoIndex = 90; % older NC14
-
-%%
 for embryoIndex =1:NEmbryos
     disp(['Embryo Index: ', num2str(embryoIndex)])
     
@@ -46,34 +36,50 @@ for embryoIndex =1:NEmbryos
         
         DisplayRange=[min(min(EmbryoImage)),max(max(EmbryoImage))];
         
-        %
-        % EmbryoFigure=figure;
-        % set(EmbryoFigure,'units', 'normalized', 'position',[0.01, .1, .7, .7]);
-        %
-        % embryoAxes = axes(EmbryoFigure,'Units', 'normalized', 'Position', [0 0 1 1]);
-        % cc=1;
-        %
-        % % Show the first image
-        % imEmbryo = imshow(EmbryoImage,DisplayRange,'Parent',embryoAxes);
-        pixelValues = histc(EmbryoImage(:), [0:256]);
-        ObservedPixelValues = find(pixelValues);
-        ThreshImage = EmbryoImage > ObservedPixelValues(3)-1;
+%         if ShowPlots
+%             EmbryoFigure=figure;
+%             set(EmbryoFigure,'units', 'normalized', 'position',[0.01, .1, .7, .7]);
+%             
+%             embryoAxes = axes(EmbryoFigure,'Units', 'normalized', 'Position', [0 0 1 1]);
+%             
+%             
+%             % Show the first image
+%             imEmbryo = imshow(EmbryoImage,DisplayRange,'Parent',embryoAxes);
+%         end
         
-        sigma = round(2.5/PixelSize_um); % 2.5 micron sigma
+        pixelValues = histc(EmbryoImage(:), [0:256]);
+        smoothedPixelValues = smooth(pixelValues(2:end), 5);
+        local_minima = islocalmin(smoothedPixelValues);
+        
+        [max_val, first_maximum] = max(smoothedPixelValues);
+        local_maxima = [zeros(first_maximum, 1, 'logical'); islocalmax(smoothedPixelValues(first_maximum+1:end))];
+        local_maxima_vals = unique(smoothedPixelValues(local_maxima));
+        if ~isempty(local_maxima_vals)
+        second_maximum = find(smoothedPixelValues == local_maxima_vals(end));
+        [minValue, minIndex] = min(smoothedPixelValues(first_maximum:second_maximum));
+        PixelThreshold = first_maximum + minIndex - 1;
+        ObservedPixelValues = find(pixelValues);
+        ThreshImage = EmbryoImage > PixelThreshold;
+        
+        
+        TrueThreshImage = EmbryoImage;
+        TrueThreshImage(~ThreshImage) = 0;
+        sigma = round(1/PixelSize_um); % 1 micron sigma
         
         imGauss = imgaussfilt(EmbryoImage,sigma);
         
         %
-        % GaussEmbryoFigure=figure(2);
-        % set(GaussEmbryoFigure,'units', 'normalized', 'position',[0.01, .1, .7, .7]);
-        %
-        % gaussAxes = axes(GaussEmbryoFigure,'Units', 'normalized', 'Position', [0 0 1 1]);
-        % cc=1;
-        %
-        % gaussRange=[min(min(imGauss)),max(max(imGauss))];
-        % % Show the first image
-        % imEmbryo = imshow(imGauss,gaussRange,'Parent',gaussAxes);
-        %
+%         if ShowPlots
+%             GaussEmbryoFigure=figure(2);
+%             set(GaussEmbryoFigure,'units', 'normalized', 'position',[0.01, .1, .7, .7]);
+%             
+%             gaussAxes = axes(GaussEmbryoFigure,'Units', 'normalized', 'Position', [0 0 1 1]);
+%             cc=1;
+%             
+%             gaussRange=[min(min(imGauss)),max(max(imGauss))];
+%             % Show the first image
+%             imEmbryo = imshow(imGauss,gaussRange,'Parent',gaussAxes);
+%         end
         % %%
         
         NeighborhoodSize_um = 4; % in microns
@@ -95,55 +101,60 @@ for embryoIndex =1:NEmbryos
             end
         end
         
-        %
-        % MeanMapFigure=figure(3);
-        % set(MeanMapFigure,'units', 'normalized', 'position',[0.01, .1, .7, .7]);
-        %
-        % meanMapAxes = axes(MeanMapFigure,'Units', 'normalized', 'Position', [0 0 1 1]);
-        %
-        %
-        % MeanMapRange=[min(min(meanIntensityMap)),max(max(meanIntensityMap))];
-        % % Show the first image
-        % imMeanMap = imshow(meanIntensityMap,MeanMapRange,'Parent',meanMapAxes);
-        %
-        %
-        % NormedMapFigure=figure(4);
-        % set(NormedMapFigure,'units', 'normalized', 'position',[0.01, .1, .7, .7]);
-        %
-        % normedMapAxes = axes(NormedMapFigure,'Units', 'normalized', 'Position', [0 0 1 1]);
-        % cc=1;
-        %
-        % NormedMapRange=[min(min(normedIntensityMap)),max(max(normedIntensityMap))];
-        % % Show the first image
-        % imNormedMap = imshow(normedIntensityMap,NormedMapRange,'Parent',normedMapAxes);
-        
+%         if ShowPlots
+%             MeanMapFigure=figure(3);
+%             set(MeanMapFigure,'units', 'normalized', 'position',[0.01, .1, .7, .7]);
+%             
+%             meanMapAxes = axes(MeanMapFigure,'Units', 'normalized', 'Position', [0 0 1 1]);
+%             
+%             
+%             MeanMapRange=[min(min(meanIntensityMap)),max(max(meanIntensityMap))];
+%             % Show the first image
+%             imMeanMap = imshow(meanIntensityMap,MeanMapRange,'Parent',meanMapAxes);
+%             
+%             
+%             NormedMapFigure=figure(4);
+%             set(NormedMapFigure,'units', 'normalized', 'position',[0.01, .1, .7, .7]);
+%             
+%             normedMapAxes = axes(NormedMapFigure,'Units', 'normalized', 'Position', [0 0 1 1]);
+%             
+%             %
+%             NormedMapRange=[min(min(normedIntensityMap)),max(max(normedIntensityMap))];
+%             % Show the first image
+%             imNormedMap = imshow(normedIntensityMap,NormedMapRange,'Parent',normedMapAxes);
+%         end
+%         
         %%
         sigma2 = round(1/PixelSize_um);
         normedGaussMap = imgaussfilt(normedIntensityMap,sigma2);
         normedGaussMap(isnan(normedGaussMap)) = min(min(normedGaussMap));
-        % NormedGaussMapFigure=figure(5);
-        % set(NormedGaussMapFigure,'units', 'normalized', 'position',[0.01, .1, .7, .7]);
-        %
-        % normedGaussMapAxes = axes(NormedGaussMapFigure,'Units', 'normalized', 'Position', [0 0 1 1]);
-        % cc=1;
-        %
+        
+        
         % % Show the first image
         normedGaussMap = mat2gray(normedGaussMap);
         
         NormedGaussMapRange=[min(min(normedGaussMap)),max(max(normedGaussMap))];
-        % normedGaussMap(normedGaussMap < prctile(normedGaussMap(:),90)) = 0;
-        % imNormedGauss = imshow(normedGaussMap,NormedGaussMapRange,'Parent',normedGaussMapAxes);
-        %
-        
+        normedGaussMap(normedGaussMap < prctile(normedGaussMap(:),90)) = 0;
+%         if ShowPlots
+%         NormedGaussMapFigure=figure(5);
+%         set(NormedGaussMapFigure,'units', 'normalized', 'position',[0.01, .1, .7, .7]);
+%         
+%         normedGaussMapAxes = axes(NormedGaussMapFigure,'Units', 'normalized', 'Position', [0 0 1 1]);
+%         
+%         imNormedGauss = imshow(normedGaussMap,NormedGaussMapRange,'Parent',normedGaussMapAxes);
+%         
+%         end
         %%
         %h = fspecial('average',NeighborhoodSize);
         hisImage = normedGaussMap;
+        hisImage(~ThreshImage) = 0;
+        
         FrameInfo = getFrameInfo(liveExperiment);
         diameters = [getDefaultParameters(FrameInfo,'d10'),getDefaultParameters(FrameInfo,'d11'),...
             getDefaultParameters(FrameInfo,'d12'),getDefaultParameters(FrameInfo,'d13'),...
             getDefaultParameters(FrameInfo,'d14')];
         
-        nucleusDiameter = diameters(5);
+        nucleusDiameter = diameters(5)/2;
         LoGratio = getDefaultParameters(FrameInfo,'LoGratio');
         space_resolution = getDefaultParameters(FrameInfo,'space resolution');
         localMaximumRadius = LoGratio*nucleusDiameter/space_resolution;
@@ -221,16 +232,70 @@ for embryoIndex =1:NEmbryos
         auto_thresh = (auto_thresh + x1-2)/100;
         
         dilatedMask = dilatedImage > 0.65;
+        %dilatedMask = dilatedImage > auto_thresh;
         % Find local maxima
         % Commented out GM on 9/3/20 Seems to no longer work after updates & embryoMask;
-        ThreshImage = hisImage;
-        ThreshImage(~dilatedMask) = 0;
-        maxima = (ThreshImage > dilatedImage);
+        ThreshImage2 = hisImage;
+        ThreshImage2(~dilatedMask) = 0;
+        maxima = (ThreshImage2 > dilatedImage);
         % Smooth the image to get more robust maxima values:
         
         maximaLinearIndices = find(maxima>0);
         [y_maxima,x_maxima] = ind2sub(size(maxima),maximaLinearIndices);
-        
+        RotatedCoordA = CompiledEmbryos.RotatedCoordAs(embryoIndex,:);
+        RotatedCoordP = CompiledEmbryos.RotatedCoordPs(embryoIndex,:);
+        RotatedCoordD = CompiledEmbryos.RotatedCoordDs(embryoIndex,:);
+        RotatedCoordV = CompiledEmbryos.RotatedCoordVs(embryoIndex,:);
+        keep_index = x_maxima >= RotatedCoordA(1) & ...
+            x_maxima <= RotatedCoordP(1) & ...
+            y_maxima >= RotatedCoordD(2) & ...
+            y_maxima <= RotatedCoordV(2);
+%       
+        y_maxima = y_maxima(keep_index);
+        x_maxima = x_maxima(keep_index);
+        DVlength = abs(RotatedCoordV(2)-RotatedCoordD(2));
+        APlength = abs(RotatedCoordA(1)-RotatedCoordP(1));
+        Mid_y = RotatedCoordA(2);
+        Mid_x = RotatedCoordA(1) + APlength/2;
+        y_dorsal = y_maxima(y_maxima < Mid_y);
+        x_dorsal = x_maxima(y_maxima < Mid_y);
+        y_ventral = y_maxima(y_maxima >= Mid_y);
+        x_ventral = x_maxima(y_maxima >= Mid_y);
+        b_index = boundary(x_maxima, y_maxima);
+        D = squareform(pdist([x_maxima y_maxima]));
+        min_distances = zeros(size(x_maxima), 'double');
+        APcoords = (x_maxima - RotatedCoordA(1))/APlength;
+        DVcoords = (y_maxima - RotatedCoordD(2))/DVlength;
+        for i = 1:length(x_maxima)
+            min_distances(i) = min(D(i,D(i,:) > 0));
+        end
+        keep_index = ones(size(x_maxima), 'logical');
+        max_dist = 2*median(min_distances);
+        for i = 1:length(x_maxima)
+            if min_distances > max_dist
+                keep_index(i) = 0;  
+            end
+            if APcoords(i) > 0.1 & APcoords(i) < 0.9 & DVcoords(i) > 0.4 & DVcoords(i) < 0.6
+                keep_index(i) = 0;
+            end
+            if APcoords(i) > 0.2 & APcoords(i) < 0.8 & DVcoords(i) > 0.25 & DVcoords(i) < 0.75
+                keep_index(i) = 0;
+            end
+        end
+        x_maxima2 = x_maxima(keep_index);
+        y_maxima2 = y_maxima(keep_index);
+        boundary_index = unique(boundary(x_maxima2, y_maxima2));
+        x_boundary = x_maxima2(ismember(1:length(x_maxima2), boundary_index)); 
+        y_boundary = y_maxima2(ismember(1:length(x_maxima2), boundary_index)); 
+        x_interior = x_maxima2(~ismember(1:length(x_maxima2), boundary_index));
+        y_interior = y_maxima2(~ismember(1:length(x_maxima2), boundary_index));
+        all_x = [x_boundary ;  x_interior];
+        all_y = [y_boundary ; y_interior];
+        D2 = squareform(pdist([double(all_x)  double(all_y)]));
+        D2 = D2(length(x_boundary)+1:length(all_x), 1:length(x_boundary))*PixelSize_um;
+        min_distances2 = min(D2, [], 2);
+        x_maxima3 = [x_boundary; x_interior(min_distances2 < 10)];
+        y_maxima3 = [y_boundary; y_interior(min_distances2 < 10)];
         if ShowPlots
             close all
             figure(1)
@@ -244,8 +309,13 @@ for embryoIndex =1:NEmbryos
             imshow(EmbryoImage, DisplayRange)
             hold on
             scatter(x_maxima,y_maxima,'r.')
+            scatter(x_maxima2,y_maxima2,'c.')
+  
+            scatter(x_boundary,y_boundary,'m.')
+            scatter(x_maxima3,y_maxima3,'y.')
             %scatter(x_max2,y_max2,'y.')
             hold off
+       
             
         end
         %Check whether anything was found in this image. If nothing is found,
@@ -256,7 +326,8 @@ for embryoIndex =1:NEmbryos
         
         
         
-        
+        x_maxima = x_maxima3;
+        y_maxima = y_maxima3;
         
         %(y, x, major axis, minor axis, orientation angle, maxcontourvalue, time,
         %particle_id %optionally, schnitz id
@@ -278,6 +349,10 @@ for embryoIndex =1:NEmbryos
             ellipse{embryoIndex}(ellipseIndex,:) = [centroid, majorAxis, minorAxis,...
                 centroid2, orientationAngle, maxContourValue];
         end
+        else
+            ellipse{embryoIndex} = zeros(0,8);
+        end
+            
     else
         ellipse{embryoIndex} = zeros(0,8);
         

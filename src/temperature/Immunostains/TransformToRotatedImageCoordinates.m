@@ -1,9 +1,22 @@
-function RotatedCoords = TransformToRotatedImageCoordinates(Coords, Prefix,CompiledEmbryos)
+function RotatedCoords = TransformToRotatedImageCoordinates(Coords, Prefix,CompiledEmbryos, MembraneMat)
 
 
 liveExperiment = LiveExperiment(Prefix);
-xSize = liveExperiment.xDim;
-ySize = liveExperiment.yDim;
+if exist('MembraneMat', 'var')
+    xSize = size(MembraneMat, 2);
+    ySize = size(MembraneMat, 1);
+    NEmbryos = size(MembraneMat, 3);
+else
+    MembraneMat = getMembraneMat(liveExperiment);
+    xSize = size(MembraneMat, 2);
+    ySize = size(MembraneMat, 1);
+    NEmbryos = size(MembraneMat, 3);
+end
+try 
+    FrameInfo = getFrameInfo(liveExperiment);
+catch
+    FrameInfo = [];
+end
 
 N = size(Coords, 1);
 
@@ -29,8 +42,11 @@ for embryoIndex = 1:N
         Coord_Temp4 = [Coord_Temp3(1)+xSize_Temp/2+0.5 Coord_Temp3(2)+ySize_Temp/2+0.5 ];
 
         %%
-       
-        Coord_Temp5 = [Coord_Temp4(1)-xSize/2 Coord_Temp4(2)-3*ySize/4  ];
+        if ~isempty(FrameInfo)
+            Coord_Temp5 = [Coord_Temp4(1)-xSize/2 Coord_Temp4(2)-3*ySize/4  ];
+        else
+            Coord_Temp5 = [Coord_Temp4(1)-xSize/4 Coord_Temp4(2)-3*ySize/4  ];
+        end
         
         if CompiledEmbryos.FlippedOrientation(embryoIndex)
             Coord_Temp5(2) = ySize/2-Coord_Temp5(2)+1;

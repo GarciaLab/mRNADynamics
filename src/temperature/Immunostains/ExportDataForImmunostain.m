@@ -96,9 +96,9 @@ warning('off', 'MATLAB:MKDIR:DirectoryExists');
     exportDataForLivemRNA_processInputParameters(varargin{:});
 
   [rawDataPath, ProcPath, DropboxFolder, ~, PreProcPath, rawDataFolder, Prefix, ExperimentType, Channel1, Channel2, ~,...
-    Channel3] = readMovieDatabase(Prefix,'rootFolder', rootFolder);
+    Channel3, ~, ~, ~, Channel4, Channel5] = readMovieDatabase(Prefix,'rootFolder', rootFolder);
 
-Channels = {Channel1, Channel2, Channel3};
+Channels = {Channel1, Channel2, Channel3, Channel4, Channel5};
 %%
 
 %   if ~isempty(rootFolder)
@@ -231,8 +231,12 @@ LIFExportMode_flatFieldImage(LIFMeta,...
 % this function exports tif z stacks
 
 exportImmunostainTIFStacks(LIFImages, 'LIF', NChannels, NReplicates, NSlices,...
-    Prefix, moviePrecision, hisPrecision)
-
+    Prefix, moviePrecision, hisPrecision);
+% try
+%     exportMembraneZoomTifs(Prefix);
+% catch
+%     disp('Missing Membrane Zoom Tifs')
+% end
 
 chooseIHProjections(...
     Prefix,'ProjectionType',ProjectionType,...

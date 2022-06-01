@@ -1,4 +1,10 @@
 clear all
+% T = 17.5C: 33-37 m 
+% T = 20C: (27) 29-31.5 (33) m
+% T = 22.5C: 19-22 m
+% T = 25C: 16-18 m
+% T = 27.5C: (13) 15-16 m
+
 Prefixes = {'2021-08-25-BrightfieldMembraneFurrow-HisRFP-T25C-Embryo1',...
     '2021-08-25-BrightfieldMembraneFurrow-HisRFP-T25C-Embryo2',...
     '2021-08-11-BrightfieldMembraneFurrow-T25C-Embryo3',...
@@ -6,12 +12,45 @@ Prefixes = {'2021-08-25-BrightfieldMembraneFurrow-HisRFP-T25C-Embryo1',...
     '2021-08-11-BrightfieldMembraneFurrow-T25C-Embryo2',...
     '2021-08-26-BrightfieldMembraneFurrow-T25C-Embryo1',...
     };%,...
+Prefixes2 = {'2022-04-11-BrightfieldMembraneFurrow-T25C-Embryo1',...
+    '2022-04-11-BrightfieldMembraneFurrow-HisRFP-T25C-Embryo1',... 
+    '2022-04-12-BrightfieldMembraneFurrow-HisRFP-T25C-Embryo2',...% Good Length NC13
+    '2022-04-12-BrightfieldMembraneFurrow-HisRFP-T25C-Embryo3',...% Good Length NC13
+    '2022-04-12-BrightfieldMembraneFurrow-HisRFP-T25C-Embryo4',...% Good Length NC13
+    '2022-04-12-BrightfieldMembraneFurrow-HisRFP-T25C-Embryo5',...% Good Length NC13
+    '2022-04-13-BrightfieldMembraneFurrow-HisRFP-T25C-Embryo6',...% Good Length NC13
+    '2022-04-18-BrightfieldMembraneFurrow-HisRFP-T27_5C-Embryo1',...% Good Length NC13
+    '2022-04-18-BrightfieldMembraneFurrow-HisRFP-T27_5C-Embryo2',...% Good Length NC13
+    '2022-04-18-BrightfieldMembraneFurrow-HisRFP-T27_5C-Embryo3',...% Good Length NC13
+    '2022-04-19-BrightfieldMembraneFurrow-HisRFP-T22_5C-Embryo1',...% Good Length NC13
+    '2022-04-19-BrightfieldMembraneFurrow-HisRFP-T22_5C-Embryo2',...% Good Length NC13
+    '2022-04-17-BrightfieldMembraneFurrow-HisRFP-T20C-Embryo1',...% Good Length NC13
+    '2022-04-17-BrightfieldMembraneFurrow-HisRFP-T20C-Embryo2',...
+    '2022-04-17-BrightfieldMembraneFurrow-HisRFP-T20C-Embryo3',...% Good Length NC13
+    '2022-04-15-BrightfieldMembraneFurrow-HisRFP-T17_5C-Embryo2'... (ok)
+    '2022-04-15-BrightfieldMembraneFurrow-HisRFP-T17_5C-Embryo3',...% Good Length NC13
+    '2022-04-16-BrightfieldMembraneFurrow-HisRFP-T17_5C-Embryo4'...% Good Length NC13
+    };
+Prefixes = [Prefixes Prefixes2];
+% Prefixes = {'2022-04-12-BrightfieldMembraneFurrow-HisRFP-T25C-Embryo2',...
+%     '2022-04-12-BrightfieldMembraneFurrow-HisRFP-T25C-Embryo3',...
+%     '2022-04-12-BrightfieldMembraneFurrow-HisRFP-T25C-Embryo4',...
+%     '2022-04-12-BrightfieldMembraneFurrow-HisRFP-T25C-Embryo5',...
+%     '2022-04-13-BrightfieldMembraneFurrow-HisRFP-T25C-Embryo6'};
 
+T_sets = [25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25, 25,25,  27.5, 27.5, 27.5, 22.5, 22.5, 20, 20, 20, 17.5, 17.5, 17.5];
+T_obs = [25, 25, 25, 25, 25, 25, 25, 25.1, 25.1, 25.1, 25, 24.9, 24.9, 27.6, 27.5, 27.5, 22.5, 22.5, 20.3, 20.2, 20,17.7,  17.8, 17.8];
 colors = brewermap(6,'Spectral');
+markers = {'o', '^', '>', 's', 'd', '<', 'p', 'h'};
+unique_temps = unique(T_sets);
+color_index = [2, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 1, 1, 1, 4, 4, 5, 5, 5,  6, 6];
+marker_index = zeros(1, length(T_sets));
+for i = 1:6
+    matches = find(color_index == i);
+    marker_index(matches) = 1:length(matches);
+end
 
-    %'2021-08-26-BrightfieldMembraneFurrow-HisRFP-T25C-Embryo1'};
-    saveVars = {};
-    saveVars = [saveVars, 'APLengths', 'DVLengths'];
+
 liveExperiments = {};
 APLengths =[];
 DVLengths = [];
@@ -34,6 +73,7 @@ nc14s = [];
 nc13s = [];        
 
 for i = 1:length(Prefixes)
+    disp([num2str(i),' of ', num2str(length(Prefixes))])
     liveExperiments{i} = LiveExperiment(Prefixes{i});
     if i == 5
         APLengths(i) = NaN;
@@ -53,9 +93,15 @@ for i = 1:length(Prefixes)
         end
     end
     FrameInfos{i} = getFrameInfo(liveExperiments{i});
+    FrameTimes = [FrameInfos{i}(:).Time];
     anaphaseFrames{i} = liveExperiments{i}.anaphaseFrames;
     nc14s(i) =anaphaseFrames{i}(6);
     nc13s(i) =anaphaseFrames{i}(5);
+    try
+    NC13lengths(i) = (FrameTimes(nc14s(i))-FrameTimes(nc13s(i)))/60;
+    catch
+       NC13lengths(i) = NaN;
+    end
     load([liveExperiments{i}.resultsFolder,filesep,'FurrowCanalDepthMeasurements.mat'])
     DeltaFCs{i} = DeltaFC_um(nc14s(i):end,1).';
     StdDeltaFCs{i} = DeltaFC_um(nc14s(i):end,2).';
@@ -68,37 +114,286 @@ for i = 1:length(Prefixes)
     sigma_ts{i} = SEDeltaFCs{i}./abs(dDelta_dts{i});
     sigma_ts{i}(sigma_ts{i} > 10) = NaN;
 end
-outdir = 'S:/Gabriella/Dropbox/FixedTissueExperiments/';
-plotdir =  'S:/Gabriella/Dropbox/FixedTissueExperiments/Plots/';
+mkdir('S:/Gabriella/Dropbox/FurrowCanalMovieMeasurements');
+plotdir = 'S:/Gabriella/Dropbox/FurrowCanalMovieMeasurements/Figures';
+mkdir(plotdir);
 %%
+
 close all
 RawDeltaFCFig = figure(1);
-set(RawDeltaFCFig,'units', 'normalized', 'position',[0.05, 0.05, 0.5, 0.5]);
+set(RawDeltaFCFig,'units', 'normalized', 'position',[0.05, 0.05, 0.8, 0.5]);
     set(gcf,'color','w');
 RawDeltaFCs_ax = axes(RawDeltaFCFig);
-
- scatter(NC14FrameTimes{3}, DeltaFCs{3},20,'filled', 'MarkerEdgeColor', colors(1,:),'MarkerFaceColor',colors(1,:))
- 
- 
- hold on 
- scatter(NC14FrameTimes{4}, DeltaFCs{4},20,'filled', 'MarkerEdgeColor', colors(2,:),'MarkerFaceColor',colors(2,:))
- 
- 
- scatter(NC14FrameTimes{5}, DeltaFCs{5},20,'filled', 'MarkerEdgeColor', colors(3,:),'MarkerFaceColor',colors(3,:))
- scatter(NC14FrameTimes{6}, DeltaFCs{6},20,'filled', 'MarkerEdgeColor', colors(4,:),'MarkerFaceColor',colors(4,:))
- 
- 
-
-scatter(NC14FrameTimes{1}, DeltaFCs{1},20,'filled', 'MarkerEdgeColor', 'k','MarkerFaceColor',colors(5,:))
-scatter(NC14FrameTimes{2}, DeltaFCs{2},20,'filled','MarkerEdgeColor', 'k','MarkerFaceColor',colors(6,:))
-grid on
+for i = 1:length(Prefixes)
+    scatter(NC14FrameTimes{i}, DeltaFCs{i}, 20, 'filled', markers{i}, 'MarkerEdgeColor', 'k', 'MarkerFaceColor', colors(i,:));
+hold on 
+end
+grid on 
 hold off
+hlegend = legend(Prefixes, 'Location', 'eastoutside',...
+            'FontSize', 14);
+
 xlabel('Time into cycle 14 (minutes)')
 ylabel('Membrane Furrow Depth (microns)')
-xlim([0, 65])
+%xlim([0, 65])
 set(RawDeltaFCs_ax,'Fontsize',18)
-outpath = [plotdir, filesep, 'RawDeltaFCs_noErrorBar.png'];
+outpath = [plotdir, filesep, 'AllTemperaturesRawDeltaFCs_noErrorBar.png'];
 saveas(RawDeltaFCFig,outpath);
+%%
+close all
+T25CAllRawDeltaFCFig = figure(1);
+set(T25CAllRawDeltaFCFig,'units', 'normalized', 'position',[0.05, 0.05, 0.5, 0.5]);
+    set(gcf,'color','w');
+RawDeltaFCs_ax = axes(T25CAllRawDeltaFCFig);
+for i = 1:length(Prefixes)
+    if T_sets(i) == 25
+    scatter(NC14FrameTimes{i}, DeltaFCs{i}, 20, 'filled', markers{marker_index(i)}, 'MarkerEdgeColor', 'k', 'MarkerFaceColor', colors(color_index(i),:));
+hold on
+    end
+end
+grid on 
+hold off
+
+xlabel('Time into cycle 14 (minutes)')
+ylabel('Membrane Furrow Depth (microns)')
+%xlim([0, 65])
+set(RawDeltaFCs_ax,'Fontsize',18)
+title('T = 25ºC')
+outpath = [plotdir, filesep, 'T25CRawDeltaFCs_noErrorBar.png'];
+saveas(T25CAllRawDeltaFCFig,outpath);
+
+%%
+close all
+T25CHisRFPAllRawDeltaFCFig = figure(1);
+set(T25CHisRFPAllRawDeltaFCFig,'units', 'normalized', 'position',[0.05, 0.05, 0.5, 0.5]);
+    set(gcf,'color','w');
+RawDeltaFCs_ax = axes(T25CHisRFPAllRawDeltaFCFig);
+for i = 1:length(Prefixes)
+    if T_sets(i) == 25 & color_index(i) == 2 
+    scatter(NC14FrameTimes{i}, DeltaFCs{i}, 20, 'filled', markers{marker_index(i)}, 'MarkerEdgeColor', 'k', 'MarkerFaceColor', colors(color_index(i),:));
+hold on
+    end
+end
+grid on 
+hold off
+
+xlabel('Time into cycle 14 (minutes)')
+ylabel('Membrane Furrow Depth (microns)')
+%xlim([0, 65])
+set(RawDeltaFCs_ax,'Fontsize',18)
+title('T = 25ºC')
+outpath = [plotdir, filesep, 'T25CHisRFPRawDeltaFCs_noErrorBar.png'];
+saveas(T25CHisRFPAllRawDeltaFCFig,outpath);
+
+%%
+close all
+T25CHisRFPAllRawDeltaFCFig = figure(1);
+set(T25CHisRFPAllRawDeltaFCFig,'units', 'normalized', 'position',[0.05, 0.05, 0.5, 0.5]);
+    set(gcf,'color','w');
+RawDeltaFCs_ax = axes(T25CHisRFPAllRawDeltaFCFig);
+for i = 1:length(Prefixes)
+    if T_sets(i) == 25 & color_index(i) == 2 & i > 6
+    scatter(NC14FrameTimes{i}, DeltaFCs{i}, 20, 'filled', markers{marker_index(i)}, 'MarkerEdgeColor', 'k', 'MarkerFaceColor', colors(color_index(i),:));
+hold on
+    end
+end
+grid on 
+hold off
+
+xlabel('Time into cycle 14 (minutes)')
+ylabel('Membrane Furrow Depth (microns)')
+%xlim([0, 65])
+set(RawDeltaFCs_ax,'Fontsize',18)
+title('T = 25ºC')
+outpath = [plotdir, filesep, 'T25CUnsquishedHisRFPRawDeltaFCs_noErrorBar.png'];
+saveas(T25CHisRFPAllRawDeltaFCFig,outpath);
+
+%%
+close all
+T25CHisRFPAllRawDeltaFCFig = figure(1);
+set(T25CHisRFPAllRawDeltaFCFig,'units', 'normalized', 'position',[0.05, 0.05, 0.5, 0.5]);
+    set(gcf,'color','w');
+RawDeltaFCs_ax = axes(T25CHisRFPAllRawDeltaFCFig);
+for i = 1:length(Prefixes)
+    if T_sets(i) == 25 & color_index(i) == 2 & i <= 6
+    scatter(NC14FrameTimes{i}, DeltaFCs{i}, 20, 'filled', markers{marker_index(i)}, 'MarkerEdgeColor', 'k', 'MarkerFaceColor', colors(color_index(i),:));
+hold on
+    end
+end
+grid on 
+hold off
+
+xlabel('Time into cycle 14 (minutes)')
+ylabel('Membrane Furrow Depth (microns)')
+%xlim([0, 65])
+set(RawDeltaFCs_ax,'Fontsize',18)
+title('T = 25ºC')
+outpath = [plotdir, filesep, 'T25CSquishedHisRFPRawDeltaFCs_noErrorBar.png'];
+saveas(T25CHisRFPAllRawDeltaFCFig,outpath);
+
+%%
+close all
+T25CHisRFPAllRawDeltaFCFig = figure(1);
+set(T25CHisRFPAllRawDeltaFCFig,'units', 'normalized', 'position',[0.05, 0.05, 0.5, 0.5]);
+    set(gcf,'color','w');
+RawDeltaFCs_ax = axes(T25CHisRFPAllRawDeltaFCFig);
+for i = 1:length(Prefixes)
+    if T_sets(i) == 25 & color_index(i) == 3
+    scatter(NC14FrameTimes{i}, DeltaFCs{i}, 20, 'filled', markers{marker_index(i)}, 'MarkerEdgeColor', 'k', 'MarkerFaceColor', colors(color_index(i),:));
+hold on
+    end
+end
+grid on 
+hold off
+
+xlabel('Time into cycle 14 (minutes)')
+ylabel('Membrane Furrow Depth (microns)')
+%xlim([0, 65])
+set(RawDeltaFCs_ax,'Fontsize',18)
+title('T = 25ºC')
+outpath = [plotdir, filesep, 'T25CNoHisRawDeltaFCs_noErrorBar.png'];
+saveas(T25CHisRFPAllRawDeltaFCFig,outpath);
+
+
+%%
+close all
+T25CHisRFPAllRawDeltaFCFig = figure(1);
+set(T25CHisRFPAllRawDeltaFCFig,'units', 'normalized', 'position',[0.05, 0.05, 0.5, 0.5]);
+    set(gcf,'color','w');
+RawDeltaFCs_ax = axes(T25CHisRFPAllRawDeltaFCFig);
+for i = 1:length(Prefixes)
+    if T_sets(i) == 25 & color_index(i) == 3 & i > 6
+    scatter(NC14FrameTimes{i}, DeltaFCs{i}, 20, 'filled', markers{marker_index(i)}, 'MarkerEdgeColor', 'k', 'MarkerFaceColor', colors(color_index(i),:));
+hold on
+    end
+end
+grid on 
+hold off
+
+xlabel('Time into cycle 14 (minutes)')
+ylabel('Membrane Furrow Depth (microns)')
+%xlim([0, 65])
+set(RawDeltaFCs_ax,'Fontsize',18)
+title('T = 25ºC')
+outpath = [plotdir, filesep, 'T25CNoHisUnsquishedRawDeltaFCs_noErrorBar.png'];
+saveas(T25CHisRFPAllRawDeltaFCFig,outpath);
+
+%%
+close all
+T25CHisRFPAllRawDeltaFCFig = figure(1);
+set(T25CHisRFPAllRawDeltaFCFig,'units', 'normalized', 'position',[0.05, 0.05, 0.5, 0.5]);
+    set(gcf,'color','w');
+RawDeltaFCs_ax = axes(T25CHisRFPAllRawDeltaFCFig);
+for i = 1:length(Prefixes)
+    if T_sets(i) == 25 & color_index(i) == 3 & i <= 6
+    scatter(NC14FrameTimes{i}, DeltaFCs{i}, 20, 'filled', markers{marker_index(i)}, 'MarkerEdgeColor', 'k', 'MarkerFaceColor', colors(color_index(i),:));
+hold on
+    end
+end
+grid on 
+hold off
+
+xlabel('Time into cycle 14 (minutes)')
+ylabel('Membrane Furrow Depth (microns)')
+%xlim([0, 65])
+set(RawDeltaFCs_ax,'Fontsize',18)
+title('T = 25ºC')
+outpath = [plotdir, filesep, 'T25CNoHisSquishedRawDeltaFCs_noErrorBar.png'];
+saveas(T25CHisRFPAllRawDeltaFCFig,outpath);
+
+%%
+close all
+T27_5CHisRFPAllRawDeltaFCFig = figure(1);
+set(T27_5CHisRFPAllRawDeltaFCFig,'units', 'normalized', 'position',[0.05, 0.05, 0.5, 0.5]);
+    set(gcf,'color','w');
+RawDeltaFCs_ax = axes(T27_5CHisRFPAllRawDeltaFCFig);
+for i = 1:length(Prefixes)
+    if T_sets(i) == 27.5 
+    scatter(NC14FrameTimes{i}, DeltaFCs{i}, 20, 'filled', markers{marker_index(i)}, 'MarkerEdgeColor', 'k', 'MarkerFaceColor', colors(color_index(i),:));
+hold on
+    end
+end
+grid on 
+hold off
+
+xlabel('Time into cycle 14 (minutes)')
+ylabel('Membrane Furrow Depth (microns)')
+%xlim([0, 65])
+set(RawDeltaFCs_ax,'Fontsize',18)
+title('T = 27.5ºC')
+outpath = [plotdir, filesep, 'T27_5CHisRFPUnsquishedRawDeltaFCs_noErrorBar.png'];
+saveas(T27_5CHisRFPAllRawDeltaFCFig,outpath);
+
+%%
+close all
+T22_5CHisRFPAllRawDeltaFCFig = figure(1);
+set(T22_5CHisRFPAllRawDeltaFCFig,'units', 'normalized', 'position',[0.05, 0.05, 0.5, 0.5]);
+    set(gcf,'color','w');
+RawDeltaFCs_ax = axes(T22_5CHisRFPAllRawDeltaFCFig);
+for i = 1:length(Prefixes)
+    if T_sets(i) == 22.5 
+    scatter(NC14FrameTimes{i}, DeltaFCs{i}, 20, 'filled', markers{marker_index(i)}, 'MarkerEdgeColor', 'k', 'MarkerFaceColor', colors(color_index(i),:));
+hold on
+    end
+end
+grid on 
+hold off
+
+xlabel('Time into cycle 14 (minutes)')
+ylabel('Membrane Furrow Depth (microns)')
+%xlim([0, 65])
+set(RawDeltaFCs_ax,'Fontsize',18)
+title('T = 22.5ºC')
+outpath = [plotdir, filesep, 'T22_5CHisRFPUnsquishedRawDeltaFCs_noErrorBar.png'];
+saveas(T22_5CHisRFPAllRawDeltaFCFig,outpath);
+
+%%
+close all
+T20CHisRFPAllRawDeltaFCFig = figure(1);
+set(T20CHisRFPAllRawDeltaFCFig,'units', 'normalized', 'position',[0.05, 0.05, 0.5, 0.5]);
+    set(gcf,'color','w');
+RawDeltaFCs_ax = axes(T20CHisRFPAllRawDeltaFCFig);
+for i = 1:length(Prefixes)
+    if T_sets(i) == 20 
+    scatter(NC14FrameTimes{i}, DeltaFCs{i}, 20, 'filled', markers{marker_index(i)}, 'MarkerEdgeColor', 'k', 'MarkerFaceColor', colors(color_index(i),:));
+hold on
+    end
+end
+grid on 
+hold off
+
+xlabel('Time into cycle 14 (minutes)')
+ylabel('Membrane Furrow Depth (microns)')
+%xlim([0, 65])
+set(RawDeltaFCs_ax,'Fontsize',18)
+title('T = 20ºC')
+outpath = [plotdir, filesep, 'T20CHisRFPUnsquishedRawDeltaFCs_noErrorBar.png'];
+saveas(T20CHisRFPAllRawDeltaFCFig,outpath);
+
+%%
+close all
+T17_5CHisRFPAllRawDeltaFCFig = figure(1);
+set(T17_5CHisRFPAllRawDeltaFCFig,'units', 'normalized', 'position',[0.05, 0.05, 0.5, 0.5]);
+    set(gcf,'color','w');
+RawDeltaFCs_ax = axes(T17_5CHisRFPAllRawDeltaFCFig);
+for i = 1:length(Prefixes)
+    if T_sets(i) == 17.5
+    scatter(NC14FrameTimes{i}, DeltaFCs{i}, 20, 'filled', markers{marker_index(i)}, 'MarkerEdgeColor', 'k', 'MarkerFaceColor', colors(color_index(i),:));
+hold on
+    end
+end
+grid on 
+hold off
+
+xlabel('Time into cycle 14 (minutes)')
+ylabel('Membrane Furrow Depth (microns)')
+%xlim([0, 65])
+set(RawDeltaFCs_ax,'Fontsize',18)
+title('T = 17.5ºC')
+outpath = [plotdir, filesep, 'T17_5CHisRFPUnsquishedRawDeltaFCs_noErrorBar.png'];
+saveas(T17_5CHisRFPAllRawDeltaFCFig,outpath);
+
+
 
 %%
 close all
@@ -106,38 +401,23 @@ RawDeltaFCFig2 = figure(2);
 set(RawDeltaFCFig2,'units', 'normalized', 'position',[0.05, 0.05, 0.5, 0.5]);
     set(gcf,'color','w');
 RawDeltaFCs_ax2 = axes(RawDeltaFCFig2);
-
+for i = 1:length(Prefixes)
 %  errorbar(NC14FrameTimes{3}, DeltaFCs{3},SEDeltaFCs{3},SEDeltaFCs{3},...
 %      sigma_ts{3}, sigma_ts{3},'MarkerEdgeColor', colors(1,:),'MarkerFaceColor',colors(1,:))
-  errorbar(NC14FrameTimes{3}, DeltaFCs{3},SEDeltaFCs{3},'.-','MarkerSize', 20,...
-      'MarkerEdgeColor', colors(1,:),'MarkerFaceColor',colors(1,:),...
-      'Color', colors(1,:));%,'LineStyle', 'none')
+  errorbar(NC14FrameTimes{i}, DeltaFCs{i},SEDeltaFCs{i},[markers{marker_index(i)}, '-'],...
+      'MarkerSize', 10,...
+      'MarkerEdgeColor', 'k','MarkerFaceColor',colors(color_index(i),:),...
+      'Color', colors(color_index(i),:));%,'LineStyle', 'none')
  
  
  hold on 
-  errorbar(NC14FrameTimes{4}, DeltaFCs{4},SEDeltaFCs{4},'.-','MarkerSize', 20,...
-      'MarkerEdgeColor', colors(2,:),'MarkerFaceColor',colors(2,:),...
-      'Color', colors(2,:));%,'LineStyle', 'none')
-   errorbar(NC14FrameTimes{5}, DeltaFCs{5},SEDeltaFCs{5},'.-','MarkerSize', 20,...
-      'MarkerEdgeColor', colors(3,:),'MarkerFaceColor',colors(3,:),...
-      'Color', colors(3,:));%,'LineStyle', 'none')
-   errorbar(NC14FrameTimes{6}, DeltaFCs{6},SEDeltaFCs{6},'.-','MarkerSize', 20,...
-      'MarkerEdgeColor', colors(4,:),'MarkerFaceColor',colors(4,:),...
-      'Color', colors(4,:));%,'LineStyle', 'none')
- 
-    errorbar(NC14FrameTimes{1}, DeltaFCs{1},SEDeltaFCs{1},'o-','MarkerSize', 5,...
-      'MarkerEdgeColor', 'k','MarkerFaceColor',colors(5,:),...
-      'Color', colors(5,:));%,'LineStyle', 'none')
-   errorbar(NC14FrameTimes{2}, DeltaFCs{2},SEDeltaFCs{2},'o-','MarkerSize', 5,...
-      'MarkerEdgeColor', 'k','MarkerFaceColor',colors(6,:),...
-      'Color', colors(6,:));%,'LineStyle', 'none')
- 
-
-grid on
+end
+grid on 
 hold off
-xlabel('Time into cycle 14 (minutes)')
-ylabel('Membrane Furrow Depth (microns)')
-xlim([0, 65])
+
+xlabel('Time into cycle 14 (minutes)', 'FontSize', 16)
+ylabel('Membrane Furrow Depth (microns)', 'FontSize', 16)
+%xlim([0, 65])
 set(RawDeltaFCs_ax2,'Fontsize',18)
 outpath = [plotdir, filesep, 'RawDeltaFCs.png'];
 saveas(RawDeltaFCFig2,outpath);

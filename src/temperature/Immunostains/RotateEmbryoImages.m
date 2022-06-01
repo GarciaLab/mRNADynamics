@@ -6,19 +6,39 @@ liveExperiment = LiveExperiment(Prefix);
 PixelSize_um = liveExperiment.pixelSize_um;
 xSize = liveExperiment.xDim;
 ySize = liveExperiment.yDim;
-FrameInfo = getFrameInfo(liveExperiment);
-load([liveExperiment.resultsFolder, filesep, 'MarkAndFindInfo.Mat'], 'MarkAndFindInfo');
+try
+    FrameInfo = getFrameInfo(liveExperiment);
+    load([liveExperiment.resultsFolder, filesep, 'MarkAndFindInfo.Mat'], 'MarkAndFindInfo');
+catch
+    FrameInfo = {};
+    MarkAndFindInfo = {};
+end
 
-NEmbryos = MarkAndFindInfo.NSeries;
-
-%%
 MembraneMat = getMembraneMat(liveExperiment);
-HisMat = getHisMat(liveExperiment);
+xSize = size(MembraneMat,2);
+ySize = size(MembraneMat,1);
+NEmbryos = size(MembraneMat,3);
+if ~isempty(MarkAndFindInfo)
+    NEmbryos = MarkAndFindInfo.NSeries;
+else
+    NEmbryos = size(MembraneMat, 3);
+end
 
+try
+    HisMat = getHisMat(liveExperiment);
+catch
+    HisMat = [];
+end
 
-RotatedMembraneMat = zeros(ySize/2, xSize, NEmbryos,'double');
-RotatedHisMat = zeros(ySize/2, xSize, NEmbryos,'double');
+if ~isempty(FrameInfo)
+    RotatedMembraneMat = zeros(ySize/2, xSize, NEmbryos,'double');
+else
+    RotatedMembraneMat = zeros(ySize/2, xSize*3/2, NEmbryos,'double');
+end
 
+if ~isempty(HisMat)
+    RotatedHisMat = zeros(ySize/2, xSize, NEmbryos,'double');
+end
 if isfile([liveExperiment.preFolder, filesep, Prefix, '-CustomHis.tif'])
     CustomHisMat = imreadStack2([liveExperiment.preFolder, filesep,...
         liveExperiment.Prefix, '-CustomHis.tif'], liveExperiment.yDim, liveExperiment.xDim, liveExperiment.nFrames);
@@ -34,16 +54,29 @@ if isfile([liveExperiment.preFolder, filesep, Prefix, '-CustomMembrane.tif'])
 end
 
 
+
+
+if isfile([liveExperiment.preFolder, filesep, Prefix, '-ZoomMembrane.tif'])
+    ZoomMembraneMat = imreadStack2([liveExperiment.preFolder, filesep,...
+        liveExperiment.Prefix, '-ZoomMembrane.tif']);
+    xSize_zoom = size(ZoomMembraneMat, 2);
+    ySize_zoom = size(ZoomMembraneMat, 2);
+    RotatedZoomMembraneMat = zeros(ySize_zoom, xSize_zoom, NEmbryos,'double');
+    
+    xSizeZoom_Temp = 2*xSize_zoom;
+    ySizeZoom_Temp = 2*ySize_zoom;
+end
+
 CompiledEmbryoPath = [liveExperiment.resultsFolder, filesep, 'CompiledEmbryos.Mat'];
 load(CompiledEmbryoPath);
 
 %%
-xSize = size(MembraneMat,2);
-ySize = size(MembraneMat,1);
-NEmbryos = size(MembraneMat,3);
+
 
 xSize_Temp = 2*xSize;
 ySize_Temp = 2*ySize;
+
+
 
 
 for embryoIndex = 1:NEmbryos
@@ -83,8 +116,11 @@ for embryoIndex = 1:NEmbryos
             hold off
         end
         %%
-        TempImage3 =  TempImage2(round(3*xSize/4)+1:round(5*xSize/4),xSize/2+1:3*xSize/2);
-        
+        if ~isempty(FrameInfo)
+            TempImage3 =  TempImage2(round(3*xSize/4)+1:round(5*xSize/4),xSize/2+1:3*xSize/2);
+        else
+            TempImage3 =  TempImage2(round(3*xSize/4)+1:round(5*xSize/4),round(ySize/4)+1:round(7*ySize/4));
+        end
         
         
         if CompiledEmbryos.FlippedOrientation(embryoIndex)
@@ -105,33 +141,37 @@ for embryoIndex = 1:NEmbryos
         
         RotatedMembraneMat(:,:,embryoIndex) = TempImage3;
         
-        
-        EmbryoImage = HisMat(:,:,embryoIndex);
-        DisplayRange=[min(min(EmbryoImage)),max(max(EmbryoImage))];
-        TempImage = zeros(ySize_Temp,xSize_Temp,'double');
-        
-        TempImage(uint16(ySize/2-CompiledEmbryos.yShift(embryoIndex)+1):uint16(ySize/2-CompiledEmbryos.yShift(embryoIndex)+ySize),...
-            uint16(xSize/2+CompiledEmbryos.xShift(embryoIndex)+1):uint16(xSize/2+CompiledEmbryos.xShift(embryoIndex)+xSize))= EmbryoImage;
-        
-        
-        TempImage2 = imrotate(TempImage, -CompiledEmbryos.APRotationAngles(embryoIndex),'bilinear', 'crop');
-        
-        theta = -CompiledEmbryos.APRotationAngles(embryoIndex)*pi/180;
-        RotMat = [cos(theta) sin(theta); -sin(theta) cos(theta)];
-        
-        
-        %%
-        TempImage3 =  TempImage2(round(3*xSize/4)+1:round(5*xSize/4),xSize/2+1:3*xSize/2);
-        
-        
-        if CompiledEmbryos.FlippedOrientation(embryoIndex)
-            TempImage3 = flipud(TempImage3);
+        if ~isempty(HisMat)
+            EmbryoImage = HisMat(:,:,embryoIndex);
+            DisplayRange=[min(min(EmbryoImage)),max(max(EmbryoImage))];
+            TempImage = zeros(ySize_Temp,xSize_Temp,'double');
             
+            TempImage(uint16(ySize/2-CompiledEmbryos.yShift(embryoIndex)+1):uint16(ySize/2-CompiledEmbryos.yShift(embryoIndex)+ySize),...
+                uint16(xSize/2+CompiledEmbryos.xShift(embryoIndex)+1):uint16(xSize/2+CompiledEmbryos.xShift(embryoIndex)+xSize))= EmbryoImage;
+            
+            
+            TempImage2 = imrotate(TempImage, -CompiledEmbryos.APRotationAngles(embryoIndex),'bilinear', 'crop');
+            
+            theta = -CompiledEmbryos.APRotationAngles(embryoIndex)*pi/180;
+            RotMat = [cos(theta) sin(theta); -sin(theta) cos(theta)];
+            
+            
+            %%
+            if ~isempty(FrameInfo)
+                TempImage3 =  TempImage2(round(3*xSize/4)+1:round(5*xSize/4),xSize/2+1:3*xSize/2);
+            else
+                 TempImage3 =  TempImage2(round(3*xSize/4)+1:round(5*xSize/4),round(ySize/4)+1:round(7*ySize/4));
+            end
+            
+            
+            if CompiledEmbryos.FlippedOrientation(embryoIndex)
+                TempImage3 = flipud(TempImage3);
+                
+            end
+            
+            
+            RotatedHisMat(:,:,embryoIndex) = TempImage3;
         end
-        
-        
-        RotatedHisMat(:,:,embryoIndex) = TempImage3;
-        
         if exist('RotatedCustomHisMat', 'var')
             EmbryoImage = CustomHisMat(:,:,embryoIndex);
             DisplayRange=[min(min(EmbryoImage)),max(max(EmbryoImage))];
@@ -148,7 +188,11 @@ for embryoIndex = 1:NEmbryos
             
             
             %%
-            TempImage3 =  TempImage2(round(3*xSize/4)+1:round(5*xSize/4),xSize/2+1:3*xSize/2);
+            if ~isempty(FrameInfo)
+                TempImage3 =  TempImage2(round(3*xSize/4)+1:round(5*xSize/4),xSize/2+1:3*xSize/2);
+            else
+                 TempImage3 =  TempImage2(round(3*xSize/4)+1:round(5*xSize/4),round(ySize/4)+1:round(7*ySize/4));
+            end
             
             
             if CompiledEmbryos.FlippedOrientation(embryoIndex)
@@ -176,7 +220,11 @@ for embryoIndex = 1:NEmbryos
             
             
             %%
-            TempImage3 =  TempImage2(round(3*xSize/4)+1:round(5*xSize/4),xSize/2+1:3*xSize/2);
+            if ~isempty(FrameInfo)
+                TempImage3 =  TempImage2(round(3*xSize/4)+1:round(5*xSize/4),xSize/2+1:3*xSize/2);
+            else
+                TempImage3 =  TempImage2(round(3*xSize/4)+1:round(5*xSize/4),round(ySize/4)+1:round(7*ySize/4));
+            end
             
             
             if CompiledEmbryos.FlippedOrientation(embryoIndex)
@@ -186,6 +234,38 @@ for embryoIndex = 1:NEmbryos
             
             
             RotatedCustomMembraneMat(:,:,embryoIndex) = TempImage3;
+        end
+        
+        if exist('ZoomMembraneMat', 'var')
+            EmbryoImage = ZoomMembraneMat(:,:,embryoIndex);
+            DisplayRange=[min(min(EmbryoImage)),max(max(EmbryoImage))];
+            TempImage = min(EmbryoImage(:))*ones(ySizeZoom_Temp,xSizeZoom_Temp,'double');
+            
+            TempImage(uint16(ySize_zoom/2)+1:uint16(3*ySize_zoom/2),...
+                uint16(xSize_zoom/2)+1:uint16(3*xSize_zoom/2))= EmbryoImage;
+            
+            
+            TempImage2 = imrotate(TempImage, -CompiledEmbryos.APRotationAngles(embryoIndex),'bilinear', 'crop');
+            
+            theta = -CompiledEmbryos.APRotationAngles(embryoIndex)*pi/180;
+            RotMat = [cos(theta) sin(theta); -sin(theta) cos(theta)];
+            
+            
+            %%
+            if ~isempty(FrameInfo)
+                TempImage3 =  TempImage2(round(3*xSize/4)+1:round(5*xSize/4),xSize/2+1:3*xSize/2);
+            else
+                 TempImage3 =  TempImage2(round(3*xSize/4)+1:round(5*xSize/4),round(ySize/4)+1:round(7*ySize/4));
+            end
+            
+            
+            if CompiledEmbryos.FlippedOrientation(embryoIndex)
+                TempImage3 = flipud(TempImage3);
+                
+            end
+            
+            
+            RotatedZoomMembraneMat(:,:,embryoIndex) = TempImage3;
         end
     end
 end
@@ -198,8 +278,12 @@ RotatedMemFile = [liveExperiment.preFolder, filesep, Prefix, '-Membrane_Rotated.
 
 
 
-saveNuclearProjection(RotatedHisMat,RotatedHisFile);
+
 saveNuclearProjection(RotatedMembraneMat,RotatedMemFile);
+
+if ~isempty(HisMat)
+    saveNuclearProjection(RotatedHisMat,RotatedHisFile);
+end
 
 if exist('RotatedCustomHisMat', 'var')
     RotatedCustomHisFile = [liveExperiment.preFolder, filesep,Prefix, '-CustomHis_Rotated.tif'];
@@ -209,4 +293,9 @@ end
 if exist('RotatedCustomMembraneMat', 'var')
     RotatedCustomMembraneFile = [liveExperiment.preFolder, filesep,Prefix, '-CustomMembrane_Rotated.tif'];
     saveNuclearProjection(RotatedCustomMembraneMat,RotatedCustomMembraneFile);
+end
+
+if exist('RotatedZoomMembraneMat', 'var')
+    RotatedZoomMembraneFile = [liveExperiment.preFolder, filesep,Prefix, '-ZoomMembrane_Rotated.tif'];
+    saveNuclearProjection(RotatedZoomMembraneMat,RotatedZoomMembraneFile);
 end

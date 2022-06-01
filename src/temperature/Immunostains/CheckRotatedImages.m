@@ -4,10 +4,18 @@ liveExperiment = LiveExperiment(Prefix);
 PixelSize_um = liveExperiment.pixelSize_um;
 xDim = liveExperiment.xDim;
 yDim = liveExperiment.yDim;
-FrameInfo = getFrameInfo(liveExperiment);
-load([liveExperiment.resultsFolder, filesep, 'MarkAndFindInfo.Mat'], 'MarkAndFindInfo');
+try
+    FrameInfo = getFrameInfo(liveExperiment);
+    load([liveExperiment.resultsFolder, filesep, 'MarkAndFindInfo.Mat'], 'MarkAndFindInfo');
+catch 
+    FrameInfo = {};
+    MarkAndFindInfo = {};
+end
 
-NEmbryos = MarkAndFindInfo.NSeries;
+MembraneMat = getMembraneMat(liveExperiment);
+xSize = size(MembraneMat,2);
+ySize = size(MembraneMat,1);
+NEmbryos = size(MembraneMat,3);
 
 %%
 RotatedMembraneMat = imreadStack2([liveExperiment.preFolder, filesep,...
@@ -207,10 +215,10 @@ while (cc~='x')
         CompiledEmbryos.Approved(CurrentEmbryo) = 0;
         
     elseif (ct~=0)&(cc=='s')
-        CompiledEmbryos.CoordAs = TransformToOriginalImageCoordinates(CompiledEmbryos.RotatedCoordAs, Prefix,CompiledEmbryos);
-        CompiledEmbryos.CoordPs = TransformToOriginalImageCoordinates(CompiledEmbryos.RotatedCoordPs, Prefix,CompiledEmbryos);
-        CompiledEmbryos.CoordDs = TransformToOriginalImageCoordinates(CompiledEmbryos.RotatedCoordDs, Prefix,CompiledEmbryos);
-        CompiledEmbryos.CoordVs = TransformToOriginalImageCoordinates(CompiledEmbryos.RotatedCoordVs, Prefix,CompiledEmbryos);
+        CompiledEmbryos.CoordAs = TransformToOriginalImageCoordinates(CompiledEmbryos.RotatedCoordAs, Prefix,CompiledEmbryos,liveExperiment,0, MembraneMat);
+        CompiledEmbryos.CoordPs = TransformToOriginalImageCoordinates(CompiledEmbryos.RotatedCoordPs, Prefix,CompiledEmbryos,liveExperiment,0, MembraneMat);
+        CompiledEmbryos.CoordDs = TransformToOriginalImageCoordinates(CompiledEmbryos.RotatedCoordDs, Prefix,CompiledEmbryos,liveExperiment,0, MembraneMat);
+        CompiledEmbryos.CoordVs = TransformToOriginalImageCoordinates(CompiledEmbryos.RotatedCoordVs, Prefix,CompiledEmbryos,liveExperiment,0, MembraneMat);
         CompiledEmbryos = UpdateAPAxisInfo(Prefix, CompiledEmbryos);
         
         
@@ -219,10 +227,10 @@ while (cc~='x')
     end
 end
 
-CompiledEmbryos.CoordAs = TransformToOriginalImageCoordinates(CompiledEmbryos.RotatedCoordAs, Prefix,CompiledEmbryos);
-CompiledEmbryos.CoordPs = TransformToOriginalImageCoordinates(CompiledEmbryos.RotatedCoordPs, Prefix,CompiledEmbryos);
-CompiledEmbryos.CoordDs = TransformToOriginalImageCoordinates(CompiledEmbryos.RotatedCoordDs, Prefix,CompiledEmbryos);
-CompiledEmbryos.CoordVs = TransformToOriginalImageCoordinates(CompiledEmbryos.RotatedCoordVs, Prefix,CompiledEmbryos);
+CompiledEmbryos.CoordAs = TransformToOriginalImageCoordinates(CompiledEmbryos.RotatedCoordAs, Prefix,CompiledEmbryos,liveExperiment, 0, MembraneMat);
+CompiledEmbryos.CoordPs = TransformToOriginalImageCoordinates(CompiledEmbryos.RotatedCoordPs, Prefix,CompiledEmbryos,liveExperiment,0, MembraneMat);
+CompiledEmbryos.CoordDs = TransformToOriginalImageCoordinates(CompiledEmbryos.RotatedCoordDs, Prefix,CompiledEmbryos,liveExperiment,0, MembraneMat);
+CompiledEmbryos.CoordVs = TransformToOriginalImageCoordinates(CompiledEmbryos.RotatedCoordVs, Prefix,CompiledEmbryos,liveExperiment,0, MembraneMat);
 CompiledEmbryos = UpdateAPAxisInfo(Prefix, CompiledEmbryos);
 
 

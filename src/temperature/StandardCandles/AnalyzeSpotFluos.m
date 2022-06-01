@@ -72,7 +72,9 @@ Flags_120mer = ones(1, length(SpotInfo_120mer_50uW.GaussianIntensitySmallSnip), 
 % Flags_120mer = Flags_120mer & SpotInfo_120mer_50uW.GaussianWidthXSmallSnip+SpotInfo_120mer_50uW.GaussianWidthYSmallSnip <= sigsum_limits(2);
 % Flags_120mer = Flags_120mer & abs(SpotInfo_120mer_50uW.GaussianWidthXSmallSnip-SpotInfo_120mer_50uW.GaussianWidthYSmallSnip) >= sigdiff_limits(1);
 % Flags_120mer = Flags_120mer & abs(SpotInfo_120mer_50uW.GaussianWidthXSmallSnip-SpotInfo_120mer_50uW.GaussianWidthYSmallSnip) <= sigdiff_limits(2);
-% 
+Flags_120mer = Flags_120mer & SpotInfo_120mer_50uW.nearest_neighbors_Corrected > 10;
+Flags_120mer = Flags_120mer & SpotInfo_120mer_50uW.nearest_neighbors_SS > 10;
+Flags_120mer = Flags_120mer & SpotInfo_120mer_50uW.nearest_neighbors_kernel > 10;
 
 Flags_60mer = ones(1, length(SpotInfo_60mer_50uW.GaussianIntensitySmallSnip), 'logical');
 % Flags_60mer = Flags_60mer & SpotInfo_60mer_50uW.GaussianWidthXSmallSnip >= sigx_limits(1);
@@ -83,7 +85,9 @@ Flags_60mer = ones(1, length(SpotInfo_60mer_50uW.GaussianIntensitySmallSnip), 'l
 % Flags_60mer = Flags_60mer & SpotInfo_60mer_50uW.GaussianWidthXSmallSnip+SpotInfo_60mer_50uW.GaussianWidthYSmallSnip <= sigsum_limits(2);
 % Flags_60mer = Flags_60mer & abs(SpotInfo_60mer_50uW.GaussianWidthXSmallSnip-SpotInfo_60mer_50uW.GaussianWidthYSmallSnip) >= sigdiff_limits(1);
 % Flags_60mer = Flags_60mer & abs(SpotInfo_60mer_50uW.GaussianWidthXSmallSnip-SpotInfo_60mer_50uW.GaussianWidthYSmallSnip) <= sigdiff_limits(2);
-
+Flags_60mer = Flags_60mer & SpotInfo_60mer_50uW.nearest_neighbors_Corrected > 10;
+Flags_60mer = Flags_60mer & SpotInfo_60mer_50uW.nearest_neighbors_SS > 10;
+Flags_60mer = Flags_60mer & SpotInfo_60mer_50uW.nearest_neighbors_kernel > 10;
 
 
 
@@ -386,31 +390,5 @@ legend('Integrated Gaussian Kernel Intensity', ['Peak = ', num2str(round(Fluo12_
 outpath = [plotdir, filesep, '120mer20C50uW_IntegratedGaussianKernelIntensityDistWidth1.png'];
 saveas(Fig12,outpath);
 
-
-%%
-nearest_neighbors = [];
-GI = [];
-nearest_neighbors_SS = [];
-GISS = [];
-nearest_neighbors_kernel = [];
-GIkernel = [];
-for i = 1:length(Spots.Fits)
-    zIndexSS = find(Spots.Fits(i).z == Spots.Fits(i).GaussianZSmallSnip);
-    nearest_neighbors_SS(end+1) = Spots.Fits(i).nearest_neighbor(zIndexSS);
-    GISS(end+1) = Spots.Fits(i).GaussianIntensitySmallSnip(zIndexSS);
-    [~, zIndex] = find(Spots.Fits(i).GaussianIntensityCorrected == max(Spots.Fits(i).GaussianIntensityCorrected));
-    nearest_neighbors(end+1) = Spots.Fits(i).nearest_neighbor(zIndex);
-    GI(end+1) = Spots.Fits(i).GaussianKernelIntensity(zIndex);
-    [~, zIndex_kernel] = find(Spots.Fits(i).GaussianKernelIntensity == max(Spots.Fits(i).GaussianKernelIntensity ));
-    nearest_neighbors_kernel(end+1) = Spots.Fits(i).nearest_neighbor(zIndex_kernel);
-    GIkernel(end+1) = Spots.Fits(i).GaussianKernelIntensity(zIndex_kernel);
-end
-
-figure(1)
-scatter(nearest_neighbors, GI)
-figure(2)
-scatter(nearest_neighbors_SS, GISS)
-figure(3)
-scatter(nearest_neighbors_kernel, GIkernel)
 
 

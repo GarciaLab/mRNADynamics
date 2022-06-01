@@ -1,8 +1,7 @@
-function exportImmunostainTIFStacks(AllImages, imagingModality, NChannels, NReplicates, NSlices,...
-    Prefix, moviePrecision, hisPrecision)
+function exportImmunostainMembraneStacks(imageMat,Prefix)
 %%
 
-NEmbryos = length(NReplicates);
+NEmbryos = size(imageMat, 4);
 
 liveExperiment = LiveExperiment(Prefix);
 PreProcFolder = liveExperiment.preFolder;

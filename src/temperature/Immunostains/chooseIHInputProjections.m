@@ -11,7 +11,7 @@
 % 'nuclearGUI' option must be entered in exportDataForLivemRNA)
 
 function [projectionChannels, ProjectionType] =...
-    chooseIHHisProjections(Prefix, varargin)
+    chooseIHInputProjections(Prefix, varargin)
 
 cleanupObj = onCleanup(@myCleanupFun);
 warning('off', 'MATLAB:ui:Slider:fixedHeight')
@@ -43,11 +43,9 @@ Channel1 = liveExperiment.Channel1;
 Channel2 = liveExperiment.Channel2;
 Channel3 = liveExperiment.Channel3;
 Channel4 = liveExperiment.Channel4;
-
 Channel5 = liveExperiment.Channel5;
 
-
-projectionChannels = {Channel1, Channel2, Channel3,Channel4,Channel5};
+projectionChannels = {Channel1, Channel2, Channel3, Channel4, Channel5};
 
 DropboxFolder = liveExperiment.userResultsFolder;
 PreProcPath = liveExperiment.userPreFolder;
@@ -82,7 +80,7 @@ NEmbryos = size(movieMat,4);
 NSlices = liveExperiment.zDim;
 yDim = liveExperiment.yDim;
 xDim = liveExperiment.xDim;
-NReplicates = size(FullRepsMovieMat,5);
+NReplicates = size(movieMat,5);
 
 if ~isempty(movieMat)
     NChannels = size(movieMat, 5);
@@ -121,9 +119,19 @@ end
 if iscell(Channel3)
     Channel3 = Channel3{1};
 end
+if iscell(Channel4)
+    Channel4 = Channel4{1};
+end
+if iscell(Channel5)
+    Channel5 = Channel5{1};
+end
 ch1pre =  truncateAtColon(Channel1);
 ch2pre =  truncateAtColon(Channel2);
 ch3pre =  truncateAtColon(Channel3);
+ch4pre =  truncateAtColon(Channel4);
+ch5pre =  truncateAtColon(Channel5);
+
+
 
 if contains(Channel1, ':')
     Channel1 = truncateAtColon(Channel1);
@@ -134,21 +142,27 @@ end
 if contains(Channel3, ':')
     Channel3 = truncateAtColon(Channel3);
 end
+if contains(Channel4, ':')
+    Channel4 = truncateAtColon(Channel4);
+end
+if contains(Channel5, ':')
+    Channel5 = truncateAtColon(Channel5);
+end
 
-projectionChannels = {Channel1, Channel2, Channel3};
+projectionChannels = {Channel1, Channel2, Channel3, Channel4, Channel5};
 
 %construct cell to store projections for each frame separately
 projCell = cell(NEmbryos, 1);
 chCell = cell(NEmbryos, 1);
 for ff = 1:NEmbryos
     projCell{ff} = ProjectionType;
-    chCell{ff} = {Channel1, Channel2, Channel3};
+    chCell{ff} = {Channel1, Channel2, Channel3, Channel4, Channel5};
 end
 
 
 
 %%
-% creates and stores histone slices
+% creates and stores input slices
 % idx = 1;
 for framesIndex = 1:NEmbryos
     %         if mod(idx, skip_factor) == 1
@@ -192,7 +206,7 @@ end
 screen_size = get(0, 'screensize');
 dim = [screen_size(3) * 0.6, screen_size(4) * 0.75];
 dimVec = [dim(1), dim(2), dim(1), dim(2)]; %to easily normalize units
-fig = uifigure('Position', [100, 100, dim(1), dim(2)], 'Name', 'Choose Histone Channels');
+fig = uifigure('Position', [100, 100, dim(1), dim(2)], 'Name', 'Choose Input Channels');
 set(fig,'KeyPressFcn',@keycall)
 imgAxis = uiaxes(fig, 'Position', [20, 20, dim(1) - 20, dim(2) * 0.5]);
 hisPrecision = 'uint8';
@@ -207,7 +221,7 @@ end
 frame_label = uilabel(fig,  'Text', ['Embryo: ', num2str(frame)] , 'Position', ...
     [dim(1) * 0.5, dim(2) * 0.65, dim(1) * 0.1, dim(2) * 0.05]);
 
-frame_slider.ValueChangedFcn = @updateHisImage;
+frame_slider.ValueChangedFcn = @updateInputImage;
 
 %% display contrast stuff
 maxPos = dimVec .* [.7, .2, .1, .1];
@@ -220,14 +234,14 @@ max_label = uilabel(fig,  'Text', 'max display value', 'Position', ...
     maxLabelPos);
 max_slider = uislider(fig, 'Limits', [0, 255], 'Value', 255, ...
     'Position', maxPos);
-max_slider.ValueChangedFcn = @updateHisImage;
+max_slider.ValueChangedFcn = @updateInputImage;
 
 
 min_label = uilabel(fig,  'Text', 'min display value', 'Position', ...
     minLabelPos);
 min_slider = uislider(fig, 'Limits', [0, 255], 'Value', 0, ...
     'Position',minPos);
-min_slider.ValueChangedFcn = @updateHisImage;
+min_slider.ValueChangedFcn = @updateInputImage;
 
 %%
 channel_label = uilabel(fig, 'Position', [10, dim(2) * 0.93, dim(1) * 0.125, dim(2) * 0.05], ...
@@ -236,7 +250,7 @@ channel_list = uilistbox(fig, 'Position', [10, dim(2) * 0.77, dim(1) * 0.125, di
     'MultiSelect', 'on', 'Items', options, ...
     'Value', {'Channel 1'});
 
-channel_list.ValueChangedFcn = @updateHisImage;
+channel_list.ValueChangedFcn = @updateInputImage;
 
 invert_label = uilabel(fig, 'Position', [dim(1) * 0.2, dim(2) * 0.93, dim(1) * 0.125, dim(2) * 0.05], ...
     'Text', 'Inversions');
@@ -247,7 +261,7 @@ invert_list = uilistbox(fig, 'Position', [dim(1) * 0.2, dim(2) * 0.77, dim(1) * 
 psa_label = uilabel(fig, 'Position', [10, dim(2) * .7, dim(1) * .5, dim(2) * .07], ...
     'Text', sprintf('%s \n %s', 'You can unselect a channel or','select multiple channels by holding down Ctrl'));
 
-invert_list.ValueChangedFcn = @updateHisImage;
+invert_list.ValueChangedFcn = @updateInputImage;
 
 proj_type_label = uilabel(fig, 'Position', [dim(1) * 0.4, dim(2) * 0.93, dim(1) * 0.125, dim(2) * 0.05], ...
     'Text', 'Projection Type');
@@ -256,7 +270,7 @@ proj_type_dropdown = uidropdown(fig, 'Position', ...
     'Items', {'maxprojection', 'medianprojection', 'middleprojection', 'midsumprojection', 'customprojection'}, ...
     'Value', {'midsumprojection'});
 
-proj_type_dropdown.ValueChangedFcn = @updateHisImage;
+proj_type_dropdown.ValueChangedFcn = @updateInputImage;
 
 
 
@@ -299,12 +313,12 @@ save_button = uibutton(fig, 'Text', 'Save Channel Selection', 'Position', ...
 
 save_button.ButtonPushedFcn = @saveOptions;
 
-updateHisImage();
+updateInputImage();
 uiwait(fig);
 
 % called whenever the frame, channels, or projection is changed. Updates
 % the histone image the UI shows
-    function updateHisImage(~, ~)
+    function updateInputImage(~, ~)
         channels_to_use = channel_list.Value;
         inverted_channels = invert_list.Value;
         projection_type = proj_type_dropdown.Value;
@@ -339,7 +353,8 @@ uiwait(fig);
         Channel1 = projectionChannels{1};
         Channel2 = projectionChannels{2};
         Channel3 = projectionChannels{3};
-        
+        Channel4 = projectionChannels{4};
+        Channel5 = projectionChannels{5};
         
     end
 
@@ -355,6 +370,8 @@ uiwait(fig);
         Channel1 = projectionChannels{1};
         Channel2 = projectionChannels{2};
         Channel3 = projectionChannels{3};
+        Channel4 = projectionChannels{4};
+        Channel5 = projectionChannels{5};
         
         channels_to_use = channel_list.Value;
         inverted_channels = invert_list.Value;
@@ -417,8 +434,8 @@ uiwait(fig);
             
         end
         
-        saveNuclearProjection(projections, [liveExperiment.preFolder, filesep, Prefix, '-His.tif']);
-        saveMarkAndFindNuclearProjection(fullrep_projections, [liveExperiment.preFolder, filesep, Prefix, '-His_AllReps.tif'])
+        saveNuclearProjection(projections, [liveExperiment.preFolder, filesep, Prefix, '-Input.tif']);
+        saveMarkAndFindNuclearProjection(fullrep_projections, [liveExperiment.preFolder, filesep, Prefix, '-Input_AllReps.tif'])
         clear LiveExperiment;
         
         
@@ -507,18 +524,36 @@ uiwait(fig);
             Channel3 = truncateAtColon(Channel3);
         end
         
-        if any(strcmp(channel_list.Value, 'Channel 3'))
-            if any(strcmp(invert_list.Value, 'Channel 3'))
-                Channel3 = [ch3pre, ':invertedNuclear'];
+        if any(strcmp(channel_list.Value, 'Channel 4'))
+            if any(strcmp(invert_list.Value, 'Channel 4'))
+                Channel4 = [ch4pre, ':invertedNuclear'];
             else
-                Channel3 = [ch3pre, ':Nuclear'];
+                Channel4 = [ch4pre, ':Nuclear'];
             end
         else
-            Channel3 = '';
+            Channel4 = '';
+        end
+        
+        if contains(Channel4, ':')
+            Channel4 = truncateAtColon(Channel4);
+        end
+        
+        if any(strcmp(channel_list.Value, 'Channel 5'))
+            if any(strcmp(invert_list.Value, 'Channel 5'))
+                Channel5 = [ch5pre, ':invertedNuclear'];
+            else
+                Channel5 = [ch5pre, ':Nuclear'];
+            end
+        else
+            Channel5 = '';
+        end
+        
+        if contains(Channel5, ':')
+            Channel5 = truncateAtColon(Channel5);
         end
         
         
-        Channels = {Channel1, Channel2, Channel3};
+        Channels = {Channel1, Channel2, Channel3, Channel4, Channel5};
         
     end
 

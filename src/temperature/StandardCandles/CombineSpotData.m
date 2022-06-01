@@ -151,6 +151,10 @@ dogFixedAreaIntensity =  [];
 DOGIntensity = [];
 FixedAreaIntensity= [];
 
+nearest_neighbors_Corrected = [];
+nearest_neighbors_SS =[];
+nearest_neighbors_kernel = [];
+
 %%
 for SpotIndex = 1:NumSpots
     xDoG(SpotIndex)  =  mean(Spots.Fits(SpotIndex).xDoG);
@@ -218,6 +222,13 @@ for SpotIndex = 1:NumSpots
     GaussianInfo_offy(SpotIndex)= Spots.Fits(SpotIndex).GaussianInfo(MatchIndex).offset_y;
     GaussianError_offy(SpotIndex) = Spots.Fits(SpotIndex).GaussianError(MatchIndex).offset_y;
     TotalPixels(SpotIndex) = sum(Spots.Fits(SpotIndex).bwArea);
+    
+    zIndexSS = find(Spots.Fits(SpotIndex).z == Spots.Fits(SpotIndex).GaussianZSmallSnip);
+    nearest_neighbors_SS(SpotIndex) = Spots.Fits(SpotIndex).nearest_neighbor(zIndexSS);
+    [~, zIndex] = find(Spots.Fits(SpotIndex).GaussianIntensityCorrected == max(Spots.Fits(SpotIndex).GaussianIntensityCorrected));
+    nearest_neighbors_Corrected(SpotIndex) = Spots.Fits(SpotIndex).nearest_neighbor(zIndex);
+    [~, zIndex_kernel] = find(Spots.Fits(SpotIndex).GaussianKernelIntensity == max(Spots.Fits(SpotIndex).GaussianKernelIntensity ));
+    nearest_neighbors_kernel(SpotIndex) = Spots.Fits(SpotIndex).nearest_neighbor(zIndex_kernel);
     
     
     
