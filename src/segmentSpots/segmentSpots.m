@@ -220,8 +220,8 @@ if track, TrackmRNADynamics(Prefix, 'noretrack'); end
 
 if fit3D > 0
     disp('Fitting 3D Gaussians...')
-    fit3DGaussiansToAllSpots(Prefix, fit3D,...
-        'segmentSpots', Spots, 'nWorkers', nWorkers, saveType);
+    fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots, ...
+                             'nWorkers', nWorkers);
     disp('3D Gaussian fitting completed.')
 end
 

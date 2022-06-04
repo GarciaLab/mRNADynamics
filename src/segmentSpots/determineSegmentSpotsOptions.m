@@ -92,6 +92,7 @@ for i = 1:length(varargin)
     elseif strcmpi(varargin{i}, 'fit3DOnly')
         fit3D = 1;
         skipSegmentation = 1;
+        runTrackmRNADynamics = false;
     elseif strcmpi(varargin{i}, 'fit3D2Spot') && fit3D == 0
         fit3D = 2;
     elseif strcmpi(varargin{i}, 'filterMovie')
