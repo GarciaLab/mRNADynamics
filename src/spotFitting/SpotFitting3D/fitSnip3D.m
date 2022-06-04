@@ -1,4 +1,41 @@
 function [spotsFrame, fitInfo] = fitSnip3D(spotsFrame, spotIndex, liveExperiment, imStack, nSpots)
+%
+% DESCRIPTION
+% Sub-function called by spotFittingLoop that generates a 3D snip 
+% containing a single spot and then fits 3D Gaussian(s) to that particular 
+% spot. The 3D snippet is a ~1.3-1.5um neighborhood centered around the
+% spot of interest.
+%
+% INPUT ARGUMENTS
+% spotsFrame: 2D fits for all spots detected in a single frame
+% spotsIndex: index of the spot within the given frame (used to index into
+%             the spotsFrame structure) 
+% liveExperiment: LiveExperiment instance for this particular dataset
+% imStack: 3D array containing the image data for this single frame
+% nSpots: number of Gaussians to fit. Should be 2 for MS2 spots (to
+%         account for sister chromatids) and 1 for transcription factor
+%         clusters
+% 
+% OPTIONS
+% N/A
+%
+% OUPUT
+% spotsFrame: 
+% fitInfo: Data structure containing key fit parameter results for the
+%          1 or 2 3D Gaussians fit to the spot.
+%          Parameter identity is as follows: 
+%               (1) amplitude of gaussian (spot 1)    
+%               (2-3) xy, and z sigma values (both spots) 
+%               (4-6) y,x,and z center positions (spot 1)         
+%               (7) amplitude of gaussian (spot 2)
+%               (8-10) y,x,and z center positions (spot 2)        
+%               (11-17) inferred background gradient
+%
+% Author (contact): Nicholas Lammers (nlammers@berkeley.edu)
+% Created: 2019-2020ish
+%
+% Documented by: Meghan Turner, 2022-05-31
+%
 
 FrameInfo = getFrameInfo(liveExperiment);
 

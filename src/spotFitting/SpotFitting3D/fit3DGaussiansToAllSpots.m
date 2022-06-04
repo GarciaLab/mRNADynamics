@@ -1,18 +1,34 @@
 function Spots = fit3DGaussiansToAllSpots(Prefix, varargin)
 %
 % DESCRIPTION
-%
+% Sub-function called by segmentSpots that fits 3D Gaussians to all
+% segmented spots.
 %
 % INPUT ARGUMENTS
-% Prefix:
+% Prefix: Prefix of the data set being analyzed
 %
 %
 % OPTIONS
+% 'segmentSpots', Spots: Use if the caller is the segmentSpots function,
+%                        where Spots is the structure containing all spots 
+%                        to be fit
+% 'nWorkers', nWorkers: Specify the number of workers to use during 
+%                       parallel processing
+% 'displayFigures': Displays figures for exploratory or debuggin purposes
+% 'keepPool', true/false: Shut down parallel processing pool when function
+%                         is done or keep running (default is true)
+% 'noSave': Don't save 3D fits to the Spots.mat structure (not sure why
+%           you'd want to do this)
 %
 %
 % OUTPUT
+% Spots:
+% Spots.mat: Spots structure saved as MAT file in ResultsFolder
+% 
 % Author (contact): Nicholas Lammers (nlammers@berkeley.edu)
 % Created: 2021-03-04
+%
+% Documented by: Meghan Turner, 2022-05-31
 
 cleanupObj = onCleanup(@myCleanupFun);
 

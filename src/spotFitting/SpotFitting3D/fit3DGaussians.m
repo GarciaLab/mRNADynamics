@@ -1,7 +1,9 @@
 function  fitInfo = fit3DGaussians(snip3D, PixelSize, zStep, nSpots, givenParams)
 
 % DESCRIPTION
-%
+% Sub-function called by fitSnip3D that fits either 1 or 2 3D Gaussians, as
+% specified by the input parameters, to the spot contained in the provided
+% 3D snippet.
 %
 % INPUT ARGUMENTS
 % snip3D: 3D array containing spot to fit. Should contain only one spot
@@ -10,24 +12,40 @@ function  fitInfo = fit3DGaussians(snip3D, PixelSize, zStep, nSpots, givenParams
 % nSpots: number of gaussians to fit. Should be 2 for MS2 spots (to
 %         account for sister chromatids) and 1 for transcription factor
 %         clusters
-% givenParams:
+% givenParams: Allows you to pass in already-calculated 3D Gaussian 
+%              parameters. If called by fitSnip3D, this will be an empty
+%              array.
 %
 % OPTIONS
 % N/A
 %
 % OUTPUT
-% fitInfo: Data structure containing key fit results.
-%          Parameter identity is as follows: 
+% fitInfo: Data structure containing key fit parameter results for the
+%          1 or 2 3D Gaussians fit to the spot.
+%       -Fields-
+%           RawFitParams: Parameter identity is as follows, 
 %               (1) amplitude of gaussian (spot 1)    
 %               (2-3) xy, and z sigma values (both spots) 
 %               (4-6) y,x,and z center positions (spot 1)         
 %               (7) amplitude of gaussian (spot 2)
 %               (8-10) y,x,and z center positions (spot 2)        
 %               (11-17) inferred background gradient
+%           spot1ParamIndices
+%           spot2ParamIndices: same as ^, for spot2
+%           SpotFitInfo3D
+%          GaussIntensity3D
+%          GaussIntensity3DSE
+%          Offset3D
+%          GaussIntensity3DRaw
+%          GaussIntensity3DRawSE
+%          GaussPos3D
+%          GaussPos3DSE
 %
 % Author (contact): Nicholas Lammers (nlammers@berkeley.edu)
 % Created: 2019/2020ish
 % Last Updated:
+%
+% Documented by: Meghan Turner, 2022-05-31
 
 %% %%%%%% initialize inference params and define bounds %%%%%%%%%%%%%%%
 fitInfo = struct;
@@ -43,8 +61,8 @@ sigmaZ_guess = 450/zStep;
 sigmaZ_guess_se = 225/zStep;
 
 % set size of neighborhood to integrate for raw integral
-fitInfo.sigmaXY_int = 230 / PixelSize;
-fitInfo.sigmaZ_int = 620 / zStep;
+fitInfo.sigmaXY_integral = 230 / PixelSize;
+fitInfo.sigmaZ_integral = 620 / zStep;
 
 % define initial parameters
 xDim = size(snip3D,1);
@@ -209,6 +227,12 @@ if fitInfo.twoSpotFlag
     fitInfo.GaussIntegralSETot = sqrt(fitInfo.GaussIntegralSE1^2 + fitInfo.GaussIntegralSE2^2); % NL: it's likely that these two quantities are correlated, so addinin in quadrature is dubious
     fitInfo.Spot2Pos = GaussFit(8:10);
     fitInfo.Spot2PosSE = FitDeltas(8:10);
+    
+    % MT 2022-06-01: This looks like a center of mass calculation, where
+    % the integrated fluorescence intensity of the 3D Gaussian fit is
+    % in place of the mass. The GaussIntegrals are also squared - why? This
+    % slightly favors the brighter sister chromatid - do we need to worry
+    % about this introducing artifacts down the road?
     fitInfo.SpotCentroid = (fitInfo.Spot1Pos*fitInfo.GaussIntegral1^2 + fitInfo.Spot2Pos*fitInfo.GaussIntegral2^2)/...
                            (fitInfo.GaussIntegral1^2 + fitInfo.GaussIntegral2^2);%fitInfo.GaussIntegralTot;
 
@@ -234,13 +258,15 @@ end
 
 
 % calculate raw integral
+% MT 2022-06-01: Is GaussIntegralRaw just a sanity check? Generates similar
+% values to GaussIntegralTot
 cutoffVal = exp(-6.25/2); %2.5 sigma
 if fitInfo.twoSpotFlag
-    intMask1 = simulate3DGaussSymmetric(fitInfo.dimensionVector, [1 fitInfo.sigmaXY_int fitInfo.sigmaZ_int fitInfo.Spot1Pos]);    
-    intMask2 = simulate3DGaussSymmetric(fitInfo.dimensionVector, [1 fitInfo.sigmaXY_int fitInfo.sigmaZ_int fitInfo.Spot2Pos]);    
+    intMask1 = simulate3DGaussSymmetric(fitInfo.dimensionVector, [1 fitInfo.sigmaXY_integral fitInfo.sigmaZ_integral fitInfo.Spot1Pos]);    
+    intMask2 = simulate3DGaussSymmetric(fitInfo.dimensionVector, [1 fitInfo.sigmaXY_integral fitInfo.sigmaZ_integral fitInfo.Spot2Pos]);    
     intMask = intMask1 >= cutoffVal| intMask2 >= cutoffVal;  
 else
-    intMask = simulate3DGaussSymmetric(fitInfo.dimensionVector, [1 fitInfo.sigmaXY_int fitInfo.sigmaZ_int fitInfo.Spot1Pos]);    
+    intMask = simulate3DGaussSymmetric(fitInfo.dimensionVector, [1 fitInfo.sigmaXY_integral fitInfo.sigmaZ_integral fitInfo.Spot1Pos]);    
     intMask = intMask >= cutoffVal; 
 end
 
