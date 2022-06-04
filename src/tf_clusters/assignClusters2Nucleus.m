@@ -31,20 +31,21 @@ function Clusters = assignClusters2Nucleus(...
 %                                   frame
 %
 % Author (contact): Meghan Turner (meghan_turner@berkeley.edu)
-% Created: 05/09/2022
-% Last Updated:
+% Created: 2022-05-09
+% Last Updated: 2022-06-01
 
 %% Get spot positions
 
 % From here on, "new" means "current frame" for both the nuclei and
 % particles.
-[newSpotsX,newSpotsY,newSpotsZ] = getSpotsXYZ(Spots(currFrame));
+[newSpotsX, newSpotsY, newSpotsZ, newSpotsXYZ] = ...
+                            getSpotsXYZCentroids3DGauss(Spots(currFrame));
 
-% If no spots in this frame, no need to continue.
+% if there are no spots in this frame, no need to continue
 if isempty(newSpotsX)
     return
 end
-
+    
 %% Get nucleus positions. 
 % The order of both the nuclei and particle position is raw (coming from 
 % Spots and Ellipses, respectively), not the one in the Particles and 
@@ -110,12 +111,12 @@ for currMinIndex = 1:length(minDistEllipseIndex)
     % Otherwise, find the schnitzcell whose Ellipse in the 
     % currentFrame (encoded as "cellno" in the Ellipses struct) is 
     % closest to the Spot in minDistIndex we're currently checking.
-    for currSchnitz = 1:length(schnitzcells)
-        schnitz2Check = schnitzcells(currSchnitz);
+    for currSchnitzID = 1:length(schnitzcells)
+        schnitz2Check = schnitzcells(currSchnitzID);
         ellipse2Check = schnitz2Check.cellno(schnitz2Check.frames==currFrame);
 
         if ellipse2Check==currMinEllipse
-            minDistSchnitz(currMinIndex) = currSchnitz;
+            minDistSchnitz(currMinIndex) = currSchnitzID;
         end
     end
 end
@@ -129,33 +130,30 @@ assignedSchnitz = [Clusters.Nucleus];
 uniqueMinDistSchnitz = unique(minDistSchnitz);
 
 % By nucleus, add all closest spots into the Cluster structure
-for i = 1:length(uniqueMinDistSchnitz)
+for n = 1:numel(Clusters)%length(uniqueMinDistSchnitz)
+    % Check if we have spots associated with this nucleus
+    currSchnitzID = Clusters(n).Nucleus;
+    schnitzMatchIndex = find(uniqueMinDistSchnitz==currSchnitzID);
     
-    % Do we already have this nucleus in the Cluster structure?
-    %
-    % From here on, variables with "Nucleus" refer to the "Nucleus" field
-    % of the Clusters struct
-    currSchnitzIndex = uniqueMinDistSchnitz(i);
-    existingSchnitzIndex = find(assignedSchnitz==currSchnitzIndex);
-    if isempty(existingSchnitzIndex)
-        currNucleusIndex = length(Clusters)+1;
-        % If the nucleus isn't in Clusters struct already, add it.
-        Clusters(currNucleusIndex).Nucleus = currSchnitzIndex;
+    if isempty(schnitzMatchIndex)
+        continue
     else
-        currNucleusIndex = existingSchnitzIndex;
+        % Set emptyFlag to false to indicate we have clusters at this frame
+        Clusters(n).ClustersByFrame(currFrame).emptyFlag = 0;
+        
+        % Grab the spots we need to assign to this nucleus
+        spotToClustersIndex = find(minDistSchnitz==currSchnitzID);
+        %Get the spots' XYZ positions
+        spotToClustersX = newSpotsX(spotToClustersIndex);
+        spotToClustersY = newSpotsY(spotToClustersIndex);
+        spotToClustersZ = newSpotsZ(spotToClustersIndex);
+
+        % Now we can add all the data to the giant, ugly nested structure
+        for s = 1:numel(spotToClustersIndex)
+            Clusters(n).ClustersByFrame(currFrame).ClusterFits(s).SpotsIndex = spotToClustersIndex(s);
+            Clusters(n).ClustersByFrame(currFrame).ClusterFits(s).xPos = spotToClustersX(s);
+            Clusters(n).ClustersByFrame(currFrame).ClusterFits(s).yPos = spotToClustersY(s);
+            Clusters(n).ClustersByFrame(currFrame).ClusterFits(s).zPos = spotToClustersZ(s);
+        end 
     end
-    
-    % Grab the spots we need to assign to this nucleus
-    spotToClustersIndex = find(minDistSchnitz==uniqueMinDistSchnitz(i));
-    %Get the spots' XYZ positions
-    spotToClustersX = newSpotsX(spotToClustersIndex);
-    spotToClustersY = newSpotsY(spotToClustersIndex);
-    spotToClustersZ = newSpotsZ(spotToClustersIndex);
-    
-    Clusters(currNucleusIndex).Frames(end+1) = currFrame;
-    Clusters(currNucleusIndex).SpotsIndex{1,end+1} = spotToClustersIndex;
-    Clusters(currNucleusIndex).xPos{1,end+1} = spotToClustersX;
-    Clusters(currNucleusIndex).yPos{1,end+1} = spotToClustersY;
-    Clusters(currNucleusIndex).zPos{1,end+1} = spotToClustersZ;
-%     Clusters(currNucleusIndex).Approved = 0;
 end

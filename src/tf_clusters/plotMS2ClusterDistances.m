@@ -80,17 +80,19 @@ interactionThresh = 200; % in nm
 %     numInteractions = numel(interactions);
 %     numInteractionsNormalized = numInteractions/numNuclei/nFrames;  % naive calculation assuming only 1 spot per nucleus
 
-% Plot distribution of interaction event distances
-maxDistanceForHist = 10 * interactionThresh;
+% Standard radial enrichment plots in the literature usually only go out to
+% 1um, so we'll start with that.
+maxDistanceForHist = 1000; % in nm
 
 %     nBins = ceil(maxDistanceForHist / pixelSize_nm);
 
-% I should do this in a more principled way, using xy- & z-step sizes
-% binStepSize = 50;
-binStepSize = 1;
+% I should do this in a more principled way, using xy- & z-step sizes or
+% interpolating
+% For now, use common step size in other enrichment papers, 0.05um
+binStepSize = 50;
 % inputEdges = 0:binStepSize:maxDistanceForHist;
 % inputEdges = 0:binStepSize:3000;
-inputEdges = 0:binStepSize:20;
+inputEdges = 0:binStepSize:maxDistanceForHist;
 
  
 %% Compile stats for each prefix so we can plot them seperately
@@ -118,7 +120,7 @@ for p = 1:numPrefixes
     pixelSize_nm = liveExperiment.pixelSize_nm;
 %     distances_nm = distances_um .* 1000;
 
-    distances_nm = distances_um; %these are actually in pixels
+    distances_nm = distances_um * pixelSize_nm; %these are actually in pixels
     
     % Bin data to make histogram plot
 %     histDistances = distances_nm(distances_nm <= maxDistanceForHist);

@@ -57,12 +57,13 @@ end
 %% Get info from LiveExperiment
 nFrames = liveExperiment.nFrames;
 % pixel sizes in um for accurate distance calculations
-pixelSize = liveExperiment.pixelSize_um;
-pixelZSize = liveExperiment.zStep_um;
+pixelSizeXY = liveExperiment.pixelSize_um;
+pixelSizeZ = liveExperiment.zStep_um;
 
 % channel info
 inputChannels = liveExperiment.inputChannels;
 spotChannels = liveExperiment.spotChannels;
+nSpotCh = numel(spotChannels);
 
 clusterChannel = intersect(inputChannels, spotChannels);
 nClusterCh = length(clusterChannel);
@@ -85,6 +86,9 @@ if ~exist(writeFolder,'dir')
 end
 
 %% Load cluster & particle data
+[Spots, ~] = loadSpotsAndCreateSpotFilter(dropboxFolder, prefix, nSpotCh);
+Spots = Spots{1,ms2Channel}; %we only need the MS2 channel here
+
 Clusters = loadClusters(resultsFolder);
 
 [Particles, ~] = getParticles(liveExperiment);
@@ -115,7 +119,7 @@ ms2ClusterDistances(numNucleiWithBoth).nucleusID = [];  %pre-allocated for speed
 for n = 1:numNucleiWithBoth
     currNucID = nucleiWithBoth(n);
     ms2ClusterDistances(n).nucleusID = currNucID;
-    currClusters = Clusters(find(nucleiWithClusters == currNucID)); %#ok<FNDSB>
+    currClusters = Clusters(find(nucleiWithClusters == currNucID)).ClustersByFrame; %#ok<FNDSB>
     currParticle = Particles(find(nucleiWithMS2 == currNucID)); %#ok<FNDSB>
     
     % Go through each frame
@@ -131,32 +135,36 @@ for n = 1:numNucleiWithBoth
         
         %% Figure out whether this nucleus has both an MS2 spot and 
         % cluster(s) in this frame (less likely to have an MS2 spot)
-        clusterFrameIndex = find(currClusters.Frames == f);
+        frameHasClusters = ~currClusters(f).emptyFlag; % flip so true if clusters are in frame
         ms2FrameIndex = find(currParticle.Frame == f);
         
-        if ~isempty(ms2FrameIndex) && ~isempty(clusterFrameIndex)
-            %% Get all the xyz positions for the clusters and MS2 spot in 
-            % this frame
+        if ~isempty(ms2FrameIndex) && frameHasClusters
+            %% Get all the xyz positions for the clusters and MS2 spot
             % putting the xyz coords in a structure that will be easy 
             % to pass directly to pdist2 later on in this script
             
-            % This is the right way to do this, but it generates these
-            % falsely large bins because you get a pile-up every z-step
-%             xyzPosMS2 = [currParticle.xPos(ms2FrameIndex)*pixelSize,...
-%                          currParticle.yPos(ms2FrameIndex)*pixelSize,...
-%                          currParticle.zPos(ms2FrameIndex)*pixelZSize];
-%             xyzPosClusters(:,1) = currClusters.xPos{1,clusterFrameIndex}*pixelSize;
-%             xyzPosClusters(:,2) = currClusters.yPos{1,clusterFrameIndex}*pixelSize;
-%             xyzPosClusters(:,3) = currClusters.zPos{1,clusterFrameIndex}*pixelZSize;
+            % The xyz positions stored in Particles are from 2D fits, not
+            % the 3D Gaussian fits. Have to go back to Spots to get those
+            spotsIndex = currParticle.Index(ms2FrameIndex);
+            ms2Pos3D = Spots(f).Fits(spotsIndex).GaussPos3D;
             
-            % This is the wrong way to do it, b/c assumes uniform xyz pixel
-            % size, when z is much larger than xy
-            xyzPosMS2 = [currParticle.xPos(ms2FrameIndex),...
-                         currParticle.yPos(ms2FrameIndex),...
-                         currParticle.zPos(ms2FrameIndex)];
-            xyzPosClusters(:,1) = currClusters.xPos{1,clusterFrameIndex};
-            xyzPosClusters(:,2) = currClusters.yPos{1,clusterFrameIndex};
-            xyzPosClusters(:,3) = currClusters.zPos{1,clusterFrameIndex};
+            % Positional data is in pixels, need to convert to nm to 
+            % correctly calculate distances.
+            xyzPosMS2 = [ms2Pos3D(1)*pixelSizeXY,...
+                         ms2Pos3D(2)*pixelSizeXY,...
+                         ms2Pos3D(3)*pixelSizeZ];
+            xyzPosClusters(:,1) = [currClusters(f).ClusterFits.xPos]*pixelSizeXY;
+            xyzPosClusters(:,2) = [currClusters(f).ClusterFits.yPos]*pixelSizeXY;
+            xyzPosClusters(:,3) = [currClusters(f).ClusterFits.zPos]*pixelSizeZ;
+            
+%             % This is the wrong way to do it, b/c assumes isometric xyz
+%             % pixel size, when actually z is much larger than xy
+%             xyzPosMS2 = [ms2Pos3D(1),...
+%                          ms2Pos3D(2),...
+%                          ms2Pos3D(3)];
+%             xyzPosClusters(:,1) = [currClusters(f).ClusterFits.xPos];
+%             xyzPosClusters(:,2) = [currClusters(f).ClusterFits.yPos];
+%             xyzPosClusters(:,3) = [currClusters(f).ClusterFits.zPos];
             
             % Remove duplicate spot detections to minimize redundancy
             % (not sure why these aren't getting filtered out in
