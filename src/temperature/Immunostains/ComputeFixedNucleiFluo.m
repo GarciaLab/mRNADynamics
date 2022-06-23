@@ -4,7 +4,9 @@ function ComputeFixedNucleiFluo(Prefix, varargin)
 ShowPlots = false;
 
 liveExperiment= LiveExperiment(Prefix);
-
+FrameInfo = getFrameInfo(liveExperiment);
+d14 = getDefaultParameters(FrameInfo, 'd14');
+sigma = d14;
 CompiledEmbryoPath = [liveExperiment.resultsFolder, filesep, 'CompiledEmbryos.Mat'];
 load(CompiledEmbryoPath);
 
@@ -76,10 +78,10 @@ if sum(InputChannelIndexes)
             ellipseFrame = ellipseFrame(ellipseFrame(:,2) > 0, :);
             Ellipses{CurrentEmbryo} = ellipseFrame;
             IntegrationRadius=ellipseFrame(1,3)/2;       %Radius of the integration region in um
-            x = 1:floor(ceil(2*IntegrationRadius)/2)*2+1;
-            y = 1:floor(ceil(2*IntegrationRadius)/2)*2+1;
+            x = 1:floor(ceil(2*d14/2)*2)+1;
+            y = 1:floor(ceil(2*d14/2)*2)+1;
             [X, Y] = meshgrid(x, y);
-            FluoFilter = double(sqrt((X-median(x)).^2 + (Y-median(y)).^2) < ceil(2*IntegrationRadius)/2);
+            FluoFilter = double(sqrt((X-median(x)).^2 + (Y-median(y)).^2) < ceil(d14)/2);
             %Initialize fields
             EmbryoSchnitzFluo = NaN(size(ellipseFrame, 1),8+nSlices, length(Channels));
             
@@ -111,7 +113,7 @@ if sum(InputChannelIndexes)
                     fullAxes = axes(EmbryoFig);
                     EmbryoImage = imshow(EmbryoChStack(:,:,zIndex), [min(min(EmbryoChStack(:,:,zIndex))), ...
                         max(max(EmbryoChStack(:,:, zIndex)))], 'Border','Tight','Parent',fullAxes);
-                    FilterEmbryoImage = imgaussfilt(EmbryoChStack(:,:,zIndex), 2/PixelSize_um);
+                    FilterEmbryoImage = imgaussfilt(EmbryoChStack(:,:,zIndex), sigma);
                     hold(fullAxes, 'on')
                     
                     for k=1:size(ellipseFrame, 1)
@@ -146,10 +148,12 @@ if sum(InputChannelIndexes)
                 %         nameSuffix=['_ch',iIndex(ChN,2)];
                 
                 %
-                convImage = imfilter(EmbryoChStack, FluoFilter, 'same');
-                
-                for j=1:length(EmbryoSchnitzFluo)
-                    for zIndex = 1:nSlices
+                %convImage = imfilter(EmbryoChStack, FluoFilter, 'same');
+             
+             
+                for zIndex = 1:nSlices
+                    convImage = imgaussfilt(EmbryoChStack(:,:,zIndex), sigma);
+                    for j=1:length(EmbryoSchnitzFluo)
                         x_coord = uint16(round(EmbryoSchnitzFluo(j, 4, channelIndex)));
                         y_coord = uint16(round(EmbryoSchnitzFluo(j, 5, channelIndex)));
                         if x_coord < 1
@@ -166,7 +170,7 @@ if sum(InputChannelIndexes)
                             y_coord = size(convImage, 1);
                         end
                
-                        EmbryoSchnitzFluo(j, 8+zIndex, channelIndex) = convImage(y_coord, x_coord, zIndex)/sum(FluoFilter(:));
+                        EmbryoSchnitzFluo(j, 8+zIndex, channelIndex) = convImage(y_coord, x_coord);
                      
                       
                     end

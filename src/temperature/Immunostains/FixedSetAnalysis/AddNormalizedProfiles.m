@@ -1,0 +1,728 @@
+function [AllCompiledEmbryos, UniversalImin, UniversalImax, Imin, Imax] = AddNormalizedProfiles(AllCompiledEmbryos)
+%%
+AllSetsCombinedEmbryosPath = 'S:/Gabriella/Dropbox/ProteinProfiles/CompiledEmbryos/';
+
+
+AllSetInfo = GetFixedSetPrefixInfo;
+
+NumSets = length(AllSetInfo.Temperatures);
+
+NChannels = 5;
+
+
+if ~exist('AllCompiledEmbryos', 'var')
+
+AllCompiledEmbryos = {};
+%%
+for exp_index = 1:length(AllSetInfo.Temperatures)
+if AllSetInfo.Flipped(exp_index)
+    FlipString = 'yes';
+else
+    FlipString = 'no';
+end
+disp(['T = ', num2str(AllSetInfo.Temperatures(exp_index)), ', Rep: ', num2str(AllSetInfo.Replicates(exp_index)), ', Flipped: ', FlipString])
+SetLabel = AllSetInfo.SetLabels{exp_index};
+PlotLabel = AllSetInfo.PlotLabels{exp_index};
+SetPrefixes = AllSetInfo.Prefixes{exp_index};
+SetIsFlipped = AllSetInfo.Flipped(exp_index);
+ProfFigPath = [AllSetsProfFigPath, SetLabel];
+OutEmbryoPath = [AllSetsCombinedEmbryosPath, SetLabel];
+if ~isdir(ProfFigPath)
+    mkdir(ProfFigPath)
+end
+if ~isdir(OutEmbryoPath)
+    mkdir(OutEmbryoPath)
+end
+liveExperiments = cell(1, length(SetPrefixes));
+for i = 1:length(SetPrefixes)
+    liveExperiments{i} = LiveExperiment(SetPrefixes{i});
+end
+FixedPixelSize_um = liveExperiments{1}.pixelSize_um;
+CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
+load(CEoutpath, 'CompiledEmbryos');
+AllCompiledEmbryos{exp_index} = CompiledEmbryos;
+end
+end
+%%
+Imin = {};
+Imax = {};
+UniversalImin = {};
+UniversalImax = {};
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles = {};
+end
+%% First Add SlideRescaledAvgAP info 
+%(SmoothedDeltaFCFactors, SmoothedDubuisTimesFactors,SmoothedHisRFP25CTimesFactors,
+% WindowedDeltaFCFactors, WindowedDubuisTimesFactors, WindowedHisRFP25CTimesFactors)
+Imin.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Test = NaN(NumSets, NChannels);
+Imax.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Test = NaN(NumSets, NChannels);
+Imin.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Control = NaN(NumSets, NChannels);
+Imax.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Control = NaN(NumSets, NChannels);
+
+for i = 1:NumSets
+  Imin.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Test.Imin;
+  Imax.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Test.Imax;
+  Imin.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Control.Imin;
+  Imax.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Control.Imax;
+end
+
+UniversalImin.SlideRescaledAvgAP.SmoothedDeltaFCFactors = min([Imin.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Test ;...
+    Imin.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Control]);
+UniversalImax.SlideRescaledAvgAP.SmoothedDeltaFCFactors = min([Imax.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Test ;...
+    Imax.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Control]);
+
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP = {};
+    AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedDeltaFCFactors = ...
+        AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.SmoothedDeltaFCFactors;
+    for ch_index = 2:NChannels
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAvgAP.SmoothedDeltaFCFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAvgAP.SmoothedDeltaFCFactors(ch_index)-UniversalImin.SlideRescaledAvgAP.SmoothedDeltaFCFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Test.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Test.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAvgAP.SmoothedDeltaFCFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAvgAP.SmoothedDeltaFCFactors(ch_index)-UniversalImin.SlideRescaledAvgAP.SmoothedDeltaFCFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Control.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedDeltaFCFactors.Control.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAvgAP.SmoothedDeltaFCFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAvgAP.SmoothedDeltaFCFactors(ch_index)-UniversalImin.SlideRescaledAvgAP.SmoothedDeltaFCFactors(ch_index));
+    end
+end
+
+%% SlideRescaledAvgAP - SmoothedDubuisTimesFactors
+Imin.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Test = NaN(NumSets, NChannels);
+Imax.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Test = NaN(NumSets, NChannels);
+Imin.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Control = NaN(NumSets, NChannels);
+Imax.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Control = NaN(NumSets, NChannels);
+
+for i = 1:NumSets
+  Imin.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Test.Imin;
+  Imax.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Test.Imax;
+  Imin.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Control.Imin;
+  Imax.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Control.Imax;
+end
+
+UniversalImin.SlideRescaledAvgAP.SmoothedDubuisTimesFactors = min([Imin.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Test ;...
+    Imin.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Control]);
+UniversalImax.SlideRescaledAvgAP.SmoothedDubuisTimesFactors = min([Imax.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Test ;...
+    Imax.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Control]);
+
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedDubuisTimesFactors = ...
+        AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.SmoothedDubuisTimesFactors;
+    for ch_index = 2:NChannels
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAvgAP.SmoothedDubuisTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAvgAP.SmoothedDubuisTimesFactors(ch_index)-UniversalImin.SlideRescaledAvgAP.SmoothedDubuisTimesFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Test.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Test.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAvgAP.SmoothedDubuisTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAvgAP.SmoothedDubuisTimesFactors(ch_index)-UniversalImin.SlideRescaledAvgAP.SmoothedDubuisTimesFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Control.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedDubuisTimesFactors.Control.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAvgAP.SmoothedDubuisTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAvgAP.SmoothedDubuisTimesFactors(ch_index)-UniversalImin.SlideRescaledAvgAP.SmoothedDubuisTimesFactors(ch_index));
+    end
+end
+
+%% SlideRescaledAvgAP - SmoothedDubuisTimesFactors
+Imin.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Test = NaN(NumSets, NChannels);
+Imax.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Test = NaN(NumSets, NChannels);
+Imin.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Control = NaN(NumSets, NChannels);
+Imax.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Control = NaN(NumSets, NChannels);
+
+for i = 1:NumSets
+  Imin.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Test.Imin;
+  Imax.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Test.Imax;
+  Imin.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Control.Imin;
+  Imax.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Control.Imax;
+end
+
+UniversalImin.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors = min([Imin.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Test ;...
+    Imin.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Control]);
+UniversalImax.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors = min([Imax.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Test ;...
+    Imax.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Control]);
+
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors = ...
+        AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors;
+    for ch_index = 2:NChannels
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors(ch_index)-UniversalImin.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Test.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Test.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors(ch_index)-UniversalImin.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Control.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors.Control.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors(ch_index)-UniversalImin.SlideRescaledAvgAP.SmoothedHisRFP25CTimesFactors(ch_index));
+    end
+end
+%% SlideRescaledAvgAP - WindowedDeltaFCFactors
+Imin.SlideRescaledAvgAP.WindowedDeltaFCFactors.Test = NaN(NumSets, NChannels);
+Imax.SlideRescaledAvgAP.WindowedDeltaFCFactors.Test = NaN(NumSets, NChannels);
+Imin.SlideRescaledAvgAP.WindowedDeltaFCFactors.Control = NaN(NumSets, NChannels);
+Imax.SlideRescaledAvgAP.WindowedDeltaFCFactors.Control = NaN(NumSets, NChannels);
+
+for i = 1:NumSets
+  Imin.SlideRescaledAvgAP.WindowedDeltaFCFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.WindowedDeltaFCFactors.Test.Imin;
+  Imax.SlideRescaledAvgAP.WindowedDeltaFCFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.WindowedDeltaFCFactors.Test.Imax;
+  Imin.SlideRescaledAvgAP.WindowedDeltaFCFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.WindowedDeltaFCFactors.Control.Imin;
+  Imax.SlideRescaledAvgAP.WindowedDeltaFCFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.WindowedDeltaFCFactors.Control.Imax;
+end
+
+UniversalImin.SlideRescaledAvgAP.WindowedDeltaFCFactors = min([Imin.SlideRescaledAvgAP.WindowedDeltaFCFactors.Test ;...
+    Imin.SlideRescaledAvgAP.WindowedDeltaFCFactors.Control]);
+UniversalImax.SlideRescaledAvgAP.WindowedDeltaFCFactors = min([Imax.SlideRescaledAvgAP.WindowedDeltaFCFactors.Test ;...
+    Imax.SlideRescaledAvgAP.WindowedDeltaFCFactors.Control]);
+
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedDeltaFCFactors = ...
+        AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.WindowedDeltaFCFactors;
+    for ch_index = 2:NChannels
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedDeltaFCFactors.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedDeltaFCFactors.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAvgAP.WindowedDeltaFCFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAvgAP.WindowedDeltaFCFactors(ch_index)-UniversalImin.SlideRescaledAvgAP.WindowedDeltaFCFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedDeltaFCFactors.Test.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedDeltaFCFactors.Test.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAvgAP.WindowedDeltaFCFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAvgAP.WindowedDeltaFCFactors(ch_index)-UniversalImin.SlideRescaledAvgAP.WindowedDeltaFCFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedDeltaFCFactors.Control.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedDeltaFCFactors.Control.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAvgAP.WindowedDeltaFCFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAvgAP.WindowedDeltaFCFactors(ch_index)-UniversalImin.SlideRescaledAvgAP.WindowedDeltaFCFactors(ch_index));
+    end
+end
+
+%% SlideRescaledAvgAP - WindowedDubuisTimesFactors
+Imin.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Test = NaN(NumSets, NChannels);
+Imax.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Test = NaN(NumSets, NChannels);
+Imin.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Control = NaN(NumSets, NChannels);
+Imax.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Control = NaN(NumSets, NChannels);
+
+for i = 1:NumSets
+  Imin.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Test.Imin;
+  Imax.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Test.Imax;
+  Imin.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Control.Imin;
+  Imax.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Control.Imax;
+end
+
+UniversalImin.SlideRescaledAvgAP.WindowedDubuisTimesFactors = min([Imin.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Test ;...
+    Imin.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Control]);
+UniversalImax.SlideRescaledAvgAP.WindowedDubuisTimesFactors = min([Imax.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Test ;...
+    Imax.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Control]);
+
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedDubuisTimesFactors = ...
+        AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.WindowedDubuisTimesFactors;
+    for ch_index = 2:NChannels
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAvgAP.WindowedDubuisTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAvgAP.WindowedDubuisTimesFactors(ch_index)-UniversalImin.SlideRescaledAvgAP.WindowedDubuisTimesFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Test.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Test.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAvgAP.WindowedDubuisTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAvgAP.WindowedDubuisTimesFactors(ch_index)-UniversalImin.SlideRescaledAvgAP.WindowedDubuisTimesFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Control.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedDubuisTimesFactors.Control.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAvgAP.WindowedDubuisTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAvgAP.WindowedDubuisTimesFactors(ch_index)-UniversalImin.SlideRescaledAvgAP.WindowedDubuisTimesFactors(ch_index));
+    end
+end
+
+%% SlideRescaledAvgAP - WindowedHisRFP25CTimesFactors
+Imin.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Test = NaN(NumSets, NChannels);
+Imax.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Test = NaN(NumSets, NChannels);
+Imin.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Control = NaN(NumSets, NChannels);
+Imax.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Control = NaN(NumSets, NChannels);
+
+for i = 1:NumSets
+  Imin.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Test.Imin;
+  Imax.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Test.Imax;
+  Imin.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Control.Imin;
+  Imax.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Control.Imax;
+end
+
+UniversalImin.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors = min([Imin.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Test ;...
+    Imin.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Control]);
+UniversalImax.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors = min([Imax.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Test ;...
+    Imax.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Control]);
+
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors = ...
+        AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors;
+    for ch_index = 2:NChannels
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors(ch_index)-UniversalImin.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Test.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Test.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors(ch_index)-UniversalImin.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Control.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors.Control.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors(ch_index)-UniversalImin.SlideRescaledAvgAP.WindowedHisRFP25CTimesFactors(ch_index));
+    end
+end
+
+Imin.SlideRescaledAP.SmoothedDeltaFCFactors.Test = NaN(NumSets, NChannels);
+Imax.SlideRescaledAP.SmoothedDeltaFCFactors.Test = NaN(NumSets, NChannels);
+Imin.SlideRescaledAP.SmoothedDeltaFCFactors.Control = NaN(NumSets, NChannels);
+Imax.SlideRescaledAP.SmoothedDeltaFCFactors.Control = NaN(NumSets, NChannels);
+
+for i = 1:NumSets
+  Imin.SlideRescaledAP.SmoothedDeltaFCFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.SmoothedDeltaFCFactors.Test.Imin;
+  Imax.SlideRescaledAP.SmoothedDeltaFCFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.SmoothedDeltaFCFactors.Test.Imax;
+  Imin.SlideRescaledAP.SmoothedDeltaFCFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.SmoothedDeltaFCFactors.Control.Imin;
+  Imax.SlideRescaledAP.SmoothedDeltaFCFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.SmoothedDeltaFCFactors.Control.Imax;
+end
+
+UniversalImin.SlideRescaledAP.SmoothedDeltaFCFactors = min([Imin.SlideRescaledAP.SmoothedDeltaFCFactors.Test ;...
+    Imin.SlideRescaledAP.SmoothedDeltaFCFactors.Control]);
+UniversalImax.SlideRescaledAP.SmoothedDeltaFCFactors = min([Imax.SlideRescaledAP.SmoothedDeltaFCFactors.Test ;...
+    Imax.SlideRescaledAP.SmoothedDeltaFCFactors.Control]);
+
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP = {};
+    AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedDeltaFCFactors = ...
+        AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.SmoothedDeltaFCFactors;
+    for ch_index = 2:NChannels
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedDeltaFCFactors.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedDeltaFCFactors.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAP.SmoothedDeltaFCFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAP.SmoothedDeltaFCFactors(ch_index)-UniversalImin.SlideRescaledAP.SmoothedDeltaFCFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedDeltaFCFactors.Test.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedDeltaFCFactors.Test.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAP.SmoothedDeltaFCFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAP.SmoothedDeltaFCFactors(ch_index)-UniversalImin.SlideRescaledAP.SmoothedDeltaFCFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedDeltaFCFactors.Control.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedDeltaFCFactors.Control.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAP.SmoothedDeltaFCFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAP.SmoothedDeltaFCFactors(ch_index)-UniversalImin.SlideRescaledAP.SmoothedDeltaFCFactors(ch_index));
+    end
+end
+
+%% SlideRescaledAP - SmoothedDubuisTimesFactors
+Imin.SlideRescaledAP.SmoothedDubuisTimesFactors.Test = NaN(NumSets, NChannels);
+Imax.SlideRescaledAP.SmoothedDubuisTimesFactors.Test = NaN(NumSets, NChannels);
+Imin.SlideRescaledAP.SmoothedDubuisTimesFactors.Control = NaN(NumSets, NChannels);
+Imax.SlideRescaledAP.SmoothedDubuisTimesFactors.Control = NaN(NumSets, NChannels);
+
+for i = 1:NumSets
+  Imin.SlideRescaledAP.SmoothedDubuisTimesFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.SmoothedDubuisTimesFactors.Test.Imin;
+  Imax.SlideRescaledAP.SmoothedDubuisTimesFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.SmoothedDubuisTimesFactors.Test.Imax;
+  Imin.SlideRescaledAP.SmoothedDubuisTimesFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.SmoothedDubuisTimesFactors.Control.Imin;
+  Imax.SlideRescaledAP.SmoothedDubuisTimesFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.SmoothedDubuisTimesFactors.Control.Imax;
+end
+
+UniversalImin.SlideRescaledAP.SmoothedDubuisTimesFactors = min([Imin.SlideRescaledAP.SmoothedDubuisTimesFactors.Test ;...
+    Imin.SlideRescaledAP.SmoothedDubuisTimesFactors.Control]);
+UniversalImax.SlideRescaledAP.SmoothedDubuisTimesFactors = min([Imax.SlideRescaledAP.SmoothedDubuisTimesFactors.Test ;...
+    Imax.SlideRescaledAP.SmoothedDubuisTimesFactors.Control]);
+
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedDubuisTimesFactors = ...
+        AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.SmoothedDubuisTimesFactors;
+    for ch_index = 2:NChannels
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedDubuisTimesFactors.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedDubuisTimesFactors.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAP.SmoothedDubuisTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAP.SmoothedDubuisTimesFactors(ch_index)-UniversalImin.SlideRescaledAP.SmoothedDubuisTimesFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedDubuisTimesFactors.Test.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedDubuisTimesFactors.Test.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAP.SmoothedDubuisTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAP.SmoothedDubuisTimesFactors(ch_index)-UniversalImin.SlideRescaledAP.SmoothedDubuisTimesFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedDubuisTimesFactors.Control.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedDubuisTimesFactors.Control.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAP.SmoothedDubuisTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAP.SmoothedDubuisTimesFactors(ch_index)-UniversalImin.SlideRescaledAP.SmoothedDubuisTimesFactors(ch_index));
+    end
+end
+
+%% SlideRescaledAP - SmoothedDubuisTimesFactors
+Imin.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Test = NaN(NumSets, NChannels);
+Imax.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Test = NaN(NumSets, NChannels);
+Imin.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Control = NaN(NumSets, NChannels);
+Imax.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Control = NaN(NumSets, NChannels);
+
+for i = 1:NumSets
+  Imin.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Test.Imin;
+  Imax.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Test.Imax;
+  Imin.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Control.Imin;
+  Imax.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Control.Imax;
+end
+
+UniversalImin.SlideRescaledAP.SmoothedHisRFP25CTimesFactors = min([Imin.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Test ;...
+    Imin.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Control]);
+UniversalImax.SlideRescaledAP.SmoothedHisRFP25CTimesFactors = min([Imax.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Test ;...
+    Imax.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Control]);
+
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedHisRFP25CTimesFactors = ...
+        AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.SmoothedHisRFP25CTimesFactors;
+    for ch_index = 2:NChannels
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAP.SmoothedHisRFP25CTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAP.SmoothedHisRFP25CTimesFactors(ch_index)-UniversalImin.SlideRescaledAP.SmoothedHisRFP25CTimesFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Test.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Test.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAP.SmoothedHisRFP25CTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAP.SmoothedHisRFP25CTimesFactors(ch_index)-UniversalImin.SlideRescaledAP.SmoothedHisRFP25CTimesFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Control.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.SmoothedHisRFP25CTimesFactors.Control.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAP.SmoothedHisRFP25CTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAP.SmoothedHisRFP25CTimesFactors(ch_index)-UniversalImin.SlideRescaledAP.SmoothedHisRFP25CTimesFactors(ch_index));
+    end
+end
+%% SlideRescaledAP - WindowedDeltaFCFactors
+Imin.SlideRescaledAP.WindowedDeltaFCFactors.Test = NaN(NumSets, NChannels);
+Imax.SlideRescaledAP.WindowedDeltaFCFactors.Test = NaN(NumSets, NChannels);
+Imin.SlideRescaledAP.WindowedDeltaFCFactors.Control = NaN(NumSets, NChannels);
+Imax.SlideRescaledAP.WindowedDeltaFCFactors.Control = NaN(NumSets, NChannels);
+
+for i = 1:NumSets
+  Imin.SlideRescaledAP.WindowedDeltaFCFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.WindowedDeltaFCFactors.Test.Imin;
+  Imax.SlideRescaledAP.WindowedDeltaFCFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.WindowedDeltaFCFactors.Test.Imax;
+  Imin.SlideRescaledAP.WindowedDeltaFCFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.WindowedDeltaFCFactors.Control.Imin;
+  Imax.SlideRescaledAP.WindowedDeltaFCFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.WindowedDeltaFCFactors.Control.Imax;
+end
+
+UniversalImin.SlideRescaledAP.WindowedDeltaFCFactors = min([Imin.SlideRescaledAP.WindowedDeltaFCFactors.Test ;...
+    Imin.SlideRescaledAP.WindowedDeltaFCFactors.Control]);
+UniversalImax.SlideRescaledAP.WindowedDeltaFCFactors = min([Imax.SlideRescaledAP.WindowedDeltaFCFactors.Test ;...
+    Imax.SlideRescaledAP.WindowedDeltaFCFactors.Control]);
+
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedDeltaFCFactors = ...
+        AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.WindowedDeltaFCFactors;
+    for ch_index = 2:NChannels
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedDeltaFCFactors.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedDeltaFCFactors.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAP.WindowedDeltaFCFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAP.WindowedDeltaFCFactors(ch_index)-UniversalImin.SlideRescaledAP.WindowedDeltaFCFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedDeltaFCFactors.Test.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedDeltaFCFactors.Test.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAP.WindowedDeltaFCFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAP.WindowedDeltaFCFactors(ch_index)-UniversalImin.SlideRescaledAP.WindowedDeltaFCFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedDeltaFCFactors.Control.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedDeltaFCFactors.Control.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAP.WindowedDeltaFCFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAP.WindowedDeltaFCFactors(ch_index)-UniversalImin.SlideRescaledAP.WindowedDeltaFCFactors(ch_index));
+    end
+end
+
+%% SlideRescaledAP - WindowedDubuisTimesFactors
+Imin.SlideRescaledAP.WindowedDubuisTimesFactors.Test = NaN(NumSets, NChannels);
+Imax.SlideRescaledAP.WindowedDubuisTimesFactors.Test = NaN(NumSets, NChannels);
+Imin.SlideRescaledAP.WindowedDubuisTimesFactors.Control = NaN(NumSets, NChannels);
+Imax.SlideRescaledAP.WindowedDubuisTimesFactors.Control = NaN(NumSets, NChannels);
+
+for i = 1:NumSets
+  Imin.SlideRescaledAP.WindowedDubuisTimesFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.WindowedDubuisTimesFactors.Test.Imin;
+  Imax.SlideRescaledAP.WindowedDubuisTimesFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.WindowedDubuisTimesFactors.Test.Imax;
+  Imin.SlideRescaledAP.WindowedDubuisTimesFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.WindowedDubuisTimesFactors.Control.Imin;
+  Imax.SlideRescaledAP.WindowedDubuisTimesFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.WindowedDubuisTimesFactors.Control.Imax;
+end
+
+UniversalImin.SlideRescaledAP.WindowedDubuisTimesFactors = min([Imin.SlideRescaledAP.WindowedDubuisTimesFactors.Test ;...
+    Imin.SlideRescaledAP.WindowedDubuisTimesFactors.Control]);
+UniversalImax.SlideRescaledAP.WindowedDubuisTimesFactors = min([Imax.SlideRescaledAP.WindowedDubuisTimesFactors.Test ;...
+    Imax.SlideRescaledAP.WindowedDubuisTimesFactors.Control]);
+
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedDubuisTimesFactors = ...
+        AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.WindowedDubuisTimesFactors;
+    for ch_index = 2:NChannels
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedDubuisTimesFactors.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedDubuisTimesFactors.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAP.WindowedDubuisTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAP.WindowedDubuisTimesFactors(ch_index)-UniversalImin.SlideRescaledAP.WindowedDubuisTimesFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedDubuisTimesFactors.Test.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedDubuisTimesFactors.Test.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAP.WindowedDubuisTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAP.WindowedDubuisTimesFactors(ch_index)-UniversalImin.SlideRescaledAP.WindowedDubuisTimesFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedDubuisTimesFactors.Control.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedDubuisTimesFactors.Control.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAP.WindowedDubuisTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAP.WindowedDubuisTimesFactors(ch_index)-UniversalImin.SlideRescaledAP.WindowedDubuisTimesFactors(ch_index));
+    end
+end
+
+%% SlideRescaledAP - WindowedHisRFP25CTimesFactors
+Imin.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Test = NaN(NumSets, NChannels);
+Imax.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Test = NaN(NumSets, NChannels);
+Imin.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Control = NaN(NumSets, NChannels);
+Imax.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Control = NaN(NumSets, NChannels);
+
+for i = 1:NumSets
+  Imin.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Test.Imin;
+  Imax.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Test.Imax;
+  Imin.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Control.Imin;
+  Imax.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Control.Imax;
+end
+
+UniversalImin.SlideRescaledAP.WindowedHisRFP25CTimesFactors = min([Imin.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Test ;...
+    Imin.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Control]);
+UniversalImax.SlideRescaledAP.WindowedHisRFP25CTimesFactors = min([Imax.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Test ;...
+    Imax.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Control]);
+
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedHisRFP25CTimesFactors = ...
+        AllCompiledEmbryos{i}.UnivScaledProfiles.SlideRescaledAP.WindowedHisRFP25CTimesFactors;
+    for ch_index = 2:NChannels
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAP.WindowedHisRFP25CTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAP.WindowedHisRFP25CTimesFactors(ch_index)-UniversalImin.SlideRescaledAP.WindowedHisRFP25CTimesFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Test.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Test.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAP.WindowedHisRFP25CTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAP.WindowedHisRFP25CTimesFactors(ch_index)-UniversalImin.SlideRescaledAP.WindowedHisRFP25CTimesFactors(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Control.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.SlideRescaledAP.WindowedHisRFP25CTimesFactors.Control.Profiles(:,:,ch_index) - ...
+           UniversalImin.SlideRescaledAP.WindowedHisRFP25CTimesFactors(ch_index))/...
+           (UniversalImax.SlideRescaledAP.WindowedHisRFP25CTimesFactors(ch_index)-UniversalImin.SlideRescaledAP.WindowedHisRFP25CTimesFactors(ch_index));
+    end
+end
+
+%%  DeltaFCSmoothedAvgAP
+Imin.DeltaFCSmoothedAvgAP.Test = NaN(NumSets, NChannels);
+Imax.DeltaFCSmoothedAvgAP.Test = NaN(NumSets, NChannels);
+Imin.DeltaFCSmoothedAvgAP.Control = NaN(NumSets, NChannels);
+Imax.DeltaFCSmoothedAvgAP.Control = NaN(NumSets, NChannels);
+
+for i = 1:NumSets
+  Imin.DeltaFCSmoothedAvgAP.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.DeltaFCSmoothedAvgAP.Test.Imin;
+  Imax.DeltaFCSmoothedAvgAP.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.DeltaFCSmoothedAvgAP.Test.Imax;
+  Imin.DeltaFCSmoothedAvgAP.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.DeltaFCSmoothedAvgAP.Control.Imin;
+  Imax.DeltaFCSmoothedAvgAP.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.DeltaFCSmoothedAvgAP.Control.Imax;
+end
+
+UniversalImin.DeltaFCSmoothedAvgAP = min([Imin.DeltaFCSmoothedAvgAP.Test ;...
+    Imin.DeltaFCSmoothedAvgAP.Control]);
+UniversalImax.DeltaFCSmoothedAvgAP = min([Imax.DeltaFCSmoothedAvgAP.Test ;...
+    Imax.DeltaFCSmoothedAvgAP.Control]);
+
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles.DeltaFCSmoothedAvgAP = ...
+        AllCompiledEmbryos{i}.UnivScaledProfiles.DeltaFCSmoothedAvgAP;
+    for ch_index = 2:NChannels
+        AllCompiledEmbryos{i}.NormalizedProfiles.DeltaFCSmoothedAvgAP.Test.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.DeltaFCSmoothedAvgAP.Test.Profiles(:,:,ch_index) - ...
+           UniversalImin.DeltaFCSmoothedAvgAP(ch_index))/...
+           (UniversalImax.DeltaFCSmoothedAvgAP(ch_index)-UniversalImin.DeltaFCSmoothedAvgAP(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.DeltaFCSmoothedAvgAP.Control.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.DeltaFCSmoothedAvgAP.Control.Profiles(:,:,ch_index) - ...
+           UniversalImin.DeltaFCSmoothedAvgAP(ch_index))/...
+           (UniversalImax.DeltaFCSmoothedAvgAP(ch_index)-UniversalImin.DeltaFCSmoothedAvgAP(ch_index));
+    end
+end
+
+%%  DubuisTimesSmoothedAvgAP
+Imin.DubuisTimesSmoothedAvgAP.Test = NaN(NumSets, NChannels);
+Imax.DubuisTimesSmoothedAvgAP.Test = NaN(NumSets, NChannels);
+Imin.DubuisTimesSmoothedAvgAP.Control = NaN(NumSets, NChannels);
+Imax.DubuisTimesSmoothedAvgAP.Control = NaN(NumSets, NChannels);
+
+for i = 1:NumSets
+  Imin.DubuisTimesSmoothedAvgAP.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.DubuisTimesSmoothedAvgAP.Test.Imin;
+  Imax.DubuisTimesSmoothedAvgAP.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.DubuisTimesSmoothedAvgAP.Test.Imax;
+  Imin.DubuisTimesSmoothedAvgAP.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.DubuisTimesSmoothedAvgAP.Control.Imin;
+  Imax.DubuisTimesSmoothedAvgAP.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.DubuisTimesSmoothedAvgAP.Control.Imax;
+end
+
+UniversalImin.DubuisTimesSmoothedAvgAP = min([Imin.DubuisTimesSmoothedAvgAP.Test ;...
+    Imin.DubuisTimesSmoothedAvgAP.Control]);
+UniversalImax.DubuisTimesSmoothedAvgAP = min([Imax.DubuisTimesSmoothedAvgAP.Test ;...
+    Imax.DubuisTimesSmoothedAvgAP.Control]);
+
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles.DubuisTimesSmoothedAvgAP = ...
+        AllCompiledEmbryos{i}.UnivScaledProfiles.DubuisTimesSmoothedAvgAP;
+    for ch_index = 2:NChannels
+        AllCompiledEmbryos{i}.NormalizedProfiles.DubuisTimesSmoothedAvgAP.Test.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.DubuisTimesSmoothedAvgAP.Test.Profiles(:,:,ch_index) - ...
+           UniversalImin.DubuisTimesSmoothedAvgAP(ch_index))/...
+           (UniversalImax.DubuisTimesSmoothedAvgAP(ch_index)-UniversalImin.DubuisTimesSmoothedAvgAP(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.DubuisTimesSmoothedAvgAP.Control.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.DubuisTimesSmoothedAvgAP.Control.Profiles(:,:,ch_index) - ...
+           UniversalImin.DubuisTimesSmoothedAvgAP(ch_index))/...
+           (UniversalImax.DubuisTimesSmoothedAvgAP(ch_index)-UniversalImin.DubuisTimesSmoothedAvgAP(ch_index));
+    end
+end
+
+%%  HisRFP25CTimesSmoothedAvgAP
+Imin.HisRFP25CTimesSmoothedAvgAP.Test = NaN(NumSets, NChannels);
+Imax.HisRFP25CTimesSmoothedAvgAP.Test = NaN(NumSets, NChannels);
+Imin.HisRFP25CTimesSmoothedAvgAP.Control = NaN(NumSets, NChannels);
+Imax.HisRFP25CTimesSmoothedAvgAP.Control = NaN(NumSets, NChannels);
+
+for i = 1:NumSets
+  Imin.HisRFP25CTimesSmoothedAvgAP.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.HisRFP25CTimesSmoothedAvgAP.Test.Imin;
+  Imax.HisRFP25CTimesSmoothedAvgAP.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.HisRFP25CTimesSmoothedAvgAP.Test.Imax;
+  Imin.HisRFP25CTimesSmoothedAvgAP.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.HisRFP25CTimesSmoothedAvgAP.Control.Imin;
+  Imax.HisRFP25CTimesSmoothedAvgAP.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.HisRFP25CTimesSmoothedAvgAP.Control.Imax;
+end
+
+UniversalImin.HisRFP25CTimesSmoothedAvgAP = min([Imin.HisRFP25CTimesSmoothedAvgAP.Test ;...
+    Imin.HisRFP25CTimesSmoothedAvgAP.Control]);
+UniversalImax.HisRFP25CTimesSmoothedAvgAP = min([Imax.HisRFP25CTimesSmoothedAvgAP.Test ;...
+    Imax.HisRFP25CTimesSmoothedAvgAP.Control]);
+
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles.HisRFP25CTimesSmoothedAvgAP = ...
+        AllCompiledEmbryos{i}.UnivScaledProfiles.HisRFP25CTimesSmoothedAvgAP;
+    for ch_index = 2:NChannels
+        AllCompiledEmbryos{i}.NormalizedProfiles.HisRFP25CTimesSmoothedAvgAP.Test.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.HisRFP25CTimesSmoothedAvgAP.Test.Profiles(:,:,ch_index) - ...
+           UniversalImin.HisRFP25CTimesSmoothedAvgAP(ch_index))/...
+           (UniversalImax.HisRFP25CTimesSmoothedAvgAP(ch_index)-UniversalImin.HisRFP25CTimesSmoothedAvgAP(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.HisRFP25CTimesSmoothedAvgAP.Control.Profiles(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.HisRFP25CTimesSmoothedAvgAP.Control.Profiles(:,:,ch_index) - ...
+           UniversalImin.HisRFP25CTimesSmoothedAvgAP(ch_index))/...
+           (UniversalImax.HisRFP25CTimesSmoothedAvgAP(ch_index)-UniversalImin.HisRFP25CTimesSmoothedAvgAP(ch_index));
+    end
+end
+
+%%  DeltaFCWindowedAvgAP
+Imin.DeltaFCWindowedAvgAP.Test = NaN(NumSets, NChannels);
+Imax.DeltaFCWindowedAvgAP.Test = NaN(NumSets, NChannels);
+Imin.DeltaFCWindowedAvgAP.Control = NaN(NumSets, NChannels);
+Imax.DeltaFCWindowedAvgAP.Control = NaN(NumSets, NChannels);
+
+for i = 1:NumSets
+  Imin.DeltaFCWindowedAvgAP.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.DeltaFCWindowedAvgAP.Test.Imin;
+  Imax.DeltaFCWindowedAvgAP.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.DeltaFCWindowedAvgAP.Test.Imax;
+  Imin.DeltaFCWindowedAvgAP.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.DeltaFCWindowedAvgAP.Control.Imin;
+  Imax.DeltaFCWindowedAvgAP.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.DeltaFCWindowedAvgAP.Control.Imax;
+end
+
+UniversalImin.DeltaFCWindowedAvgAP = min([Imin.DeltaFCWindowedAvgAP.Test ;...
+    Imin.DeltaFCWindowedAvgAP.Control]);
+UniversalImax.DeltaFCWindowedAvgAP = min([Imax.DeltaFCWindowedAvgAP.Test ;...
+    Imax.DeltaFCWindowedAvgAP.Control]);
+
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles.DeltaFCWindowedAvgAP = ...
+        AllCompiledEmbryos{i}.UnivScaledProfiles.DeltaFCWindowedAvgAP;
+    for ch_index = 2:NChannels
+        AllCompiledEmbryos{i}.NormalizedProfiles.DeltaFCWindowedAvgAP.Test.mean(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.DeltaFCWindowedAvgAP.Test.mean(:,:,ch_index) - ...
+           UniversalImin.DeltaFCWindowedAvgAP(ch_index))/...
+           (UniversalImax.DeltaFCWindowedAvgAP(ch_index)-UniversalImin.DeltaFCWindowedAvgAP(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.DeltaFCWindowedAvgAP.Control.mean(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.DeltaFCWindowedAvgAP.Control.mean(:,:,ch_index) - ...
+           UniversalImin.DeltaFCWindowedAvgAP(ch_index))/...
+           (UniversalImax.DeltaFCWindowedAvgAP(ch_index)-UniversalImin.DeltaFCWindowedAvgAP(ch_index));
+       
+       AllCompiledEmbryos{i}.NormalizedProfiles.DeltaFCWindowedAvgAP.Test.se(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.DeltaFCWindowedAvgAP.Test.se(:,:,ch_index))/...
+           (UniversalImax.DeltaFCWindowedAvgAP(ch_index)-UniversalImin.DeltaFCWindowedAvgAP(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.DeltaFCWindowedAvgAP.Control.se(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.DeltaFCWindowedAvgAP.Control.se(:,:,ch_index))/...
+           (UniversalImax.DeltaFCWindowedAvgAP(ch_index)-UniversalImin.DeltaFCWindowedAvgAP(ch_index));
+       
+    end
+end
+
+%%  DubuisTimesWindowedAvgAP
+Imin.DubuisTimesWindowedAvgAP.Test = NaN(NumSets, NChannels);
+Imax.DubuisTimesWindowedAvgAP.Test = NaN(NumSets, NChannels);
+Imin.DubuisTimesWindowedAvgAP.Control = NaN(NumSets, NChannels);
+Imax.DubuisTimesWindowedAvgAP.Control = NaN(NumSets, NChannels);
+
+for i = 1:NumSets
+  Imin.DubuisTimesWindowedAvgAP.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.DubuisTimesWindowedAvgAP.Test.Imin;
+  Imax.DubuisTimesWindowedAvgAP.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.DubuisTimesWindowedAvgAP.Test.Imax;
+  Imin.DubuisTimesWindowedAvgAP.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.DubuisTimesWindowedAvgAP.Control.Imin;
+  Imax.DubuisTimesWindowedAvgAP.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.DubuisTimesWindowedAvgAP.Control.Imax;
+end
+
+UniversalImin.DubuisTimesWindowedAvgAP = min([Imin.DubuisTimesWindowedAvgAP.Test ;...
+    Imin.DubuisTimesWindowedAvgAP.Control]);
+UniversalImax.DubuisTimesWindowedAvgAP = min([Imax.DubuisTimesWindowedAvgAP.Test ;...
+    Imax.DubuisTimesWindowedAvgAP.Control]);
+
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles.DubuisTimesWindowedAvgAP = ...
+        AllCompiledEmbryos{i}.UnivScaledProfiles.DubuisTimesWindowedAvgAP;
+    for ch_index = 2:NChannels
+        AllCompiledEmbryos{i}.NormalizedProfiles.DubuisTimesWindowedAvgAP.Test.mean(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.DubuisTimesWindowedAvgAP.Test.mean(:,:,ch_index) - ...
+           UniversalImin.DubuisTimesWindowedAvgAP(ch_index))/...
+           (UniversalImax.DubuisTimesWindowedAvgAP(ch_index)-UniversalImin.DubuisTimesWindowedAvgAP(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.DubuisTimesWindowedAvgAP.Control.mean(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.DubuisTimesWindowedAvgAP.Control.mean(:,:,ch_index) - ...
+           UniversalImin.DubuisTimesWindowedAvgAP(ch_index))/...
+           (UniversalImax.DubuisTimesWindowedAvgAP(ch_index)-UniversalImin.DubuisTimesWindowedAvgAP(ch_index));
+       
+       AllCompiledEmbryos{i}.NormalizedProfiles.DubuisTimesWindowedAvgAP.Test.se(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.DubuisTimesWindowedAvgAP.Test.se(:,:,ch_index))/...
+           (UniversalImax.DubuisTimesWindowedAvgAP(ch_index)-UniversalImin.DubuisTimesWindowedAvgAP(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.DubuisTimesWindowedAvgAP.Control.se(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.DubuisTimesWindowedAvgAP.Control.se(:,:,ch_index))/...
+           (UniversalImax.DubuisTimesWindowedAvgAP(ch_index)-UniversalImin.DubuisTimesWindowedAvgAP(ch_index));
+    end
+end
+
+%%  HisRFP25CTimesWindowedAvgAP
+Imin.HisRFP25CTimesWindowedAvgAP.Test = NaN(NumSets, NChannels);
+Imax.HisRFP25CTimesWindowedAvgAP.Test = NaN(NumSets, NChannels);
+Imin.HisRFP25CTimesWindowedAvgAP.Control = NaN(NumSets, NChannels);
+Imax.HisRFP25CTimesWindowedAvgAP.Control = NaN(NumSets, NChannels);
+
+for i = 1:NumSets
+  Imin.HisRFP25CTimesWindowedAvgAP.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.HisRFP25CTimesWindowedAvgAP.Test.Imin;
+  Imax.HisRFP25CTimesWindowedAvgAP.Test(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.HisRFP25CTimesWindowedAvgAP.Test.Imax;
+  Imin.HisRFP25CTimesWindowedAvgAP.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.HisRFP25CTimesWindowedAvgAP.Control.Imin;
+  Imax.HisRFP25CTimesWindowedAvgAP.Control(i,:) = AllCompiledEmbryos{i}.UnivScaledProfiles.HisRFP25CTimesWindowedAvgAP.Control.Imax;
+end
+
+UniversalImin.HisRFP25CTimesWindowedAvgAP = min([Imin.HisRFP25CTimesWindowedAvgAP.Test ;...
+    Imin.HisRFP25CTimesWindowedAvgAP.Control]);
+UniversalImax.HisRFP25CTimesWindowedAvgAP = min([Imax.HisRFP25CTimesWindowedAvgAP.Test ;...
+    Imax.HisRFP25CTimesWindowedAvgAP.Control]);
+
+for i = 1:NumSets
+    AllCompiledEmbryos{i}.NormalizedProfiles.HisRFP25CTimesWindowedAvgAP = ...
+        AllCompiledEmbryos{i}.UnivScaledProfiles.HisRFP25CTimesWindowedAvgAP;
+    for ch_index = 2:NChannels
+        AllCompiledEmbryos{i}.NormalizedProfiles.HisRFP25CTimesWindowedAvgAP.Test.mean(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.HisRFP25CTimesWindowedAvgAP.Test.mean(:,:,ch_index) - ...
+           UniversalImin.HisRFP25CTimesWindowedAvgAP(ch_index))/...
+           (UniversalImax.HisRFP25CTimesWindowedAvgAP(ch_index)-UniversalImin.HisRFP25CTimesWindowedAvgAP(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.HisRFP25CTimesWindowedAvgAP.Control.mean(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.HisRFP25CTimesWindowedAvgAP.Control.mean(:,:,ch_index) - ...
+           UniversalImin.HisRFP25CTimesWindowedAvgAP(ch_index))/...
+           (UniversalImax.HisRFP25CTimesWindowedAvgAP(ch_index)-UniversalImin.HisRFP25CTimesWindowedAvgAP(ch_index));
+       
+        AllCompiledEmbryos{i}.NormalizedProfiles.HisRFP25CTimesWindowedAvgAP.Test.se(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.HisRFP25CTimesWindowedAvgAP.Test.se(:,:,ch_index))/...
+           (UniversalImax.HisRFP25CTimesWindowedAvgAP(ch_index)-UniversalImin.HisRFP25CTimesWindowedAvgAP(ch_index));
+        AllCompiledEmbryos{i}.NormalizedProfiles.HisRFP25CTimesWindowedAvgAP.Control.se(:,:,ch_index) = ....
+           (AllCompiledEmbryos{i}.NormalizedProfiles.HisRFP25CTimesWindowedAvgAP.Control.se(:,:,ch_index))/...
+           (UniversalImax.HisRFP25CTimesWindowedAvgAP(ch_index)-UniversalImin.HisRFP25CTimesWindowedAvgAP(ch_index));
+    end
+end
+
+
+%%
+for i = 1:NumSets
+
+SetLabel = AllSetInfo.SetLabels{i};
+OutEmbryoPath = [AllSetsCombinedEmbryosPath, SetLabel];
+CompiledEmbryos = AllCompiledEmbryos{i};
+    CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
+save(CEoutpath, 'CompiledEmbryos');
+end

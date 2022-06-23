@@ -28,6 +28,9 @@ else
     NEmbryos = size(MembraneMat, 3);
 end
 
+xDim = size(MembraneMat, 2);
+yDim = size(MembraneMat, 1);
+
 CompiledEmbryoPath = [liveExperiment.resultsFolder, filesep, 'CompiledEmbryos.Mat'];
 if isfile(CompiledEmbryoPath)
     load(CompiledEmbryoPath,'CompiledEmbryos');
@@ -43,6 +46,12 @@ else
     CompiledEmbryos.Approved = ones(1, NEmbryos,'logical');
 end
 
+if MarkPV & ~isfield(CompiledEmbryos, 'PVCoordAs')
+    CompiledEmbryos.PVCoordAs = zeros(NEmbryos,2);
+    CompiledEmbryos.PVCoordPs = zeros(NEmbryos,2);
+    CompiledEmbryos.PVCoordDs = zeros(NEmbryos,2);
+    CompiledEmbryos.PVCoordVs = zeros(NEmbryos,2);
+end
 
 CompiledEmbryos = UpdateAPAxisInfo(Prefix, CompiledEmbryos);
 
@@ -75,7 +84,17 @@ DorsalEdge = plot(CompiledEmbryos.CoordDs(CurrentEmbryo,1), CompiledEmbryos.Coor
     'b.','MarkerSize',20);
 VentralEdge = plot(CompiledEmbryos.CoordVs(CurrentEmbryo,1), CompiledEmbryos.CoordVs(CurrentEmbryo,2),...
     'y.','MarkerSize',20);
+if MarkPV
+PVAnteriorPole = plot(CompiledEmbryos.PVCoordAs(CurrentEmbryo,1), CompiledEmbryos.PVCoordAs(CurrentEmbryo,2),...
+    'gp','MarkerFaceColor','g', 'MarkerSize',5);
+PVPosteriorPole = plot(CompiledEmbryos.PVCoordPs(CurrentEmbryo,1), CompiledEmbryos.PVCoordPs(CurrentEmbryo,2),...
+    'rp','MarkerFaceColor','r','MarkerSize',5);
 
+PVDorsalEdge = plot(CompiledEmbryos.PVCoordDs(CurrentEmbryo,1), CompiledEmbryos.PVCoordDs(CurrentEmbryo,2),...
+    'bp','MarkerSize',5,'MarkerFaceColor','b');
+PVVentralEdge = plot(CompiledEmbryos.PVCoordVs(CurrentEmbryo,1), CompiledEmbryos.PVCoordVs(CurrentEmbryo,2),...
+    'yp','MarkerSize',5,'MarkerFaceColor','y');
+end
 if CompiledEmbryos.CoordPs(CurrentEmbryo,1) > 0 & CompiledEmbryos.CoordAs(CurrentEmbryo,1) > 0
     Slope = (CompiledEmbryos.CoordPs(CurrentEmbryo,2)-CompiledEmbryos.CoordAs(CurrentEmbryo,2))/(CompiledEmbryos.CoordPs(CurrentEmbryo,1)-CompiledEmbryos.CoordAs(CurrentEmbryo,1));
     Intercept = CompiledEmbryos.CoordAs(CurrentEmbryo,2)-Slope*CompiledEmbryos.CoordAs(CurrentEmbryo,1);
@@ -124,6 +143,16 @@ while (cc~='x')
     VentralEdge.XData = CompiledEmbryos.CoordVs(CurrentEmbryo,1);
     VentralEdge.YData = CompiledEmbryos.CoordVs(CurrentEmbryo,2);
     
+    if MarkPV
+    PVAnteriorPole.XData = CompiledEmbryos.PVCoordAs(CurrentEmbryo,1);
+    PVAnteriorPole.YData = CompiledEmbryos.PVCoordAs(CurrentEmbryo,2);
+    PVPosteriorPole.XData = CompiledEmbryos.PVCoordPs(CurrentEmbryo,1);
+    PVPosteriorPole.YData = CompiledEmbryos.PVCoordPs(CurrentEmbryo,2);
+    PVDorsalEdge.XData = CompiledEmbryos.PVCoordDs(CurrentEmbryo,1);
+    PVDorsalEdge.YData = CompiledEmbryos.PVCoordDs(CurrentEmbryo,2);
+    PVVentralEdge.XData = CompiledEmbryos.PVCoordVs(CurrentEmbryo,1);
+    PVVentralEdge.YData = CompiledEmbryos.PVCoordVs(CurrentEmbryo,2);
+    end
     %     imshow(imadjust(APImage), 'Parent', apAx)
     %imshow(APImage,DisplayRange)
     if CompiledEmbryos.CoordPs(CurrentEmbryo,1) > 0 & CompiledEmbryos.CoordAs(CurrentEmbryo,1) > 0
@@ -171,15 +200,27 @@ while (cc~='x')
     elseif (ct~=0)&(cc=='a')	%Select anterior end
         [CoordAx,CoordAy]=ginputc(1,'Color',[1,1,1]);
         CompiledEmbryos.CoordAs(CurrentEmbryo,:) = [CoordAx,CoordAy];
+    elseif (ct~=0)&(cc=='A') & MarkPV	%Select anterior end
+        [CoordAx,CoordAy]=ginputc(1,'Color',[1,1,1]);
+        CompiledEmbryos.PVCoordAs(CurrentEmbryo,:) = [CoordAx,CoordAy];
     elseif (ct~=0)&(cc=='p')    %Select posterior end
         [CoordPx,CoordPy]=ginputc(1,'Color',[1,1,1]);
         CompiledEmbryos.CoordPs(CurrentEmbryo,:) = [CoordPx,CoordPy];
+    elseif (ct~=0)&(cc=='P')& MarkPV		%Select anterior end
+        [CoordPx,CoordPy]=ginputc(1,'Color',[1,1,1]);
+        CompiledEmbryos.PVCoordPs(CurrentEmbryo,:) = [CoordPx,CoordPy];
     elseif (ct~=0)&(cc=='d')	%Select dorsal edge
         [CoordDx,CoordDy]=ginputc(1,'Color',[1,1,1]);
         CompiledEmbryos.CoordDs(CurrentEmbryo,:) = [CoordDx,CoordDy];
+    elseif (ct~=0)&(cc=='D') & MarkPV	%Select dorsal edge
+        [CoordDx,CoordDy]=ginputc(1,'Color',[1,1,1]);
+        CompiledEmbryos.PVCoordDs(CurrentEmbryo,:) = [CoordDx,CoordDy];
     elseif (ct~=0)&(cc=='v')    %Select ventral edge
         [CoordVx,CoordVy]=ginputc(1,'Color',[1,1,1]);
         CompiledEmbryos.CoordVs(CurrentEmbryo,:) = [CoordVx,CoordVy];
+    elseif (ct~=0)&(cc=='V')& MarkPV	    %Select ventral edge
+        [CoordVx,CoordVy]=ginputc(1,'Color',[1,1,1]);
+        CompiledEmbryos.PVCoordVs(CurrentEmbryo,:) = [CoordVx,CoordVy];
     elseif (ct~=0)&(cc=='.')&(CurrentEmbryo < NEmbryos)    %Increase contrast
         CurrentEmbryo = CurrentEmbryo+1;
          EmbryoImage = MembraneMat(:,:,CurrentEmbryo);
@@ -251,4 +292,6 @@ save(CompiledEmbryoPath,'CompiledEmbryos');
 disp('Axis information saved.')
 close all
 %%
+if ~MarkPV
 RotateEmbryoImages(Prefix);
+end

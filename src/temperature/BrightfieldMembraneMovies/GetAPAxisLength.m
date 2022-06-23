@@ -113,7 +113,15 @@ imwrite(uint16(MidImage3),[DropboxFolder,filesep,Prefix,filesep,'APDetection',fi
 
 %This code came from Michael's code
 if isfile([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'])
+    try
     load([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP','coordD','coordV', 'APLength','DVLength');
+    catch
+        coordA=[1,1];
+    coordP=[1,1];
+    coordD=[1,1];
+    coordV=[1,1];
+    end
+        
 else
     coordA=[1,1];
     coordP=[1,1];
@@ -123,7 +131,7 @@ end
 
 %Save the AP and shift information
 
-save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP', 'coordD', 'coordV');
+%save([DropboxFolder,filesep,Prefix,filesep,'APDetection.mat'],'coordA','coordP', 'coordD', 'coordV');
 
 
 CorrectAPAxis(Prefix);

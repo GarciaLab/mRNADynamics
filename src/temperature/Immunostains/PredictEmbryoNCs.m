@@ -50,135 +50,151 @@ close all
 nEmbryos = size(hisMat, 3);
 %Get information about the image size
 % HisImage=imread([PreProcPath,filesep,Prefix,filesep,D(1).name]);
-GoodEmbryos = 1:nEmbryos;
-GoodEmbryos = GoodEmbryos(CompiledEmbryos.Approved);
-for CurrentEmbryo = GoodEmbryos
-
-
-
-HisImage = hisMat(:,:,CurrentEmbryo);
-HisImage2 = hisMat(:,:,CurrentEmbryo);
-MemImage = memMat(:,:,CurrentEmbryo);
-
-
-DisplayRangeHis = [min(min(HisImage)), max(max(HisImage))];
-DisplayRangeHis2 = [min(min(HisImage2)), max(max(HisImage2))];
-if ShowPlots
-close all
-
-FullFigure=figure(1);
-set(FullFigure,'units', 'normalized', 'position',[0.01, .3, .9, .5]);
-
-fullAxes = axes(FullFigure,'Units', 'normalized', 'Position', [0 0 1 1]);
-% Overlay=figure(2);
-% set(Overlay,'units', 'normalized', 'position',[0.01, .1, .45, .65]);
-%
-% overlayAxes = axes(Overlay,'Units', 'normalized', 'Position', [0 0 1 1]);
-%
-%
-% Original=figure(3);
-% set(Original,'units', 'normalized', 'position',[0.51, .1, .45, .65]);
-%
-% originalAxes = axes(Original,'Units', 'normalized', 'Position', [0 0 1 1]);
-
-
-
-
-tb = axtoolbar(fullAxes);
-tb.Visible = 'off';
-% tb2 = axtoolbar(originalAxes);
-% tb2.Visible = 'off';
-% tb3 = axtoolbar(originalAxes);
-% tb3.Visible = 'off';
-
-imFull = imshow(HisImage2,DisplayRangeHis2,'Border','Tight','Parent',fullAxes);
-
-SwitchImageType = false;
-hold(fullAxes,'on')
-
-set(0, 'CurrentFigure', FullFigure)
-end
-%%
-%Get the information about the centroids
-[NCentroids,~]=size(Ellipses{CurrentEmbryo});
-
-if ShowPlots
-imFull.CData = HisImage2;
-try
-    caxis(fullAxes, DisplayRange);
-    
-end
-%refresh ellipses plots by destroying and remaking
-if exist('PlotHandle', 'var')
-    cellfun(@delete, PlotHandle);
-end
-
-PlotHandle = cell(NCentroids, 1);
-end
-ellipseFrame = double(Ellipses{CurrentEmbryo});
-CoordA = CompiledEmbryos.RotatedCoordAs(CurrentEmbryo,:);
-CoordP = CompiledEmbryos.RotatedCoordPs(CurrentEmbryo,:);
-CoordD = CompiledEmbryos.RotatedCoordDs(CurrentEmbryo,:);
-CoordV = CompiledEmbryos.RotatedCoordVs(CurrentEmbryo,:);
-%bIndex = boundary(ellipseFrame(:,1), ellipseFrame(:,2), 1);
-APLength = CoordP(1)-CoordA(1);
-DVLength = CoordV(2)-CoordD(2);
-DorsalPoints = [];
-for k = 1:NCentroids
-    if (ellipseFrame(k, 1) > CoordA(1) + 0.1*APLength) & ...
-            (ellipseFrame(k, 1) < CoordP(1) - 0.1*APLength)  & ...
-            ellipseFrame(k, 2) < CoordA(2)
-        DorsalPoints(end+1) = k;
-    end
-end
-
-dorsalEllipses = ellipseFrame(DorsalPoints,:);
-if ~isempty(dorsalEllipses)
-dorsalEllipses = sortrows(dorsalEllipses, 1);
-NuclearDiameter = 2*min(dorsalEllipses(:,3));
-IncludedNuclei = [1];
-NucleiCount = 1;
-NuclearIndex = 1;
-NextNuclearIndex = 2;
-while NuclearIndex < size(dorsalEllipses, 1) & NextNuclearIndex <= size(dorsalEllipses, 1)
-    if dorsalEllipses(NextNuclearIndex,1) <= dorsalEllipses(NuclearIndex,1)+0.5*NuclearDiameter
-        NextNuclearIndex = NextNuclearIndex+1;
+CompiledEmbryos.SingleRowDorsalNucleiCounts = NaN(1, nEmbryos);
+CompiledEmbryos.SingleRowDorsalMedianNucleiSpacing = NaN(1, nEmbryos);
+for CurrentEmbryo = 1:nEmbryos
+    if CompiledEmbryos.Approved(CurrentEmbryo)
+        
+        
+        
+        HisImage = hisMat(:,:,CurrentEmbryo);
+        HisImage2 = hisMat(:,:,CurrentEmbryo);
+        MemImage = memMat(:,:,CurrentEmbryo);
+        
+        
+        DisplayRangeHis = [min(min(HisImage)), max(max(HisImage))];
+        DisplayRangeHis2 = [min(min(HisImage2)), max(max(HisImage2))];
+        if ShowPlots
+            close all
+            
+            FullFigure=figure(1);
+            set(FullFigure,'units', 'normalized', 'position',[0.01, .3, .9, .5]);
+            
+            fullAxes = axes(FullFigure,'Units', 'normalized', 'Position', [0 0 1 1]);
+            % Overlay=figure(2);
+            % set(Overlay,'units', 'normalized', 'position',[0.01, .1, .45, .65]);
+            %
+            % overlayAxes = axes(Overlay,'Units', 'normalized', 'Position', [0 0 1 1]);
+            %
+            %
+            % Original=figure(3);
+            % set(Original,'units', 'normalized', 'position',[0.51, .1, .45, .65]);
+            %
+            % originalAxes = axes(Original,'Units', 'normalized', 'Position', [0 0 1 1]);
+            
+            
+            
+            
+            tb = axtoolbar(fullAxes);
+            tb.Visible = 'off';
+            % tb2 = axtoolbar(originalAxes);
+            % tb2.Visible = 'off';
+            % tb3 = axtoolbar(originalAxes);
+            % tb3.Visible = 'off';
+            
+            imFull = imshow(HisImage2,DisplayRangeHis2,'Border','Tight','Parent',fullAxes);
+            
+            SwitchImageType = false;
+            hold(fullAxes,'on')
+            
+            set(0, 'CurrentFigure', FullFigure)
+        end
+        %%
+        %Get the information about the centroids
+        [NCentroids,~]=size(Ellipses{CurrentEmbryo});
+        
+        if ShowPlots
+            imFull.CData = HisImage2;
+            try
+                caxis(fullAxes, DisplayRange);
+                
+            end
+            %refresh ellipses plots by destroying and remaking
+            if exist('PlotHandle', 'var')
+                cellfun(@delete, PlotHandle);
+            end
+            
+            PlotHandle = cell(NCentroids, 1);
+        end
+        ellipseFrame = double(Ellipses{CurrentEmbryo});
+        CoordA = CompiledEmbryos.RotatedCoordAs(CurrentEmbryo,:);
+        CoordP = CompiledEmbryos.RotatedCoordPs(CurrentEmbryo,:);
+        CoordD = CompiledEmbryos.RotatedCoordDs(CurrentEmbryo,:);
+        CoordV = CompiledEmbryos.RotatedCoordVs(CurrentEmbryo,:);
+        %bIndex = boundary(ellipseFrame(:,1), ellipseFrame(:,2), 1);
+        APLength = CoordP(1)-CoordA(1);
+        DVLength = CoordV(2)-CoordD(2);
+        DorsalPoints = [];
+        for k = 1:NCentroids
+            if (ellipseFrame(k, 1) > CoordA(1) + 0.1*APLength) & ...
+                    (ellipseFrame(k, 1) < CoordP(1) - 0.1*APLength)  & ...
+                    ellipseFrame(k, 2) < CoordA(2)
+                DorsalPoints(end+1) = k;
+            end
+        end
+        
+        dorsalEllipses = ellipseFrame(DorsalPoints,:);
+        if ~isempty(dorsalEllipses)
+            dorsalEllipses = sortrows(dorsalEllipses, 1);
+            NuclearDiameter = 2*min(dorsalEllipses(:,3));
+            IncludedNuclei = [1];
+            NucleiCount = 1;
+            NuclearIndex = 1;
+            NextNuclearIndex = 2;
+            while NuclearIndex < size(dorsalEllipses, 1) & NextNuclearIndex <= size(dorsalEllipses, 1)
+                if dorsalEllipses(NextNuclearIndex,1) <= dorsalEllipses(NuclearIndex,1)+NuclearDiameter*PixelSize_um*1.5;
+                    NextNuclearIndex = NextNuclearIndex+1;
+                else
+                    IncludedNuclei(end+1) = NextNuclearIndex;
+                    NucleiCount = NucleiCount+1;
+                    NuclearIndex = NextNuclearIndex;
+                    NextNuclearIndex = NuclearIndex+1;
+                end
+            end
+            
+            dorsalEllipses = dorsalEllipses(IncludedNuclei,:);
+            if ShowPlots
+                for k=1:size(dorsalEllipses, 1)
+                    n =k;
+                    %         PlotHandle{k} = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
+                    %             'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
+                    %             'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)), 'FaceAlpha', 0,...
+                    %             'InteractionsAllowed', 'none', 'LabelVisible', 'hover', 'Label', num2str(ellipseFrame(n, 9)));
+                    colorhash = uint8(mod(round(dorsalEllipses(n, 1)+dorsalEllipses(n, 2)),20)+1);
+                    PlotHandle{k} = ellipse(2*dorsalEllipses(n, 3), 2*dorsalEllipses(n, 4),...
+                        dorsalEllipses(n, 5) * (360/(2*pi)), dorsalEllipses(n, 1),...
+                        dorsalEllipses(n, 2), clrmp(colorhash,:), 10, fullAxes, 0.5);
+                    
+                    
+                    
+                end
+                
+            end
+            NucleiAPspacings = diff(dorsalEllipses(:,1))*PixelSize_um;
+            CompiledEmbryos.SingleRowDorsalNucleiCounts(CurrentEmbryo) = NucleiCount;
+            CompiledEmbryos.SingleRowDorsalMedianNucleiSpacing(CurrentEmbryo) = median(NucleiAPspacings);
+            disp(['Current Embryo: ', num2str(CurrentEmbryo), ', Nuclear Count: ', num2str(NucleiCount)]);
+            if NucleiCount >= 72
+                CompiledEmbryos.nc(CurrentEmbryo) = 14;
+            elseif NucleiCount <= 65 & NucleiCount >= 50
+                CompiledEmbryos.nc(CurrentEmbryo) = 13;
+            elseif NucleiCount <= 45 & NucleiCount >= 30
+                CompiledEmbryos.nc(CurrentEmbryo) = 12;
+            else
+                CompiledEmbryos.nc(CurrentEmbryo) = NaN;
+            end
+            
+        else
+            CompiledEmbryos.nc(CurrentEmbryo) = NaN;
+        end
     else
-        IncludedNuclei(end+1) = NextNuclearIndex;
-        NucleiCount = NucleiCount+1;
-        NuclearIndex = NextNuclearIndex;
-        NextNuclearIndex = NuclearIndex+1;
+        CompiledEmbryos.nc(CurrentEmbryo) = NaN;
     end
-end
-    
-dorsalEllipses = dorsalEllipses(IncludedNuclei,:);
-if ShowPlots
-for k=1:size(dorsalEllipses, 1)
-    n =k;
-    %         PlotHandle{k} = drawellipse('Center',[ellipseFrame(n, 1) ellipseFrame(n, 2)],...
-    %             'SemiAxes',[ellipseFrame(n, 3) ellipseFrame(n, 4)], ...
-    %             'RotationAngle',ellipseFrame(n, 5) * (360/(2*pi)), 'FaceAlpha', 0,...
-    %             'InteractionsAllowed', 'none', 'LabelVisible', 'hover', 'Label', num2str(ellipseFrame(n, 9)));
-    colorhash = uint8(mod(round(dorsalEllipses(n, 1)+dorsalEllipses(n, 2)),20)+1);
-    PlotHandle{k} = ellipse(2*dorsalEllipses(n, 3), 2*dorsalEllipses(n, 4),...
-        dorsalEllipses(n, 5) * (360/(2*pi)), dorsalEllipses(n, 1),...
-        dorsalEllipses(n, 2), clrmp(colorhash,:), 10, fullAxes, 0.5);
-    
-    
-end
-
-end
-disp(['Current Embryo: ', num2str(CurrentEmbryo), ', Nuclear Count: ', num2str(NucleiCount)]);
-if NucleiCount > 65
-    CompiledEmbryos.nc(CurrentEmbryo) = 14;
-elseif NucleiCount > 55
-    CompiledEmbryos.nc(CurrentEmbryo) = 13;
-end
-else
-    CompiledEmbryos.nc(CurrentEmbryo) = NaN;
-end
 end
 if ShowPlots
     close all
+end
+if length(CompiledEmbryos.nc) ~= nEmbryos
+    error('Wrong number of nuclear cycles saved');
 end
 save([DropboxFolder,filesep,Prefix,filesep,'CompiledEmbryos.mat'],'CompiledEmbryos', '-v6')

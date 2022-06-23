@@ -1,4 +1,4 @@
-function ExtractMembraneFurrowDepths(Prefix, UseCustom, varargin)
+function ExtractMembraneFurrowDepts(Prefix, UseCustom)
 if ~exist('UseCustom', 'var')
     UseCustom = false;
 end
@@ -34,19 +34,24 @@ CustomMembraneMat = imreadStack2(CustomRotatedMembraneFile, liveExperiment.yDim,
 if UseCustom
     RotatedHisFile = [liveExperiment.preFolder, filesep, Prefix, '-CustomHis_Rotated.tif'];
 else
-    RotatedHisFile = [liveExperiment.preFolder, filesep, Prefix, '-His_Rotated.tif'];
+    RotatedHisFile = [liveExperiment.preFolder, filesep, Prefix, '-CustomHis_Rotated.tif'];
 end
 hisMat = imreadStack2(RotatedHisFile, liveExperiment.yDim, liveExperiment.xDim, liveExperiment.nFrames);
 HisMat = imresize(hisMat, 2);
-HoldMembraneMat = CustomMembraneMat;
-if isfile(CustomRotatedMembraneFile) & ~UseCustom
+MedZoomMembraneMat = imreadStack2(MedMembraneFile, ySize, xSize, NEmbryos);
+MinZoomMembraneMat = imreadStack2(MinMembraneFile, ySize, xSize, NEmbryos);
+ZoomMembraneMat = MedZoomMembraneMat;
+ZoomPixelSize_um = PixelSize_um;
+if  ~UseCustom
     UseZoomMembrane = true;
-    MedZoomMembraneMat = imreadStack2(MedMembraneFile, ySize, xSize, NEmbryos);
-    MinZoomMembraneMat = imreadStack2(MinMembraneFile, ySize, xSize, NEmbryos);
-    ZoomMembraneMat = MedZoomMembraneMat;
-    ZoomPixelSize_um = PixelSize_um;
     HoldMembraneMat = ZoomMembraneMat;
+elseif isfile(CustomRotatedMembraneFile) & UseCustom
+    UseZoomMembrane = false;
+    HoldMembraneMat =CustomMembraneMat;
 end
+
+
+
 
 %%
 ProcPath = liveExperiment.userProcFolder;
@@ -104,7 +109,6 @@ end
 %%
 close all
 FurrowSelection = true;
-UseCustom = false;
 UseMin = false;
 if UseCustom
     MembraneMat = CustomMembraneMat;
@@ -121,6 +125,24 @@ if UseCustom
     
     xRange = xlims(1):xlims(2);
     yRange = ylims(1):ylims(2);
+    
+    
+    His_DVLength = abs(CompiledEmbryos.RotatedCoordVs(CurrentEmbryo, 2)-CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2));
+    His_ylims = [round(0.9*CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2)),...
+        round(His_DVLength*1/3+CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2))];
+    His_APLength=abs(CompiledEmbryos.RotatedCoordPs(CurrentEmbryo, 1)-CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1));
+    His_xlims = [round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.4),...
+        round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.6)];
+    
+    His_APGrid =  0.4:0.025:0.6;
+    His_APmarkers = His_APGrid*His_APLength+CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)-His_xlims(1);
+    
+    His_xRange = His_xlims(1):His_xlims(2);
+    His_yRange = His_ylims(1):His_ylims(2);
+    
+    HisImage = hisMat(His_yRange, His_xRange, CurrentEmbryo);
+    His_DisplayRange=[min(min(HisImage)),max(max(HisImage))];
+    
     
 end
 if UseZoomMembrane
@@ -281,7 +303,7 @@ while (currentCharacter~='x')
     end
     
     hold(hisAxes, 'on')
-     %refresh ellipses plots by destroying and remaking
+    %refresh ellipses plots by destroying and remaking
     if exist('HisPlotHandle', 'var')
         cellfun(@delete, HisPlotHandle);
     end
@@ -529,6 +551,22 @@ while (currentCharacter~='x')
             xRange = xlims(1):xlims(2);
             yRange = ylims(1):ylims(2);
             
+            His_DVLength = abs(CompiledEmbryos.RotatedCoordVs(CurrentEmbryo, 2)-CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2));
+            His_ylims = [round(0.9*CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2)),...
+                round(His_DVLength*1/3+CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2))];
+            His_APLength=abs(CompiledEmbryos.RotatedCoordPs(CurrentEmbryo, 1)-CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1));
+            His_xlims = [round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.4),...
+                round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.6)];
+            
+            His_APGrid =  0.4:0.025:0.6;
+            His_APmarkers = His_APGrid*His_APLength+CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)-His_xlims(1);
+            
+            His_xRange = His_xlims(1):His_xlims(2);
+            His_yRange = His_ylims(1):His_ylims(2);
+            
+            HisImage = hisMat(His_yRange, His_xRange, CurrentEmbryo);
+            His_DisplayRange=[min(min(HisImage)),max(max(HisImage))];
+            
         end
         if UseZoomMembrane
             DVLength = abs(CompiledEmbryos.MemRotatedCoordVs(CurrentEmbryo, 2)-CompiledEmbryos.MemRotatedCoordDs(CurrentEmbryo, 2));
@@ -545,20 +583,20 @@ while (currentCharacter~='x')
             yRange = ylims(1):ylims(2);
             
             His_DVLength = abs(CompiledEmbryos.RotatedCoordVs(CurrentEmbryo, 2)-CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2));
-    His_ylims = [round(0.9*CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2)),...
-        round(His_DVLength*1/3+CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2))];
-    His_APLength=abs(CompiledEmbryos.RotatedCoordPs(CurrentEmbryo, 1)-CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1));
-    His_xlims = [round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.3),...
-        round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.7)];
-    
-    His_APGrid = 0.3:0.025:0.7;
-    His_APmarkers = His_APGrid*His_APLength+CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)-His_xlims(1);
-    
-    His_xRange = His_xlims(1):His_xlims(2);
-    His_yRange = His_ylims(1):His_ylims(2);
-    
-    HisImage = HisMat(yRange, xRange, CurrentEmbryo);
-    His_DisplayRange=[min(min(HisImage)),max(max(HisImage))];
+            His_ylims = [round(0.9*CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2)),...
+                round(His_DVLength*1/3+CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2))];
+            His_APLength=abs(CompiledEmbryos.RotatedCoordPs(CurrentEmbryo, 1)-CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1));
+            His_xlims = [round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.3),...
+                round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.7)];
+            
+            His_APGrid = 0.3:0.025:0.7;
+            His_APmarkers = His_APGrid*His_APLength+CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)-His_xlims(1);
+            
+            His_xRange = His_xlims(1):His_xlims(2);
+            His_yRange = His_ylims(1):His_ylims(2);
+            
+            HisImage = HisMat(yRange, xRange, CurrentEmbryo);
+            His_DisplayRange=[min(min(HisImage)),max(max(HisImage))];
             
         end
         
@@ -593,6 +631,22 @@ while (currentCharacter~='x')
             xRange = xlims(1):xlims(2);
             yRange = ylims(1):ylims(2);
             
+            His_DVLength = abs(CompiledEmbryos.RotatedCoordVs(CurrentEmbryo, 2)-CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2));
+            His_ylims = [round(0.9*CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2)),...
+                round(His_DVLength*1/3+CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2))];
+            His_APLength=abs(CompiledEmbryos.RotatedCoordPs(CurrentEmbryo, 1)-CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1));
+            His_xlims = [round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.4),...
+                round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.6)];
+            
+            His_APGrid =  0.4:0.025:0.6;
+            His_APmarkers = His_APGrid*His_APLength+CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)-His_xlims(1);
+            
+            His_xRange = His_xlims(1):His_xlims(2);
+            His_yRange = His_ylims(1):His_ylims(2);
+            
+            HisImage = hisMat(His_yRange, His_xRange, CurrentEmbryo);
+            His_DisplayRange=[min(min(HisImage)),max(max(HisImage))];
+            
         end
         if UseZoomMembrane
             DVLength = abs(CompiledEmbryos.MemRotatedCoordVs(CurrentEmbryo, 2)-CompiledEmbryos.MemRotatedCoordDs(CurrentEmbryo, 2));
@@ -609,20 +663,20 @@ while (currentCharacter~='x')
             yRange = ylims(1):ylims(2);
             
             His_DVLength = abs(CompiledEmbryos.RotatedCoordVs(CurrentEmbryo, 2)-CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2));
-    His_ylims = [round(0.9*CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2)),...
-        round(His_DVLength*1/3+CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2))];
-    His_APLength=abs(CompiledEmbryos.RotatedCoordPs(CurrentEmbryo, 1)-CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1));
-    His_xlims = [round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.3),...
-        round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.7)];
-    
-    His_APGrid = 0.3:0.025:0.7;
-    His_APmarkers = His_APGrid*His_APLength+CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)-His_xlims(1);
-    
-    His_xRange = His_xlims(1):His_xlims(2);
-    His_yRange = His_ylims(1):His_ylims(2);
-    
-    HisImage = HisMat(yRange, xRange, CurrentEmbryo);
-    His_DisplayRange=[min(min(HisImage)),max(max(HisImage))];
+            His_ylims = [round(0.9*CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2)),...
+                round(His_DVLength*1/3+CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2))];
+            His_APLength=abs(CompiledEmbryos.RotatedCoordPs(CurrentEmbryo, 1)-CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1));
+            His_xlims = [round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.3),...
+                round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.7)];
+            
+            His_APGrid = 0.3:0.025:0.7;
+            His_APmarkers = His_APGrid*His_APLength+CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)-His_xlims(1);
+            
+            His_xRange = His_xlims(1):His_xlims(2);
+            His_yRange = His_ylims(1):His_ylims(2);
+            
+            HisImage = HisMat(yRange, xRange, CurrentEmbryo);
+            His_DisplayRange=[min(min(HisImage)),max(max(HisImage))];
             
             
         end
@@ -657,6 +711,22 @@ while (currentCharacter~='x')
             xRange = xlims(1):xlims(2);
             yRange = ylims(1):ylims(2);
             
+            His_DVLength = abs(CompiledEmbryos.RotatedCoordVs(CurrentEmbryo, 2)-CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2));
+            His_ylims = [round(0.9*CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2)),...
+                round(His_DVLength*1/3+CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2))];
+            His_APLength=abs(CompiledEmbryos.RotatedCoordPs(CurrentEmbryo, 1)-CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1));
+            His_xlims = [round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.4),...
+                round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.6)];
+            
+            His_APGrid =  0.4:0.025:0.6;
+            His_APmarkers = His_APGrid*His_APLength+CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)-His_xlims(1);
+            
+            His_xRange = His_xlims(1):His_xlims(2);
+            His_yRange = His_ylims(1):His_ylims(2);
+            
+            HisImage = hisMat(His_yRange, His_xRange, CurrentEmbryo);
+            His_DisplayRange=[min(min(HisImage)),max(max(HisImage))];
+            
         end
         if UseZoomMembrane
             DVLength = abs(CompiledEmbryos.MemRotatedCoordVs(CurrentEmbryo, 2)-CompiledEmbryos.MemRotatedCoordDs(CurrentEmbryo, 2));
@@ -673,20 +743,20 @@ while (currentCharacter~='x')
             yRange = ylims(1):ylims(2);
             
             His_DVLength = abs(CompiledEmbryos.RotatedCoordVs(CurrentEmbryo, 2)-CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2));
-    His_ylims = [round(0.9*CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2)),...
-        round(His_DVLength*1/3+CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2))];
-    His_APLength=abs(CompiledEmbryos.RotatedCoordPs(CurrentEmbryo, 1)-CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1));
-    His_xlims = [round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.3),...
-        round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.7)];
-    
-    His_APGrid = 0.3:0.025:0.7;
-    His_APmarkers = His_APGrid*His_APLength+CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)-His_xlims(1);
-    
-    His_xRange = His_xlims(1):His_xlims(2);
-    His_yRange = His_ylims(1):His_ylims(2);
-    
-    HisImage = HisMat(yRange, xRange, CurrentEmbryo);
-    His_DisplayRange=[min(min(HisImage)),max(max(HisImage))];
+            His_ylims = [round(0.9*CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2)),...
+                round(His_DVLength*1/3+CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2))];
+            His_APLength=abs(CompiledEmbryos.RotatedCoordPs(CurrentEmbryo, 1)-CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1));
+            His_xlims = [round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.3),...
+                round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.7)];
+            
+            His_APGrid = 0.3:0.025:0.7;
+            His_APmarkers = His_APGrid*His_APLength+CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)-His_xlims(1);
+            
+            His_xRange = His_xlims(1):His_xlims(2);
+            His_yRange = His_ylims(1):His_ylims(2);
+            
+            HisImage = HisMat(yRange, xRange, CurrentEmbryo);
+            His_DisplayRange=[min(min(HisImage)),max(max(HisImage))];
             
             
         end
@@ -738,15 +808,11 @@ while (currentCharacter~='x')
     elseif (ct~=0)&(currentCharacter=='q')    %Reset the contrast
         CompiledEmbryos.Approved(CurrentEmbryo) = true;
     elseif (ct~=0)&(currentCharacter=='t')    %Switch mat to use
-        if UseZoomMembrane
+        ChangeFig = false;
+        if UseZoomMembrane & ~UseMin
+            UseMin = true;
+            MembraneMat = MinZoomMembraneMat;
             
-            if UseMin
-                UseMin = false;
-                MembraneMat = MinZoomMembraneMat;
-            else
-                UseMin = true;
-                MembraneMat = MedZoomMembraneMat;
-            end
             DVLength = abs(CompiledEmbryos.MemRotatedCoordVs(CurrentEmbryo, 2)-CompiledEmbryos.MemRotatedCoordDs(CurrentEmbryo, 2));
             ylims = [round(0.9*CompiledEmbryos.MemRotatedCoordDs(CurrentEmbryo, 2)),...
                 round(DVLength*1/3+CompiledEmbryos.MemRotatedCoordDs(CurrentEmbryo, 2))];
@@ -765,25 +831,166 @@ while (currentCharacter~='x')
             DisplayRange=[min(min(MemImage)),max(max(MemImage))];
             
             His_DVLength = abs(CompiledEmbryos.RotatedCoordVs(CurrentEmbryo, 2)-CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2));
-    His_ylims = [round(0.9*CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2)),...
-        round(His_DVLength*1/3+CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2))];
-    His_APLength=abs(CompiledEmbryos.RotatedCoordPs(CurrentEmbryo, 1)-CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1));
-    His_xlims = [round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.3),...
-        round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.7)];
-    
-    His_APGrid = 0.3:0.025:0.7;
-    His_APmarkers = His_APGrid*His_APLength+CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)-His_xlims(1);
-    
-    His_xRange = His_xlims(1):His_xlims(2);
-    His_yRange = His_ylims(1):His_ylims(2);
-    
-    HisImage = HisMat(yRange, xRange, CurrentEmbryo);
-    His_DisplayRange=[min(min(HisImage)),max(max(HisImage))];
+            His_ylims = [round(0.9*CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2)),...
+                round(His_DVLength*1/3+CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2))];
+            His_APLength=abs(CompiledEmbryos.RotatedCoordPs(CurrentEmbryo, 1)-CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1));
+            His_xlims = [round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.3),...
+                round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.7)];
+            
+            His_APGrid = 0.3:0.025:0.7;
+            His_APmarkers = His_APGrid*His_APLength+CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)-His_xlims(1);
+            
+            His_xRange = His_xlims(1):His_xlims(2);
+            His_yRange = His_ylims(1):His_ylims(2);
+            
+            HisImage = HisMat(yRange, xRange, CurrentEmbryo);
+            His_DisplayRange=[min(min(HisImage)),max(max(HisImage))];
+        elseif UseZoomMembrane & UseMin
+            ChangeFig = true;
+            UseMin = false;
+            MembraneMat = CustomMembraneMat;
+            UseCustom = true;
+            UseZoomMembrane = false;
+            DVLength = abs(CompiledEmbryos.RotatedCoordVs(CurrentEmbryo, 2)-CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2));
+            ylims = [round(0.9*CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2)),...
+                round(DVLength*1/3+CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2))];
+            APLength=abs(CompiledEmbryos.RotatedCoordPs(CurrentEmbryo, 1)-CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1));
+            xlims = [round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+APLength*.4),...
+                round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+APLength*.6)];
+            
+            APGrid = 0.4:0.025:0.6;
+            APmarkers = APGrid*APLength+CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)-xlims(1);
+            
+            xRange = xlims(1):xlims(2);
+            yRange = ylims(1):ylims(2);
+            
+            
+            
+            MemImage = MembraneMat(yRange,xRange,CurrentEmbryo);
+            DisplayRange=[min(min(MemImage)),max(max(MemImage))];
+            
+            
+            His_DVLength = abs(CompiledEmbryos.RotatedCoordVs(CurrentEmbryo, 2)-CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2));
+            His_ylims = [round(0.9*CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2)),...
+                round(His_DVLength*1/3+CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2))];
+            His_APLength=abs(CompiledEmbryos.RotatedCoordPs(CurrentEmbryo, 1)-CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1));
+            His_xlims = [round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.4),...
+                round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.6)];
+            
+            His_APGrid =  0.4:0.025:0.6;
+            His_APmarkers = His_APGrid*His_APLength+CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)-His_xlims(1);
+            
+            His_xRange = His_xlims(1):His_xlims(2);
+            His_yRange = His_ylims(1):His_ylims(2);
+            
+            HisImage = hisMat(His_yRange, His_xRange, CurrentEmbryo);
+            His_DisplayRange=[min(min(HisImage)),max(max(HisImage))];
+        elseif UseCustom
+            ChangeFig = true;
+            UseMin = false;
+            MembraneMat = MedZoomMembraneMat;
+            UseCustom = false;
+            UseZoomMembrane = true;
+            DVLength = abs(CompiledEmbryos.MemRotatedCoordVs(CurrentEmbryo, 2)-CompiledEmbryos.MemRotatedCoordDs(CurrentEmbryo, 2));
+            ylims = [round(0.9*CompiledEmbryos.MemRotatedCoordDs(CurrentEmbryo, 2)),...
+                round(DVLength*1/3+CompiledEmbryos.MemRotatedCoordDs(CurrentEmbryo, 2))];
+            APLength=abs(CompiledEmbryos.MemRotatedCoordPs(CurrentEmbryo, 1)-CompiledEmbryos.MemRotatedCoordAs(CurrentEmbryo, 1));
+            xlims = [round(CompiledEmbryos.MemRotatedCoordAs(CurrentEmbryo, 1)+APLength*.3),...
+                round(CompiledEmbryos.MemRotatedCoordAs(CurrentEmbryo, 1)+APLength*.7)];
+            
+            APGrid = 0.3:0.025:0.7;
+            APmarkers = APGrid*APLength+CompiledEmbryos.MemRotatedCoordAs(CurrentEmbryo, 1)-xlims(1);
+            
+            xRange = xlims(1):xlims(2);
+            yRange = ylims(1):ylims(2);
+            
+            
+            MemImage = MembraneMat(yRange,xRange,CurrentEmbryo);
+            DisplayRange=[min(min(MemImage)),max(max(MemImage))];
+            
+            His_DVLength = abs(CompiledEmbryos.RotatedCoordVs(CurrentEmbryo, 2)-CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2));
+            His_ylims = [round(0.9*CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2)),...
+                round(His_DVLength*1/3+CompiledEmbryos.RotatedCoordDs(CurrentEmbryo, 2))];
+            His_APLength=abs(CompiledEmbryos.RotatedCoordPs(CurrentEmbryo, 1)-CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1));
+            His_xlims = [round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.3),...
+                round(CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)+His_APLength*.7)];
+            
+            His_APGrid = 0.3:0.025:0.7;
+            His_APmarkers = His_APGrid*His_APLength+CompiledEmbryos.RotatedCoordAs(CurrentEmbryo, 1)-His_xlims(1);
+            
+            His_xRange = His_xlims(1):His_xlims(2);
+            His_yRange = His_ylims(1):His_ylims(2);
+            
+            HisImage = HisMat(yRange, xRange, CurrentEmbryo);
+            His_DisplayRange=[min(min(HisImage)),max(max(HisImage))];
             
         end
-        
-        
-        
+        if ChangeFig
+            close all
+            
+            
+            Overlay=figure;
+            set(Overlay,'units', 'normalized', 'position',[0.1, .4, .7, .3]);
+            
+            overlayAxes = axes(Overlay,'Units', 'normalized', 'Position', [0 0 1 1]);
+            
+            
+            tb = axtoolbar(overlayAxes);
+            tb.Visible = 'off';
+            
+            HisFig=figure(2);
+            set(HisFig,'units', 'normalized', 'position',[0.1, 0.1, .7, .3]);
+            
+            hisAxes = axes(HisFig,'Units', 'normalized', 'Position', [0 0 1 1]);
+            
+            
+            tb2 = axtoolbar(hisAxes);
+            tb2.Visible = 'off';
+            
+            
+            
+            
+            currentCharacter=1;
+            
+            
+            
+            % Show the first image
+            imOverlay = imshow(MemImage,DisplayRange,'Parent',overlayAxes);
+            imHis = imshow(HisImage,His_DisplayRange,'Parent',hisAxes);
+            if exist('HisGuidePlotHandles', 'var')
+                cellfun(@delete, HisPlotHandle);
+            end
+            hold(hisAxes, 'on');
+            HisGuidePlotHandles = cell(1,length(APmarkers));
+            for pl=1:length(APmarkers)
+                HisGuidePlotHandles{pl} = plot(hisAxes, [APmarkers(pl),APmarkers(pl)], [0 size(imHis.CData,2)], 'b-+');
+                HisGuidePlotHandles{pl}.Color(4) =0.3;
+            end
+            
+            
+            hold(hisAxes, 'off');
+            
+            
+            
+            if exist('GuidePlotHandles', 'var')
+                cellfun(@delete, GuidePlotHandles);
+            end
+            hold(overlayAxes, 'on')
+            GuidePlotHandles = cell(1,length(APmarkers));
+            for pl=1:length(APmarkers)
+                GuidePlotHandles{pl} = plot(overlayAxes, [APmarkers(pl),APmarkers(pl)], [0 size(imOverlay.CData,2)], 'b-+');
+                GuidePlotHandles{pl}.Color(4) =0.3;
+            end
+            hold(overlayAxes, 'off');
+            title(overlayAxes, FigureTitle);
+            
+            hold off
+            
+            
+            set(0, 'CurrentFigure', Overlay)
+            
+            
+        end
         
         
     end

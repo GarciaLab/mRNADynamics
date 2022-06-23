@@ -349,7 +349,7 @@ while (currentCharacter~='x')
             CurrentFrame = nFrames;
         end
         
-    elseif (ct~=0)&(currentCharacter==',')&(CurrentFrame>nc14)
+    elseif (ct~=0)&(currentCharacter==',')&(CurrentFrame>1)
         %           NumFurrowMeasurements(CurrentFrame) = size( FurrowMeasurements{CurrentFrame},1);
         %          if NumFurrowMeasurements(CurrentFrame) > 0
         %              for m=1:NumFurrowMeasurements(CurrentFrame)

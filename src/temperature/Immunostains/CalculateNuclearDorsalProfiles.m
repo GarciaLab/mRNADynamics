@@ -83,17 +83,19 @@ end
 GoodEmbryos = GoodEmbryos(CompiledEmbryos.Approved & ~EmptyEllipses);
 APNarrowbins = 0:0.0125:1;
 NarrowProfileNucleiFluoInfo = cell(size(EllipsesFluoInfo));
-DorsalNarrowAPProfiles = NaN(nEmbryos, length(APNarrowbins)-1, length(Channels));
+DorsalNarrowAPProfiles = NaN(nEmbryos, length(APNarrowbins), length(Channels));
 APbins = 0:0.025:1;
 ProfileNucleiFluoInfo = cell(size(EllipsesFluoInfo));
-DorsalAPProfiles = NaN(nEmbryos, length(APbins)-1, length(Channels));
+DorsalAPProfiles = NaN(nEmbryos, length(APbins), length(Channels));
 AllDorsalNucleiFluoInfo = cell(size(EllipsesFluoInfo));
-DorsalAvgAPProfiles = NaN(nEmbryos, length(APbins)-1, length(Channels));
-DorsalAvgNarrowAPProfiles = NaN(nEmbryos, length(APNarrowbins)-1, length(Channels));
-DorsalStdAPProfiles = NaN(nEmbryos, length(APbins)-1, length(Channels));
-DorsalStdNarrowAPProfiles = NaN(nEmbryos, length(APNarrowbins)-1, length(Channels));
-DorsalCountAPProfiles = NaN(nEmbryos, length(APbins)-1, length(Channels));
-DorsalCountNarrowAPProfiles = NaN(nEmbryos, length(APNarrowbins)-1, length(Channels));
+DorsalAvgAPProfiles = NaN(nEmbryos, length(APbins), length(Channels));
+DorsalAvgNarrowAPProfiles = NaN(nEmbryos, length(APNarrowbins), length(Channels));
+DorsalStdAPProfiles = NaN(nEmbryos, length(APbins), length(Channels));
+DorsalStdNarrowAPProfiles = NaN(nEmbryos, length(APNarrowbins), length(Channels));
+DorsalCountAPProfiles = NaN(nEmbryos, length(APbins), length(Channels));
+DorsalCountNarrowAPProfiles = NaN(nEmbryos, length(APNarrowbins), length(Channels));
+
+
 %%
 for CurrentEmbryo = GoodEmbryos
     
@@ -169,9 +171,9 @@ for CurrentEmbryo = GoodEmbryos
     DorsalPoints = [];
     
     for k = 1:NCentroids
-        if (ellipseFrame(k, 1) > CoordA(1) + 0.1*APLength) & ...
-                (ellipseFrame(k, 1) < CoordP(1) - 0.1*APLength)  & ...
-                ellipseFrame(k, 2) < CoordA(2)
+        if (ellipseFrame(k, 1) >= CoordA(1) + 0.0875*APLength) & ...
+                (ellipseFrame(k, 1) <= CoordP(1) - 0.0875*APLength)  & ...
+                ellipseFrame(k, 2) <= CoordA(2)
             DorsalPoints(end+1) = k;
         end
     end
@@ -182,9 +184,9 @@ for CurrentEmbryo = GoodEmbryos
     NFluoCentroids = size(EllipsesFluoFrame, 1);
     DorsalPointsFluo = [];
     for k = 1:NFluoCentroids
-        if (EllipsesFluoFrame(k, 1, InputChannelIndexes(1)) > CoordA(1) + 0.1*APLength) & ...
-                (EllipsesFluoFrame(k, 1, InputChannelIndexes(1)) < CoordP(1) - 0.1*APLength)  & ...
-                EllipsesFluoFrame(k, 2, InputChannelIndexes(1)) < CoordA(2)
+        if (EllipsesFluoFrame(k, 1, InputChannelIndexes(1)) >= CoordA(1) + 0.0875*APLength) & ...
+                (EllipsesFluoFrame(k, 1, InputChannelIndexes(1)) <= CoordP(1) - 0.0875*APLength)  & ...
+                EllipsesFluoFrame(k, 2, InputChannelIndexes(1)) <= CoordA(2)
             DorsalPointsFluo(end+1) = k;
         end
     end
@@ -213,9 +215,12 @@ for CurrentEmbryo = GoodEmbryos
         end
     end
     
+    MinAPbin = find(round(APbins,5) == 0.1);
+    MaxAPbin = find(round(APbins,5) == 0.9);
+    DiffBins = diff(APbins);
     profileCells = [];
-    for binIndex = 1:length(APbins)-1
-        cellIndexes = find(dorsalFluo(:,6,InputChannelIndexes(end)) >= APbins(binIndex) & dorsalFluo(:,6,InputChannelIndexes(end)) < APbins(binIndex+1));
+    for binIndex = MinAPbin:MaxAPbin
+        cellIndexes = find(dorsalFluo(:,6,InputChannelIndexes(end)) >= APbins(binIndex)-DiffBins(1)/2 & dorsalFluo(:,6,InputChannelIndexes(end)) < APbins(binIndex)+DiffBins(1)/2);
         if ~isempty(cellIndexes)
             [~, subIndex] = max(dorsalFluo(cellIndexes,8,InputChannelIndexes(end)));
             singleCellIndex = cellIndexes(subIndex);
@@ -228,8 +233,8 @@ for CurrentEmbryo = GoodEmbryos
     
     
     
-    for binIndex = 1:length(APbins)-1
-        cellIndex = find(finalDorsalFluo(:,6,InputChannelIndexes(end)) >= APbins(binIndex) & finalDorsalFluo(:,6,InputChannelIndexes(end)) < APbins(binIndex+1));
+    for binIndex = MinAPbin:MaxAPbin
+        cellIndex = find(finalDorsalFluo(:,6,InputChannelIndexes(end))>= APbins(binIndex)-0.025/2 & finalDorsalFluo(:,6,InputChannelIndexes(end)) < APbins(binIndex)+0.025/2);
         if ~isempty(cellIndex)
             for channelIndex = ChannelsToIntegrate
                 DorsalAPProfiles(CurrentEmbryo, binIndex, channelIndex) = finalDorsalFluo(cellIndex, 8,channelIndex);
@@ -237,11 +242,27 @@ for CurrentEmbryo = GoodEmbryos
         end
     end
     
+     
+    AllDorsalNucleiFluoInfo{CurrentEmbryo} = dorsalFluo;
     
+    for binIndex = MinAPbin:MaxAPbin
+        cellIndex = find(dorsalFluo(:,6,InputChannelIndexes(end)) >= APbins(binIndex)-DiffBins(1)/2 & dorsalFluo(:,6,InputChannelIndexes(end)) < APbins(binIndex)+DiffBins(1)/2);
+        if ~isempty(cellIndex)
+            for channelIndex = ChannelsToIntegrate
+                DorsalAvgAPProfiles(CurrentEmbryo, binIndex, channelIndex) = mean(dorsalFluo(cellIndex, 8,channelIndex));
+                DorsalStdAPProfiles(CurrentEmbryo, binIndex, channelIndex) = std(dorsalFluo(cellIndex, 8,channelIndex));
+                DorsalCountAPProfiles(CurrentEmbryo, binIndex, channelIndex) = length(cellIndex);
+            end
+        end
+    end
+    
+    MinNarrowAPbin = find(round(APNarrowbins,5) == 0.1);
+    MaxNarrowAPbin = find(round(APNarrowbins,5) == 0.9);
+    DiffNarrowBins = diff(APNarrowbins);
     % Repeat for NarrowAPbins
     profileCells = [];
-    for binIndex = 1:length(APNarrowbins)-1
-        cellIndexes = find(dorsalFluo(:,6,InputChannelIndexes(end)) >= APNarrowbins(binIndex) & dorsalFluo(:,6,InputChannelIndexes(end)) < APNarrowbins(binIndex+1));
+    for binIndex = MinNarrowAPbin:MaxNarrowAPbin
+        cellIndexes = find(dorsalFluo(:,6,InputChannelIndexes(end)) >= APNarrowbins(binIndex)-DiffNarrowBins(1)/2 & dorsalFluo(:,6,InputChannelIndexes(end)) < APNarrowbins(binIndex)+DiffNarrowBins(1)/2);
         if ~isempty(cellIndexes)
             [~, subIndex] = max(dorsalFluo(cellIndexes,8,InputChannelIndexes(end)));
             singleCellIndex = cellIndexes(subIndex);
@@ -254,8 +275,8 @@ for CurrentEmbryo = GoodEmbryos
     
     
     
-    for binIndex = 1:length(APNarrowbins)-1
-        cellIndex = find(finalDorsalFluo(:,6,InputChannelIndexes(end)) >= APNarrowbins(binIndex) & finalDorsalFluo(:,6,InputChannelIndexes(end)) < APNarrowbins(binIndex+1));
+    for binIndex =  MinNarrowAPbin:MaxNarrowAPbin
+        cellIndex = find(finalDorsalFluo(:,6,InputChannelIndexes(end)) >= APNarrowbins(binIndex)-DiffNarrowBins(1)/2 & finalDorsalFluo(:,6,InputChannelIndexes(end)) < APNarrowbins(binIndex)+DiffNarrowBins(1)/2);
         if ~isempty(cellIndex)
             for channelIndex = ChannelsToIntegrate
                 DorsalNarrowAPProfiles(CurrentEmbryo, binIndex, channelIndex) = finalDorsalFluo(cellIndex, 8,channelIndex);
@@ -264,22 +285,10 @@ for CurrentEmbryo = GoodEmbryos
     end
     
     % Repeat for All Cells
- 
-    AllDorsalNucleiFluoInfo{CurrentEmbryo} = dorsalFluo;
+
     
-    for binIndex = 1:length(APbins)-1
-        cellIndex = find(dorsalFluo(:,6,InputChannelIndexes(end)) >= APbins(binIndex) & dorsalFluo(:,6,InputChannelIndexes(end)) < APbins(binIndex+1));
-        if ~isempty(cellIndex)
-            for channelIndex = ChannelsToIntegrate
-                DorsalAvgAPProfiles(CurrentEmbryo, binIndex, channelIndex) = mean(dorsalFluo(cellIndex, 8,channelIndex));
-                DorsalStdAPProfiles(CurrentEmbryo, binIndex, channelIndex) = std(dorsalFluo(cellIndex, 8,channelIndex));
-                DorsalCountAPProfiles(CurrentEmbryo, binIndex, channelIndex) = length(cellIndex);
-            end
-        end
-    end
-    
-    for binIndex = 1:length(APNarrowbins)-1
-        cellIndex = find(dorsalFluo(:,6,InputChannelIndexes(end)) >= APNarrowbins(binIndex) & dorsalFluo(:,6,InputChannelIndexes(end)) < APNarrowbins(binIndex+1));
+    for binIndex = MinNarrowAPbin:MaxNarrowAPbin
+        cellIndex = find(dorsalFluo(:,6,InputChannelIndexes(end)) >= APNarrowbins(binIndex)-DiffNarrowBins(1)/2 & dorsalFluo(:,6,InputChannelIndexes(end)) < APNarrowbins(binIndex)+DiffNarrowBins(1)/2);
         if ~isempty(cellIndex)
             for channelIndex = ChannelsToIntegrate
                 DorsalAvgNarrowAPProfiles(CurrentEmbryo, binIndex, channelIndex) = mean(dorsalFluo(cellIndex, 8,channelIndex));
@@ -296,12 +305,14 @@ for CurrentEmbryo = GoodEmbryos
     
 end
 %%
-if ShowPlots
-    close all
-end
+
 
 DorsalNuclearPath = [liveExperiment.resultsFolder, filesep, 'DorsalNuclearProfiles.mat'];
 save(DorsalNuclearPath, 'DorsalAvgAPProfiles', 'DorsalAvgNarrowAPProfiles', 'NarrowProfileNucleiFluoInfo',...
     'DorsalAPProfiles', 'DorsalNarrowAPProfiles','ProfileNucleiFluoInfo',...
     'ProfileNarrowNucleiFluoInfo','AllDorsalNucleiFluoInfo','DorsalStdAPProfiles',...
     'DorsalStdNarrowAPProfiles','DorsalCountAPProfiles','DorsalCountNarrowAPProfiles');
+
+if ShowPlots
+    close all
+end
