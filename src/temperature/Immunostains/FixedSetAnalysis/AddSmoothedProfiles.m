@@ -8,7 +8,7 @@ if ~exist('sigma_time_multiplier', 'var')
 end
     
 if ~exist('width_sig_multiplier', 'var')
-    width_sig_multiplier = 4;
+    width_sig_multiplier = 3;
 end
 
 if ~exist('min_points_singleside', 'var')
@@ -20,7 +20,7 @@ if ~exist('min_2sigma_points', 'var')
 end
 
 if ~exist('sigma_time', 'var')
-    sigma_time = 2.5;
+    sigma_time = 4;
 end
 
 APbins = 0:0.025:1;
@@ -36,15 +36,16 @@ NChannels = size(DorsalProfiles, 3);
 y = CompiledEmbryos.FixCorrectedDeltaFC_um.mean(CompiledEmbryos.AllDeltaValidProfilesTestTF);
 % ThreeMinDeltas = mink(y, 3);
 % minx = floor(ThreeMinDeltas(end)/.1)*.1;
-x = 2:0.2:45;
+x = 2:1:45;
 sigma = sigma_deltafc;
 DiffMat = x.'-y;
-[nn_idx, nn_D] = knnsearch(y.', x.', 'K', 25);
+[nn_idx, nn_D] = knnsearch(y.', x.', 'K', 50);
 
 
 
 GaussianWeights = GetGaussianWeightMat(x, y, sigma, (width_sig_multiplier)*sigma);
 keepx = ones(1, length(x), 'logical');
+counts_within_halfsigma = zeros(1, length(x));
 counts_within_1sigma = zeros(1, length(x));
 counts_within_2sigma = zeros(1, length(x));
 counts_within_3sigma = zeros(1, length(x));
@@ -63,6 +64,7 @@ for x_index = 1:length(x)
         continue
     end
     
+    counts_within_halfsigma(x_index) = sum(nn_D(x_index,:) <= sigma_deltafc/2);
     counts_within_1sigma(x_index) = sum(nn_D(x_index,:) <= sigma_deltafc);
     counts_within_2sigma(x_index) = sum(nn_D(x_index,:) <= 2*sigma_deltafc & nn_D(x_index,:) > sigma_deltafc);
     counts_within_3sigma(x_index) = sum(nn_D(x_index,:) <= 3*sigma_deltafc & nn_D(x_index,:) > 2*sigma_deltafc);
@@ -116,13 +118,13 @@ CompiledEmbryos.AllDeltaValidProfilesControlTF = CompiledEmbryos.IsNC14 &...
 y = CompiledEmbryos.FixCorrectedDeltaFC_um.mean(CompiledEmbryos.AllDeltaValidProfilesControlTF);
 % ThreeMinDeltas = mink(y, 3);
 % minx = floor(ThreeMinDeltas(end)/.1)*.1;
-x = 2:0.2:45;
+x = 2:1:45;
 sigma = sigma_deltafc;
 
 
 
 DiffMat = x.'-y;
-[nn_idx, nn_D] = knnsearch(y.', x.', 'K', 25);
+[nn_idx, nn_D] = knnsearch(y.', x.', 'K', 50);
 GaussianWeights = GetGaussianWeightMat(x, y, sigma, (width_sig_multiplier)*sigma);
 keepx = ones(1, length(x), 'logical');
 counts_within_1sigma = zeros(1, length(x));
@@ -203,15 +205,16 @@ DorsalProfiles = CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles;
 sigma = sigma_time;%floor(MaxT*sigma_time_multiplier);
 
 DiffMat = x.'-y;
-[nn_idx, nn_D] = knnsearch(y.', x.', 'K', 25);
+[nn_idx, nn_D] = knnsearch(y.', x.', 'K', 50);
 GaussianWeights = GetGaussianWeightMat(x, y, sigma, (width_sig_multiplier)*sigma);
 keepx = ones(1, length(x), 'logical');
+counts_within_halfsigma = zeros(1, length(x));
 counts_within_1sigma = zeros(1, length(x));
 counts_within_2sigma = zeros(1, length(x));
 counts_within_3sigma = zeros(1, length(x));
 counts_within_4sigma = zeros(1, length(x));
 for x_index = 1:length(x)
-    Num2SigmaPoints = sum(nn_D(x_index,:) <= 2*sigma_deltafc);
+    Num2SigmaPoints = sum(nn_D(x_index,:) <= 2*sigma);
     
     if Num2SigmaPoints < min_2sigma_points
         keepx(x_index) = false;
@@ -224,16 +227,18 @@ for x_index = 1:length(x)
         continue
     end
     
-    counts_within_1sigma(x_index) = sum(nn_D(x_index,:) <= sigma_deltafc);
-    counts_within_2sigma(x_index) = sum(nn_D(x_index,:) <= 2*sigma_deltafc & nn_D(x_index,:) > sigma_deltafc);
-    counts_within_3sigma(x_index) = sum(nn_D(x_index,:) <= 3*sigma_deltafc & nn_D(x_index,:) > 2*sigma_deltafc);
-    counts_within_4sigma(x_index) = sum(nn_D(x_index,:) <= 4*sigma_deltafc & nn_D(x_index,:) > 3*sigma_deltafc);
+    counts_within_halfsigma(x_index)= sum(nn_D(x_index,:) <= sigma/2);
+    counts_within_1sigma(x_index) = sum(nn_D(x_index,:) <= sigma);
+    counts_within_2sigma(x_index) = sum(nn_D(x_index,:) <= 2*sigma & nn_D(x_index,:) > sigma);
+    counts_within_3sigma(x_index) = sum(nn_D(x_index,:) <= 3*sigma & nn_D(x_index,:) > 2*sigma);
+    counts_within_4sigma(x_index) = sum(nn_D(x_index,:) <= 4*sigma & nn_D(x_index,:) > 3*sigma);
     
     GaussianWeights(x_index, ~ismember(1:length(y), nn_idx(x_index,:))) = 0;
    
 end
 CompiledEmbryos.DubuisTimesSmoothedProfiles = {};
 CompiledEmbryos.DubuisTimesSmoothedProfiles.TestCounts = {};
+CompiledEmbryos.DubuisTimesSmoothedProfiles.TestCounts.counts_within_halfsigma = counts_within_halfsigma;
 CompiledEmbryos.DubuisTimesSmoothedProfiles.TestCounts.counts_within_1sigma = counts_within_1sigma;
 CompiledEmbryos.DubuisTimesSmoothedProfiles.TestCounts.counts_within_2sigma = counts_within_2sigma;
 CompiledEmbryos.DubuisTimesSmoothedProfiles.TestCounts.counts_within_3sigma = counts_within_3sigma;
@@ -282,16 +287,17 @@ MaxT = 70;
 x = 0:1:MaxT;
 
 DiffMat = x.'-y;
-[nn_idx, nn_D] = knnsearch(y.', x.', 'K', 25);
+[nn_idx, nn_D] = knnsearch(y.', x.', 'K', 50);
 sigma = sigma_time;%floor(MaxT*sigma_time_multiplier);
 GaussianWeights = GetGaussianWeightMat(x, y, sigma, (width_sig_multiplier)*sigma);
 keepx = ones(1, length(x), 'logical');
+counts_within_halfsigma = zeros(1, length(x));
 counts_within_1sigma = zeros(1, length(x));
 counts_within_2sigma = zeros(1, length(x));
 counts_within_3sigma = zeros(1, length(x));
 counts_within_4sigma = zeros(1, length(x));
 for x_index = 1:length(x)
-    Num2SigmaPoints = sum(nn_D(x_index,:) <= 2*sigma_deltafc);
+    Num2SigmaPoints = sum(nn_D(x_index,:) <= 2*sigma);
     
     if Num2SigmaPoints < min_2sigma_points
         keepx(x_index) = false;
@@ -304,16 +310,18 @@ for x_index = 1:length(x)
         continue
     end
     
-    counts_within_1sigma(x_index) = sum(nn_D(x_index,:) <= sigma_deltafc);
-    counts_within_2sigma(x_index) = sum(nn_D(x_index,:) <= 2*sigma_deltafc & nn_D(x_index,:) > sigma_deltafc);
-    counts_within_3sigma(x_index) = sum(nn_D(x_index,:) <= 3*sigma_deltafc & nn_D(x_index,:) > 2*sigma_deltafc);
-    counts_within_4sigma(x_index) = sum(nn_D(x_index,:) <= 4*sigma_deltafc & nn_D(x_index,:) > 3*sigma_deltafc);
+    counts_within_halfsigma(x_index)= sum(nn_D(x_index,:) <= sigma/2);
+    counts_within_1sigma(x_index) = sum(nn_D(x_index,:) <= sigma);
+    counts_within_2sigma(x_index) = sum(nn_D(x_index,:) <= 2*sigma & nn_D(x_index,:) > sigma);
+    counts_within_3sigma(x_index) = sum(nn_D(x_index,:) <= 3*sigma & nn_D(x_index,:) > 2*sigma);
+    counts_within_4sigma(x_index) = sum(nn_D(x_index,:) <= 4*sigma & nn_D(x_index,:) > 3*sigma);
     
     GaussianWeights(x_index, ~ismember(1:length(y), nn_idx(x_index,:))) = 0;
    
 end
 
 CompiledEmbryos.DubuisTimesSmoothedProfiles.ControlCounts = {};
+CompiledEmbryos.DubuisTimesSmoothedProfiles.ControlCounts.counts_within_halfsigma = counts_within_halfsigma;
 CompiledEmbryos.DubuisTimesSmoothedProfiles.ControlCounts.counts_within_1sigma = counts_within_1sigma;
 CompiledEmbryos.DubuisTimesSmoothedProfiles.ControlCounts.counts_within_2sigma = counts_within_2sigma;
 CompiledEmbryos.DubuisTimesSmoothedProfiles.ControlCounts.counts_within_3sigma = counts_within_3sigma;

@@ -41,10 +41,13 @@ function keyInputHandler = ParticleChangeEventHandler(cptState)
         elseif cc == ')'
             % Switches nuclear association to clicked particle and switches to the first frame for that particle.
             % Added by G. Martini on 11/23/20
+            try
             [cptState.Particles, cptState.CurrentParticle, cptState.CurrentFrame, cptState.ManualZFlag, cptState.TwinParticle] =...
                 changeParticleAssociatedWithNucleus(cptState.Spots, cptState.Particles, cptState.CurrentParticle,...
                 cptState.CurrentFrame, cptState.CurrentChannelIndex, cptState.UseHistoneOverlay, cptState.schnitzcells, [], cptState.UseTwinTraces);
-
+            catch
+                disp(['Failed to click a particle. Try in zoomed in mode if this continues to happen.']);
+            end
         elseif cc == 'u'
             [x2, ~, ~] = SpotsXYZ(cptState.Spots{cptState.CurrentChannelIndex}(cptState.CurrentFrame));
             

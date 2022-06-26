@@ -15,7 +15,8 @@ AllSetInfo.UsePeakValueToIdentifyControls = {};
 AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff = {};
 AllSetInfo.UseMeanValueToIdentifyControls = {};
 AllSetInfo.MinimumFixCorrectedDeltaFC = {};
-
+AllSetInfo.TestDubuisTimesToUse = {};
+AllSetInfo.ControlDubuisTimesToUse = {};
 
 
 
@@ -40,6 +41,13 @@ AllSetInfo.UsePeakValueToIdentifyControls{end+1} = logical([1 1 1 1]);
 AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff{end+1} = [1 NaN 8 7];
 AllSetInfo.UseMeanValueToIdentifyControls{end+1} = logical([1 0 1 1]);
 AllSetInfo.MinimumFixCorrectedDeltaFC{end+1} = [0 0 0 0];
+
+TestDubuisTimesToUse = zeros(5, 70, 'logical');
+TestDubuisTimesToUse(2:5,[15:16 18:41]+1) = true;
+ControlDubuisTimesToUse= zeros(5, 70, 'logical');
+ControlDubuisTimesToUse(2:5,[42:46]+1) = true;
+AllSetInfo.TestDubuisTimesToUse{end+1} = TestDubuisTimesToUse;
+AllSetInfo.ControlDubuisTimesToUse{end+1} = ControlDubuisTimesToUse;
 % 
 % T=25C, Replicate 2
 SetLabel = 'FixedT25CReplicate2';
@@ -61,6 +69,15 @@ AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff{end+1} = [8 5 6];
 AllSetInfo.UseMeanValueToIdentifyControls{end+1} = logical([1 1 1]);
 AllSetInfo.MinimumFixCorrectedDeltaFC{end+1} = [0 0 0];
 
+TestDubuisTimesToUse = zeros(5, 70, 'logical');
+TestDubuisTimesToUse(2:5,(18:39)+1) = true;
+TestDubuisTimesToUse([2 4:5],(11:16)+1) = true;
+AllSetInfo.TestDubuisTimesToUse{end+1} = TestDubuisTimesToUse;
+
+ControlDubuisTimesToUse= zeros(5, 70, 'logical');
+ControlDubuisTimesToUse(2:5,(28:35)+1) = true;
+AllSetInfo.ControlDubuisTimesToUse{end+1} = ControlDubuisTimesToUse;
+
 % % T=25C, Flipped Stain
 SetLabel = 'FixedT25CFlipped';
 PlotLabel = '25°C Flipped Stain';
@@ -80,6 +97,14 @@ AllSetInfo.UsePeakValueToIdentifyControls{end+1} = logical([1 1 1]);
 AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff{end+1} = [9.5 4.5 5];
 AllSetInfo.UseMeanValueToIdentifyControls{end+1} = logical([1 1 1]);
 AllSetInfo.MinimumFixCorrectedDeltaFC{end+1} = [0 0 0];
+
+TestDubuisTimesToUse = zeros(5, 70, 'logical');
+TestDubuisTimesToUse(2:5,(25:45)+1) = true;
+AllSetInfo.TestDubuisTimesToUse{end+1} = TestDubuisTimesToUse;
+
+ControlDubuisTimesToUse= zeros(5, 70, 'logical');
+ControlDubuisTimesToUse(2:5,[32:40 46:49]+1) = true;
+AllSetInfo.ControlDubuisTimesToUse{end+1} = ControlDubuisTimesToUse;
 %%
 % % T=27.5C, Replicate 1
 SetLabel = 'FixedT27_5CReplicate1';
@@ -102,6 +127,16 @@ AllSetInfo.UsePeakValueToIdentifyControls{end+1} = logical([1 1 1]);
 AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff{end+1} = [1 8 8];
 AllSetInfo.UseMeanValueToIdentifyControls{end+1} = logical([1 1 1]);
 AllSetInfo.MinimumFixCorrectedDeltaFC{end+1} = [0 0 0];
+
+TestDubuisTimesToUse = zeros(5, 70, 'logical');
+TestDubuisTimesToUse([2 4 5],[6:22 31:35]+1) = true;
+TestDubuisTimesToUse(3,(6:35)+1) = true;
+AllSetInfo.TestDubuisTimesToUse{end+1} = TestDubuisTimesToUse;
+
+ControlDubuisTimesToUse= zeros(5, 70, 'logical');
+ControlDubuisTimesToUse(2:5,[29 48:52]+1) = true;
+AllSetInfo.ControlDubuisTimesToUse{end+1} = ControlDubuisTimesToUse;
+
 % % T=27.5C, Replicate 2 NEW
 SetLabel = 'FixedT27_5CReplicate2';
 PlotLabel = '27.5°C Replicate 2';
@@ -121,6 +156,15 @@ AllSetInfo.UsePeakValueToIdentifyControls{end+1} = logical([1 1 0]);
 AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff{end+1} = [8 6 6];
 AllSetInfo.UseMeanValueToIdentifyControls{end+1} = logical([1 1 1]);
 AllSetInfo.MinimumFixCorrectedDeltaFC{end+1} = [0 0 0];
+
+TestDubuisTimesToUse = zeros(5, 70, 'logical');
+TestDubuisTimesToUse([2 4 5],(6:39)+1) = true;
+TestDubuisTimesToUse(3,(6:35)+1) = true;
+AllSetInfo.TestDubuisTimesToUse{end+1} = TestDubuisTimesToUse;
+
+ControlDubuisTimesToUse= zeros(5, 70, 'logical');
+ControlDubuisTimesToUse(2:5,[27:38 46:59]+1) = true;
+AllSetInfo.ControlDubuisTimesToUse{end+1} = ControlDubuisTimesToUse;
 
 
 % % T=27.5C, Flipped Stain
@@ -142,6 +186,14 @@ AllSetInfo.UsePeakValueToIdentifyControls{end+1} = logical([1 1 1]);
 AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff{end+1} = [8.5 8 5];
 AllSetInfo.UseMeanValueToIdentifyControls{end+1} = logical([1 1 1]);
 AllSetInfo.MinimumFixCorrectedDeltaFC{end+1} = [4 0 0];
+
+TestDubuisTimesToUse = zeros(5, 70, 'logical');
+TestDubuisTimesToUse(2:5,(28:42)+1) = true;
+AllSetInfo.TestDubuisTimesToUse{end+1} = TestDubuisTimesToUse;
+
+ControlDubuisTimesToUse= zeros(5, 70, 'logical');
+ControlDubuisTimesToUse(2:5,(30:52)+1) = true;
+AllSetInfo.ControlDubuisTimesToUse{end+1} = ControlDubuisTimesToUse;
 %%
 % % T=22.5C, Replicate 1
 SetLabel = 'FixedT22_5CReplicate1';
@@ -165,6 +217,14 @@ AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff{end+1} = [1 8 8 6 7.5];
 AllSetInfo.UseMeanValueToIdentifyControls{end+1} = logical([1 1 1 1 1]);
 AllSetInfo.MinimumFixCorrectedDeltaFC{end+1} = [0 0 0 0 0];
 
+TestDubuisTimesToUse = zeros(5, 70, 'logical');
+TestDubuisTimesToUse(2:5,[13:17 18:21 23:38]+1) = true;
+AllSetInfo.TestDubuisTimesToUse{end+1} = TestDubuisTimesToUse;
+
+ControlDubuisTimesToUse= zeros(5, 70, 'logical');
+ControlDubuisTimesToUse(2:5,(32:39)+1) = true;
+AllSetInfo.ControlDubuisTimesToUse{end+1} = ControlDubuisTimesToUse;
+
 % % T=22.5C, Replicate 2 
 SetLabel = 'FixedT22_5CReplicate2';
 PlotLabel = '22.5°C Replicate 2';
@@ -183,6 +243,16 @@ AllSetInfo.UsePeakValueToIdentifyControls{end+1} = logical([1 1]);
 AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff{end+1} = [7 7];
 AllSetInfo.UseMeanValueToIdentifyControls{end+1} = logical([1 1]);
 AllSetInfo.MinimumFixCorrectedDeltaFC{end+1} = [0 0];
+
+TestDubuisTimesToUse = zeros(5, 70, 'logical');
+TestDubuisTimesToUse(2:5,[19:24 29:35 38:41]+1) = true;
+TestDubuisTimesToUse(3,(7:10)+1) = true;
+AllSetInfo.TestDubuisTimesToUse{end+1} = TestDubuisTimesToUse;
+
+ControlDubuisTimesToUse= zeros(5, 70, 'logical');
+ControlDubuisTimesToUse(2:5,(32:36)+1) = true;
+ControlDubuisTimesToUse(3,(36:53)+1) = true;
+AllSetInfo.ControlDubuisTimesToUse{end+1} = ControlDubuisTimesToUse;
 
 % % T=22.5C, Flipped Stain 
 SetLabel = 'FixedT22_5CFlipped';
@@ -203,6 +273,14 @@ AllSetInfo.UsePeakValueToIdentifyControls{end+1} = logical([1 1 1]);
 AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff{end+1} = [8 6 8];
 AllSetInfo.UseMeanValueToIdentifyControls{end+1} = logical([1 1 1]);
 AllSetInfo.MinimumFixCorrectedDeltaFC{end+1} = [0 0 3];
+
+TestDubuisTimesToUse = zeros(5, 70, 'logical');
+TestDubuisTimesToUse(2:5,[13 15 18 20:21 28:39]+1) = true;
+AllSetInfo.TestDubuisTimesToUse{end+1} = TestDubuisTimesToUse;
+
+ControlDubuisTimesToUse= zeros(5, 70, 'logical');
+ControlDubuisTimesToUse(2:5,(34:49)+1) = true;
+AllSetInfo.ControlDubuisTimesToUse{end+1} = ControlDubuisTimesToUse;
 %%
 % % T=20C, Replicate 1
 SetLabel = 'FixedT20CReplicate1';
@@ -224,6 +302,14 @@ AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff{end+1} = [1 9 8];
 AllSetInfo.UseMeanValueToIdentifyControls{end+1} = logical([1 1 1]);
 AllSetInfo.MinimumFixCorrectedDeltaFC{end+1} = [0 0 0];
 
+TestDubuisTimesToUse = zeros(5, 70, 'logical');
+TestDubuisTimesToUse(2:5,(35:55)+1) = true;
+AllSetInfo.TestDubuisTimesToUse{end+1} = TestDubuisTimesToUse;
+
+ControlDubuisTimesToUse= zeros(5, 70, 'logical');
+ControlDubuisTimesToUse(2:5,(40:41)+1) = true;
+AllSetInfo.ControlDubuisTimesToUse{end+1} = ControlDubuisTimesToUse;
+
 % % T=20C, Replicate 2
 SetLabel = 'FixedT20CReplicate2';
 PlotLabel = '20°C Replicate 2';
@@ -243,6 +329,15 @@ AllSetInfo.UsePeakValueToIdentifyControls{end+1} = logical([1 1 1]);
 AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff{end+1} = [6 6 5];
 AllSetInfo.UseMeanValueToIdentifyControls{end+1} = logical([1 1 1]);
 AllSetInfo.MinimumFixCorrectedDeltaFC{end+1} = [0 0 0];
+
+TestDubuisTimesToUse = zeros(5, 70, 'logical');
+TestDubuisTimesToUse(2:5,[30:39 45:50]+1) = true;
+AllSetInfo.TestDubuisTimesToUse{end+1} = TestDubuisTimesToUse;
+
+ControlDubuisTimesToUse= zeros(5, 70, 'logical');
+ControlDubuisTimesToUse([2 4 5],[39:44 59:51]+1) = true;
+ControlDubuisTimesToUse(3,(41:46)+1) = true;
+AllSetInfo.ControlDubuisTimesToUse{end+1} = ControlDubuisTimesToUse;
 
 
 % % T=20C, Flipped Stain
@@ -264,6 +359,14 @@ AllSetInfo.UsePeakValueToIdentifyControls{end+1} = logical([1 1 1]);
 AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff{end+1} = [12 8 8];
 AllSetInfo.UseMeanValueToIdentifyControls{end+1} =logical([1 1 1]);
 AllSetInfo.MinimumFixCorrectedDeltaFC{end+1} = [0 0 0];
+
+TestDubuisTimesToUse = zeros(5, 70, 'logical');
+TestDubuisTimesToUse(2:5,[31:52 56:58]+1) = true;
+AllSetInfo.TestDubuisTimesToUse{end+1} = TestDubuisTimesToUse;
+
+ControlDubuisTimesToUse= zeros(5, 70, 'logical');
+ControlDubuisTimesToUse(2:5,(35:52)+1) = true;
+AllSetInfo.ControlDubuisTimesToUse{end+1} = ControlDubuisTimesToUse;
 
 %%
     
@@ -287,6 +390,15 @@ AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff{end+1} = [1 8 7];
 AllSetInfo.UseMeanValueToIdentifyControls{end+1} =logical([1 1 1]);
 AllSetInfo.MinimumFixCorrectedDeltaFC{end+1} = [0 0 0];
 
+TestDubuisTimesToUse = zeros(5, 70, 'logical');
+TestDubuisTimesToUse(2:5,[7:10 13:14 20:21 23:38]+1) = true;
+TestDubuisTimesToUse([2 4:5],(47:49)+1) = true;
+AllSetInfo.TestDubuisTimesToUse{end+1} = TestDubuisTimesToUse;
+
+ControlDubuisTimesToUse= zeros(5, 70, 'logical');
+ControlDubuisTimesToUse(2:5,(34:42)+1) = true;
+AllSetInfo.ControlDubuisTimesToUse{end+1} = ControlDubuisTimesToUse;
+
 % % T=17.5C, Replicate 2
 SetLabel = 'FixedT17_5CReplicate2';
 PlotLabel = '17.5°C Replicate 2';
@@ -307,6 +419,14 @@ AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff{end+1} = [6 7 5];
 AllSetInfo.UseMeanValueToIdentifyControls{end+1} =logical([1 1 1]);
 AllSetInfo.MinimumFixCorrectedDeltaFC{end+1} = [0 0 0];
 
+TestDubuisTimesToUse = zeros(5, 70, 'logical');
+TestDubuisTimesToUse(2:5,[7:10 13:15 18 20:21 28:36 39]+1) = true;
+AllSetInfo.TestDubuisTimesToUse{end+1} = TestDubuisTimesToUse;
+
+ControlDubuisTimesToUse= zeros(5, 70, 'logical');
+ControlDubuisTimesToUse(2:5,(39:58)+1) = true;
+AllSetInfo.ControlDubuisTimesToUse{end+1} = ControlDubuisTimesToUse;
+
 % % T=17.5C, Flipped Stain
 SetLabel = 'FixedT17_5CFlipped';
 PlotLabel = '17.5°C Flipped Stain';
@@ -326,5 +446,15 @@ AllSetInfo.UsePeakValueToIdentifyControls{end+1} = logical([1 1 1]);
 AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff{end+1} = [7 8.9 4.5];
 AllSetInfo.UseMeanValueToIdentifyControls{end+1} =logical([1 1 1]);
 AllSetInfo.MinimumFixCorrectedDeltaFC{end+1} = [0 0 0];
+
+TestDubuisTimesToUse = zeros(5, 70, 'logical');
+TestDubuisTimesToUse(2:5,(28:43)+1) = true;
+AllSetInfo.TestDubuisTimesToUse{end+1} = TestDubuisTimesToUse;
+
+ControlDubuisTimesToUse= zeros(5, 70, 'logical');
+ControlDubuisTimesToUse(2:5,[33:50 52:54]+1) = true;
+AllSetInfo.ControlDubuisTimesToUse{end+1} = ControlDubuisTimesToUse;
+
+%%
 
 AllSetInfo.Flipped = logical(AllSetInfo.Flipped);

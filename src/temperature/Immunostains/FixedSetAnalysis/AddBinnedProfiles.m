@@ -1,10 +1,10 @@
-function CompiledEmbryos = AddBinnedProfiles(CompiledEmbryos, deltafc_binwidth, time25C_binwidth)
+function CompiledEmbryos = AddBinnedProfiles(CompiledEmbryos, deltafc_binwidth, dubuistime_binwidth)
 %%
 if ~exist('deltafc_binwidth', 'var')
     deltafc_binwidth = 2.5;
 end
 if ~exist('dubuistime_binwidth', 'var')
-    dubuistime_binwidth = 5;
+    dubuistime_binwidth = 3;
 end
 if ~exist('yw25Ctime_binwidth', 'var')
     yw25Ctime_binwidth = 5;
@@ -304,11 +304,15 @@ CompiledEmbryos.BinnedProfiles.DubuisTime.Test.mean = NaN(NumTbins, NumAPbins, N
 CompiledEmbryos.BinnedProfiles.DubuisTime.Test.std = NaN(NumTbins, NumAPbins, NChannels);
 CompiledEmbryos.BinnedProfiles.DubuisTime.Test.se = NaN(NumTbins, NumAPbins, NChannels);
 CompiledEmbryos.BinnedProfiles.DubuisTime.Test.count = zeros(NumTbins, NumAPbins, NChannels);
+CompiledEmbryos.BinnedProfiles.DubuisTime.Test.count_abovecenter = zeros(NumTbins, NumAPbins, NChannels);
+CompiledEmbryos.BinnedProfiles.DubuisTime.Test.count_belowcenter = zeros(NumTbins, NumAPbins, NChannels);
 CompiledEmbryos.BinnedProfiles.DubuisTime.Control = {}; 
 CompiledEmbryos.BinnedProfiles.DubuisTime.Control.mean = NaN(NumTbins, NumAPbins, NChannels);
 CompiledEmbryos.BinnedProfiles.DubuisTime.Control.std = NaN(NumTbins, NumAPbins, NChannels);
 CompiledEmbryos.BinnedProfiles.DubuisTime.Control.se = NaN(NumTbins, NumAPbins, NChannels);
 CompiledEmbryos.BinnedProfiles.DubuisTime.Control.count = zeros(NumTbins, NumAPbins, NChannels);
+CompiledEmbryos.BinnedProfiles.DubuisTime.Control.count_abovecenter = zeros(NumTbins, NumAPbins, NChannels);
+CompiledEmbryos.BinnedProfiles.DubuisTime.Control.count_belowcenter = zeros(NumTbins, NumAPbins, NChannels);
 
 
 for i = 1:NumTbins
@@ -317,8 +321,11 @@ for i = 1:NumTbins
     TFcontrolBin = TFtimeBin & AllDubuisTimeProfilesControlTF;
     for ch_index = 2:NChannels
         if sum(TFtestBin) >= 1
+            
             for ap_index = 1:NumAPbins
                 TFGoodAP = ~isnan(DorsalProfiles(TFtestBin,ap_index,ch_index));
+                TestCountsAboveCenter = sum(~isnan(DorsalProfiles(CompiledEmbryos.DubuisEmbryoTimes > x(i) &  TFtestBin,ap_index,ch_index)));
+                TestCountsBelowCenter = sum(~isnan(DorsalProfiles(CompiledEmbryos.DubuisEmbryoTimes < x(i) &  TFtestBin,ap_index,ch_index)));
                 if sum(TFGoodAP) > 1
                     CompiledEmbryos.BinnedProfiles.DubuisTime.Test.mean(i,ap_index,ch_index) = mean(DorsalProfiles(TFtestBin,ap_index,ch_index), 'omitnan');
                     CompiledEmbryos.BinnedProfiles.DubuisTime.Test.std(i,ap_index,ch_index) = std(DorsalProfiles(TFtestBin,ap_index,ch_index), 'omitnan');
@@ -332,10 +339,15 @@ for i = 1:NumTbins
                     CompiledEmbryos.BinnedProfiles.DubuisTime.Test.count(i,ap_index,ch_index) = 1;
                     CompiledEmbryos.BinnedProfiles.DubuisTime.Test.se(i,ap_index,ch_index) = NaN;
                 end
+                
+                CompiledEmbryos.BinnedProfiles.DubuisTime.Test.count_abovecenter(i,ap_index,ch_index) = TestCountsAboveCenter;
+                CompiledEmbryos.BinnedProfiles.DubuisTime.Test.count_belowcenter(i,ap_index,ch_index) = TestCountsBelowCenter;
             end
         end
         
         if sum(TFcontrolBin) >= 1
+            ControlCountsAboveCenter = sum(~isnan(DorsalProfiles(CompiledEmbryos.DubuisEmbryoTimes > x(i) &  TFcontrolBin,ap_index,ch_index)));
+            ControlCountsBelowCenter = sum(~isnan(DorsalProfiles(CompiledEmbryos.DubuisEmbryoTimes < x(i) &  TFcontrolBin,ap_index,ch_index)));
             for ap_index = 1:NumAPbins
                 TFGoodAP = ~isnan(DorsalProfiles(TFcontrolBin,ap_index,ch_index));
                 if sum(TFGoodAP) > 1
@@ -351,10 +363,16 @@ for i = 1:NumTbins
                     CompiledEmbryos.BinnedProfiles.DubuisTime.Control.count(i,ap_index,ch_index) = 1;
                     CompiledEmbryos.BinnedProfiles.DubuisTime.Control.se(i,ap_index,ch_index) = NaN;
                 end
+                
+                CompiledEmbryos.BinnedProfiles.DubuisTime.Control.count_abovecenter(i,ap_index,ch_index) = ControlCountsAboveCenter;
+                CompiledEmbryos.BinnedProfiles.DubuisTime.Control.count_belowcenter(i,ap_index,ch_index) = ControlCountsBelowCenter;
             end
         end
     end
 end
+
+CompiledEmbryos.BinnedProfiles.DubuisTime.Test.count_balance = (CompiledEmbryos.BinnedProfiles.DubuisTime.Test.count_abovecenter)./(CompiledEmbryos.BinnedProfiles.DubuisTime.Test.count_abovecenter+CompiledEmbryos.BinnedProfiles.DubuisTime.Test.count_belowcenter);
+CompiledEmbryos.BinnedProfiles.DubuisTime.Control.count_balance = (CompiledEmbryos.BinnedProfiles.DubuisTime.Control.count_abovecenter)./(CompiledEmbryos.BinnedProfiles.DubuisTime.Control.count_abovecenter+CompiledEmbryos.BinnedProfiles.DubuisTime.Control.count_belowcenter);
 
 %% Add Dubuis Time-based Binning - narrow AP
 NarrowDorsalProfiles = CompiledEmbryos.SlideRescaledDorsalAvgNarrowAPProfiles;
@@ -424,6 +442,7 @@ x = 0:1:65;
 
 NumTbins = length(x);
 
+
 DorsalProfiles = CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles;
 CompiledEmbryos.WindowedProfiles.DubuisTime = {};
 CompiledEmbryos.WindowedProfiles.DubuisTime.x = x;
@@ -433,11 +452,15 @@ CompiledEmbryos.WindowedProfiles.DubuisTime.Test.mean = NaN(NumTbins, NumAPbins,
 CompiledEmbryos.WindowedProfiles.DubuisTime.Test.std = NaN(NumTbins, NumAPbins, NChannels);
 CompiledEmbryos.WindowedProfiles.DubuisTime.Test.se = NaN(NumTbins, NumAPbins, NChannels);
 CompiledEmbryos.WindowedProfiles.DubuisTime.Test.count = zeros(NumTbins, NumAPbins, NChannels);
+CompiledEmbryos.WindowedProfiles.DubuisTime.Test.count_abovecenter = zeros(NumTbins, NumAPbins, NChannels);
+CompiledEmbryos.WindowedProfiles.DubuisTime.Test.count_belowcenter = zeros(NumTbins, NumAPbins, NChannels);
 CompiledEmbryos.WindowedProfiles.DubuisTime.Control = {}; 
 CompiledEmbryos.WindowedProfiles.DubuisTime.Control.mean = NaN(NumTbins, NumAPbins, NChannels);
 CompiledEmbryos.WindowedProfiles.DubuisTime.Control.std = NaN(NumTbins, NumAPbins, NChannels);
 CompiledEmbryos.WindowedProfiles.DubuisTime.Control.se = NaN(NumTbins, NumAPbins, NChannels);
 CompiledEmbryos.WindowedProfiles.DubuisTime.Control.count = zeros(NumTbins, NumAPbins, NChannels);
+CompiledEmbryos.WindowedProfiles.DubuisTime.Control.count_abovecenter = zeros(NumTbins, NumAPbins, NChannels);
+CompiledEmbryos.WindowedProfiles.DubuisTime.Control.count_belowcenter = zeros(NumTbins, NumAPbins, NChannels);
 
 
 for i = 1:NumTbins
@@ -446,8 +469,11 @@ for i = 1:NumTbins
     TFcontrolBin = TFtimeBin & AllDubuisTimeProfilesControlTF;
     for ch_index = 2:NChannels
         if sum(TFtestBin) >= 1
+            
             for ap_index = 1:NumAPbins
                 TFGoodAP = ~isnan(DorsalProfiles(TFtestBin,ap_index,ch_index));
+                TestCountsAboveCenter = sum(~isnan(DorsalProfiles(CompiledEmbryos.DubuisEmbryoTimes > x(i) &  TFtestBin,ap_index,ch_index)));
+                TestCountsBelowCenter = sum(~isnan(DorsalProfiles(CompiledEmbryos.DubuisEmbryoTimes < x(i) &  TFtestBin,ap_index,ch_index)));
                 if sum(TFGoodAP) > 1
                     CompiledEmbryos.WindowedProfiles.DubuisTime.Test.mean(i,ap_index,ch_index) = mean(DorsalProfiles(TFtestBin,ap_index,ch_index), 'omitnan');
                     CompiledEmbryos.WindowedProfiles.DubuisTime.Test.std(i,ap_index,ch_index) = std(DorsalProfiles(TFtestBin,ap_index,ch_index), 'omitnan');
@@ -461,12 +487,18 @@ for i = 1:NumTbins
                     CompiledEmbryos.WindowedProfiles.DubuisTime.Test.count(i,ap_index,ch_index) = 1;
                     CompiledEmbryos.WindowedProfiles.DubuisTime.Test.se(i,ap_index,ch_index) = NaN;
                 end
+                
+                CompiledEmbryos.WindowedProfiles.DubuisTime.Test.count_abovecenter(i,ap_index,ch_index) = TestCountsAboveCenter;
+                CompiledEmbryos.WindowedProfiles.DubuisTime.Test.count_belowcenter(i,ap_index,ch_index) = TestCountsBelowCenter;
             end
         end
         
         if sum(TFcontrolBin) >= 1
+            
             for ap_index = 1:NumAPbins
                 TFGoodAP = ~isnan(DorsalProfiles(TFcontrolBin,ap_index,ch_index));
+                ControlCountsAboveCenter = sum(~isnan(DorsalProfiles(CompiledEmbryos.DubuisEmbryoTimes > x(i) &  TFcontrolBin,ap_index,ch_index)));
+                ControlCountsBelowCenter = sum(~isnan(DorsalProfiles(CompiledEmbryos.DubuisEmbryoTimes < x(i) &  TFcontrolBin,ap_index,ch_index)));
                 if sum(TFGoodAP) > 1
                     CompiledEmbryos.WindowedProfiles.DubuisTime.Control.mean(i,ap_index,ch_index) = mean(DorsalProfiles(TFcontrolBin,ap_index,ch_index), 'omitnan');
                     CompiledEmbryos.WindowedProfiles.DubuisTime.Control.std(i,ap_index,ch_index) = std(DorsalProfiles(TFcontrolBin,ap_index,ch_index), 'omitnan');
@@ -480,10 +512,16 @@ for i = 1:NumTbins
                     CompiledEmbryos.WindowedProfiles.DubuisTime.Control.count(i,ap_index,ch_index) = 1;
                     CompiledEmbryos.WindowedProfiles.DubuisTime.Control.se(i,ap_index,ch_index) = NaN;
                 end
+                
+                CompiledEmbryos.WindowedProfiles.DubuisTime.Control.count_abovecenter(i,ap_index,ch_index) = ControlCountsAboveCenter;
+                CompiledEmbryos.WindowedProfiles.DubuisTime.Control.count_belowcenter(i,ap_index,ch_index) = ControlCountsBelowCenter;
             end
         end
     end
 end
+
+CompiledEmbryos.WindowedProfiles.DubuisTime.Test.count_balance = (CompiledEmbryos.WindowedProfiles.DubuisTime.Test.count_abovecenter)./(CompiledEmbryos.WindowedProfiles.DubuisTime.Test.count_abovecenter+CompiledEmbryos.WindowedProfiles.DubuisTime.Test.count_belowcenter);
+CompiledEmbryos.WindowedProfiles.DubuisTime.Control.count_balance = (CompiledEmbryos.WindowedProfiles.DubuisTime.Control.count_abovecenter)./(CompiledEmbryos.WindowedProfiles.DubuisTime.Control.count_abovecenter+CompiledEmbryos.WindowedProfiles.DubuisTime.Control.count_belowcenter);
 
 %% Narrow windowed Profiles - Dubuis Times
 NarrowDorsalProfiles = CompiledEmbryos.SlideRescaledDorsalAvgNarrowAPProfiles;
@@ -1083,7 +1121,7 @@ end
 
 
 
-
+% disp('test button')
 
 
 

@@ -379,7 +379,7 @@ end
 
 
 set(0, 'CurrentFigure', Overlay);
-
+set(Overlay,'Toolbar','none');
 frameChangeKeyInput = FrameChangeEventHandler(cptState);
 zSliceChangeKeyInput = ZSliceChangeEventHandler(cptState);
 particleChangeKeyInput = ParticleChangeEventHandler(cptState);
