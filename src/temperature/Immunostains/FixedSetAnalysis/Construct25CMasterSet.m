@@ -19,7 +19,7 @@ NumNarrowAPbins = length(NarrowAPbins);
 
 for i = 1:NumSets
     AllCompiledEmbryos{i} = AddBinnedProfiles( AllCompiledEmbryos{i});
-    %AllCompiledEmbryos{i} = AddSmoothedProfiles( AllCompiledEmbryos{i});
+    AllCompiledEmbryos{i} = AddSmoothedProfiles( AllCompiledEmbryos{i});
 end
 
 %%
@@ -320,10 +320,10 @@ dlm = fitlm(FitSet2, FitSet1);%,'Weights',  1./(FitSD1.^2));
 % 20ºC Flipped Control & 17.5ºC Flipped Control ( can also include 25ºC Rep
 % 1 Test & 25C Rep 2 Test)
 FitBins = zeros(NChannels, NumAPbins, 'logical');
-FitBins(2,:) = APbins >= 0.2 &  APbins <= 0.8 ;
-FitBins(3,:) = APbins >= 0.1 &  APbins <= 0.5 ;
-FitBins(4,:) = APbins >= 0.5 &  APbins <= 0.9 ;
-FitBins(5,:) = (APbins >= 0.2 &  APbins <= 0.5) | (APbins >= 0.7 * APbins <= 0.9) ;
+FitBins(2,:) = APbins >= 0.1 &  APbins <= 0.9 ;
+FitBins(3,:) = APbins >= 0.1 &  APbins <= 0.9 ;
+FitBins(4,:) = APbins >= 0.1 &  APbins <= 0.9 ;
+FitBins(5,:) = (APbins >= 0.1 &  APbins <= 0.9) | (APbins >= 0.7 * APbins <= 0.9) ;
 Ts = [25, 27.5, 22.5, 20, 17.5, 25, 25];
 Reps = [0, 0, 0, 0, 0, 1, 2];
 CTstrings = {'Control', 'Control', 'Control', 'Control', 'Control', 'Test', 'Test'};
@@ -368,12 +368,8 @@ CombinedCounts = NaN(length(DubuisTimes), NumAPbins, NChannels);
 
 %%
 
-for ch_index = 3:5
+for ch_index = 2:5
 
-counts_i = counts(:,apbin,ch_index,i).';
-counts_above_i = counts_above(:,apbin,ch_index,i).';
-counts_below_i = counts_below(:,apbin,ch_index,i).';
-counts_balance_i = counts_balance(:,apbin,ch_index,i).';
 
 for i = 1:NSubsets
     for apbin = 1:NumAPbins
@@ -583,7 +579,7 @@ save(AllCompiledPath, 'CombinedMean', 'CombinedSE', 'CombinedCounts', 'Slopes', 
 
 
 
-%% DUBUIS Binned Program 
+%% DUBUIS Smoothed Profile 
 % 25ºC Flipped Control  27.5ºC Flipped Control & 22.5ºC Flipped Control &
 % 20ºC Flipped Control & 17.5ºC Flipped Control ( can also include 25ºC Rep
 % 1 Test & 25C Rep 2 Test)
@@ -631,7 +627,7 @@ CombinedCounts = NaN(length(DubuisTimes), NumAPbins, NChannels);
 
 %%
 
-for ch_index = 3:5
+for ch_index = 2:5
 
 for i = 1:NSubsets
     for apbin = 1:NumAPbins
@@ -839,6 +835,246 @@ save(AllFlippedCompiledPath, 'CombinedMean', 'CombinedSE', 'CombinedCounts', 'Sl
 
 
 
+%% DUBUIS Smoothed Program 
+% 25ºC Flipped Control  27.5ºC Flipped Control & 22.5ºC Flipped Control &
+% 20ºC Flipped Control & 17.5ºC Flipped Control ( can also include 25ºC Rep
+% 1 Test & 25C Rep 2 Test)
+FitBins = zeros(NChannels, NumAPbins, 'logical');
+FitBins(2,:) = APbins >= 0.2 &  APbins <= 0.8 ;
+FitBins(3,:) = APbins >= 0.1 &  APbins <= 0.5 ;
+FitBins(4,:) = APbins >= 0.5 &  APbins <= 0.9 ;
+FitBins(5,:) = (APbins >= 0.2 &  APbins <= 0.5) | (APbins >= 0.7 * APbins <= 0.9) ;
+Ts = [25, 27.5, 22.5, 20, 17.5, 25, 25];
+Reps = [0, 0, 0, 0, 0, 1, 2];
+CTstrings = {'Control', 'Control', 'Control', 'Control', 'Control', 'Test', 'Test'};
+NSubsets = length(Ts);
+DubuisTimes = AllCompiledEmbryos{1}.DubuisTimesSmoothedProfiles.ControlCounts;
+DubuisTimes = AllCompiledEmbryos{1}.DubuisSmoothedTimes;
+Ndt= length(DubuisTimes);
+means = NaN(Ndt, NumAPbins, NChannels, NSubsets);
+counts = NaN(Ndt,  NSubsets);
+counts_below = NaN(Ndt, NSubsets);
+counts_above = NaN(Ndt, NSubsets);
+counts_balance =  NaN(Ndt,  NSubsets);
+for i = 1:NSubsets
+    set_index = find(AllSetInfo.Temperatures == Ts(i) & AllSetInfo.Replicates == Reps(i));
+    means(:,:,:,i) = AllCompiledEmbryos{set_index}.DubuisTimeSmoothedAvgAPProfiles.(CTstrings{i});
+    counts(:,i) = AllCompiledEmbryos{set_index}.DubuisTimesSmoothedProfiles.ControlCounts.counts_within_1sigma+...
+        AllCompiledEmbryos{set_index}.DubuisTimesSmoothedProfiles.ControlCounts.counts_within_2sigma;
+    counts_below(:,i) = AllCompiledEmbryos{set_index}.DubuisTimesSmoothedProfiles.ControlCounts.counts_within_2sigma_belowcenter;
+    counts_above(:,i) = AllCompiledEmbryos{set_index}.DubuisTimesSmoothedProfiles.ControlCounts.counts_within_2sigma_abovecenter;
+    counts_balance(:,i) = AllCompiledEmbryos{set_index}.DubuisTimesSmoothedProfiles.ControlCounts.counts_within_2balance;
+end
+
+
+StrictConditions = zeros(Ndt, NumAPbins, NChannels, NSubsets, 'logical');
+LooseConditions = zeros(Ndt, NumAPbins, NChannels, NSubsets, 'logical');
+StrictConditionsComps = zeros(Ndt, NumAPbins, NChannels, NSubsets,NSubsets, 'logical');
+LooseConditionsComps = zeros(Ndt, NumAPbins, NChannels, NSubsets,NSubsets, 'logical');
+StrictCompactComps = zeros(NChannels, NSubsets,NSubsets);
+LooseCompactComps = zeros(NChannels, NSubsets,NSubsets);
+
+SubsetsIncluded = cell(1, NChannels);
+Fits = cell(1, NChannels);
+
+Slopes = NaN(NSubsets-1, 2, NChannels);
+Intercepts = NaN(NSubsets-1, 2, NChannels);
+IncludedMeans = NaN(length(DubuisTimes), NumAPbins, NChannels, NSubsets);
+IncludedCounts = NaN(length(DubuisTimes), NumAPbins, NChannels, NSubsets);
+CombinedMean = NaN(length(DubuisTimes), NumAPbins, NChannels);
+CombinedCounts = NaN(length(DubuisTimes), NumAPbins, NChannels);
+
+%%
+
+for ch_index = 2:5
+
+
+
+for i = 1:NSubsets
+    for apbin = 1:NumAPbins
+            counts_i = counts(:,i);
+            counts_above_i = counts_above(:,i);
+            counts_below_i = counts_below(:,i);
+            counts_balance_i = counts_balance(:,i);
+            StrictConditions(:,apbin, ch_index, i) = (counts_i >= 5 & counts_below_i  >= 2 ...
+                & counts_above_i >= 2 & counts_balance_i>= 0.3 & counts_balance_i <= 0.7);
+            LooseConditions(:,apbin, ch_index, i)  = (counts_i >= 3 & counts_below_i  >= 1 ...
+                & counts_above_i >= 1 & counts_balance_i >= 0.2 & counts_balance_i <= 0.8);
+    end
+    
+end
+
+
+AllSubsets = 1:NSubsets;
+for i = 1:NSubsets
+for j = AllSubsets(~ismember(AllSubsets, i))
+        for apbin = 1:NumAPbins
+   
+            StrictConditionsComps(:,apbin,ch_index,i,j) = StrictConditions(:,apbin,ch_index,i) &...
+                StrictConditions(:,apbin,ch_index,j);
+            LooseConditionsComps(:,apbin,ch_index,i,j) = LooseConditions(:,apbin,ch_index,i) &...
+                LooseConditions(:,apbin,ch_index,j);
+        end
+        SumStrictTimeBins = sum(StrictConditionsComps(:,:,ch_index,i,j), 1);
+        StrictCompactComps(ch_index, i, j) = max(SumStrictTimeBins);
+        SumLooseTimeBins = sum(LooseConditionsComps(:,:,ch_index,i,j), 1);
+        LooseCompactComps(ch_index, i, j) = max(SumLooseTimeBins);
+ 
+    
+end
+end
+
+DubuisMats = repmat(DubuisTimes.', 1, NumAPbins);
+APMats = repmat(APbins, length(DubuisTimes), 1);
+RowLabels = repmat((1:NSubsets).', 1, NSubsets);
+ColLabels = repmat(1:NSubsets, NSubsets, 1);
+SubRowLabels = repmat((1:(NSubsets-2)).', 1, NSubsets-2);
+SubColLabels = repmat(1:(NSubsets-2), NSubsets-2, 1);
+SubsetsToFit = 1:NSubsets;
+SubsetsIncluded{ch_index} = [];
+Fits{ch_index} = {};
+
+[maxval, max_idx] = max(squeeze(LooseCompactComps(ch_index, 1:5, 1:5)),[], 'all', 'Linear');
+set1 = SubRowLabels(max_idx);
+set2 = SubColLabels(max_idx);
+SubsetsIncluded{ch_index} = [SubsetsIncluded{ch_index} set1 set2];
+SubsetsToFit = SubsetsToFit(~ismember(SubsetsToFit, SubsetsIncluded{ch_index}));
+
+
+%%
+
+means1 = means(:,FitBins(ch_index,:),ch_index, set1);
+means1 = means1(LooseConditions(:,FitBins(ch_index,:),ch_index, set1) & LooseConditions(:,FitBins(ch_index,:),ch_index, set2)); 
+dubuis1 = DubuisMats(LooseConditions(:,FitBins(ch_index,:),ch_index, set1) & LooseConditions(:,FitBins(ch_index,:),ch_index, set2)); 
+counts1 =  counts(:,set1);
+counts1 = counts1(LooseConditions(:,21,ch_index, set1)& LooseConditions(:,21,ch_index, set2)); 
+means2 = means(:,FitBins(ch_index,:),ch_index, set2);
+means2 = means2(LooseConditions(:,FitBins(ch_index,:),ch_index, set1) & LooseConditions(:,FitBins(ch_index,:),ch_index, set2)); 
+dubuis2 = DubuisMats(LooseConditions(:,FitBins(ch_index,:),ch_index, set1) & LooseConditions(:,FitBins(ch_index,:),ch_index, set2)); 
+counts2 =  counts(:,set2);
+counts2 = counts2(LooseConditions(:,21,ch_index, set1) & LooseConditions(:,21,ch_index, set2)); 
+IncludedMeans(:,:,ch_index,1) =  means(:,:,ch_index, set1);
+IncludedCounts(:,:,ch_index,1) = repmat(counts(:,set1), 1, NumAPbins);
+
+dlm = fitlm(means1, means2);
+Fits{ch_index}{1} = dlm;
+Slopes(size(Slopes, 1)+1, :, ch_index) = [dlm.Coefficients.Estimate(2) dlm.Coefficients.SE(2) ];
+Intercepts(size(Intercepts, 1)+1, :, ch_index) = [dlm.Coefficients.Estimate(1) dlm.Coefficients.SE(1) ];
+IncludedMeans(:,:,ch_index,2) =  means(:,:,ch_index, set2)*dlm.Coefficients.Estimate(2)+dlm.Coefficients.Estimate(1);
+IncludedCounts(:,:,ch_index,2) = repmat(counts(:,set2), 1, NumAPbins);
+
+for t_index = 1:length(DubuisTimes)
+    for ap_index = 1:NumAPbins
+        MeansToUse = ~isnan(squeeze(IncludedMeans(t_index, ap_index,ch_index, :))).';
+        if sum(MeansToUse) > 0
+            Weights = squeeze(IncludedCounts(t_index, ap_index,ch_index, MeansToUse)).'/(sum(squeeze(IncludedCounts(t_index, ap_index,ch_index, MeansToUse))));
+            CountsToUse = squeeze(IncludedCounts(t_index, ap_index,ch_index, MeansToUse)).';
+            CombinedMean(t_index,ap_index, ch_index)  = sum((squeeze(IncludedMeans(t_index, ap_index,ch_index, MeansToUse)).').*Weights);
+            CombinedCounts(t_index,ap_index, ch_index)   = sum(CountsToUse);
+        else
+            CombinedMean(t_index,ap_index, ch_index) = NaN;
+            CombinedCounts(t_index,ap_index, ch_index) = 0;
+        end
+        
+    end
+end
+
+CombinedMean(CombinedMean == 0) = NaN;
+plot(APbins, CombinedMean(:,:,ch_index).')
+disp('pause')
+
+
+%%
+
+while ~isempty(SubsetsToFit) 
+TempStrictConditionsComps = zeros(Ndt, NumAPbins, NChannels, NSubsets, 'logical');
+TempLooseConditionsComps = zeros(Ndt, NumAPbins, NChannels, NSubsets, 'logical');
+TempStrictCompactComps = zeros(NChannels,NSubsets);
+TempLooseCompactComps = zeros(NChannels, NSubsets);
+
+for i = SubsetsToFit
+    
+    for apbin = 1:NumAPbins
+        
+        TempStrictConditionsComps(:,apbin,ch_index,i) = StrictConditions(:,apbin,ch_index,SubsetsIncluded{ch_index}(1)); 
+        TempLooseConditionsComps(:,apbin,ch_index,i) = LooseConditions(:,apbin,ch_index,SubsetsIncluded{ch_index}(1)); 
+        for j = SubsetsIncluded{ch_index}(2:end)
+            TempStrictConditionsComps(:,apbin,ch_index,i) = TempStrictConditionsComps(:,apbin,ch_index,i) |  StrictConditions(:,apbin,ch_index,j);
+            TempLooseConditionsComps(:,apbin,ch_index,i) = TempLooseConditionsComps(:,apbin,ch_index,i) |  LooseConditions(:,apbin,ch_index,j);
+        end
+         TempStrictConditionsComps(:,apbin,ch_index,i) =  TempStrictConditionsComps(:,apbin,ch_index,i) &  StrictConditions(:,apbin,ch_index,i);
+         TempLooseConditionsComps(:,apbin,ch_index,i) =  TempLooseConditionsComps(:,apbin,ch_index,i) &  LooseConditions(:,apbin,ch_index,i);
+        
+    end
+    SumStrictTimeBins = sum(TempStrictConditionsComps(:,:,ch_index,i), 1);
+    TempStrictCompactComps(ch_index, i) = max(SumStrictTimeBins);
+    SumLooseTimeBins = sum(TempLooseConditionsComps(:,:,ch_index,i), 1);
+    TempLooseCompactComps(ch_index, i) = max(SumLooseTimeBins);
+    
+    
+end
+
+if length(SubsetsIncluded{ch_index}) < NSubsets - 2
+    [maxval, max_idx] = max(squeeze(TempLooseCompactComps(ch_index, 1:(NSubsets-2))),[], 'all', 'Linear');
+    tempset = SubRowLabels(max_idx);
+else
+    [maxval, max_idx] = max(squeeze(TempLooseCompactComps(ch_index, 1:(NSubsets))),[], 'all', 'Linear');
+    tempset = RowLabels(max_idx);
+end
+SubsetsIncluded{ch_index} = [SubsetsIncluded{ch_index}  tempset];
+SubsetsToFit = SubsetsToFit(~ismember(SubsetsToFit, SubsetsIncluded{ch_index} ));
+
+
+%%
+
+means1 = means(:,FitBins(ch_index,:),ch_index, tempset);
+means1 = means1(TempLooseConditionsComps(:,FitBins(ch_index,:),ch_index, tempset)); 
+dubuis1 = DubuisMats(TempLooseConditionsComps(:,FitBins(ch_index,:),ch_index, tempset)); 
+counts1 =  counts(:,tempset);
+counts1 = counts1(TempLooseConditionsComps(:,21,ch_index, tempset)); 
+
+means2 = CombinedMean(:,FitBins(ch_index,:),ch_index);
+means2 = means2(TempLooseConditionsComps(:,FitBins(ch_index,:),ch_index, tempset)); 
+dubuis2 = DubuisMats(TempLooseConditionsComps(:,FitBins(ch_index,:),ch_index, tempset)); 
+
+counts2 =  CombinedCounts(:,FitBins(ch_index,:),ch_index);
+counts2 = counts2(TempLooseConditionsComps(:,FitBins(ch_index,:),ch_index, tempset)); 
+
+
+
+dlm = fitlm(means1, means2)
+Fits{ch_index}{length(SubsetsIncluded{ch_index})-1} = dlm;
+Slopes(size(Slopes, 1)+1, :, ch_index) = [dlm.Coefficients.Estimate(2) dlm.Coefficients.SE(2) ];
+Intercepts(size(Intercepts, 1)+1, :, ch_index) = [dlm.Coefficients.Estimate(1) dlm.Coefficients.SE(1) ];
+IncludedMeans(:,:,ch_index,length(SubsetsIncluded{ch_index}))=  means(:,:,ch_index, tempset)*dlm.Coefficients.Estimate(2)+dlm.Coefficients.Estimate(1);
+IncludedCounts(:,:,ch_index,length(SubsetsIncluded{ch_index})) = repmat(counts(:,tempset), 1, NumAPbins);
+
+for t_index = 1:length(DubuisTimes)
+    for ap_index = 1:NumAPbins
+        MeansToUse = ~isnan(squeeze(IncludedMeans(t_index, ap_index,ch_index, :))).';
+        if sum(MeansToUse) > -1
+            Weights = squeeze(IncludedCounts(t_index, ap_index,ch_index, MeansToUse)).'/(sum(squeeze(IncludedCounts(t_index, ap_index,ch_index, MeansToUse))));
+            CountsToUse = squeeze(IncludedCounts(t_index, ap_index,ch_index, MeansToUse)).';
+            CombinedMean(t_index,ap_index, ch_index)  = sum((squeeze(IncludedMeans(t_index, ap_index,ch_index, MeansToUse)).').*Weights);
+  
+            CombinedCounts(t_index,ap_index, ch_index)   = sum(CountsToUse);
+        else
+            CombinedMean(t_index,ap_index, ch_index) = NaN;
+            CombinedCounts(t_index,ap_index, ch_index) = 0;
+        end
+    end
+end
+
+CombinedMean(CombinedMean == 0) = NaN;
+plot(APbins, CombinedMean(:,:,ch_index).')
+
+disp('pause')
+end
+end
+%%
+AllSmoothCompiledPath = 'S:/Gabriella/Dropbox/ProteinProfiles/Smoothed25CMasterSets.mat';
+save(AllSmoothCompiledPath, 'CombinedMean', 'CombinedCounts', 'Slopes', 'Intercepts', 'Fits', 'SubsetsIncluded',...
+    'Ts', 'Reps', 'CTstrings', 'SubsetsIncluded');
 
 
 

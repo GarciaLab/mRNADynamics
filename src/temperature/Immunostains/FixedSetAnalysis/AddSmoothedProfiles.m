@@ -28,6 +28,8 @@ NumAPbins = length(APbins);
 NarrowAPbins = 0:0.0125:1;
 NumNarrowAPbins = length(NarrowAPbins);
 
+
+%% Add DeltaFC Smoothed Profiles
 CompiledEmbryos.AllDeltaValidProfilesTestTF = CompiledEmbryos.IsNC14 &...
         CompiledEmbryos.TestSetEmbryos & ~isnan([CompiledEmbryos.FixCorrectedDeltaFC_um.mean(:)].');% &...
         %CompiledEmbryos.FixCorrectedDeltaFC_um(:,1).' > 3;
@@ -190,14 +192,14 @@ end
 
         %CompiledEmbryos.FixCorrectedDeltaFC_um(:,1).' > 3;
 
-%%
+%% Add DubuisTimes Smoothed Profiles
 
 CompiledEmbryos.AllDubuisValidProfilesTestTF = CompiledEmbryos.IsNC14 &...
         CompiledEmbryos.TestSetEmbryos & ~isnan([CompiledEmbryos.DubuisEmbryoTimes]);% &...
 y = CompiledEmbryos.DubuisEmbryoTimes(CompiledEmbryos.AllDubuisValidProfilesTestTF );
 % ThreeMinDeltas = mink(y, 3);
 % minx = floor(ThreeMinDeltas(end)/.1)*.1;
-MaxT = ceil(max([CompiledEmbryos.DubuisEmbryoTimes(:)]));
+%MaxT = ceil(max([CompiledEmbryos.DubuisEmbryoTimes(:)]));
 MaxT = 70;
 x = 0:1:MaxT;
 DorsalProfiles = CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles;
@@ -213,6 +215,8 @@ counts_within_1sigma = zeros(1, length(x));
 counts_within_2sigma = zeros(1, length(x));
 counts_within_3sigma = zeros(1, length(x));
 counts_within_4sigma = zeros(1, length(x));
+counts_within_2sigma_abovecenter = zeros(1, length(x));
+counts_within_2sigma_belowcenter = zeros(1, length(x));
 for x_index = 1:length(x)
     Num2SigmaPoints = sum(nn_D(x_index,:) <= 2*sigma);
     
@@ -232,6 +236,8 @@ for x_index = 1:length(x)
     counts_within_2sigma(x_index) = sum(nn_D(x_index,:) <= 2*sigma & nn_D(x_index,:) > sigma);
     counts_within_3sigma(x_index) = sum(nn_D(x_index,:) <= 3*sigma & nn_D(x_index,:) > 2*sigma);
     counts_within_4sigma(x_index) = sum(nn_D(x_index,:) <= 4*sigma & nn_D(x_index,:) > 3*sigma);
+    counts_within_2sigma_abovecenter(x_index) = sum(DiffMat(x_index,nn_idx(x_index,:)) >= 0 & DiffMat(x_index,nn_idx(x_index,:)) <= 2*sigma);
+    counts_within_2sigma_belowcenter(x_index) = sum(DiffMat(x_index,nn_idx(x_index,:)) <= 0 & DiffMat(x_index,nn_idx(x_index,:)) >= -2*sigma);
     
     GaussianWeights(x_index, ~ismember(1:length(y), nn_idx(x_index,:))) = 0;
    
@@ -243,6 +249,9 @@ CompiledEmbryos.DubuisTimesSmoothedProfiles.TestCounts.counts_within_1sigma = co
 CompiledEmbryos.DubuisTimesSmoothedProfiles.TestCounts.counts_within_2sigma = counts_within_2sigma;
 CompiledEmbryos.DubuisTimesSmoothedProfiles.TestCounts.counts_within_3sigma = counts_within_3sigma;
 CompiledEmbryos.DubuisTimesSmoothedProfiles.TestCounts.counts_within_4sigma = counts_within_4sigma;
+CompiledEmbryos.DubuisTimesSmoothedProfiles.TestCounts.counts_within_2sigma_abovecenter = counts_within_2sigma_abovecenter;
+CompiledEmbryos.DubuisTimesSmoothedProfiles.TestCounts.counts_within_2sigma_belowcenter = counts_within_2sigma_belowcenter;
+CompiledEmbryos.DubuisTimesSmoothedProfiles.TestCounts.counts_within_2balance = counts_within_2sigma_abovecenter./(counts_within_2sigma_abovecenter+counts_within_2sigma_belowcenter);
 
 CompiledEmbryos.DubuisSmoothedTimes = x;
 CompiledEmbryos.DubuisTimeSmoothedAvgAPProfiles = {};
@@ -296,6 +305,8 @@ counts_within_1sigma = zeros(1, length(x));
 counts_within_2sigma = zeros(1, length(x));
 counts_within_3sigma = zeros(1, length(x));
 counts_within_4sigma = zeros(1, length(x));
+counts_within_2sigma_abovecenter = zeros(1, length(x));
+counts_within_2sigma_belowcenter = zeros(1, length(x));
 for x_index = 1:length(x)
     Num2SigmaPoints = sum(nn_D(x_index,:) <= 2*sigma);
     
@@ -315,6 +326,9 @@ for x_index = 1:length(x)
     counts_within_2sigma(x_index) = sum(nn_D(x_index,:) <= 2*sigma & nn_D(x_index,:) > sigma);
     counts_within_3sigma(x_index) = sum(nn_D(x_index,:) <= 3*sigma & nn_D(x_index,:) > 2*sigma);
     counts_within_4sigma(x_index) = sum(nn_D(x_index,:) <= 4*sigma & nn_D(x_index,:) > 3*sigma);
+    counts_within_2sigma_abovecenter(x_index) = sum(DiffMat(x_index,nn_idx(x_index,:)) >= 0 & DiffMat(x_index,nn_idx(x_index,:)) <= 2*sigma);
+    counts_within_2sigma_belowcenter(x_index) = sum(DiffMat(x_index,nn_idx(x_index,:)) <= 0 & DiffMat(x_index,nn_idx(x_index,:)) >= -2*sigma);
+    
     
     GaussianWeights(x_index, ~ismember(1:length(y), nn_idx(x_index,:))) = 0;
    
@@ -326,6 +340,10 @@ CompiledEmbryos.DubuisTimesSmoothedProfiles.ControlCounts.counts_within_1sigma =
 CompiledEmbryos.DubuisTimesSmoothedProfiles.ControlCounts.counts_within_2sigma = counts_within_2sigma;
 CompiledEmbryos.DubuisTimesSmoothedProfiles.ControlCounts.counts_within_3sigma = counts_within_3sigma;
 CompiledEmbryos.DubuisTimesSmoothedProfiles.ControlCounts.counts_within_4sigma = counts_within_4sigma;
+CompiledEmbryos.DubuisTimesSmoothedProfiles.ControlCounts.counts_within_2sigma_abovecenter = counts_within_2sigma_abovecenter;
+CompiledEmbryos.DubuisTimesSmoothedProfiles.ControlCounts.counts_within_2sigma_belowcenter = counts_within_2sigma_belowcenter;
+CompiledEmbryos.DubuisTimesSmoothedProfiles.ControlCounts.counts_within_2balance = counts_within_2sigma_abovecenter./(counts_within_2sigma_abovecenter+counts_within_2sigma_belowcenter);
+
 
 CompiledEmbryos.DubuisTimeSmoothedAvgAPProfiles.Control = NaN(length(x), NumAPbins,  NChannels);
 

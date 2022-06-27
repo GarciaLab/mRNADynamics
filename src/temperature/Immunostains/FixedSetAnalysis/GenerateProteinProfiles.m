@@ -1,6 +1,6 @@
 function  [AllCompiledEmbryos, Universal_Imins, Universal_Imaxs, Imins, Imaxs]   = GenerateProteinProfiles(version)
 %%
-version = 3;
+
 if ~exist('version', 'var')
     version = 1;
 end

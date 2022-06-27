@@ -32,11 +32,11 @@ NChannels = 5;
 APbins = 0:0.025:1;
 NumAPbins = length(APbins);
 
-
-for i = 1:NumSets
-    AllCompiledEmbryos{i} = AddBinnedProfiles( AllCompiledEmbryos{i});
-    %AllCompiledEmbryos{i} = AddSmoothedProfiles( AllCompiledEmbryos{i});
-end
+% 
+% for i = 1:NumSets
+%     AllCompiledEmbryos{i} = AddBinnedProfiles( AllCompiledEmbryos{i});
+%     %AllCompiledEmbryos{i} = AddSmoothedProfiles( AllCompiledEmbryos{i});
+% end
 
 MasterSetPath = 'S:/Gabriella/Dropbox/ProteinProfiles/25CMasterSets.mat';
 load(MasterSetPath, 'CombinedMean', 'CombinedSE', 'CombinedCounts', 'Slopes', 'Intercepts', 'Fits', 'SubsetsIncluded',...
@@ -126,16 +126,20 @@ for temp_index = 1:length(unique_temperatures)
     exp1 = ReplicateIndices(1); 
     exp2 = ReplicateIndices(2);
 for ch_index = [3:5]
-    ProfSet1 = AllCompiledEmbryos{exp1}.NormalizedProfiles.DubuisTimesWindowedAvgAP.Test.mean(:,:, ch_index);
-    ProfSet2 = AllCompiledEmbryos{exp2}.NormalizedProfiles.DubuisTimesWindowedAvgAP.Test.mean(:,:, ch_index);
-    ProfCounts1 = AllCompiledEmbryos{exp1}.NormalizedProfiles.DubuisTimesWindowedAvgAP.Test.count(:,:, ch_index);
-    ProfCounts2 = AllCompiledEmbryos{exp2}.NormalizedProfiles.DubuisTimesWindowedAvgAP.Test.count(:,:, ch_index);
+    ProfSet1 = AllCompiledEmbryos{exp1}.NormalizedProfiles.MasterDubuisTimesWindowedAvgAP.Test.mean(:,:, ch_index);
+    ProfSet2 = AllCompiledEmbryos{exp2}.NormalizedProfiles.MasterDubuisTimesWindowedAvgAP.Test.mean(:,:, ch_index);
+    ProfCounts1 = AllCompiledEmbryos{exp1}.NormalizedProfiles.MasterDubuisTimesWindowedAvgAP.Test.count(:,:, ch_index);
+    ProfCounts2 = AllCompiledEmbryos{exp2}.NormalizedProfiles.MasterDubuisTimesWindowedAvgAP.Test.count(:,:, ch_index);
     ProfSet1 = ProfSet1(:);
     ProfSet2 = ProfSet2(:);
     ProfCounts1 = ProfCounts1(:);
     ProfCounts2 = ProfCounts2(:);
     PlotProfSet1 = ProfSet1(ProfCounts1 >= 3 & ProfCounts2 >= 3);
     PlotProfSet2 = ProfSet2(ProfCounts1 >= 3 & ProfCounts2 >= 3);
+    if isempty(PlotProfSet1) | isempty(PlotProfSet2)
+        PlotProfSet1 = ProfSet1(ProfCounts1 >= 1 & ProfCounts2 >= 1);
+        PlotProfSet2 = ProfSet2(ProfCounts1 >= 1 & ProfCounts2 >= 1);
+    end
 
     MaxValues = NaN(1, NumSets);
     close all
@@ -183,6 +187,9 @@ end
 
 %%
 close all
+SmoothMasterSetPath = 'S:/Gabriella/Dropbox/ProteinProfiles/Smoothed25CMasterSets.mat';
+load(SmoothMasterSetPath, 'CombinedMean', 'CombinedSE', 'CombinedCounts', 'Slopes', 'Intercepts', 'Fits', 'SubsetsIncluded',...
+    'Ts', 'Reps', 'CTstrings', 'SubsetsIncluded');
 
 unique_temperatures = unique(AllSetInfo.Temperatures);
 gap_colors = [0 0 0 ;
@@ -200,30 +207,45 @@ BinsToFit(4,22:37) = true;
 BinsToFit(5,5:21) = true;
 for exp_index = 1:15
 for ch_index = [3 5]
-    ProfSet2 = AllCompiledEmbryos{exp_index}.NormalizedProfiles.DubuisTimesWindowedAvgAP.Control.mean(:,BinsToFit(ch_index,:), ch_index);
-    ProfCounts2 = AllCompiledEmbryos{exp_index}.NormalizedProfiles.DubuisTimesWindowedAvgAP.Control.count(:,BinsToFit(ch_index,:), ch_index);
-    ProfSet2 = ProfSet2(:);
-    ProfCounts2 = ProfCounts2(:);
+    ProfSet2 = AllCompiledEmbryos{exp_index}.NormalizedProfiles.MasterDubuisTimesSmoothedAvgAP.Test.Profiles(:,BinsToFit(ch_index,:), ch_index);
+    %ProfCounts2 = AllCompiledEmbryos{exp_index}.NormalizedProfiles.MasterDubuisTimesWindowedAvgAP.Control.count(:,BinsToFit(ch_index,:), ch_index);
+    ProfSet2 = ProfSet2(:).';
+    %ProfCounts2 = ProfCounts2(:).';
     
     
     ProfSet1 = CombinedMean(:,BinsToFit(ch_index,:),ch_index);
-    ProfSet1 = ProfSet1(:);
+    ProfSet1 = ProfSet1(:).';
     ProfCounts1 = CombinedCounts(:,BinsToFit(ch_index,:),ch_index);
-    ProfCounts1 = ProfCounts1(:);
-    PlotProfSet1 = ProfSet1(ProfCounts1 >= 5 & ProfCounts2 >= 3);
-    PlotProfSet2 = ProfSet2(ProfCounts1 >= 5 & ProfCounts2 >= 3);
-    
+    ProfCounts1 = ProfCounts1(:).';
+    TfNaN = isnan(ProfSet1) | isnan(ProfSet2);
+    PlotProfSet1 = ProfSet1(~TfNaN);
+    PlotProfSet2 = ProfSet2(~TfNaN);
+%     PlotProfSet1 = ProfSet1(ProfCounts1 >= 5 & ProfCounts2 >= 3);
+%     PlotProfSet2 = ProfSet2(ProfCounts1 >= 5 & ProfCounts2 >= 3);
+%     
     
     DubuisTimesMat = repmat(AllCompiledEmbryos{exp_index}.DubuisSmoothedTimes.', 1, sum(BinsToFit(ch_index,:)));
     DubuisTimesFlat = DubuisTimesMat(:).';
-    PlotDubuisTimes = DubuisTimesFlat(ProfCounts1 >= 5 & ProfCounts2 >= 3);
-    if isempty(PlotProfSet1)
-        PlotProfSet1 = ProfSet1(ProfCounts1 >= 3 & ProfCounts2 >= 1);
-        PlotProfSet2 = ProfSet2(ProfCounts1 >= 3 & ProfCounts2 >= 1);
-         PlotDubuisTimes = DubuisTimesFlat(ProfCounts1 >= 3 & ProfCounts2 >= 1);
-        AddTitleStr = ' (Low Counts)';
-    else
-        AddTitleStr = '';
+    %PlotDubuisTimes = DubuisTimesFlat(ProfCounts1 >= 5 & ProfCounts2 >= 3);
+    PlotDubuisTimes = DubuisTimesFlat(~TfNaN);
+%     if isempty(PlotProfSet1) | isempty(PlotProfSet2)
+%         PlotProfSet1 = ProfSet1(ProfCounts1 >= 3 & ProfCounts2 >= 1);
+%         PlotProfSet2 = ProfSet2(ProfCounts1 >= 3 & ProfCounts2 >= 1);
+%         PlotDubuisTimes = DubuisTimesFlat(ProfCounts1 >= 3 & ProfCounts2 >= 1);
+%         AddTitleStr = ' (Low Counts)';
+%         if isempty(PlotProfSet1)| isempty(PlotProfSet2)
+%             PlotProfSet1 = ProfSet1(ProfCounts1 >= 1 & ProfCounts2 >= 1);
+%             PlotProfSet2 = ProfSet2(ProfCounts1 >= 1 & ProfCounts2 >= 1);
+%             PlotDubuisTimes = DubuisTimesFlat(ProfCounts1 >= 3 & ProfCounts2 >= 1);
+%             AddTitleStr = ' (Very Low Counts)';
+%             
+%         end
+%     else
+%         AddTitleStr = '';
+%     end
+    
+    if isempty(PlotProfSet1) | isempty(PlotProfSet2)
+        continue
     end
     MaxValues = NaN(1, NumSets);
     close all
@@ -231,46 +253,47 @@ for ch_index = [3 5]
     set(DeltaFCFixCorrectedFig,'units', 'normalized', 'position',[0.01, 0.05, .6, .6]);
     set(gcf,'color','w');
     DeltaFCAx = axes(DeltaFCFixCorrectedFig);
-         
-            map = colormap(colorsDubuisTimes);
+    
+    map = colormap(colorsDubuisTimes);
     h = colorbar;
-            % %set(h, 'ylim', [min(Prefix_temp_obs) max(Prefix_temp_obs)])
-            hold off
-            colorTitleHandle = get(h,'Title');
-            titleString = '\del (\mum)';
-            titleString = 'time (min)';
-            set(colorTitleHandle ,'String',titleString);
-                  h.Ticks =  FractonalDubuisTimeRange(1:5:71)+0.5*(FractonalDubuisTimeRange(2)-FractonalDubuisTimeRange(1)); %Create 8 ticks from zero to 1
-            h.TickLabels = {'0.0', '5.0','10.0','15.0','20.0','25.0', '30.0', '35.0', '40.0','45.0','50.0','55.0', '60.0', '65.0', '70.0'};
-            hold on
-            
-            for plot_index = 1:length(PlotProfSet1)
-                scatter(PlotProfSet1(plot_index),PlotProfSet2(plot_index),...
-                    75, 'MarkerFaceColor', colorsDubuisTimes(PlotDubuisTimes(plot_index)+1,:),...
-                    'MarkerEdgeColor', colorsDubuisTimes(PlotDubuisTimes(plot_index)+1,:));
-                hold on
-            end
-            
- ymax = ceil(max(PlotProfSet2)/5)*5;
-  xmax = ceil(max(PlotProfSet1)/5)*5;
-   ymax = max(PlotProfSet2);
-%             xmax = ceil(max([AllAPProfileFlatExp1 ; AllAPProfileFlatExp2])/.5)*.5;
-%             ymax = ceil(max(AllAPProfileFlatExp2)/5)*5;
-%             xmax = ceil(max(AllAPProfileFlatExp1)/5)*5;
-            %plot([0, xmax], [0, ymax], 'k');
-     %ymax = max(max(CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(CompiledEmbryos.AllDeltaValidProfilesTestTF,:,ch_index)))*1.1;
-%     plot([y_positions(ch_index), y_positions(ch_index)], [0, ymax], 'k:','LineWidth', 2.0);
-    grid on 
+    % %set(h, 'ylim', [min(Prefix_temp_obs) max(Prefix_temp_obs)])
+    hold off
+    colorTitleHandle = get(h,'Title');
+    titleString = '\del (\mum)';
+    titleString = 'time (min)';
+    set(colorTitleHandle ,'String',titleString);
+    h.Ticks =  FractonalDubuisTimeRange(1:5:71)+0.5*(FractonalDubuisTimeRange(2)-FractonalDubuisTimeRange(1)); %Create 8 ticks from zero to 1
+    h.TickLabels = {'0.0', '5.0','10.0','15.0','20.0','25.0', '30.0', '35.0', '40.0','45.0','50.0','55.0', '60.0', '65.0', '70.0'};
+    hold on
+    
+    for plot_index = 1:length(PlotProfSet1)
+        scatter(PlotProfSet1(plot_index),PlotProfSet2(plot_index),...
+            75, 'MarkerFaceColor', colorsDubuisTimes(PlotDubuisTimes(plot_index)+1,:),...
+            'MarkerEdgeColor', colorsDubuisTimes(PlotDubuisTimes(plot_index)+1,:));
+        hold on
+    end
+    
+    ymax = ceil(max(PlotProfSet2)/5)*5;
+    xmax = ceil(max(PlotProfSet1)/5)*5;
+    ymax = max(PlotProfSet2);
+    %             xmax = ceil(max([AllAPProfileFlatExp1 ; AllAPProfileFlatExp2])/.5)*.5;
+    %             ymax = ceil(max(AllAPProfileFlatExp2)/5)*5;
+    %             xmax = ceil(max(AllAPProfileFlatExp1)/5)*5;
+    %plot([0, xmax], [0, ymax], 'k');
+    %ymax = max(max(CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(CompiledEmbryos.AllDeltaValidProfilesTestTF,:,ch_index)))*1.1;
+    %     plot([y_positions(ch_index), y_positions(ch_index)], [0, ymax], 'k:','LineWidth', 2.0);
+    grid on
     hold off
     %xlabel('Time (Dubuis) into cycle 14 (min)', 'FontSize', 16)
-xlim([0, xmax])
+    xlim([0, xmax])
     xlab ='Master 25ºC Profile (AU)';
-ylab = ['Control for ', num2str(AllSetInfo.Temperatures(exp_index)), 'ºC Replicate ', num2str(AllSetInfo.Replicates(exp_index))];
-
-xlabel(xlab, 'FontSize', 16)
-ylabel(ylab, 'FontSize', 16)
-
-ylim([0, ymax])
+    ylab = ['Control for ', num2str(AllSetInfo.Temperatures(exp_index)), 'ºC Replicate ', num2str(AllSetInfo.Replicates(exp_index))];
+    ylab = [num2str(AllSetInfo.Temperatures(exp_index)), 'ºC Replicate ', num2str(AllSetInfo.Replicates(exp_index))];
+    
+    xlabel(xlab, 'FontSize', 16)
+    ylabel(ylab, 'FontSize', 16)
+    
+    ylim([0, ymax])
 
 
 DeltaFCAx.YAxis.FontSize = 16;
@@ -282,9 +305,9 @@ title(DeltaFCAx, [ChannelNames{ch_index}, AddTitleStr], 'FontSize', 18)
 
 DeltaFCAx.FontSize = 16;
 if AllSetInfo.Replicates(exp_index) == 0
-    outstring = ['Master25CProfile_T', strrep(num2str(AllSetInfo.Temperatures(exp_index)), '.', '_'),'Cflipped_control'];        
+    outstring = ['Master25CProfile_T', strrep(num2str(AllSetInfo.Temperatures(exp_index)), '.', '_'),'Cflipped_test'];        
 else
-outstring = ['Master25CProfile_T', strrep(num2str(AllSetInfo.Temperatures(exp_index)), '.', '_'),'Crep', num2str(AllSetInfo.Replicates(exp_index)), '_control'];
+outstring = ['Master25CProfile_T', strrep(num2str(AllSetInfo.Temperatures(exp_index)), '.', '_'),'Crep', num2str(AllSetInfo.Replicates(exp_index)), '_test'];
 end 
 outpath = [AllSetsProfFigPath, filesep, 'SetComps',filesep,outstring, '_', ChannelNames{ch_index}, '_DubuisTimesColor.png'];
 saveas(DeltaFCFixCorrectedFig,outpath);
