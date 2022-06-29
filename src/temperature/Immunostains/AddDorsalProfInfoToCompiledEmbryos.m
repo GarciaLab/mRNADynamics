@@ -12,11 +12,18 @@ DorsalNuclearPath = [liveExperiment.resultsFolder, filesep, 'DorsalNuclearProfil
     'ProfileNarrowNucleiFluoInfo','AllDorsalNucleiFluoInfo','DorsalStdAPProfiles',...
     'DorsalStdNarrowAPProfiles','DorsalCountAPProfiles','DorsalCountNarrowAPProfiles');
 
+
 CompiledEmbryos.DorsalAPProfiles = DorsalAPProfiles;
+
+
 CompiledEmbryos.DorsalAvgAPProfiles = DorsalAvgAPProfiles;
+
+
 CompiledEmbryos.NarrowProfileNucleiFluoInfo = NarrowProfileNucleiFluoInfo;
-CompiledEmbryos.DorsalAPProfiles = DorsalAPProfiles;
+
 CompiledEmbryos.DorsalNarrowAPProfiles = DorsalNarrowAPProfiles;
+
+
 CompiledEmbryos.DorsalAvgNarrowAPProfiles = DorsalAvgNarrowAPProfiles;
 CompiledEmbryos.ProfileNucleiFluoInfo = ProfileNucleiFluoInfo;
 CompiledEmbryos.ProfileNarrowNucleiFluoInfo = ProfileNarrowNucleiFluoInfo;

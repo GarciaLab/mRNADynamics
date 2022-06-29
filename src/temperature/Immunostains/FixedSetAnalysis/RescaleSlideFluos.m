@@ -18,6 +18,11 @@ ControlChannelBackgroundBins(2,:) = APbins >= 0.1 & APbins <= 0.9;%APbins >= 0.3
 ControlChannelBackgroundBins(3,:) = APbins >= 0.1 & APbins <= 0.9;%APbins >= 0.8; % Bicoid
 ControlChannelBackgroundBins(4,:) = APbins >= 0.1 & APbins <= 0.9;%APbins >= 0.775; % Knirps
 ControlChannelBackgroundBins(5,:) = APbins >= 0.1 & APbins <= 0.9;%APbins >= 0.55 & APbins <= 0.625; % Hunchback
+MinBins = zeros(NChannels, length(APbins), 'logical');
+MinBins(2,:) = APbins >= 0.2 & APbins <= 0.8;
+MinBins(3,:) = APbins >= 0.85 & APbins <= 0.9;
+MinBins(4,:) = APbins >= 0.85 & APbins <= 0.9;
+MinBins(5,:) = APbins >= 0.625 & APbins <= 0.675;
 CompiledEmbryos.ControlChannelBackgroundBins = ControlChannelBackgroundBins;
 TestChannelBackgroundBins = ControlChannelBackgroundBins;
 if ~SetIsFlipped
@@ -201,6 +206,12 @@ for embryo_index = AllEmbryos
         CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(embryo_index,:,ch_index) =...
             CompiledEmbryos.SlideRescalingFactors(CompiledEmbryos.SlideIDs(embryo_index), ch_index)*CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(embryo_index,:,ch_index)+...
             CompiledEmbryos.SlideRescalingIntercepts(CompiledEmbryos.SlideIDs(embryo_index), ch_index);
+%         CompiledEmbryos.SlideRescaledDorsalAPProfiles(embryo_index,:,ch_index)  = ...
+%             CompiledEmbryos.SlideRescaledDorsalAPProfiles(embryo_index,:,ch_index)  -...
+%            mean(CompiledEmbryos.SlideRescaledDorsalAPProfiles(embryo_index,MinBins(ch_index,:),ch_index), 2, 'omitnan');
+%        CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(embryo_index,:,ch_index)  = ...
+%             CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(embryo_index,:,ch_index)  -...
+%            mean(CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(embryo_index,MinBins(ch_index,:),ch_index), 2, 'omitnan');
     end
 end
 

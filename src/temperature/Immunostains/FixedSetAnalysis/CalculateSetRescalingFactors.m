@@ -2,8 +2,8 @@ function AllCompiledEmbryos = CalculateSetRescalingFactors(AllCompiledEmbryos)
 %%
 
 AllSetsCombinedEmbryosPath = 'S:/Gabriella/Dropbox/ProteinProfiles/CompiledEmbryos/';
-MasterSetPath = 'S:/Gabriella/Dropbox/ProteinProfiles/25CMasterSets.mat';
-AllSmoothMasterPath = 'S:/Gabriella/Dropbox/ProteinProfiles/Smoothed25CMasterSets.mat';
+MasterSetPath = 'S:/Gabriella/Dropbox/ProteinProfiles/25CUnflippedMasterSets.mat';
+AllSmoothMasterPath = 'S:/Gabriella/Dropbox/ProteinProfiles/Smoothed25CUnflippedMasterSets.mat';
 load(MasterSetPath, 'CombinedMean', 'CombinedSE', 'CombinedCounts', 'Slopes', 'Intercepts', 'Fits', 'SubsetsIncluded',...
     'Ts', 'Reps', 'CTstrings', 'SubsetsIncluded');
 AllSetInfo = GetFixedSetPrefixInfo;
@@ -88,8 +88,8 @@ OkOverlapIndices = cell(NumSets,  NChannels);
 for i = 1:(NumSets)
     exp1 = exp_idx(i);
     for ch_index = 2:NChannels
-        OkOverlapIndices{exp1, ch_index} = (squeeze(counts_windowed(:,:,ch_index,i))>= 2) & (CombinedCounts(:,:,ch_index) >= 3);
-        GoodOverlapIndices{exp1,ch_index} = (squeeze(counts_windowed(:,:,ch_index,i))>= 3)&(CombinedCounts(:,:,ch_index) >= 5);
+        OkOverlapIndices{exp1, ch_index} = (squeeze(counts_windowed(:,:,ch_index,i))>= 2) &(squeeze(CombinedCounts(:,:,ch_index)) >= 3);
+        GoodOverlapIndices{exp1,ch_index} = (squeeze(counts_windowed(:,:,ch_index,i))>= 3)&(squeeze(CombinedCounts(:,:,ch_index)) >= 5);
         
         if sum((sum(GoodOverlapIndices{exp1, ch_index}, 2) >= 20)) > 8
             
