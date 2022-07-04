@@ -8,21 +8,29 @@ AllSetsCombinedEmbryosPath = 'S:/Gabriella/Dropbox/ProteinProfiles/CompiledEmbry
 SetLabel = AllSetInfo.SetLabels{exp_index};
 OutEmbryoPath = [AllSetsCombinedEmbryosPath, SetLabel];
 
-outpath = 'S:/Gabriella/Dropbox/BootstrappedTestData/25CBootstrappedGaussianSmoothedProfiles.mat';
-load(outpath, 'MeanSmoothedProfiles', 'SmoothedProfileSEs', 'xfits');
+BootstrappedProfilePath = 'S:/Gabriella/Dropbox/BootstrappedTestData/25CBootstrappedGaussianSmoothedProfiles.mat';
+load(BootstrappedProfilePath, 'MeanSmoothedProfiles', 'SmoothedProfileSEs', 'xfits');
+
+NumMasterProfs = length(MeanSmoothedProfiles);
 
 %%
-ch_index = 3;
+CompiledEmbryos.mdl.SlideRescaledDorsalAvgAPProfiles.Control = cell(NumMasterProfs, NChannels);
+CompiledEmbryos.ScaleFits  = {};
+CompiledEmbryos.ScaleFits.SlideRescaledDorsalAvgAPProfiles = {};
+CompiledEmbryos.ScaleFits.SlideRescaledDorsalAvgAPProfiles.Control = {};
+CompiledEmbryos.ScaleFits.SlideRescaledDorsalAvgAPProfiles.Control.ScaleEstimate = NaN(NumMasterProfs, NChannels);
+CompiledEmbryos.ScaleFits.SlideRescaledDorsalAvgAPProfiles.Control.ScaleSE = NaN(NumMasterProfs, NChannels);
+CompiledEmbryos.ScaleFits.SlideRescaledDorsalAvgAPProfiles.Control.InterceptEstimate = NaN(NumMasterProfs, NChannels);
+CompiledEmbryos.ScaleFits = NaN(NumMasterProfs, NChannels);
+CompiledEmbryos.ScaleFits = NaN(NumMasterProfs, NChannels);
+CompiledEmbryos.ScaleFits = NaN(NumMasterProfs, NChannels);
+
+f = @(b,x) b(1).*x + b(2);
+
+for ch_index = [3 5]
 ControlSetTF = CompiledEmbryos.IsNC14 & CompiledEmbryos.ControlSetEmbryos & ~isnan(CompiledEmbryos.DubuisEmbryoTimes);
 
 
-CompiledEmbryos.mdl = cell(3, NChannels);
-CompiledEmbryos.BootstrappedScaleFactors = NaN(3, NChannels);
-CompiledEmbryos.BootstrappedScaleFactorSEs = NaN(3, NChannels);
-CompiledEmbryos.BootstrappedScaleIntercepts = NaN(3, NChannels);
-CompiledEmbryos.BootstrappedScaleInterceptSEs = NaN(3, NChannels);
-
-f = @(b,x) b(1).*x + b(2);
 
 for ProfIndex = 1:3
 MasterProfile = MeanSmoothedProfiles{ProfIndex};
@@ -45,6 +53,7 @@ beta0 =[1, min(yset,[], 'all')];
     end
 end
     
-    
+end
+%%
 CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
 save(CEoutpath, 'CompiledEmbryos');

@@ -1,4 +1,4 @@
-function CompiledEmbryos =  AddBootstrappedFitProfiles(CompiledEmbryos, exp_index)
+function CompiledEmbryos =  AddUniversalScalingFactorsToTestScaledProfiles(CompiledEmbryos, exp_index)
 AllSetInfo = GetFixedSetPrefixInfo;
 
 AllSetsCombinedEmbryosPath = 'S:/Gabriella/Dropbox/ProteinProfiles/CompiledEmbryos/';
@@ -161,7 +161,7 @@ end
 UseTestTF = CompiledEmbryos.TestSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(CompiledEmbryos.DubuisEmbryoTimes);
 UseControlTF = CompiledEmbryos.ControlSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(CompiledEmbryos.DubuisEmbryoTimes);
 
-parfor type_index = 1:NumTypes
+for type_index = 1:NumTypes
     ProfString1 = ProfString1s{type_index};
     ProfString2 = ProfString2s{type_index};
     

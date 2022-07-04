@@ -1,5 +1,5 @@
 
-version = 10;
+version = 11;
 SizeDataPath = 'S:/Gabriella/Dropbox/EmbryoSizeMeasurements/EmbryoSizeData.mat';
 AllSetsProfFigPath = 'S:/Gabriella/Dropbox/ProteinProfiles/Figures/';
 AllCompiledPath = ['S:/Gabriella/Dropbox/ProteinProfiles/V',num2str(version),'Profiles/'];
@@ -34,10 +34,10 @@ gap_colors = [0 0 0 ;
     212 84 66;
     237 176 32 ]/255;%0.9290 0.6940 0.1250]/255;
 %
-% load([AllCompiledPath, 'AllCompiledEmbryos.Mat'], 'AllCompiledEmbryos')
+load([AllCompiledPath, 'AllCompiledEmbryos.Mat'], 'AllCompiledEmbryos')
 %%
 
-master_index = 9;
+
 for temp = [25, 27.5, 22.5, 20, 17.5]
     for ch_index = [3]
         exp_indices = find(AllSetInfo.Temperatures == temp);
@@ -63,125 +63,68 @@ for temp = [25, 27.5, 22.5, 20, 17.5]
         x_sample{1} = CompiledEmbryos.DubuisEmbryoTimes;
         UseTF{1} = CompiledEmbryos.TestSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(x_sample{1});
         x_sample{1} =x_sample{1}(UseTF{1});
-        if temp ~= 25
-            ys{1} =  CompiledEmbryos.UnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.ControlScaling(UseTF{1},:,ch_index,master_index);
-        else
-            ys{1} =  CompiledEmbryos.UnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.TestScaling(UseTF{1},:,ch_index,master_index);
-        end
+        ys{1} =  CompiledEmbryos.UnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped(UseTF{1},:,ch_index);
         BadTF{1} =  sum(isnan(ys{1}), 2).' >min( sum(isnan(ys{1}), 2).');
         x_sample{1} = x_sample{1}(~BadTF{1});
         ys{1} = ys{1}(~BadTF{1},:);
-        if temp ~= 25
-            xfits{1} = CompiledEmbryos.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.ControlScaling.x;
-            yfits{1} = CompiledEmbryos.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.ControlScaling.TestSet.mean(:,:,ch_index,master_index);
-        else
-            xfits{1} = CompiledEmbryos.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.TestScaling.x;
-            yfits{1} = CompiledEmbryos.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.TestScaling.TestSet.mean(:,:,ch_index,master_index);
-        end
+        xfits{1} = CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped.x;
+        yfits{1} = CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped.TestSet.mean(:,:,ch_index);
+        
         
         x_sample_control{1} = CompiledEmbryos.DubuisEmbryoTimes;
         UseTF_control{1} = CompiledEmbryos.ControlSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(x_sample_control{1});
         x_sample_control{1} =x_sample_control{1}(UseTF_control{1});
-        if temp ~= 25
-            ys_control{1} =  CompiledEmbryos.UnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.ControlScaling(UseTF_control{1},:,ch_index,master_index);
-        else
-            ys_control{1} =  CompiledEmbryos.UnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.TestScaling(UseTF_control{1},:,ch_index,master_index);
-        end
+        ys_control{1} =  CompiledEmbryos.UnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped(UseTF_control{1},:,ch_index);
         BadTF_control{1} =  sum(isnan(ys_control{1}), 2).' >min( sum(isnan(ys_control{1}), 2).');
         x_sample_control{1} = x_sample_control{1}(~BadTF_control{1});
         ys_control{1} = ys_control{1}(~BadTF_control{1},:);
-        if temp ~= 25
-            xfits_control{1} = CompiledEmbryos.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.ControlScaling.x;
-            yfits_control{1} = CompiledEmbryos.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.ControlScaling.ControlSet.mean(:,:,ch_index,master_index);
-        else
-            xfits_control{1} = CompiledEmbryos.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.TestScaling.x;
-            yfits_control{1} = CompiledEmbryos.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.TestScaling.ControlSet.mean(:,:,ch_index,master_index);
-        end
+        xfits_control{1} = CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped.x;
+        yfits_control{1} = CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped.ControlSet.mean(:,:,ch_index);
         SetLabel{1} = AllSetInfo.SetLabels{exp_index};
         
         CompiledEmbryos2 = AllCompiledEmbryos{exp_index2};
         x_sample{2} = CompiledEmbryos2.DubuisEmbryoTimes;
         UseTF{2} = CompiledEmbryos2.TestSetEmbryos & CompiledEmbryos2.IsNC14 & ~isnan(x_sample{2});
         x_sample{2} =x_sample{2}(UseTF{2});
-        if temp ~= 25
-            ys{2} =  CompiledEmbryos2.UnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.ControlScaling(UseTF{2},:,ch_index,master_index);
-        else
-            ys{2} =  CompiledEmbryos2.UnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.TestScaling(UseTF{2},:,ch_index,master_index);
-        end
+        ys{2} =  CompiledEmbryos2.UnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped(UseTF{2},:,ch_index);
         BadTF{2} =  sum(isnan(ys{2}), 2).' >min( sum(isnan(ys{2}), 2).');
         x_sample{2} = x_sample{2}(~BadTF{2});
         ys{2} = ys{2}(~BadTF{2},:);
-        if temp ~= 25
-            xfits{2} = CompiledEmbryos2.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.ControlScaling.x;
-            yfits{2} = CompiledEmbryos2.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.ControlScaling.TestSet.mean(:,:,ch_index,master_index);
-        else
-            xfits{2} = CompiledEmbryos2.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.TestScaling.x;
-            yfits{2} = CompiledEmbryos2.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.TestScaling.TestSet.mean(:,:,ch_index,master_index);
-        end
-        
+        xfits{2} = CompiledEmbryos2.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped.x;
+        yfits{2} = CompiledEmbryos2.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped.TestSet.mean(:,:,ch_index);
         x_sample_control{2} = CompiledEmbryos2.DubuisEmbryoTimes;
         
         UseTF_control{2} = CompiledEmbryos2.ControlSetEmbryos & CompiledEmbryos2.IsNC14 & ~isnan(x_sample_control{2});
         x_sample_control{2} =x_sample_control{2}(UseTF_control{2});
-        if temp ~= 25
-            ys_control{2} =  CompiledEmbryos2.UnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.ControlScaling(UseTF_control{2},:,ch_index,master_index);
-        else
-            ys_control{2} =  CompiledEmbryos2.UnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.TestScaling(UseTF_control{2},:,ch_index,master_index);
-        end
+        ys_control{2} =  CompiledEmbryos2.UnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped(UseTF_control{2},:,ch_index);
         BadTF_control{2}=  sum(isnan(ys_control{2}), 2).' >min( sum(isnan(ys_control{2}), 2).');
         x_sample_control{2} = x_sample_control{2}(~BadTF_control{2});
         ys_control{2} = ys_control{2}(~BadTF_control{2},:);
-        if temp ~= 25
-            xfits_control{2} = CompiledEmbryos2.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.ControlScaling.x;
-            yfits_control{2} = CompiledEmbryos2.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.ControlScaling.ControlSet.mean(:,:,ch_index,master_index);
-        else
-            xfits_control{2} = CompiledEmbryos2.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.TestScaling.x;
-            yfits_control{2} = CompiledEmbryos2.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.TestScaling.ControlSet.mean(:,:,ch_index,master_index);
-        end
-        
+        xfits_control{2} = CompiledEmbryos2.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped.x;
+        yfits_control{2} = CompiledEmbryos2.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped.ControlSet.mean(:,:,ch_index);
         SetLabel{2} = AllSetInfo.SetLabels{exp_index2};
         
         CompiledEmbryos3 = AllCompiledEmbryos{exp_index3};
         x_sample{3} = CompiledEmbryos3.DubuisEmbryoTimes;
         UseTF{3} = CompiledEmbryos3.TestSetEmbryos & CompiledEmbryos3.IsNC14 & ~isnan(x_sample{3});
         x_sample{3} =x_sample{3}(UseTF{3});
-        if temp ~= 25
-            ys{3} =  CompiledEmbryos3.UnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.ControlScaling(UseTF{3},:,ch_index,master_index);
-        else
-            ys{3} =  CompiledEmbryos3.UnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.TestScaling(UseTF{3},:,ch_index,master_index);
-        end
+        ys{3} =  CompiledEmbryos3.FitSlideRescaledDorsalAvgAPProfiles(UseTF{3},:,ch_index);
+        
         BadTF{3} =  sum(isnan(ys{3}), 2).' >min( sum(isnan(ys{3}), 2).');
         x_sample{3} = x_sample{3}(~BadTF{3});
         ys{3} = ys{3}(~BadTF{3},:);
-        if temp ~= 25
-            xfits{3} = CompiledEmbryos3.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.ControlScaling.x;
-            yfits{3} = CompiledEmbryos3.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.ControlScaling.TestSet.mean(:,:,ch_index,master_index);
-        else
-            xfits{3} = CompiledEmbryos3.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.TestScaling.x;
-            yfits{3} = CompiledEmbryos3.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.TestScaling.TestSet.mean(:,:,ch_index,master_index);
-            
-        end
+        xfits{3} = CompiledEmbryos3.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Rep1.x;
+        yfits{3} = CompiledEmbryos3.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped.TestSet.mean(:,:,ch_index);
         
         x_sample_control{3} = CompiledEmbryos3.DubuisEmbryoTimes;
         UseTF_control{3} = CompiledEmbryos3.ControlSetEmbryos & CompiledEmbryos3.IsNC14 & ~isnan(x_sample_control{3});
         x_sample_control{3} =x_sample_control{3}(UseTF_control{3});
-        if temp ~= 25
-            ys_control{3} =  CompiledEmbryos3.UnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.ControlScaling(UseTF_control{3},:,ch_index,master_index);
-        else
-            ys_control{3} =  CompiledEmbryos3.UnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.TestScaling(UseTF_control{3},:,ch_index,master_index);
-        end
+        ys_control{3} =   CompiledEmbryos3.FitSlideRescaledDorsalAvgAPProfiles(UseTF_control{3},:,ch_index);
         BadTF_control{3}=  sum(isnan(ys_control{3}), 2).' >min( sum(isnan(ys_control{3}), 2).');
         x_sample_control{3} = x_sample_control{3}(~BadTF_control{3});
         ys_control{3} = ys_control{3}(~BadTF_control{3},:);
-        if temp ~= 25
-            xfits_control{3} = CompiledEmbryos3.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.ControlScaling.x;
-            yfits_control{3} = CompiledEmbryos3.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.ControlScaling.ControlSet.mean(:,:,ch_index,master_index);
-        else
-            xfits_control{3} = CompiledEmbryos3.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.TestScaling.x;
-            yfits_control{3} = CompiledEmbryos3.BootstrappedUnivScaledProfiles.FitSlideRescaledDorsalAvgAPProfiles.TestScaling.ControlSet.mean(:,:,ch_index,master_index);
-            
-        end
-        
+        xfits_control{3} = CompiledEmbryos3.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Rep1.x;
+        yfits_control{3} = CompiledEmbryos3.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped.ControlSet.mean(:,:,ch_index);
         SetLabel{3} = AllSetInfo.SetLabels{exp_index3};
         
         for APindex =5:4:37
@@ -263,7 +206,10 @@ for temp = [25, 27.5, 22.5, 20, 17.5]
                 DeltaFCAx{2, sub_index}.FontSize = 14;
             end
             sgtitle(['AP: ', num2str(round(APbins(APindex), 2))], 'FontSize', 16)
-            outpath2 = [AllSetsProfFigPath, filesep, 'BootstrappedProfiles', filesep, 'FitSlideRescaledAvgAP', filesep,...
+            if ~isdir([AllSetsProfFigPath, filesep, 'BootstrappedProfiles', filesep, 'FitSlideRescaledAvgAP_Flipped'])
+                mkdir([AllSetsProfFigPath, filesep, 'BootstrappedProfiles', filesep, 'FitSlideRescaledAvgAP_Flipped'])
+            end
+            outpath2 = [AllSetsProfFigPath, filesep, 'BootstrappedProfiles', filesep, 'FitSlideRescaledAvgAP_Flipped', filesep,...
                 ChannelNames{ch_index}, '_T', strrep(num2str(temp), '.', '_'), 'C_AP',num2str(APindex), '.png' ]
             saveas(DeltaFCFixCorrectedFig,outpath2);
         end
@@ -291,127 +237,130 @@ j_list = [2 3 3 5 6 6 8 9 9 11 12 12 14 15 15];
 
 ch_index = 3;
 for list_index = 1:length(i_list)
-    for prof_index = 1:10
-        exp_index = i_list(list_index);
-        CompiledEmbryos = AllCompiledEmbryos{exp_index};
-        x_sample = CompiledEmbryos.DubuisEmbryoTimes;
-        UseTF = CompiledEmbryos.TestSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(x_sample);
-        x_sample =x_sample(UseTF);
-        ys = CompiledEmbryos.UnivScaledProfiles.SlideRescaledDorsalAvgAPProfiles.ControlScaling(UseTF, :, ch_index, prof_index);
-        BadTF =  sum(isnan(ys), 2).' >min( sum(isnan(ys), 2).');
-        x_sample = x_sample(~BadTF);
-        ys = ys(~BadTF,:);
-        xfits = CompiledEmbryos.BootstrappedUnivScaledProfiles.SlideRescaledDorsalAvgAPProfiles.ControlScaling.x;
-        yfits = CompiledEmbryos.BootstrappedUnivScaledProfiles.SlideRescaledDorsalAvgAPProfiles.ControlScaling.TestSet.mean(:, :, ch_index, prof_index);
-        
-        
-        exp_index2 = j_list(list_index);
-        CompiledEmbryos2 = AllCompiledEmbryos{exp_index2};
-        x_sample_control = CompiledEmbryos2.DubuisEmbryoTimes;
-        UseTF_control = CompiledEmbryos2.TestSetEmbryos & CompiledEmbryos2.IsNC14 & ~isnan(x_sample_control);
-        x_sample_control =x_sample_control(UseTF_control);
-        ys_control = CompiledEmbryos2.UnivScaledProfiles.SlideRescaledDorsalAvgAPProfiles.ControlScaling(UseTF_control, :, ch_index, prof_index);BadTF_control=  sum(isnan(ys_control), 2).' >min( sum(isnan(ys_control), 2).');
-        x_sample_control = x_sample_control(~BadTF_control);
-        ys_control = ys_control(~BadTF_control,:);
-        xfits_control = CompiledEmbryos2.BootstrappedUnivScaledProfiles.SlideRescaledDorsalAvgAPProfiles.ControlScaling.x;
-        yfits_control =  CompiledEmbryos2.BootstrappedUnivScaledProfiles.SlideRescaledDorsalAvgAPProfiles.ControlScaling.TestSet.mean(:, :, ch_index, prof_index);
-        
-        APmat = repmat(APbins, length(xfits), 1);
-        xmat = repmat(xfits.', 1, NumAPbins);
-        xindex_mat = repmat((1:length(xfits)).', 1, NumAPbins);
-        
-        yfits = yfits(1:size(yfits, 1),:).';
-        yfits = yfits(:).';
-        yfits_control = yfits_control(1:size(yfits_control, 1),:).';
-        yfits_control = yfits_control(:).';
-        xflat = xmat(1:size(xmat, 1),:);
-        xflat = xflat(:).';
-        xindex_flat = xindex_mat(1:size(xindex_mat, 1),:);
-        xindex_flat = xindex_flat(:).';
-        
-        TFkeep = ~isnan(yfits) & ~isnan(yfits_control);
-        x_plot = xindex_flat(TFkeep);
-        yfits = yfits(TFkeep);
-        yfits2 = yfits_control(TFkeep);
-        
-        SS_res = sum((yfits2-yfits).^2);
-        SS_tot = sum((yfits2-mean(yfits2)).^2);
-        Rsquared = 1-SS_res/SS_tot;
-        
-        SetLabel = AllSetInfo.SetLabels{exp_index};
-        SetLabel2 = AllSetInfo.SetLabels{exp_index2};
-        DubuisTimeRange = xfits_control;
-        colorsDubuisTimes = hsv(length(DubuisTimeRange)); % Colormap "jet" is another option
-        FractonalDubuisTimeRange = DubuisTimeRange/max(DubuisTimeRange);
-        BinsToFit = zeros(NChannels, NumAPbins, 'logical');
-        BinsToFit(2,9:33) = true;
-        BinsToFit(3,5:13) = true;
-        BinsToFit(4,22:37) = true;
-        BinsToFit(5,5:21) = true;
-        
-        
-        close all
-        DeltaFCFixCorrectedFig =figure(1);
-        set(DeltaFCFixCorrectedFig,'units', 'normalized', 'position',[0.05, 0.05, .6, .6]);
-        set(gcf,'color','w');
-        DeltaFCAx = axes(DeltaFCFixCorrectedFig);
-        map = colormap(colorsDubuisTimes);
-        h = colorbar;
-        % %set(h, 'ylim', [min(Prefix_temp_obs) max(Prefix_temp_obs)])
-        
-        colorTitleHandle = get(h,'Title');
-        titleString = '\del (\mum)';
-        titleString = 'time (min)';
-        set(colorTitleHandle ,'String',titleString);
-        h.Ticks =  FractonalDubuisTimeRange(1:5:71)+0.5*(FractonalDubuisTimeRange(2)-FractonalDubuisTimeRange(1)); %Create 8 ticks from zero to 1
-        h.TickLabels = {'0.0', '5.0','10.0','15.0','20.0','25.0', '30.0', '35.0', '40.0','45.0','50.0','55.0', '60.0','65.0', '70.0'};
+    
+    exp_index = i_list(list_index);
+    CompiledEmbryos = AllCompiledEmbryos{exp_index};
+    x_sample = CompiledEmbryos.DubuisEmbryoTimes;
+    UseTF = CompiledEmbryos.TestSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(x_sample);
+    x_sample =x_sample(UseTF);
+    ys = CompiledEmbryos.UnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Rep2(UseTF, :, ch_index);
+    BadTF =  sum(isnan(ys), 2).' >min( sum(isnan(ys), 2).');
+    x_sample = x_sample(~BadTF);
+    ys = ys(~BadTF,:);
+    xfits = CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Rep1.x;
+    yfits = CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Rep2.TestSet.mean(:, :, ch_index);
+    
+    
+    exp_index2 = j_list(list_index);
+    CompiledEmbryos2 = AllCompiledEmbryos{exp_index2};
+    x_sample_control = CompiledEmbryos2.DubuisEmbryoTimes;
+    UseTF_control = CompiledEmbryos2.TestSetEmbryos & CompiledEmbryos2.IsNC14 & ~isnan(x_sample_control);
+    x_sample_control =x_sample_control(UseTF_control);
+    ys_control = CompiledEmbryos2.UnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Rep2(UseTF_control, :, ch_index);
+    BadTF_control=  sum(isnan(ys_control), 2).' >min( sum(isnan(ys_control), 2).');
+    x_sample_control = x_sample_control(~BadTF_control);
+    ys_control = ys_control(~BadTF_control,:);
+    xfits_control = CompiledEmbryos2.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Rep1.x;
+    yfits_control =  CompiledEmbryos2.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Rep2.TestSet.mean(:, :, ch_index);
+    
+    APmat = repmat(APbins, length(xfits), 1);
+    xmat = repmat(xfits.', 1, NumAPbins);
+    xindex_mat = repmat((1:length(xfits)).', 1, NumAPbins);
+    
+    yfits = yfits(1:size(yfits, 1),:).';
+    yfits = yfits(:).';
+    yfits_control = yfits_control(1:size(yfits_control, 1),:).';
+    yfits_control = yfits_control(:).';
+    xflat = xmat(1:size(xmat, 1),:);
+    xflat = xflat(:).';
+    xindex_flat = xindex_mat(1:size(xindex_mat, 1),:);
+    xindex_flat = xindex_flat(:).';
+    
+    TFkeep = ~isnan(yfits) & ~isnan(yfits_control);
+    x_plot = xindex_flat(TFkeep);
+    yfits = yfits(TFkeep);
+    yfits2 = yfits_control(TFkeep);
+    
+    SS_res = sum((yfits2-yfits).^2);
+    SS_tot = sum((yfits2-mean(yfits2)).^2);
+    Rsquared = 1-SS_res/SS_tot;
+    
+    SetLabel = AllSetInfo.SetLabels{exp_index};
+    SetLabel2 = AllSetInfo.SetLabels{exp_index2};
+    DubuisTimeRange = xfits_control;
+    colorsDubuisTimes = hsv(length(DubuisTimeRange)); % Colormap "jet" is another option
+    FractonalDubuisTimeRange = DubuisTimeRange/max(DubuisTimeRange);
+    BinsToFit = zeros(NChannels, NumAPbins, 'logical');
+    BinsToFit(2,9:33) = true;
+    BinsToFit(3,5:13) = true;
+    BinsToFit(4,22:37) = true;
+    BinsToFit(5,5:21) = true;
+    
+    
+    close all
+    DeltaFCFixCorrectedFig =figure(1);
+    set(DeltaFCFixCorrectedFig,'units', 'normalized', 'position',[0.05, 0.05, .6, .6]);
+    set(gcf,'color','w');
+    DeltaFCAx = axes(DeltaFCFixCorrectedFig);
+    map = colormap(colorsDubuisTimes);
+    h = colorbar;
+    % %set(h, 'ylim', [min(Prefix_temp_obs) max(Prefix_temp_obs)])
+    
+    colorTitleHandle = get(h,'Title');
+    titleString = '\del (\mum)';
+    titleString = 'time (min)';
+    set(colorTitleHandle ,'String',titleString);
+    h.Ticks =  FractonalDubuisTimeRange(1:50:701)+0.5*(FractonalDubuisTimeRange(2)-FractonalDubuisTimeRange(1)); %Create 8 ticks from zero to 1
+    h.TickLabels = {'0.0', '5.0','10.0','15.0','20.0','25.0', '30.0', '35.0', '40.0','45.0','50.0','55.0', '60.0','65.0', '70.0'};
+    hold on
+    for plot_index = 1:20:length(x_plot)
+        scatter(yfits(plot_index),yfits2(plot_index),...
+            75, 'MarkerFaceColor', colorsDubuisTimes(x_plot(plot_index),:),...
+            'MarkerEdgeColor', colorsDubuisTimes(x_plot(plot_index),:));
         hold on
-        for plot_index = 1:5:length(x_plot)
-            scatter(yfits(plot_index),yfits2(plot_index),...
-                75, 'MarkerFaceColor', colorsDubuisTimes(x_plot(plot_index),:),...
-                'MarkerEdgeColor', colorsDubuisTimes(x_plot(plot_index),:));
-            hold on
-        end
-        
-        ymax = max([max(yfits),max(yfits2)]) *1.1;
-        plot([0 ymax], [0 ymax], 'k', 'LineWidth', 2.0);
-        
-        
-        grid on
-        hold off
-        if AllSetInfo.Replicates(exp_index) ~= 0
-            xLabel = [num2str(AllSetInfo.Temperatures(exp_index)), '°C Replicate ', num2str(AllSetInfo.Replicates(exp_index)),' Test Set'];
-        else
-            xLabel = [num2str(AllSetInfo.Temperatures(exp_index)), '°C Flipped Stain Test Set'];
-        end
-        xlabel(xLabel, 'FontSize', 16)
-        
-        if AllSetInfo.Replicates(exp_index2) ~= 0
-            yLabel = [num2str(AllSetInfo.Temperatures(exp_index2)), '°C Replicate ', num2str(AllSetInfo.Replicates(exp_index2)),' Test Set'];
-        else
-            yLabel = [num2str(AllSetInfo.Temperatures(exp_index2)), '°C Flipped Stain Test Set'];
-        end
-        ylabel(yLabel, 'FontSize', 16)
-        %xlabel('\delta_{FC} (\mum)', 'FontSize', 16)
-        xlim([0, min([ymax, 150])])
-        
-        title(DeltaFCAx, {['Master Profile ', num2str(prof_index),', R^2: ',num2str(round(Rsquared, 3))],['Control Scaling  ', ChannelNames{ch_index}, ' (AU)']}, 'FontSize', 18);
-        
-        ylim([0, min([ymax, 150])])
-        
-        DeltaFCAx.YAxis.FontSize = 16;
-        DeltaFCAx.XAxis.FontSize = 16;
-        
-        %
-        
-        
-        DeltaFCAx.FontSize = 16;
-        
-        %outstring = ['T', strrep(num2str(AllSetInfo.Temperatures(i)), '.', '_'),'CRep', num2str(AllSetInfo.Replicates(i)), 'test','_'];
-        outpath = [AllSetsProfFigPath, filesep,'Set1Comps' , filesep, SetLabel, '_Test_',SetLabel2,'_Test_SlideRescaledMaster',num2str(prof_index),'_ControlScaling_',ChannelNames{ch_index}, '_DubuisColored.png'];
-        saveas(DeltaFCFixCorrectedFig,outpath);
     end
+    
+    ymax = max([max(yfits),max(yfits2)]) *1.1;
+    plot([0 ymax], [0 ymax], 'k', 'LineWidth', 2.0);
+    
+    
+    grid on
+    hold off
+    if AllSetInfo.Replicates(exp_index) ~= 0
+        xLabel = [num2str(AllSetInfo.Temperatures(exp_index)), '°C Replicate ', num2str(AllSetInfo.Replicates(exp_index)),' Test Set'];
+    else
+        xLabel = [num2str(AllSetInfo.Temperatures(exp_index)), '°C Flipped Stain Test Set'];
+    end
+    xlabel(xLabel, 'FontSize', 16)
+    
+    if AllSetInfo.Replicates(exp_index2) ~= 0
+        yLabel = [num2str(AllSetInfo.Temperatures(exp_index2)), '°C Replicate ', num2str(AllSetInfo.Replicates(exp_index2)),' Test Set'];
+    else
+        yLabel = [num2str(AllSetInfo.Temperatures(exp_index2)), '°C Flipped Stain Test Set'];
+    end
+    ylabel(yLabel, 'FontSize', 16)
+    %xlabel('\delta_{FC} (\mum)', 'FontSize', 16)
+    xlim([0, min([ymax, 150])])
+    
+    title(DeltaFCAx, {['Rep2 Master Profile, R^2: ',num2str(round(Rsquared, 3))],['Test Scaling  ', ChannelNames{ch_index}, ' (AU)']}, 'FontSize', 18);
+    
+    ylim([0, min([ymax, 150])])
+    
+    DeltaFCAx.YAxis.FontSize = 16;
+    DeltaFCAx.XAxis.FontSize = 16;
+    
+    %
+    
+    
+    DeltaFCAx.FontSize = 16;
+    if ~isdir([AllSetsProfFigPath, filesep,'Rep2Comps'])
+        mkdir([AllSetsProfFigPath, filesep,'Rep2Comps' ])
+    end
+    %outstring = ['T', strrep(num2str(AllSetInfo.Temperatures(i)), '.', '_'),'CRep', num2str(AllSetInfo.Replicates(i)), 'test','_'];
+    outpath = [AllSetsProfFigPath, filesep,'Rep2Comps' , filesep, SetLabel, '_Test_',SetLabel2,'_Test_SlideRescaled_Rep2Scaling_',ChannelNames{ch_index}, '_DubuisColored.png'];
+    saveas(DeltaFCFixCorrectedFig,outpath);
 end
+
 
 
 
@@ -819,7 +768,7 @@ for temp = [25, 27.5, 22.5, 20, 17.5]
         end
     end
 end
-%% Plot Bootstrapped unscaled profiles 
+%% Plot Bootstrapped unscaled profiles
 
 
 for temp = [25, 27.5, 22.5, 20, 17.5]
@@ -858,7 +807,7 @@ for temp = [25, 27.5, 22.5, 20, 17.5]
         x_sample_control{1} = CompiledEmbryos.DubuisEmbryoTimes;
         UseTF_control{1} = CompiledEmbryos.ControlSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(x_sample_control{1});
         x_sample_control{1} =x_sample_control{1}(UseTF_control{1});
-        ys_control{1} =  CompiledEmbryos.FitSlideRescaledDorsalAvgAPProfiles(UseTF_control{1},:,ch_index); 
+        ys_control{1} =  CompiledEmbryos.FitSlideRescaledDorsalAvgAPProfiles(UseTF_control{1},:,ch_index);
         BadTF_control{1} =  sum(isnan(ys_control{1}), 2).' >min( sum(isnan(ys_control{1}), 2).');
         x_sample_control{1} = x_sample_control{1}(~BadTF_control{1});
         ys_control{1} = ys_control{1}(~BadTF_control{1},:);
@@ -880,7 +829,7 @@ for temp = [25, 27.5, 22.5, 20, 17.5]
         x_sample_control{2} = CompiledEmbryos2.DubuisEmbryoTimes;
         UseTF_control{2} = CompiledEmbryos2.ControlSetEmbryos & CompiledEmbryos2.IsNC14 & ~isnan(x_sample_control{2});
         x_sample_control{2} =x_sample_control{2}(UseTF_control{2});
-        ys_control{2} =  CompiledEmbryos2.FitSlideRescaledDorsalAvgAPProfiles(UseTF_control{2},:,ch_index); 
+        ys_control{2} =  CompiledEmbryos2.FitSlideRescaledDorsalAvgAPProfiles(UseTF_control{2},:,ch_index);
         BadTF_control{2}=  sum(isnan(ys_control{2}), 2).' >min( sum(isnan(ys_control{2}), 2).');
         x_sample_control{2} = x_sample_control{2}(~BadTF_control{2});
         ys_control{2} = ys_control{2}(~BadTF_control{2},:);
@@ -902,7 +851,7 @@ for temp = [25, 27.5, 22.5, 20, 17.5]
         x_sample_control{3} = CompiledEmbryos3.DubuisEmbryoTimes;
         UseTF_control{3} = CompiledEmbryos3.ControlSetEmbryos & CompiledEmbryos3.IsNC14 & ~isnan(x_sample_control{3});
         x_sample_control{3} =x_sample_control{3}(UseTF_control{3});
-        ys_control{3} =  CompiledEmbryos3.FitSlideRescaledDorsalAvgAPProfiles(UseTF_control{3},:,ch_index); 
+        ys_control{3} =  CompiledEmbryos3.FitSlideRescaledDorsalAvgAPProfiles(UseTF_control{3},:,ch_index);
         BadTF_control{3}=  sum(isnan(ys_control{3}), 2).' >min( sum(isnan(ys_control{3}), 2).');
         x_sample_control{3} = x_sample_control{3}(~BadTF_control{3});
         ys_control{3} = ys_control{3}(~BadTF_control{3},:);
@@ -916,15 +865,15 @@ for temp = [25, 27.5, 22.5, 20, 17.5]
                 max( yfits{1}(:,APindex)), max( yfits{2}(:,APindex)), max( yfits{3}(:,APindex)),...
                 max(ys_control{1}(:,APindex)), max(ys_control{2}(:,APindex)), max(ys_control{3}(:,APindex)),...
                 max(ys{1}(:,APindex)),max(ys{2}(:,APindex)),max(ys{3}(:,APindex))])*1.1;
-           
+            
             DeltaFCAx = cell(2,3);
             close all
             DeltaFCFixCorrectedFig =figure(1);
             set(DeltaFCFixCorrectedFig,'units', 'normalized', 'position',[0.01, 0.05, .8, .8]);
             set(gcf,'color','w');
             for sub_index = 1:3
-                 ymax = max([max(ys_control{sub_index}(:, APindex)), max(yfits_control{sub_index}(:, APindex)),...
-                     max(yfits{sub_index}(:, APindex)),  max(ys{sub_index}(:, APindex))])*1.1;
+                ymax = max([max(ys_control{sub_index}(:, APindex)), max(yfits_control{sub_index}(:, APindex)),...
+                    max(yfits{sub_index}(:, APindex)),  max(ys{sub_index}(:, APindex))])*1.1;
                 
                 DeltaFCAx{1,sub_index} = subplot(2, 3, sub_index);
                 scatter(x_sample{sub_index}, ys{sub_index}(:,APindex),...
@@ -996,6 +945,7 @@ for temp = [25, 27.5, 22.5, 20, 17.5]
             outpath2 = [AllSetsProfFigPath, filesep, 'BootstrappedProfiles2', filesep, 'FitSlideRescaledAvgAP', filesep,...
                 ChannelNames{ch_index}, '_T', strrep(num2str(temp), '.', '_'), 'C_AP',num2str(APindex), '.png' ]
             saveas(DeltaFCFixCorrectedFig,outpath2);
+            
         end
     end
 end

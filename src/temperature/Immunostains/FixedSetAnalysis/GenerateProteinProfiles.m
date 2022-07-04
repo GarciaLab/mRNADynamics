@@ -1,8 +1,8 @@
-function  [AllCompiledEmbryos, Universal_Imins, Universal_Imaxs, Imins, Imaxs]   = GenerateProteinProfiles(version)
+function  [AllCompiledEmbryos]   = GenerateProteinProfiles(version)
 %%
 
 if ~exist('version', 'var')
-    version = 1;
+    version = 11;
 end
 SizeDataPath = 'S:/Gabriella/Dropbox/EmbryoSizeMeasurements/EmbryoSizeData.mat';
 AllSetsProfFigPath = 'S:/Gabriella/Dropbox/ProteinProfiles/Figures/';
@@ -100,33 +100,66 @@ end
 
 for exp_index = 1:NumSets
     AllCompiledEmbryos{exp_index} = AddFitBicoidProfiles(AllCompiledEmbryos{exp_index} , exp_index);
+    AllCompiledEmbryos{exp_index} = AddNonBicoidZeroCorrection(AllCompiledEmbryos{exp_index} , exp_index);
 end
 %%
 for exp_index = 1:NumSets
     disp(['i = ', num2str(exp_index)])
     AllCompiledEmbryos{exp_index} = AddBootstrappedProfiles(AllCompiledEmbryos{exp_index} , exp_index);
 end
+AllCompiledEmbryos = FitScalingFactorsToTestProfiles(AllCompiledEmbryos);
 
+for exp_index = 1:NumSets
+    disp(['i = ', num2str(exp_index)])
+    AllCompiledEmbryos{exp_index} = AddTestMasterFitRescaledProfiles(AllCompiledEmbryos{exp_index} , exp_index);
+end
+
+
+for exp_index = 1:NumSets
+    disp(['i = ', num2str(exp_index)])
+    AllCompiledEmbryos{exp_index} = AddBootstrappedTestFitProfiles(AllCompiledEmbryos{exp_index} , exp_index);
+end
+
+
+
+
+AllCompiledEmbryos = FitComboScalingFactorsToMasterProfiles(AllCompiledEmbryos);
+
+for exp_index = 1:NumSets
+    AllCompiledEmbryos{exp_index}  = AddUniversalScaledTestMasterFitRescaledProfiles(AllCompiledEmbryos{exp_index}, exp_index);
+end
+%%
+parfor exp_index = 1:NumSets
+    %disp(['Embryo Index = ', num2str(exp_index)])
+    tic
+    AllCompiledEmbryos{exp_index}  =  AddBootstrappedUnivScaledTestFitProfiles(AllCompiledEmbryos{exp_index} , exp_index);
+    toc
+end
+%%
+if ~isdir(AllCompiledPath)
+    mkdir(AllCompiledPath)
+end
+save([AllCompiledPath, 'AllCompiledEmbryos.Mat'], 'AllCompiledEmbryos');%,
 
 
 %%
-% 
-for exp_index = 1:NumSets
-    disp(['i = ', num2str(exp_index)])
-    SetLabel = AllSetInfo.SetLabels{exp_index};
-    PlotLabel = AllSetInfo.PlotLabels{exp_index};
-    SetPrefixes = AllSetInfo.Prefixes{exp_index};
-    SetIsFlipped = AllSetInfo.Flipped(exp_index);
-    ProfFigPath = [AllSetsProfFigPath, SetLabel];
-    OutEmbryoPath = [AllSetsCombinedEmbryosPath, SetLabel];
-    CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
-    AllCompiledEmbryos{exp_index} = FitControlScalingFactorsToMasterProfiles(AllCompiledEmbryos{exp_index}, exp_index);
-    AllCompiledEmbryos{exp_index} = AddUniversalScalingFactorsToMasterProfiles(AllCompiledEmbryos{exp_index}  , exp_index);
-    AllCompiledEmbryos{exp_index} = AddBootstrappedFitProfiles(AllCompiledEmbryos{exp_index}  , exp_index);
-    CompiledEmbryos = AllCompiledEmbryos{exp_index} ;
-    CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
-    save(CEoutpath, 'CompiledEmbryos');
-end
+% % 
+% for exp_index = 1:NumSets
+%     disp(['i = ', num2str(exp_index)])
+%     SetLabel = AllSetInfo.SetLabels{exp_index};
+%     PlotLabel = AllSetInfo.PlotLabels{exp_index};
+%     SetPrefixes = AllSetInfo.Prefixes{exp_index};
+%     SetIsFlipped = AllSetInfo.Flipped(exp_index);
+%     ProfFigPath = [AllSetsProfFigPath, SetLabel];
+%     OutEmbryoPath = [AllSetsCombinedEmbryosPath, SetLabel];
+%     CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
+%     AllCompiledEmbryos{exp_index} = FitScalingFactorsToMasterProfiles(AllCompiledEmbryos{exp_index}, exp_index);
+%     %AllCompiledEmbryos{exp_index} = AddUniversalScalingFactorsToMasterProfiles(AllCompiledEmbryos{exp_index}  , exp_index);
+%     AllCompiledEmbryos{exp_index} = AddBootstrappedFitProfiles(AllCompiledEmbryos{exp_index}  , exp_index);
+%     CompiledEmbryos = AllCompiledEmbryos{exp_index} ;
+%     CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
+%     save(CEoutpath, 'CompiledEmbryos');
+% end
 
 % TStarts = 0:10:50;
 % TEnds = 10:10:60;
