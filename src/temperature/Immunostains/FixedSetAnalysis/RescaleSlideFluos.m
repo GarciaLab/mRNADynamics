@@ -10,6 +10,7 @@ NChannels = size(CompiledEmbryos.DorsalAvgAPProfiles, 3);
 % find peak between 0.525 and 0.7
 % KnirpsBackground < 0.5 for T25C Flipped & slide_index = 1
 
+f = @(b,x) b(1).*x + b(2);
 AllEmbryos = 1:NEmbryos;
 SlideIDs = unique(CompiledEmbryos.SlideIDs);
 NSlides = length(SlideIDs);
@@ -49,185 +50,254 @@ CompiledEmbryos.SlideRescalingIntercepts(1,:) = 0;
 CompiledEmbryos.SlideRescalingInterceptSEs(1,:) = 0;
 
 %%
-AllDeltaValidProfilesTestTF = CompiledEmbryos.IsNC14 &...
-    CompiledEmbryos.TestSetEmbryos & ~isnan([CompiledEmbryos.FixCorrectedDeltaFC_um.mean(:)].');% &...
-AllDeltaValidProfilesControlTF = CompiledEmbryos.IsNC14 &...
-    CompiledEmbryos.ControlSetEmbryos & ~isnan([CompiledEmbryos.FixCorrectedDeltaFC_um.mean(:)].');% &...
 
-x = 0:1:45;
-NumTbins = length(x);
+xfits = 0:1:70;
+Nxfits = length(xfits);
+min_2sigma_points = 3;
+counts_above_limit = 1;
+counts_below_limit = 1;
+sigma = 5;
+window_multiplier = 4;
+NumBootstrappedFits = 200;
+NumPoints = 100;
+NumAPbins = size(CompiledEmbryos.DorsalAvgAPProfiles, 2);
+NChannels =size(CompiledEmbryos.DorsalAvgAPProfiles, 3);
 
-deltafc_binwidth = 2.5;
-DorsalProfiles = CompiledEmbryos.DorsalAvgAPProfiles;
-WindowedProfiles.DeltaFC = {};
-WindowedProfiles.DeltaFC.BinWidth = deltafc_binwidth;
-WindowedProfiles.DeltaFC.x = x;
-WindowedProfiles.DeltaFC.Test = {};
-WindowedProfiles.DeltaFC.Test.mean = NaN(NumTbins, NumAPbins, NChannels, NSlides);
-WindowedProfiles.DeltaFC.Test.std = NaN(NumTbins, NumAPbins, NChannels, NSlides);
-WindowedProfiles.DeltaFC.Test.se = NaN(NumTbins, NumAPbins, NChannels, NSlides);
-WindowedProfiles.DeltaFC.Test.count = zeros(NumTbins, NumAPbins, NChannels, NSlides);
-WindowedProfiles.DeltaFC.Control = {};
-WindowedProfiles.DeltaFC.Control.mean = NaN(NumTbins, NumAPbins, NChannels, NSlides);
-WindowedProfiles.DeltaFC.Control.std = NaN(NumTbins, NumAPbins, NChannels, NSlides);
-WindowedProfiles.DeltaFC.Control.se = NaN(NumTbins, NumAPbins, NChannels, NSlides);
-WindowedProfiles.DeltaFC.Control.count = zeros(NumTbins, NumAPbins, NChannels, NSlides);
 
-for slide_index = 1:NSlides
-    for i = 1:NumTbins
-        TFtimeBin = CompiledEmbryos.SlideIDs == slide_index & [CompiledEmbryos.FixCorrectedDeltaFC_um.mean(:)].' >= x(i)-deltafc_binwidth/2 & [CompiledEmbryos.FixCorrectedDeltaFC_um.mean(:)].'< x(i)+deltafc_binwidth/2;
-        TFtestBin = TFtimeBin & AllDeltaValidProfilesTestTF;
-        TFcontrolBin = TFtimeBin & AllDeltaValidProfilesControlTF;
-        for ch_index = 2:NChannels
-            if sum(TFtestBin) >= 1
-                for ap_index = 1:NumAPbins
-                    TFGoodAP = ~isnan(DorsalProfiles(TFtestBin,ap_index,ch_index));
-                    if sum(TFGoodAP) > 1
-                        WindowedProfiles.DeltaFC.Test.mean(i,ap_index,ch_index, slide_index) = mean(DorsalProfiles(TFtestBin,ap_index,ch_index), 'omitnan');
-                        WindowedProfiles.DeltaFC.Test.std(i,ap_index,ch_index, slide_index) = std(DorsalProfiles(TFtestBin,ap_index,ch_index), 'omitnan');
-                        WindowedProfiles.DeltaFC.Test.count(i,ap_index,ch_index, slide_index) = sum(~isnan(DorsalProfiles(TFtestBin,ap_index,ch_index)));
-                        WindowedProfiles.DeltaFC.Test.se(i,ap_index,ch_index, slide_index) = WindowedProfiles.DeltaFC.Test.std(i,ap_index,ch_index, slide_index)/...
-                            sqrt(WindowedProfiles.DeltaFC.Test.count(i,ap_index,ch_index, slide_index));
-                    elseif sum(TFGoodAP)  == 1
-                        TestProfs = DorsalProfiles(TFtestBin,ap_index,ch_index);
-                        CompiledEmbryos.WindowedProfiles.DeltaFC.Test.mean(i,ap_index,ch_index, slide_index) = TestProfs(TFGoodAP);
-                        CompiledEmbryos.WindowedProfiles.DeltaFC.Test.std(i,ap_index,ch_index, slide_index) = NaN;
-                        CompiledEmbryos.WindowedProfiles.DeltaFC.Test.count(i,ap_index,ch_index, slide_index) = 1;
-                        CompiledEmbryos.WindowedProfiles.DeltaFC.Test.se(i,ap_index,ch_index, slide_index) = NaN;
-                    end
-                end
+NValidPoints = NaN(NChannels, NSlides);
+
+
+%%
+for ch_index = 3
+    for slide_index = 1:NSlides
+        UseTF = CompiledEmbryos.TestSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(CompiledEmbryos.DubuisEmbryoTimes) & (CompiledEmbryos.SlideIDs == slide_index);
+        x_sample = CompiledEmbryos.DubuisEmbryoTimes(UseTF);
+        ys = CompiledEmbryos.DorsalAvgAPProfiles(UseTF, :,ch_index);
+        BadTF =  sum(isnan(ys), 2).' >NumAPbins/2;
+        x_sample = x_sample(~BadTF);
+        ys = ys(~BadTF,:);
+        
+        
+        
+        [x_sample, sort_order] = sort(x_sample);
+        ys = ys(sort_order,:);
+        
+        SmoothedProfiles = NaN(Nxfits, NumAPbins, NumBootstrappedFits);
+        
+        DiffMat = xfits.'-x_sample;
+        GaussianWeights = GetGaussianWeightMat(xfits, x_sample, sigma, window_multiplier*sigma);
+        counts = zeros(1, Nxfits);
+        counts_above = zeros(1,Nxfits);
+        counts_below = zeros(1, Nxfits);
+        for x_index = 1:Nxfits
+            MatchedPoints = find(GaussianWeights(x_index,:)> 0);
+            Num2SigmaPoints = sum(DiffMat(x_index,MatchedPoints) > -2*sigma & DiffMat(x_index,MatchedPoints) < 2*sigma );
+            
+            if Num2SigmaPoints < min_2sigma_points
+                GaussianWeights(x_index,:) = 0;
+                continue
             end
             
-            if sum(TFcontrolBin) >= 1
-                for ap_index = 1:NumAPbins
-                    TFGoodAP = ~isnan(DorsalProfiles(TFcontrolBin,ap_index,ch_index));
-                    if sum(TFGoodAP) > 1
-                        WindowedProfiles.DeltaFC.Control.mean(i,ap_index,ch_index, slide_index) = mean(DorsalProfiles(TFcontrolBin,ap_index,ch_index), 'omitnan');
-                        WindowedProfiles.DeltaFC.Control.std(i,ap_index,ch_index, slide_index) = std(DorsalProfiles(TFcontrolBin,ap_index,ch_index), 'omitnan');
-                        WindowedProfiles.DeltaFC.Control.count(i,ap_index,ch_index, slide_index) = sum(~isnan(DorsalProfiles(TFcontrolBin,ap_index,ch_index)));
-                        WindowedProfiles.DeltaFC.Control.se(i,ap_index,ch_index, slide_index) = WindowedProfiles.DeltaFC.Control.std(i,ap_index,ch_index)/...
-                            sqrt(WindowedProfiles.DeltaFC.Control.count(i,ap_index,ch_index, slide_index));
-                    elseif sum(TFGoodAP)  == 1
-                        ControlProfs = DorsalProfiles(TFcontrolBin,ap_index,ch_index);
-                        WindowedProfiles.DeltaFC.Control.mean(i,ap_index,ch_index, slide_index) = ControlProfs(TFGoodAP);
-                        WindowedProfiles.DeltaFC.Control.std(i,ap_index,ch_index, slide_index) = NaN;
-                        WindowedProfiles.DeltaFC.Control.count(i,ap_index,ch_index, slide_index) = 1;
-                        WindowedProfiles.DeltaFC.Control.se(i,ap_index,ch_index, slide_index) = NaN;
-                    end
-                end
+            counts(x_index) = Num2SigmaPoints;
+            MatchedPoints = find(GaussianWeights(x_index,:)> 0);
+            
+            counts_above(x_index) = sum(DiffMat(x_index,MatchedPoints) > 0 & DiffMat(x_index,MatchedPoints) < 2*sigma );
+            counts_below(x_index) = sum(DiffMat(x_index,MatchedPoints) < 0 & DiffMat(x_index,MatchedPoints) > -2*sigma );
+            
+            if counts_above(x_index) < counts_above_limit
+                GaussianWeights(x_index,:) = 0;
             end
+            
+            if counts_below(x_index) < counts_below_limit
+                GaussianWeights(x_index,:) = 0;
+            end
+            
         end
+        
+        
+        ValidCountTFs = (counts >= min_2sigma_points & counts_above >= counts_above_limit & counts_below >= counts_below_limit & xfits >= min(x_sample)+sigma/2 & xfits <= max(x_sample) - sigma/2);
+        x_indices = 1:Nxfits;
+        ValidXfits = x_indices(ValidCountTFs);
+        NValidXfits = length(ValidXfits);
+        NValidPoints(ch_index, slide_index) = NValidXfits;
     end
 end
-%%
-AllSlides = 1:NSlides;
-CountDims = [size(WindowedProfiles.DeltaFC.Control.count, 1),...
-    size(WindowedProfiles.DeltaFC.Control.count, 2), NSlides];
-counts = zeros([size(WindowedProfiles.DeltaFC.Control.count) NSlides]);
+ref_slide = find(NValidPoints(3,:) == max(NValidPoints(3,:)));
 
-ControlledProfiles = NaN([size(WindowedProfiles.DeltaFC.Control.count) NSlides]);
-for i = AllSlides
-    counts(:,:,:,i) =WindowedProfiles.DeltaFC.Control.count(:,:,:, i);
-    ControlledProfiles(:,:,:,i) = WindowedProfiles.DeltaFC.Control.mean(:,:,:, i);
+%% Bootstrapping the FitSlideRescaledDorsalAvgAPProfiles for the Test Set
+
+xfits = 0:0.1:70;
+Nxfits = length(xfits);
+if ~isfield(CompiledEmbryos, 'BootstrappedProfiles')
+    CompiledEmbryos.BootstrappedProfiles = {};
+end
+if ~isfield(CompiledEmbryos.BootstrappedProfiles, 'SlideFitProfiles')
+    CompiledEmbryos.BootstrappedProfiles.SlideFitProfiles = {};
+end
+if ~isfield(CompiledEmbryos.BootstrappedProfiles.SlideFitProfiles, 'Test')
+    CompiledEmbryos.BootstrappedProfiles.SlideFitProfiles.Test = {};
 end
 
-FitInfo = cell(NSlides, NSlides, NChannels);
-ScalingFactors = NaN(NSlides, NSlides, NChannels);
-ScalingSEs = NaN(NSlides, NSlides, NChannels);
-ScalingIntercepts = NaN(NSlides, NSlides, NChannels);
-ScalingInterceptSEs =NaN(NSlides, NSlides, NChannels);
-OverlapIndices = cell(NSlides, NSlides, NChannels);
-
-for i = 1:(NSlides-1)
-    for j = i+1:NSlides
-        for ch_index = 2:NChannels
+CompiledEmbryos.BootstrappedProfiles.SlideFitProfiles.Test.mean = NaN(Nxfits, NumAPbins, NChannels, NSlides);
+CompiledEmbryos.BootstrappedProfiles.SlideFitProfiles.Test.se = NaN(Nxfits, NumAPbins, NChannels, NSlides);
+CompiledEmbryos.BootstrappedProfiles.SlideFitProfiles.Test.counts = NaN(Nxfits,NChannels, NSlides);
+CompiledEmbryos.BootstrappedProfiles.SlideFitProfiles.Test.counts_above = NaN(Nxfits,NChannels, NSlides);
+CompiledEmbryos.BootstrappedProfiles.SlideFitProfiles.Test.counts_below = NaN(Nxfits,NChannels, NSlides);
+%%
+for ch_index = [2 3 4 5]
+    for slide_index = ref_slide
+        UseTF = CompiledEmbryos.TestSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(CompiledEmbryos.DubuisEmbryoTimes) & (CompiledEmbryos.SlideIDs == slide_index);
+        x_sample = CompiledEmbryos.DubuisEmbryoTimes(UseTF);
+        ys = CompiledEmbryos.DorsalAvgAPProfiles(UseTF, :,ch_index);
+        BadTF =  sum(isnan(ys), 2).' > NumAPbins/2;
+        x_sample = x_sample(~BadTF);
+        ys = ys(~BadTF,:);
+        
+        
+        
+        [x_sample, sort_order] = sort(x_sample);
+        ys = ys(sort_order,:);
+        
+        SmoothedProfiles = NaN(Nxfits, NumAPbins, NumBootstrappedFits);
+        
+        DiffMat = xfits.'-x_sample;
+        GaussianWeights = GetGaussianWeightMat(xfits, x_sample, sigma, window_multiplier*sigma);
+        counts = zeros(1, Nxfits);
+        counts_above = zeros(1,Nxfits);
+        counts_below = zeros(1, Nxfits);
+        for x_index = 1:Nxfits
+            MatchedPoints = find(GaussianWeights(x_index,:)> 0);
+            Num2SigmaPoints = sum(DiffMat(x_index,MatchedPoints) > -2*sigma & DiffMat(x_index,MatchedPoints) < 2*sigma );
             
-            OverlapIndices{j, i, ch_index} = (counts(:,ControlChannelBackgroundBins(ch_index, :),ch_index,i) >= 1) &   (counts(:,ControlChannelBackgroundBins(ch_index, :),ch_index,j) >= 1);
+            if Num2SigmaPoints < min_2sigma_points
+                GaussianWeights(x_index,:) = 0;
+                continue
+            end
             
+            counts(x_index) = Num2SigmaPoints;
+            MatchedPoints = find(GaussianWeights(x_index,:)> 0);
             
-            if sum(sum((OverlapIndices{j, i, ch_index} )) >= 1) >= 5
-                
-                FitSet1 = ControlledProfiles(:,ControlChannelBackgroundBins(ch_index, :),ch_index,i);
-                FitSet1 = FitSet1( OverlapIndices{j, i, ch_index}).';
-                
-                FitSet2 = ControlledProfiles(:,ControlChannelBackgroundBins(ch_index, :),ch_index,j);
-                FitSet2 = FitSet2( OverlapIndices{j, i, ch_index}).';
-                
-                dlm = fitlm(FitSet2, FitSet1);%,'Weights',  1./(FitSD1.^2));
-                FitInfo{j, i, ch_index} = dlm;
-                ScalingFactors(j, i, ch_index) = dlm.Coefficients.Estimate(2);
-                ScalingSEs(j, i, ch_index) = dlm.Coefficients.SE(2);
-                ScalingIntercepts(j, i, ch_index) = dlm.Coefficients.Estimate(1);
-                ScalingInterceptSEs(j, i, ch_index) = dlm.Coefficients.SE(1);
-                
+            counts_above(x_index) = sum(DiffMat(x_index,MatchedPoints) > 0 & DiffMat(x_index,MatchedPoints) < 2*sigma );
+            counts_below(x_index) = sum(DiffMat(x_index,MatchedPoints) < 0 & DiffMat(x_index,MatchedPoints) > -2*sigma );
+            
+            if counts_above(x_index) < counts_above_limit
+                GaussianWeights(x_index,:) = 0;
+            end
+            
+            if counts_below(x_index) < counts_below_limit
+                GaussianWeights(x_index,:) = 0;
+            end
+            
+        end
+        
+        
+        ValidCountTFs = (counts >= min_2sigma_points & counts_above >= counts_above_limit & counts_below >= counts_below_limit & xfits >= min(x_sample)+sigma/2 & xfits <= max(x_sample) - sigma/2);
+        x_indices = 1:Nxfits;
+        ValidXfits = x_indices(ValidCountTFs);
+        NValidXfits = length(ValidXfits);
+        NValidPoints(ch_index, slide_index) = NValidXfits;
+        
+        for j = 1:NValidXfits
+            WindowWidthLimits = [xfits(ValidXfits(j))-( min(x_sample)), max(x_sample)- xfits(ValidXfits(j))];
+            for rep = 1:NumBootstrappedFits*2
+                r1  = (rand(NumPoints, 1)*(2*window_multiplier*sigma)-window_multiplier*sigma).';
+                Deltas = DiffMat(ValidXfits(j),:);
+                Deltas(Deltas > window_multiplier*sigma | Deltas < -window_multiplier*sigma) = NaN;
+                ind = NaN(1, NumPoints);
+                for k = 1:NumPoints
+                    ind(k) = find(min(abs(Deltas - r1(k))) == abs(Deltas - r1(k)));
+                end
+                SmoothedProfiles(ValidXfits(j),:,rep) =  GaussianWeights(ValidXfits(j),ind)*ys(ind, :)/(sum(GaussianWeights(ValidXfits(j),ind)));
             end
         end
+        
+        
+        MeanSmoothedProfiles = mean(SmoothedProfiles, 3, 'omitnan');
+        SmoothedProfileSEs = std(SmoothedProfiles,0,  3, 'omitnan')/sqrt(NumBootstrappedFits);
+        
+        SmoothedProfileSEs(MeanSmoothedProfiles  == 0) = NaN;
+        MeanSmoothedProfiles(MeanSmoothedProfiles  == 0) = NaN;
+        %close all
+        
+        CompiledEmbryos.BootstrappedProfiles.SlideFitProfiles.x = xfits;
+        CompiledEmbryos.BootstrappedProfiles.SlideFitProfiles.Test.mean(:,:,ch_index, slide_index) = MeanSmoothedProfiles;
+        CompiledEmbryos.BootstrappedProfiles.SlideFitProfiles.Test.se(:,:,ch_index, slide_index)  = SmoothedProfileSEs;
+        CompiledEmbryos.BootstrappedProfiles.SlideFitProfiles.Test.counts(:,ch_index,slide_index) = counts;
+        CompiledEmbryos.BootstrappedProfiles.SlideFitProfiles.Test.counts_above(:,ch_index,slide_index)  = counts_above;
+        CompiledEmbryos.BootstrappedProfiles.SlideFitProfiles.Test.counts_below(:,ch_index,slide_index)  = counts_above;
         
     end
 end
 %%
-for ch_index = 2:NChannels
-    for i = 1:(NSlides-1)
-        for j = i+1:NSlides
-            
-            ScalingFactors(i, j, ch_index) = 1/ScalingFactors(j, i, ch_index);
-            ScalingSEs(i, j, ch_index) = ScalingSEs(j, i, ch_index)/(ScalingFactors(j, i, ch_index)^2);
-            ScalingIntercepts(i, j, ch_index) = -ScalingIntercepts(j, i, ch_index) /ScalingFactors(j, i, ch_index);
-            ScalingInterceptSEs(i, j, ch_index) = sqrt(ScalingInterceptSEs(j, i, ch_index)^2+ScalingIntercepts(i, j, ch_index)^2*ScalingInterceptSEs(j, i, ch_index)^2)/ScalingFactors(j, i, ch_index);
-            
+CompiledEmbryos.SlideRescalingFactors(ref_slide,:) = 1;
+CompiledEmbryos.SlideRescalingSEs(ref_slide,:) = 0;
+CompiledEmbryos.SlideRescalingIntercepts(ref_slide,:) = 0;
+CompiledEmbryos.SlideRescalingInterceptSEs(ref_slide,:) = 0;
+AllSlides = 1:NSlides;
+SlidesToFit = AllSlides(AllSlides ~= ref_slide);
+for slide_index = SlidesToFit
+    for ch_index = 2:5
+        UseTF = CompiledEmbryos.TestSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(CompiledEmbryos.DubuisEmbryoTimes) & (CompiledEmbryos.SlideIDs == slide_index);
+        x_sample = round(CompiledEmbryos.DubuisEmbryoTimes(UseTF), 1);
+        ys = CompiledEmbryos.DorsalAvgAPProfiles(UseTF, :,ch_index);
+        BadTF =  sum(isnan(ys), 2).' > NumAPbins/2;
+        x_sample = x_sample(~BadTF);
+        ys = ys(~BadTF,:);
+        
+        
+        
+        [x_sample, sort_order] = sort(x_sample);
+        ys = ys(sort_order,:);
+        
+        y_pred = GetMasterProfileForEmbryoTimes(x_sample, CompiledEmbryos.BootstrappedProfiles.SlideFitProfiles.Test.mean(:,:,ch_index, ref_slide) , xfits);
+        
+        ys = ys(:);
+        y_pred = y_pred(:);
+        TFys = ~isnan(ys) & ~isnan(y_pred);
+        ys = ys(TFys);
+        y_pred = y_pred(TFys);
+        beta0 =[1, min(ys,[], 'all')];
+        if ~isempty(y_pred)
+            dlm = fitnlm(y_pred(:),ys(:),f,beta0);
+            CompiledEmbryos.SlideRescalingFactors(slide_index, ch_index) = 1/dlm.Coefficients.Estimate(1);
+            CompiledEmbryos.SlideRescalingIntercepts(slide_index, ch_index) = -dlm.Coefficients.Estimate(2)/dlm.Coefficients.Estimate(1);
+            CompiledEmbryos.SlideRescalingSEs(slide_index, ch_index)= dlm.Coefficients.SE(1)/(dlm.Coefficients.Estimate(1)^2);
+            CompiledEmbryos.SlideRescalingInterceptSEs(slide_index, ch_index)= sqrt(dlm.Coefficients.SE(1)^2*dlm.Coefficients.Estimate(2)^2/(dlm.Coefficients.Estimate(1)^4)+...
+                dlm.Coefficients.SE(2)^2/(dlm.Coefficients.Estimate(1)^2));
         end
+        
     end
 end
-
-%%
-for ch_index = 2:NChannels
-    for j = 2:NSlides
-        CompiledEmbryos.SlideRescalingFactors(j, ch_index) = ScalingFactors(j, 1, ch_index);
-        CompiledEmbryos.SlideRescalingSEs(j, ch_index) = ScalingSEs(j, 1, ch_index);
-        CompiledEmbryos.SlideRescalingIntercepts(j, ch_index) = ScalingIntercepts(j, 1, ch_index);
-        CompiledEmbryos.SlideRescalingInterceptSEs(j, ch_index) = ScalingInterceptSEs(j, 1, ch_index);
-    end
-    
-end
-
-
-
-
-
-
+   
 %%
 CompiledEmbryos.SlideRescaledDorsalAPProfiles = CompiledEmbryos.DorsalAPProfiles;
 CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles = CompiledEmbryos.DorsalAvgAPProfiles;
-for embryo_index = AllEmbryos
-    for ch_index = 2:NChannels
-        CompiledEmbryos.SlideRescaledDorsalAPProfiles(embryo_index,:,ch_index) =...
-            CompiledEmbryos.SlideRescalingFactors(CompiledEmbryos.SlideIDs(embryo_index), ch_index)*CompiledEmbryos.SlideRescaledDorsalAPProfiles(embryo_index,:,ch_index)+...
-            CompiledEmbryos.SlideRescalingIntercepts(CompiledEmbryos.SlideIDs(embryo_index), ch_index);
-        CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(embryo_index,:,ch_index) =...
-            CompiledEmbryos.SlideRescalingFactors(CompiledEmbryos.SlideIDs(embryo_index), ch_index)*CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(embryo_index,:,ch_index)+...
-            CompiledEmbryos.SlideRescalingIntercepts(CompiledEmbryos.SlideIDs(embryo_index), ch_index);
-%         CompiledEmbryos.SlideRescaledDorsalAPProfiles(embryo_index,:,ch_index)  = ...
-%             CompiledEmbryos.SlideRescaledDorsalAPProfiles(embryo_index,:,ch_index)  -...
-%            mean(CompiledEmbryos.SlideRescaledDorsalAPProfiles(embryo_index,MinBins(ch_index,:),ch_index), 2, 'omitnan');
-%        CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(embryo_index,:,ch_index)  = ...
-%             CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(embryo_index,:,ch_index)  -...
-%            mean(CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(embryo_index,MinBins(ch_index,:),ch_index), 2, 'omitnan');
+for ch_index = 2:5
+    for slide_index = 1:NSlides
+        CompiledEmbryos.SlideRescaledDorsalAPProfiles(CompiledEmbryos.SlideIDs == slide_index,:,ch_index) = ...
+            CompiledEmbryos.SlideRescalingFactors(slide_index, ch_index)*CompiledEmbryos.SlideRescaledDorsalAPProfiles(CompiledEmbryos.SlideIDs == slide_index,:,ch_index)+...
+            CompiledEmbryos.SlideRescalingIntercepts(slide_index, ch_index);
+        CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(CompiledEmbryos.SlideIDs == slide_index,:,ch_index) = ...
+            CompiledEmbryos.SlideRescalingFactors(slide_index, ch_index)*CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(CompiledEmbryos.SlideIDs == slide_index,:,ch_index)+...
+            CompiledEmbryos.SlideRescalingIntercepts(slide_index, ch_index);
     end
 end
+
 
 %%
 NarrowAPbins = 0:0.0125:1;
 NumNarrowAPbins = length(NarrowAPbins);
-% NarrowControlChannelBackgroundBins = zeros(NChannels, length(NarrowAPbins), 'logical');
-% NarrowControlChannelBackgroundBins(2,:) = NarrowAPbins >= 0.375 & NarrowAPbins <= 0.6; % Hoechst
-% NarrowControlChannelBackgroundBins(3,:) = NarrowAPbins >= 0.8; % Bicoid
-% NarrowControlChannelBackgroundBins(4,:) = NarrowAPbins >= 0.775; % Knirps
-% NarrowControlChannelBackgroundBins(5,:) = NarrowAPbins >= 0.55 & NarrowAPbins <= 0.625; % Hunchback
+
 NarrowControlChannelBackgroundBins = zeros(NChannels, length(NarrowAPbins), 'logical');
 NarrowControlChannelBackgroundBins(2,:) = NarrowAPbins >= 0.1 & NarrowAPbins <= 0.9;%APbins >= 0.375 & APbins <= 0.6; % Hoechst
 NarrowControlChannelBackgroundBins(3,:) = NarrowAPbins >= 0.1 & NarrowAPbins <= 0.9;%APbins >= 0.8; % Bicoid
 NarrowControlChannelBackgroundBins(4,:) = NarrowAPbins >= 0.1 & NarrowAPbins <= 0.9;%APbins >= 0.775; % Knirps
 NarrowControlChannelBackgroundBins(5,:) = NarrowAPbins >= 0.1 & NarrowAPbins <= 0.9;%APbins >= 0.55 & APbins <= 0.625; % Hunchback
+MinNarrowBins = zeros(NChannels, length(NarrowAPbins), 'logical');
+MinNarrowBins(2,:) = NarrowAPbins >= 0.2 & NarrowAPbins <= 0.8;
+MinNarrowBins(3,:) = NarrowAPbins >= 0.85 & NarrowAPbins <= 0.9;
+MinNarrowBins(4,:) = NarrowAPbins >= 0.85 & NarrowAPbins <= 0.9;
+MinNarrowBins(5,:) = NarrowAPbins >= 0.625 & NarrowAPbins <= 0.675;
 CompiledEmbryos.NarrowControlChannelBackgroundBins = NarrowControlChannelBackgroundBins;
 NarrowTestChannelBackgroundBins = NarrowControlChannelBackgroundBins;
 if ~SetIsFlipped
@@ -237,186 +307,247 @@ else
     CompiledEmbryos.NarrowControlChannelBackgroundBins = NarrowTestChannelBackgroundBins;
     CompiledEmbryos.NarrowTestChannelBackgroundBins = NarrowControlChannelBackgroundBins;
 end
-
 CompiledEmbryos.NarrowMeanTestBackgrounds = NaN(NSlides, NChannels);
 CompiledEmbryos.NarrowCountTestBackgrounds = NaN(NSlides, NChannels);
 CompiledEmbryos.NarrowSlideRescalingFactors = NaN(NSlides, NChannels);
 CompiledEmbryos.NarrowSlideRescalingSEs = NaN(NSlides, NChannels);
 CompiledEmbryos.NarrowSlideRescalingIntercepts = NaN(NSlides, NChannels);
 CompiledEmbryos.NarrowSlideRescalingInterceptSEs = NaN(NSlides, NChannels);
-FitInfo = cell(NSlides, NSlides, NChannels);
-ScalingFactors = NaN(NSlides, NSlides, NChannels);
-ScalingSEs = NaN(NSlides, NSlides, NChannels);
-CompiledEmbryos.NarrowSlideRescalingFactors(1,:) = 1;
-CompiledEmbryos.NarrowSlideRescalingSEs(1,:) = 0;
-CompiledEmbryos.NarrowSlideRescalingIntercepts(1,:) = 1;
-CompiledEmbryos.NarrowSlideRescalingInterceptSEs(1,:) = 0;
-NarrowDorsalProfiles = CompiledEmbryos.DorsalAvgNarrowAPProfiles;
-WindowedProfiles.DeltaFC = {};
-WindowedProfiles.DeltaFC.BinWidth = deltafc_binwidth;
-WindowedProfiles.DeltaFC.x = x;
-WindowedProfiles.DeltaFC.Test = {};
-WindowedProfiles.DeltaFC.Test.mean = NaN(NumTbins, NumNarrowAPbins, NChannels, NSlides);
-WindowedProfiles.DeltaFC.Test.std = NaN(NumTbins, NumNarrowAPbins, NChannels, NSlides);
-WindowedProfiles.DeltaFC.Test.se = NaN(NumTbins, NumNarrowAPbins, NChannels, NSlides);
-WindowedProfiles.DeltaFC.Test.count = zeros(NumTbins, NumNarrowAPbins, NChannels, NSlides);
-WindowedProfiles.DeltaFC.Control = {};
-WindowedProfiles.DeltaFC.Control.mean = NaN(NumTbins, NumNarrowAPbins, NChannels, NSlides);
-WindowedProfiles.DeltaFC.Control.std = NaN(NumTbins, NumNarrowAPbins, NChannels, NSlides);
-WindowedProfiles.DeltaFC.Control.se = NaN(NumTbins, NumNarrowAPbins, NChannels, NSlides);
-WindowedProfiles.DeltaFC.Control.count = zeros(NumTbins, NumNarrowAPbins, NChannels, NSlides);
+CompiledEmbryos.SlideRescalingFactors(1,:) = 1;
+CompiledEmbryos.SlideRescalingSEs(1,:) = 0;
+CompiledEmbryos.SlideRescalingIntercepts(1,:) = 0;
+CompiledEmbryos.SlideRescalingInterceptSEs(1,:) = 0;
 
-for slide_index = 1:NSlides
-    for i = 1:NumTbins
-        TFtimeBin = CompiledEmbryos.SlideIDs == slide_index & [CompiledEmbryos.FixCorrectedDeltaFC_um.mean(:)].' >= x(i)-deltafc_binwidth/2 & [CompiledEmbryos.FixCorrectedDeltaFC_um.mean(:)].'< x(i)+deltafc_binwidth/2;
-        TFtestBin = TFtimeBin & AllDeltaValidProfilesTestTF;
-        TFcontrolBin = TFtimeBin & AllDeltaValidProfilesControlTF;
-        for ch_index = 2:NChannels
-            if sum(TFtestBin) >= 1
-                for ap_index = 1:NumNarrowAPbins
-                    TFGoodAP = ~isnan(NarrowDorsalProfiles(TFtestBin,ap_index,ch_index));
-                    if sum(TFGoodAP) > 1
-                        WindowedProfiles.DeltaFC.Test.mean(i,ap_index,ch_index, slide_index) = mean(NarrowDorsalProfiles(TFtestBin,ap_index,ch_index), 'omitnan');
-                        WindowedProfiles.DeltaFC.Test.std(i,ap_index,ch_index, slide_index) = std(NarrowDorsalProfiles(TFtestBin,ap_index,ch_index), 'omitnan');
-                        WindowedProfiles.DeltaFC.Test.count(i,ap_index,ch_index, slide_index) = sum(~isnan(NarrowDorsalProfiles(TFtestBin,ap_index,ch_index)));
-                        WindowedProfiles.DeltaFC.Test.se(i,ap_index,ch_index, slide_index) = WindowedProfiles.DeltaFC.Test.std(i,ap_index,ch_index, slide_index)/...
-                            sqrt(WindowedProfiles.DeltaFC.Test.count(i,ap_index,ch_index, slide_index));
-                    elseif sum(TFGoodAP)  == 1
-                        TestProfs = NarrowDorsalProfiles(TFtestBin,ap_index,ch_index);
-                        CompiledEmbryos.WindowedProfiles.DeltaFC.Test.mean(i,ap_index,ch_index, slide_index) = TestProfs(TFGoodAP);
-                        CompiledEmbryos.WindowedProfiles.DeltaFC.Test.std(i,ap_index,ch_index, slide_index) = NaN;
-                        CompiledEmbryos.WindowedProfiles.DeltaFC.Test.count(i,ap_index,ch_index, slide_index) = 1;
-                        CompiledEmbryos.WindowedProfiles.DeltaFC.Test.se(i,ap_index,ch_index, slide_index) = NaN;
-                    end
-                end
+%%
+
+xfits = 0:1:70;
+Nxfits = length(xfits);
+min_2sigma_points = 3;
+counts_above_limit = 1;
+counts_below_limit = 1;
+sigma = 5;
+window_multiplier = 4;
+NumBootstrappedFits = 200;
+NumPoints = 100;
+NumNarrowAPbins = size(CompiledEmbryos.DorsalAvgNarrowAPProfiles, 2);
+NChannels =size(CompiledEmbryos.DorsalAvgNarrowAPProfiles, 3);
+
+
+NValidPoints = NaN(NChannels, NSlides);
+
+
+%%
+for ch_index = 3
+    for slide_index = 1:NSlides
+        UseTF = CompiledEmbryos.TestSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(CompiledEmbryos.DubuisEmbryoTimes) & (CompiledEmbryos.SlideIDs == slide_index);
+        x_sample = CompiledEmbryos.DubuisEmbryoTimes(UseTF);
+        ys = CompiledEmbryos.DorsalAvgNarrowAPProfiles(UseTF, :,ch_index);
+        BadTF =  sum(isnan(ys), 2).' > NumNarrowAPbins/2;
+        x_sample = x_sample(~BadTF);
+        ys = ys(~BadTF,:);
+        
+        
+        
+        [x_sample, sort_order] = sort(x_sample);
+        ys = ys(sort_order,:);
+        
+        SmoothedProfiles = NaN(Nxfits, NumNarrowAPbins, NumBootstrappedFits);
+        
+        DiffMat = xfits.'-x_sample;
+        GaussianWeights = GetGaussianWeightMat(xfits, x_sample, sigma, window_multiplier*sigma);
+        counts = zeros(1, Nxfits);
+        counts_above = zeros(1,Nxfits);
+        counts_below = zeros(1, Nxfits);
+        for x_index = 1:Nxfits
+            MatchedPoints = find(GaussianWeights(x_index,:)> 0);
+            Num2SigmaPoints = sum(DiffMat(x_index,MatchedPoints) > -2*sigma & DiffMat(x_index,MatchedPoints) < 2*sigma );
+            
+            if Num2SigmaPoints < min_2sigma_points
+                GaussianWeights(x_index,:) = 0;
+                continue
             end
             
-            if sum(TFcontrolBin) >= 1
-                for ap_index = 1:NumAPbins
-                    TFGoodAP = ~isnan(NarrowDorsalProfiles(TFcontrolBin,ap_index,ch_index));
-                    if sum(TFGoodAP) > 1
-                        WindowedProfiles.DeltaFC.Control.mean(i,ap_index,ch_index, slide_index) = mean(NarrowDorsalProfiles(TFcontrolBin,ap_index,ch_index), 'omitnan');
-                        WindowedProfiles.DeltaFC.Control.std(i,ap_index,ch_index, slide_index) = std(NarrowDorsalProfiles(TFcontrolBin,ap_index,ch_index), 'omitnan');
-                        WindowedProfiles.DeltaFC.Control.count(i,ap_index,ch_index, slide_index) = sum(~isnan(NarrowDorsalProfiles(TFcontrolBin,ap_index,ch_index)));
-                        WindowedProfiles.DeltaFC.Control.se(i,ap_index,ch_index, slide_index) = WindowedProfiles.DeltaFC.Control.std(i,ap_index,ch_index)/...
-                            sqrt(WindowedProfiles.DeltaFC.Control.count(i,ap_index,ch_index, slide_index));
-                    elseif sum(TFGoodAP)  == 1
-                        ControlProfs = NarrowDorsalProfiles(TFcontrolBin,ap_index,ch_index);
-                        WindowedProfiles.DeltaFC.Control.mean(i,ap_index,ch_index, slide_index) = ControlProfs(TFGoodAP);
-                        WindowedProfiles.DeltaFC.Control.std(i,ap_index,ch_index, slide_index) = NaN;
-                        WindowedProfiles.DeltaFC.Control.count(i,ap_index,ch_index, slide_index) = 1;
-                        WindowedProfiles.DeltaFC.Control.se(i,ap_index,ch_index, slide_index) = NaN;
-                    end
-                end
+            counts(x_index) = Num2SigmaPoints;
+            MatchedPoints = find(GaussianWeights(x_index,:)> 0);
+            
+            counts_above(x_index) = sum(DiffMat(x_index,MatchedPoints) > 0 & DiffMat(x_index,MatchedPoints) < 2*sigma );
+            counts_below(x_index) = sum(DiffMat(x_index,MatchedPoints) < 0 & DiffMat(x_index,MatchedPoints) > -2*sigma );
+            
+            if counts_above(x_index) < counts_above_limit
+                GaussianWeights(x_index,:) = 0;
             end
+            
+            if counts_below(x_index) < counts_below_limit
+                GaussianWeights(x_index,:) = 0;
+            end
+            
         end
+        
+        
+        ValidCountTFs = (counts >= min_2sigma_points & counts_above >= counts_above_limit & counts_below >= counts_below_limit & xfits >= min(x_sample)+sigma/2 & xfits <= max(x_sample) - sigma/2);
+        x_indices = 1:Nxfits;
+        ValidXfits = x_indices(ValidCountTFs);
+        NValidXfits = length(ValidXfits);
+        NValidPoints(ch_index, slide_index) = NValidXfits;
     end
 end
-%%
-AllSlides = 1:NSlides;
-CountDims = [size(WindowedProfiles.DeltaFC.Control.count, 1),...
-    size(WindowedProfiles.DeltaFC.Control.count, 2), NSlides];
-counts = zeros([size(WindowedProfiles.DeltaFC.Control.count) NSlides]);
+ref_slide = find(NValidPoints(3,:) == max(NValidPoints(3,:)));
 
-ControlledProfiles = NaN([size(WindowedProfiles.DeltaFC.Control.count)]);
-for i = AllSlides
-    counts(:,:,:,i) =WindowedProfiles.DeltaFC.Control.count(:,:,:, i);
-    ControlledProfiles(:,:,:,i) = WindowedProfiles.DeltaFC.Control.mean(:,:,:, i);
+%% Bootstrapping the FitSlideRescaledDorsalAvgAPProfiles for the Test Set
+
+xfits = 0:0.1:70;
+Nxfits = length(xfits);
+if ~isfield(CompiledEmbryos, 'BootstrappedProfiles')
+    CompiledEmbryos.BootstrappedProfiles = {};
+end
+if ~isfield(CompiledEmbryos.BootstrappedProfiles, 'SlideFitProfiles')
+    CompiledEmbryos.BootstrappedProfiles.NarrowSlideFitProfiles = {};
+end
+if ~isfield(CompiledEmbryos.BootstrappedProfiles.SlideFitProfiles, 'Test')
+    CompiledEmbryos.BootstrappedProfiles.NarrowSlideFitProfiles.Test = {};
 end
 
-FitInfo = cell(NSlides, NSlides, NChannels);
-ScalingFactors = NaN(NSlides, NSlides, NChannels);
-ScalingSEs = NaN(NSlides, NSlides, NChannels);
-ScalingIntercepts = NaN(NSlides, NSlides, NChannels);
-ScalingInterceptSEs =NaN(NSlides, NSlides, NChannels);
-OverlapIndices = cell(NSlides, NSlides, NChannels);
-
-for i = 1:(NSlides-1)
-    for j = i+1:NSlides
-        for ch_index = 2:NChannels
+CompiledEmbryos.BootstrappedProfiles.NarrowSlideFitProfiles.Test.mean = NaN(Nxfits, NumNarrowAPbins, NChannels, NSlides);
+CompiledEmbryos.BootstrappedProfiles.NarrowSlideFitProfiles.Test.se = NaN(Nxfits, NumNarrowAPbins, NChannels, NSlides);
+CompiledEmbryos.BootstrappedProfiles.NarrowSlideFitProfiles.Test.counts = NaN(Nxfits,NChannels, NSlides);
+CompiledEmbryos.BootstrappedProfiles.NarrowSlideFitProfiles.Test.counts_above = NaN(Nxfits,NChannels, NSlides);
+CompiledEmbryos.BootstrappedProfiles.NarrowSlideFitProfiles.Test.counts_below = NaN(Nxfits,NChannels, NSlides);
+%%
+for ch_index = [2 3 4 5]
+    for slide_index = ref_slide
+        UseTF = CompiledEmbryos.TestSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(CompiledEmbryos.DubuisEmbryoTimes) & (CompiledEmbryos.SlideIDs == slide_index);
+        x_sample = CompiledEmbryos.DubuisEmbryoTimes(UseTF);
+        ys = CompiledEmbryos.DorsalAvgNarrowAPProfiles(UseTF, :,ch_index);
+        BadTF =  sum(isnan(ys), 2).' > NumNarrowAPbins/2;
+        x_sample = x_sample(~BadTF);
+        ys = ys(~BadTF,:);
+        
+        
+        
+        [x_sample, sort_order] = sort(x_sample);
+        ys = ys(sort_order,:);
+        
+        SmoothedProfiles = NaN(Nxfits, NumNarrowAPbins, NumBootstrappedFits);
+        
+        DiffMat = xfits.'-x_sample;
+        GaussianWeights = GetGaussianWeightMat(xfits, x_sample, sigma, window_multiplier*sigma);
+        counts = zeros(1, Nxfits);
+        counts_above = zeros(1,Nxfits);
+        counts_below = zeros(1, Nxfits);
+        for x_index = 1:Nxfits
+            MatchedPoints = find(GaussianWeights(x_index,:)> 0);
+            Num2SigmaPoints = sum(DiffMat(x_index,MatchedPoints) > -2*sigma & DiffMat(x_index,MatchedPoints) < 2*sigma );
             
-            OverlapIndices{j, i, ch_index} = (counts(:,NarrowControlChannelBackgroundBins(ch_index, :),ch_index,i) >= 1) &   (counts(:,NarrowControlChannelBackgroundBins(ch_index, :),ch_index,j) >= 1);
+            if Num2SigmaPoints < min_2sigma_points
+                GaussianWeights(x_index,:) = 0;
+                continue
+            end
             
+            counts(x_index) = Num2SigmaPoints;
+            MatchedPoints = find(GaussianWeights(x_index,:)> 0);
             
-            if sum(sum((OverlapIndices{j, i, ch_index} )) >= 1) >= 5
-                
-                FitSet1 = ControlledProfiles(:,NarrowControlChannelBackgroundBins(ch_index, :),ch_index,i);
-                FitSet1 = FitSet1( OverlapIndices{j, i, ch_index}).';
-                
-                FitSet2 = ControlledProfiles(:,NarrowControlChannelBackgroundBins(ch_index, :),ch_index,j);
-                FitSet2 = FitSet2( OverlapIndices{j, i, ch_index}).';
-                
-                dlm = fitlm(FitSet2, FitSet1);%,'Weights',  1./(FitSD1.^2));
-                FitInfo{j, i, ch_index} = dlm;
-                ScalingFactors(j, i, ch_index) = dlm.Coefficients.Estimate(2);
-                ScalingSEs(j, i, ch_index) = dlm.Coefficients.SE(2);
-                ScalingIntercepts(j, i, ch_index) = dlm.Coefficients.Estimate(1);
-                ScalingInterceptSEs(j, i, ch_index) = dlm.Coefficients.SE(1);
-                
+            counts_above(x_index) = sum(DiffMat(x_index,MatchedPoints) > 0 & DiffMat(x_index,MatchedPoints) < 2*sigma );
+            counts_below(x_index) = sum(DiffMat(x_index,MatchedPoints) < 0 & DiffMat(x_index,MatchedPoints) > -2*sigma );
+            
+            if counts_above(x_index) < counts_above_limit
+                GaussianWeights(x_index,:) = 0;
+            end
+            
+            if counts_below(x_index) < counts_below_limit
+                GaussianWeights(x_index,:) = 0;
+            end
+            
+        end
+        
+        
+        ValidCountTFs = (counts >= min_2sigma_points & counts_above >= counts_above_limit & counts_below >= counts_below_limit & xfits >= min(x_sample)+sigma/2 & xfits <= max(x_sample) - sigma/2);
+        x_indices = 1:Nxfits;
+        ValidXfits = x_indices(ValidCountTFs);
+        NValidXfits = length(ValidXfits);
+        NValidPoints(ch_index, slide_index) = NValidXfits;
+        
+        for j = 1:NValidXfits
+            WindowWidthLimits = [xfits(ValidXfits(j))-( min(x_sample)), max(x_sample)- xfits(ValidXfits(j))];
+            for rep = 1:NumBootstrappedFits*2
+                r1  = (rand(NumPoints, 1)*(2*window_multiplier*sigma)-window_multiplier*sigma).';
+                Deltas = DiffMat(ValidXfits(j),:);
+                Deltas(Deltas > window_multiplier*sigma | Deltas < -window_multiplier*sigma) = NaN;
+                ind = NaN(1, NumPoints);
+                for k = 1:NumPoints
+                    ind(k) = find(min(abs(Deltas - r1(k))) == abs(Deltas - r1(k)));
+                end
+                SmoothedProfiles(ValidXfits(j),:,rep) =  GaussianWeights(ValidXfits(j),ind)*ys(ind, :)/(sum(GaussianWeights(ValidXfits(j),ind)));
             end
         end
+        
+        
+        MeanSmoothedProfiles = mean(SmoothedProfiles, 3, 'omitnan');
+        SmoothedProfileSEs = std(SmoothedProfiles,0,  3, 'omitnan')/sqrt(NumBootstrappedFits);
+        
+        SmoothedProfileSEs(MeanSmoothedProfiles  == 0) = NaN;
+        MeanSmoothedProfiles(MeanSmoothedProfiles  == 0) = NaN;
+        %close all
+        
+        CompiledEmbryos.BootstrappedProfiles.NarrowSlideFitProfiles.x = xfits;
+        CompiledEmbryos.BootstrappedProfiles.NarrowSlideFitProfiles.Test.mean(:,:,ch_index, slide_index) = MeanSmoothedProfiles;
+        CompiledEmbryos.BootstrappedProfiles.NarrowSlideFitProfiles.Test.se(:,:,ch_index, slide_index)  = SmoothedProfileSEs;
+        CompiledEmbryos.BootstrappedProfiles.NarrowSlideFitProfiles.Test.counts(:,ch_index,slide_index) = counts;
+        CompiledEmbryos.BootstrappedProfiles.NarrowSlideFitProfiles.Test.counts_above(:,ch_index,slide_index)  = counts_above;
+        CompiledEmbryos.BootstrappedProfiles.NarrowSlideFitProfiles.Test.counts_below(:,ch_index,slide_index)  = counts_above;
         
     end
 end
 %%
-for ch_index = 2:NChannels
-    for i = 1:(NSlides-1)
-        for j = i+1:NSlides
-            
-            ScalingFactors(i, j, ch_index) = 1/ScalingFactors(j, i, ch_index);
-            ScalingSEs(i, j, ch_index) = ScalingSEs(j, i, ch_index)/(ScalingFactors(j, i, ch_index)^2);
-            ScalingIntercepts(i, j, ch_index) = -ScalingIntercepts(j, i, ch_index) /ScalingFactors(j, i, ch_index);
-            ScalingInterceptSEs(i, j, ch_index) = sqrt(ScalingInterceptSEs(j, i, ch_index)^2+ScalingIntercepts(i, j, ch_index)^2*ScalingInterceptSEs(j, i, ch_index)^2)/ScalingFactors(j, i, ch_index);
-            
+CompiledEmbryos.NarrowSlideRescalingFactors(ref_slide,:) = 1;
+CompiledEmbryos.NarrowSlideRescalingSEs(ref_slide,:) = 0;
+CompiledEmbryos.NarrowSlideRescalingIntercepts(ref_slide,:) = 0;
+CompiledEmbryos.NarrowSlideRescalingInterceptSEs(ref_slide,:) = 0;
+AllSlides = 1:NSlides;
+SlidesToFit = AllSlides(AllSlides ~= ref_slide);
+for slide_index = SlidesToFit
+    for ch_index = 2:5
+        UseTF = CompiledEmbryos.TestSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(CompiledEmbryos.DubuisEmbryoTimes) & (CompiledEmbryos.SlideIDs == slide_index);
+        x_sample = round(CompiledEmbryos.DubuisEmbryoTimes(UseTF), 1);
+        ys = CompiledEmbryos.DorsalAvgNarrowAPProfiles(UseTF, :,ch_index);
+        BadTF =  sum(isnan(ys), 2).' >NumNarrowAPbins/2;
+        x_sample = x_sample(~BadTF);
+        ys = ys(~BadTF,:);
+        
+        
+        
+        [x_sample, sort_order] = sort(x_sample);
+        ys = ys(sort_order,:);
+        
+        y_pred = GetMasterProfileForEmbryoTimes(x_sample, CompiledEmbryos.BootstrappedProfiles.NarrowSlideFitProfiles.Test.mean(:,:,ch_index, ref_slide) , xfits);
+        
+        ys = ys(:);
+        y_pred = y_pred(:);
+        TFys = ~isnan(ys) & ~isnan(y_pred);
+        ys = ys(TFys);
+        y_pred = y_pred(TFys);
+        beta0 =[1, min(ys,[], 'all')];
+        if ~isempty(y_pred)
+            dlm = fitnlm(y_pred(:),ys(:),f,beta0);
+            CompiledEmbryos.NarrowSlideRescalingFactors(slide_index, ch_index) = 1/dlm.Coefficients.Estimate(1);
+            CompiledEmbryos.NarrowSlideRescalingIntercepts(slide_index, ch_index) = -dlm.Coefficients.Estimate(2)/dlm.Coefficients.Estimate(1);
+            CompiledEmbryos.NarrowSlideRescalingSEs(slide_index, ch_index)= dlm.Coefficients.SE(1)/(dlm.Coefficients.Estimate(1)^2);
+            CompiledEmbryos.NarrowSlideRescalingInterceptSEs(slide_index, ch_index)= sqrt(dlm.Coefficients.SE(1)^2*dlm.Coefficients.Estimate(2)^2/(dlm.Coefficients.Estimate(1)^4)+...
+                dlm.Coefficients.SE(2)^2/(dlm.Coefficients.Estimate(1)^2));
         end
+        
     end
 end
-
-%%
-for ch_index = 2:NChannels
-    for j = 2:NSlides
-        CompiledEmbryos.NarrowSlideRescalingFactors(j, ch_index) = ScalingFactors(j, 1, ch_index);
-        CompiledEmbryos.NarrowSlideRescalingSEs(j, ch_index) = ScalingSEs(j, 1, ch_index);
-        CompiledEmbryos.NarrowSlideRescalingIntercepts(j, ch_index) = ScalingIntercepts(j, 1, ch_index);
-        CompiledEmbryos.NarrowSlideRescalingInterceptSEs(j, ch_index) = ScalingInterceptSEs(j, 1, ch_index);
-    end
-    
-end
-
-
-
-
-
-
+   
 %%
 CompiledEmbryos.SlideRescaledDorsalNarrowAPProfiles = CompiledEmbryos.DorsalNarrowAPProfiles;
 CompiledEmbryos.SlideRescaledDorsalAvgNarrowAPProfiles = CompiledEmbryos.DorsalAvgNarrowAPProfiles;
-for embryo_index = AllEmbryos
-    for ch_index = 2:NChannels
-        CompiledEmbryos.SlideRescaledDorsalNarrowAPProfiles(embryo_index,:,ch_index) =...
-            CompiledEmbryos.NarrowSlideRescalingFactors(CompiledEmbryos.SlideIDs(embryo_index), ch_index)*CompiledEmbryos.SlideRescaledDorsalNarrowAPProfiles(embryo_index,:,ch_index)+...
-            CompiledEmbryos.NarrowSlideRescalingIntercepts(CompiledEmbryos.SlideIDs(embryo_index), ch_index);
-        CompiledEmbryos.SlideRescaledDorsalAvgNarrowAPProfiles(embryo_index,:,ch_index) =...
-            CompiledEmbryos.NarrowSlideRescalingFactors(CompiledEmbryos.SlideIDs(embryo_index), ch_index)*CompiledEmbryos.SlideRescaledDorsalAvgNarrowAPProfiles(embryo_index,:,ch_index)+...
-            CompiledEmbryos.NarrowSlideRescalingIntercepts(CompiledEmbryos.SlideIDs(embryo_index), ch_index);
+for ch_index = 2:5
+    for slide_index = 1:NSlides
+        CompiledEmbryos.SlideRescaledDorsalNarrowAPProfiles(CompiledEmbryos.SlideIDs == slide_index,:,ch_index) = ...
+            CompiledEmbryos.NarrowSlideRescalingFactors(slide_index, ch_index)*CompiledEmbryos.SlideRescaledDorsalNarrowAPProfiles(CompiledEmbryos.SlideIDs == slide_index,:,ch_index)+...
+            CompiledEmbryos.NarrowSlideRescalingIntercepts(slide_index, ch_index);
+        CompiledEmbryos.SlideRescaledDorsalAvgNarrowAPProfiles(CompiledEmbryos.SlideIDs == slide_index,:,ch_index) = ...
+            CompiledEmbryos.NarrowSlideRescalingFactors(slide_index, ch_index)*CompiledEmbryos.SlideRescaledDorsalAvgNarrowAPProfiles(CompiledEmbryos.SlideIDs == slide_index,:,ch_index)+...
+            CompiledEmbryos.NarrowSlideRescalingIntercepts(slide_index, ch_index);
     end
 end
-
-
-
-%%
-CompiledEmbryos.SlideRescaledDorsalNarrowAPProfiles = CompiledEmbryos.DorsalNarrowAPProfiles;
-CompiledEmbryos.SlideRescaledDorsalAvgNarrowAPProfiles = CompiledEmbryos.DorsalAvgNarrowAPProfiles;
-for embryo_index = AllEmbryos
-    for ch_index = 2:NChannels
-        CompiledEmbryos.SlideRescaledDorsalNarrowAPProfiles(embryo_index,:,ch_index) =...
-            CompiledEmbryos.NarrowSlideRescalingFactors(CompiledEmbryos.SlideIDs(embryo_index), ch_index)*CompiledEmbryos.SlideRescaledDorsalNarrowAPProfiles(embryo_index,:,ch_index)+...
-            CompiledEmbryos.NarrowSlideRescalingIntercepts(CompiledEmbryos.SlideIDs(embryo_index), ch_index);
-        CompiledEmbryos.SlideRescaledDorsalAvgNarrowAPProfiles(embryo_index,:,ch_index) =...
-            CompiledEmbryos.NarrowSlideRescalingFactors(CompiledEmbryos.SlideIDs(embryo_index), ch_index)*CompiledEmbryos.SlideRescaledDorsalAvgNarrowAPProfiles(embryo_index,:,ch_index)+...
-            CompiledEmbryos.NarrowSlideRescalingIntercepts(CompiledEmbryos.SlideIDs(embryo_index), ch_index);
-    end
-end
-
-
-

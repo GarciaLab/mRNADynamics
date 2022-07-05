@@ -54,7 +54,7 @@ for ch_index = 3
     UseTF = CompiledEmbryos.TestSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(CompiledEmbryos.DubuisEmbryoTimes);
     x_sample = CompiledEmbryos.DubuisEmbryoTimes(UseTF);
     ys = CompiledEmbryos.FitSlideRescaledDorsalAvgAPProfiles(UseTF, :,ch_index);
-    BadTF =  sum(isnan(ys), 2).' >min( sum(isnan(ys), 2).');
+    BadTF =  sum(isnan(ys), 2).' > NumAPbins/2;%min( sum(isnan(ys), 2).');
     x_sample = x_sample(~BadTF);
     ys = ys(~BadTF,:);
     
@@ -141,7 +141,7 @@ for ch_index = 3
     UseTF = CompiledEmbryos.ControlSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(CompiledEmbryos.DubuisEmbryoTimes);
     x_sample = CompiledEmbryos.DubuisEmbryoTimes(UseTF);
     ys = CompiledEmbryos.FitSlideRescaledDorsalAvgAPProfiles(UseTF, :,ch_index);
-    BadTF =  sum(isnan(ys), 2).' >min( sum(isnan(ys), 2).');
+    BadTF =  sum(isnan(ys), 2).' > NumAPbins/2;%min( sum(isnan(ys), 2).');
     x_sample = x_sample(~BadTF);
     ys = ys(~BadTF,:);
     
@@ -229,7 +229,7 @@ for ch_index = [3 5]
     UseTF = CompiledEmbryos.TestSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(CompiledEmbryos.DubuisEmbryoTimes);
     x_sample = CompiledEmbryos.DubuisEmbryoTimes(UseTF);
     ys = CompiledEmbryos.ZeroCorrectedSlideRescaledDorsalAvgAPProfiles(UseTF, :,ch_index);
-    BadTF =  sum(isnan(ys), 2).' >min( sum(isnan(ys), 2).');
+    BadTF =  sum(isnan(ys), 2).' >NumAPbins/2;
     x_sample = x_sample(~BadTF);
     ys = ys(~BadTF,:);
     
@@ -318,7 +318,7 @@ for ch_index = [3 5]
     UseTF = CompiledEmbryos.ControlSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(CompiledEmbryos.DubuisEmbryoTimes);
     x_sample = CompiledEmbryos.DubuisEmbryoTimes(UseTF);
     ys = CompiledEmbryos.ZeroCorrectedSlideRescaledDorsalAvgAPProfiles(UseTF, :,ch_index);
-    BadTF =  sum(isnan(ys), 2).' >min( sum(isnan(ys), 2).');
+    BadTF =  sum(isnan(ys), 2).' >NumAPbins/2;
     x_sample = x_sample(~BadTF);
     ys = ys(~BadTF,:);
     
@@ -404,7 +404,7 @@ for ch_index = [3 5]
     UseTF = CompiledEmbryos.TestSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(CompiledEmbryos.DubuisEmbryoTimes);
     x_sample = CompiledEmbryos.DubuisEmbryoTimes(UseTF);
     ys = CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(UseTF, :,ch_index);
-    BadTF =  sum(isnan(ys), 2).' >min( sum(isnan(ys), 2).');
+    BadTF =  sum(isnan(ys), 2).' > NumAPbins/2;%min( sum(isnan(ys), 2).');
     x_sample = x_sample(~BadTF);
     ys = ys(~BadTF,:);
     
@@ -492,7 +492,7 @@ for ch_index = [3 5]
     UseTF = CompiledEmbryos.ControlSetEmbryos & CompiledEmbryos.IsNC14 & ~isnan(CompiledEmbryos.DubuisEmbryoTimes);
     x_sample = CompiledEmbryos.DubuisEmbryoTimes(UseTF);
     ys = CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(UseTF, :,ch_index);
-    BadTF =  sum(isnan(ys), 2).' >min( sum(isnan(ys), 2).');
+    BadTF =  sum(isnan(ys), 2).' > NumAPbins/2;%min( sum(isnan(ys), 2).');
     x_sample = x_sample(~BadTF);
     ys = ys(~BadTF,:);
     

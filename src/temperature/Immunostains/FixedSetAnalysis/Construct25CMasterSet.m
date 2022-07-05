@@ -1,4 +1,4 @@
-version = 5;
+version = 13;
 AllCompiledPath = ['S:/Gabriella/Dropbox/ProteinProfiles/V',num2str(version),'Profiles/'];
 AllSetsProfFigPath = 'S:/Gabriella/Dropbox/ProteinProfiles/V5/Figures/';
 load([AllCompiledPath, 'AllCompiledEmbryos.Mat'], 'AllCompiledEmbryos');

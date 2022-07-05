@@ -117,7 +117,26 @@ for i = 1:length(SetPrefixes)
         CT_CompiledEmbryos.DeltaFC_um.count = [CT_CompiledEmbryos.DeltaFC_um.count  CompiledEmbryos.DeltaFC_um.count]; 
         CT_CompiledEmbryos.DeltaFC_um.se = [CT_CompiledEmbryos.DeltaFC_um.se  CompiledEmbryos.DeltaFC_um.se]; 
         CT_CompiledEmbryos.UseCustomFurrowMeasurements = [CT_CompiledEmbryos.UseCustomFurrowMeasurements CompiledEmbryos.UseCustomFurrowMeasurements];
-        
+%         
+%         CT_CompiledEmbryos.EdgeCorrectedDorsalAPProfiles = [CT_CompiledEmbryos.EdgeCorrectedDorsalAPProfiles ; CompiledEmbryos.EdgeCorrectedDorsalAPProfiles]; 
+%         CT_CompiledEmbryos.EdgeCorrectedDorsalAvgAPProfiles = [CT_CompiledEmbryos.EdgeCorrectedDorsalAvgAPProfiles ; CompiledEmbryos.EdgeCorrectedDorsalAvgAPProfiles]; 
+%         CT_CompiledEmbryos.EdgeCorrectedDorsalNarrowAPProfiles = [CT_CompiledEmbryos.EdgeCorrectedDorsalNarrowAPProfiles ; CompiledEmbryos.EdgeCorrectedDorsalNarrowAPProfiles]; 
+%         CT_CompiledEmbryos.EdgeCorrectedDorsalAvgNarrowAPProfiles = [CT_CompiledEmbryos.EdgeCorrectedDorsalAvgNarrowAPProfiles ; CompiledEmbryos.EdgeCorrectedDorsalAvgNarrowAPProfiles];  
+%         CT_CompiledEmbryos.EdgeCorrectedDorsalStdAPProfiles = [CT_CompiledEmbryos.EdgeCorrectedDorsalStdAPProfiles ; CompiledEmbryos.EdgeCorrectedDorsalStdAPProfiles]; 
+%         CT_CompiledEmbryos.EdgeCorrectedDorsalStdNarrowAPProfiles = [CT_CompiledEmbryos.EdgeCorrectedDorsalStdNarrowAPProfiles ; CompiledEmbryos.EdgeCorrectedDorsalStdNarrowAPProfiles]; 
+%         CT_CompiledEmbryos.EdgeCorrectedDorsalCountAPProfiles = [CT_CompiledEmbryos.EdgeCorrectedDorsalCountAPProfiles ; CompiledEmbryos.EdgeCorrectedDorsalCountAPProfiles]; 
+%         CT_CompiledEmbryos.EdgeCorrectedDorsalCountNarrowAPProfiles = [CT_CompiledEmbryos.EdgeCorrectedDorsalCountNarrowAPProfiles ; CompiledEmbryos.EdgeCorrectedDorsalCountNarrowAPProfiles]; 
+%         
+%         CT_CompiledEmbryos.MiddleMeanDorsalAPProfiles = [CT_CompiledEmbryos.MiddleMeanDorsalAPProfiles ; CompiledEmbryos.MiddleMeanDorsalAPProfiles]; 
+%         CT_CompiledEmbryos.MiddleMeanDorsalAvgAPProfiles = [CT_CompiledEmbryos.MiddleMeanDorsalAvgAPProfiles ; CompiledEmbryos.MiddleMeanDorsalAvgAPProfiles]; 
+%         CT_CompiledEmbryos.MiddleMeanDorsalNarrowAPProfiles = [CT_CompiledEmbryos.MiddleMeanDorsalNarrowAPProfiles ; CompiledEmbryos.MiddleMeanDorsalNarrowAPProfiles]; 
+%         CT_CompiledEmbryos.MiddleMeanDorsalAvgNarrowAPProfiles = [CT_CompiledEmbryos.MiddleMeanDorsalAvgNarrowAPProfiles ; CompiledEmbryos.MiddleMeanDorsalAvgNarrowAPProfiles];  
+%         CT_CompiledEmbryos.MiddleMeanDorsalStdAPProfiles = [CT_CompiledEmbryos.MiddleMeanDorsalStdAPProfiles ; CompiledEmbryos.MiddleMeanDorsalStdAPProfiles]; 
+%         CT_CompiledEmbryos.MiddleMeanDorsalStdNarrowAPProfiles = [CT_CompiledEmbryos.MiddleMeanDorsalStdNarrowAPProfiles ; CompiledEmbryos.MiddleMeanDorsalStdNarrowAPProfiles]; 
+%         CT_CompiledEmbryos.MiddleMeanDorsalCountAPProfiles = [CT_CompiledEmbryos.MiddleMeanDorsalCountAPProfiles ; CompiledEmbryos.MiddleMeanDorsalCountAPProfiles]; 
+%         CT_CompiledEmbryos.MiddleMeanDorsalCountNarrowAPProfiles = [CT_CompiledEmbryos.MiddleMeanDorsalCountNarrowAPProfiles ; CompiledEmbryos.MiddleMeanDorsalCountNarrowAPProfiles]; 
+%         
+%         
         
     end
 end

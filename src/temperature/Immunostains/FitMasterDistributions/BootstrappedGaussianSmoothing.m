@@ -1,7 +1,4 @@
-% version = 6;
-% AllCompiledPath = ['S:/Gabriella/Dropbox/ProteinProfiles/V',num2str(version),'Profiles/'];
-% load(AllCompiledPath, 'AllCompiledEmbryos');
-
+function BootstrappedGaussianSmoothing(AllCompiledEmbryos)
 %%
 MeanSmoothedProfiles = {};
 SmoothedProfileSEs = {};
@@ -13,7 +10,7 @@ xfits = 0:.1:70;
 APbins = 0:0.025:1;
 NumAPbins = length(APbins);
 NChannels = 5;
-
+ChannelNames = {'', 'Hoechst', 'Bicoid', 'Knirps', 'Hunchback'};
 
 for i = 1:length(exp_indices)
     disp(['i = ', num2str(i)])

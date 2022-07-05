@@ -52,9 +52,15 @@ for ProfIndex = 1:NumMasterProfs
     
     yset = CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(ControlSetTF,:,ch_index);
     
+    ysample = ysample(:);
+    yset = yset(:);
+    
+    TFys = ~isnan(ysample) & ~isnan(yset);
+    ysample = ysample(TFys);
+    yset = yset(TFys);
     beta0 =[1, min(yset,[], 'all')];
-    if ~isnan(beta0(2))
-        dlm = fitnlm(ysample(:),yset(:),f,beta0);
+    if ~isempty(yset)
+        dlm = fitnlm(ysample,yset,f,beta0);
         CompiledEmbryos.mdl.SlideRescaledDorsalAvgAPProfiles.Control{ProfIndex, ch_index} = dlm;
         CompiledEmbryos.ScaleFits.SlideRescaledDorsalAvgAPProfiles.Control.ScaleEstimate(ProfIndex, ch_index) = 1/dlm.Coefficients.Estimate(1);
         CompiledEmbryos.ScaleFits.SlideRescaledDorsalAvgAPProfiles.Control.InterceptEstimate(ProfIndex, ch_index) = -dlm.Coefficients.Estimate(2)/dlm.Coefficients.Estimate(1);
@@ -118,10 +124,15 @@ for ProfIndex = 1:NumMasterProfs
     ysample = GetMasterProfileForEmbryoTimes(xsample, MasterProfile, xfits);
     
     yset = CompiledEmbryos.ZeroCorrectedSlideRescaledDorsalAvgAPProfiles(ControlSetTF,:,ch_index);
+    ysample = ysample(:);
+    yset = yset(:);
     
+    TFys = ~isnan(ysample) & ~isnan(yset);
+    ysample = ysample(TFys);
+    yset = yset(TFys);
     beta0 =[1, min(yset,[], 'all')];
-    if ~isnan(beta0(2))
-        dlm = fitnlm(ysample(:),yset(:),f,beta0);
+    if ~isempty(yset)
+        dlm = fitnlm(ysample,yset,f,beta0);
         CompiledEmbryos.mdl.ZeroCorrectedSlideRescaledDorsalAvgAPProfiles.Control{ProfIndex, ch_index} = dlm;
         CompiledEmbryos.ScaleFits.ZeroCorrectedSlideRescaledDorsalAvgAPProfiles.Control.ScaleEstimate(ProfIndex, ch_index) = 1/dlm.Coefficients.Estimate(1);
         CompiledEmbryos.ScaleFits.ZeroCorrectedSlideRescaledDorsalAvgAPProfiles.Control.InterceptEstimate(ProfIndex, ch_index) = -dlm.Coefficients.Estimate(2)/dlm.Coefficients.Estimate(1);
@@ -185,10 +196,15 @@ for ProfIndex = 1:NumMasterProfs
     ysample = GetMasterProfileForEmbryoTimes(xsample, MasterProfile, xfits);
     
     yset = CompiledEmbryos.FitSlideRescaledDorsalAvgAPProfiles(ControlSetTF,:,ch_index);
+    ysample = ysample(:);
+    yset = yset(:);
     
+    TFys = ~isnan(ysample) & ~isnan(yset);
+    ysample = ysample(TFys);
+    yset = yset(TFys);
     beta0 =[1, min(yset,[], 'all')];
-    if ~isnan(beta0(2))
-        dlm = fitnlm(ysample(:),yset(:),f,beta0);
+    if ~isempty(yset)
+        dlm = fitnlm(ysample,yset,f,beta0);
         CompiledEmbryos.mdl.FitSlideRescaledDorsalAvgAPProfiles.Control{ProfIndex, ch_index} = dlm;
         CompiledEmbryos.ScaleFits.FitSlideRescaledDorsalAvgAPProfiles.Control.ScaleEstimate(ProfIndex, ch_index) = 1/dlm.Coefficients.Estimate(1);
         CompiledEmbryos.ScaleFits.FitSlideRescaledDorsalAvgAPProfiles.Control.InterceptEstimate(ProfIndex, ch_index) = -dlm.Coefficients.Estimate(2)/dlm.Coefficients.Estimate(1);

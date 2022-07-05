@@ -2,10 +2,8 @@ function AllCompiledEmbryos = CalculateSetRescalingFactors(AllCompiledEmbryos)
 %%
 
 AllSetsCombinedEmbryosPath = 'S:/Gabriella/Dropbox/ProteinProfiles/CompiledEmbryos/';
-MasterSetPath = 'S:/Gabriella/Dropbox/ProteinProfiles/25CUnflippedMasterSets.mat';
-AllSmoothMasterPath = 'S:/Gabriella/Dropbox/ProteinProfiles/Smoothed25CUnflippedMasterSets.mat';
-load(MasterSetPath, 'CombinedMean', 'CombinedSE', 'CombinedCounts', 'Slopes', 'Intercepts', 'Fits', 'SubsetsIncluded',...
-    'Ts', 'Reps', 'CTstrings', 'SubsetsIncluded');
+MasterSetPath = 'S:/Gabriella/Dropbox/BootstrappedTestData/25CBootstrappedGaussianSmoothedProfiles.mat';
+load(MasterSetPath, 'MeanSmoothedProfiles', 'SmoothedProfileSEs', 'xfits', 'NormedMeanSmoothedProfiles', 'NormedMeanSmoothedProfileSEs');
 AllSetInfo = GetFixedSetPrefixInfo;
 
 NumSets = length(AllSetInfo.Temperatures);
@@ -63,9 +61,9 @@ end
 
 %% Master Set Windowed 
 warning('off','stats:LinearModel:RankDefDesignMat')
-exp_idx = 1:NumSets;
-AllSets = 1:NumSets;
 
+exp_idx = 1:NumSets;
+if isfield(AllCompiledEmbryos{1}, 'WindowedProfiles')
 counts_windowed =  zeros([size(AllCompiledEmbryos{1}.WindowedProfiles.DubuisTime.Control.count), NumSets]);
 ControlledProfiles = NaN([size(AllCompiledEmbryos{1}.WindowedProfiles.DubuisTime.Control.count), NumSets]);
 for i = 1:NumSets
@@ -129,7 +127,8 @@ for i = 1:(NumSets)
         end
     end
 end
-%%
+
+
 SetScalingFactors = NaN(NumSets, NChannels);
 SetScalingSEs = NaN(NumSets, NChannels);
 SetScalingIntercepts = NaN(NumSets, NChannels);
@@ -162,17 +161,10 @@ for exp_index = 1:length(AllSetInfo.Temperatures)
     AllCompiledEmbryos{exp_index} = CompiledEmbryos;
     save(CEoutpath, 'CompiledEmbryos');
 end
-
+end
 
 %% Master Set Smoothed 
 
-load(AllSmoothMasterPath, 'CombinedMean', 'CombinedSE', 'CombinedCounts', 'Slopes', 'Intercepts', 'Fits', 'SubsetsIncluded',...
-    'Ts', 'Reps', 'CTstrings', 'SubsetsIncluded');
-
-
-warning('off','stats:LinearModel:RankDefDesignMat')
-exp_idx = 1:NumSets;
-AllSets = 1:NumSets;
 
 counts_windowed =  zeros([size(AllCompiledEmbryos{1}.DubuisTimeSmoothedAvgAPProfiles.Control), NumSets]);
 ControlledProfiles = NaN([size(AllCompiledEmbryos{1}.DubuisTimeSmoothedAvgAPProfiles.Control), NumSets]);
@@ -238,7 +230,7 @@ for i = 1:(NumSets)
         end
     end
 end
-%%
+
 SetScalingFactors = NaN(NumSets, NChannels);
 SetScalingSEs = NaN(NumSets, NChannels);
 SetScalingIntercepts = NaN(NumSets, NChannels);

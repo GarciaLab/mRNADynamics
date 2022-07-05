@@ -14,9 +14,9 @@ UseFitX2 = fitx2 >= 0.2 & fitx2 < 0.925;
 UsePredX2 = fitx2 >= 0.1 & fitx2 < 0.925;
 CompiledEmbryos.RescaledAvgFitModels = cell(1, size(CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles, 1));
 CompiledEmbryos.FitSlideRescaledDorsalAvgAPProfiles = NaN(size(CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles));
-if ~isfield(CompiledEmbryos, 'ZeroCorrectedSlideRescaledDorsalAvgAPProfiles')
-    CompiledEmbryos.ZeroCorrectedSlideRescaledDorsalAvgAPProfiles = NaN(size(CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles));
-end
+
+CompiledEmbryos.ZeroCorrectedSlideRescaledDorsalAvgAPProfiles = NaN(size(CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles));
+
 NumAPbins = size(CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles, 2);
 NChannels = size(CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles, 3);
 ch_index = 3;

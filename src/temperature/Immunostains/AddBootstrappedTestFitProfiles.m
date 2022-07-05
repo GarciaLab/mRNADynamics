@@ -263,7 +263,7 @@ for type_index = 1:NumTypes
         ys = CompiledEmbryos.UnivScaledProfiles.(ProfString1).(ProfString2);
         
         ys = ys(UseTestTF, :,ch_index);
-        BadTF =  sum(isnan(ys), 2).' >min( sum(isnan(ys), 2).');
+        BadTF =  sum(isnan(ys), 2).' > NumAPbins/2;
         
         x_sample = x_sample(~BadTF);
         ys = ys(~BadTF,:);
@@ -343,7 +343,7 @@ for type_index = 1:NumTypes
         ys = CompiledEmbryos.UnivScaledProfiles.(ProfString1).(ProfString2);
         
         ys = ys(UseControlTF, :,ch_index);
-        BadTF =  sum(isnan(ys), 2).' >min( sum(isnan(ys), 2).');
+        BadTF =  sum(isnan(ys), 2).' >NumAPbins/2;
         
         x_sample = x_sample(~BadTF);
         ys = ys(~BadTF,:);
