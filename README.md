@@ -7,7 +7,6 @@ Please, when you use this code cite “H. G. Garcia, M. Tikhonov, A. Lin, T. Gre
 
 # 1. Required Matlab toolboxes:
 
-- Curve Fitting
 - Image Processing Toolbox
 - Computer Vision Systems
 - Curve Fitting
