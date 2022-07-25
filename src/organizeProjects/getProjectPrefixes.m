@@ -1,15 +1,17 @@
-function prefixes = getProjectPrefixes(dataType,varargin)
+function prefixes = getProjectPrefixes(dataTypes,varargin)
 
-% function allPrefixes = getProjectPrefixes(dataType,varargin)
+% function prefixes = getProjectPrefixes(dataTypes,varargin)
 %
 % DESCRIPTION
-% Returns the Prefixes for all experiments in a project tab of 
-% DataStatus.xlsx. This is an even more barebones version of the
-% 'justPrefixes' option in LoadMS2Set.
+% Returns the Prefixes for all experiments in the project tab(s) of 
+% DataStatus.xlsx specified by 'dataTypes'
+% This is an even more barebones version of the 'justPrefixes' option in
+% LoadMS2Set.
 %
 % INPUT
-% dataType: This is a string that is identical to the name of the tab in
-%           DataStatus.xlsx that you wish to analyze.
+% dataType: This is a cell array of strings that match the name(s) of the 
+%           tab(s) in DataStatus.xlsx that you wish to analyze. 
+%           (Note: They don't all need to be in the same DataStatus file!)
 %
 % OPTIONS
 % 'onlyApproved': Limits the prefixes returned by this function to only
@@ -28,11 +30,15 @@ function prefixes = getProjectPrefixes(dataType,varargin)
 %                        'ReadyForEnrichment')
 %
 % OUTPUT
-% prefixes: n x 1 cell array containing the Prefixes for this project tab
+% prefixes: n x 1 cell array containing the Prefixes for the specified
+%           project tab(s)
 %
 % Author (contact): Meghan Turner (meghan_turner@berkeley.edu)
 % Created: 5/17/2020
-% Last Updated: MT 7/15/2020 in master branch of mRNADynamics git repo
+% Last Updated: MT 2022-06-14, added functionality to get prefixes for
+%                              multiple DataStatus tabs at once
+
+%% Getting everything set up 
 
 onlyApproved = false; 
 onlyUnapproved = false;
@@ -41,7 +47,15 @@ customApprovalFlag = '';
 prefixes = {}; %#ok<NASGU>
 dataStatusFilename = 'DataStatus.*';    %This naming convention is now enforced inside findDataStatus.m
 
-% Determine if 'onlyApproved' option applies
+% If user passed a single dataType as a character array, convert to cell
+% array to ensure downstream compatibility
+if ischar(dataTypes)
+    projectList = {dataTypes};
+else
+    projectList = dataTypes;
+end
+
+% Determine which type of approval flag we're dealing with
 for i= 1:length(varargin)
     if strcmpi(varargin{i}, 'onlyApproved')
         onlyApproved = true; 
@@ -59,59 +73,72 @@ end
 % Find all DataStatus.xlsx files in all DropboxFolders
 dataStatusFolders = findDataStatus(allDropboxFolders);
 
-%Look in all DataStatus.xlsx files to find the tab specified by the dataType
-%user input
-dataStatusWithDataTypeFolder = findDataStatusTab(dataStatusFolders, dataType);
 
-%Redefine the DropboxFolder according to the DataStatus.xlsx we'll use
-dropboxFolder = dataStatusWithDataTypeFolder;
+%% Loop over all dataTypes input by user
 
-%Load the contents of the DataStatus.XLSX tab we just found
-dataStatusDir = dir([dropboxFolder,filesep,dataStatusFilename]);
-dataTypeTabContents = readcell([dropboxFolder,filesep,dataStatusDir(1).name], ...
-                               'Sheet', dataType);
+allExperimentNames = {};
 
-%Get the Prefixes for all datasets
-[allPrefixes,~] = getPrefixesFromDataStatusTab(dataTypeTabContents);
-
-
-%% Handle 'Approved' dataset options
-
-if onlyApproved || onlyUnapproved
-    %Find which datasets are "ready" or "approved". All others are "ignored".
-    compileRow = find(strcmpi(dataTypeTabContents(:,1),'AnalyzeLiveData Compile Particles') |...
-                      strcmpi(dataTypeTabContents(:,1),'CompileParticles') |...
-                      strcmpi(dataTypeTabContents(:,1),'CompileNuclearProtein'));
+for i = 1:numel(projectList)
+    currDataType = projectList{i};
     
-    readyLogicalArray = strcmpi(dataTypeTabContents(compileRow, 2:end),'READY') | ...
-                   strcmpi(dataTypeTabContents(compileRow, 2:end),'ApproveAll');
+    % Look in all DataStatus.xlsx files to find the tab specified by the 
+    % current dataType
+    dataStatusWithDataTypeFolder = findDataStatusTab(dataStatusFolders, currDataType);
 
-    if onlyApproved
-        outSets = find(readyLogicalArray);
+    % Redefine the DropboxFolder according to the DataStatus.xlsx we'll use
+    dropboxFolder = dataStatusWithDataTypeFolder;
 
-        if isempty(outSets)
-            warning('No ApproveAll or READY sets found.')
+    % Load the contents of the DataStatus.XLSX tab we just found
+    dataStatusDir = dir([dropboxFolder,filesep,dataStatusFilename]);
+    dataTypeTabContents = readcell([dropboxFolder,filesep,dataStatusDir(1).name], ...
+                                   'Sheet', currDataType);
+
+    %Get the Prefixes for all experiments in this dataType
+    [currPrefixes,~] = getPrefixesFromDataStatusTab(dataTypeTabContents);
+
+
+    % Handle 'Approved' dataset options
+    if onlyApproved || onlyUnapproved
+        %Find which datasets are "ready" or "approved". All others are "ignored".
+        compileRow = find(strcmpi(dataTypeTabContents(:,1),'AnalyzeLiveData Compile Particles') |...
+                          strcmpi(dataTypeTabContents(:,1),'CompileParticles') |...
+                          strcmpi(dataTypeTabContents(:,1),'CompileNuclearProtein'));
+
+        readyLogicalArray = strcmpi(dataTypeTabContents(compileRow, 2:end),'READY') | ...
+                       strcmpi(dataTypeTabContents(compileRow, 2:end),'ApproveAll');
+
+        if onlyApproved
+            outSets = find(readyLogicalArray);
+
+            if isempty(outSets)
+                warning('No ApproveAll or READY sets found.')
+            end
+
+        elseif onlyUnapproved
+            outSets = find(~readyLogicalArray);
         end
-        
-    elseif onlyUnapproved
-        outSets = find(~readyLogicalArray);
+
+        outPrefixes = currPrefixes(outSets);
+        prefixes = outPrefixes;
+
+    elseif customApproved
+        % Find the row in the DataStatus tab that contains the custom approval flag 
+        approvalFlagRow = find(strcmpi(dataTypeTabContents(:,1),customApprovalFlag));
+        % Contents of the approval flag row much be int booleans (1s or 0s) and
+        % CANNOT be empty
+        % If you get an error on this line, fill in any empty columns with 0s
+        approvalFlagLogicalArray = cell2mat(dataTypeTabContents(approvalFlagRow,2:end));
+
+        approvedPrefixes = currPrefixes(find(approvalFlagLogicalArray));
+        prefixes = approvedPrefixes;
+    else
+        prefixes = currPrefixes;
     end
-        
-    outPrefixes = allPrefixes(outSets);
-    prefixes = outPrefixes;
-
-elseif customApproved
-    % Find the row in the DataStatus tab that contains the custom approval flag 
-    approvalFlagRow = find(strcmpi(dataTypeTabContents(:,1),customApprovalFlag));
-    % Contents of the approval flag row much be int booleans (1s or 0s) and
-    % CANNOT be empty
-    % If you get an error on this line, fill in any empty columns with 0s
-    approvalFlagLogicalArray = cell2mat(dataTypeTabContents(approvalFlagRow,2:end));
     
-    approvedPrefixes = allPrefixes(find(approvalFlagLogicalArray));
-    prefixes = approvedPrefixes;
-else
-    prefixes = allPrefixes;
+    % Add the prefixes from this dataTypes into the main, compiled list
+    nNewPrefixes = length(currPrefixes);
+    allExperimentNames(end+1:end+nNewPrefixes, 1) = currPrefixes;
 end
 
-end
+% Not quite ready to move fully away from the prefix naming scheme
+prefixes = allExperimentNames;
