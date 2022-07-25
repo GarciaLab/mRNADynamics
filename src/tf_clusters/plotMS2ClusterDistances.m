@@ -1,4 +1,4 @@
-function plotMS2ClusterDistances(dataTypes, clusterTF)
+function plotMS2ClusterDistances(dataTypes) %,clusterTF)
 %
 % DESCRIPTION
 %
@@ -94,6 +94,17 @@ binStepSize = 50;
 % inputEdges = 0:binStepSize:3000;
 inputEdges = 0:binStepSize:maxDistanceForHist;
 
+% Need to correct for differing volumes in each bin (each bin is actually a
+% a spherical shell because we're doing this in 3D
+binVolumes3D = nan(1, numel(inputEdges)-1);
+V = @(r) (4/3)*pi*(r^3);
+
+for i = 1:numel(inputEdges)-1
+    binVolumes3D(i) = V(inputEdges(i+1)) - V(inputEdges(i));
+end
+
+binVolumes3D = binVolumes3D ./ V(inputEdges(end)); %just rescaling so we're not working with tiny, tiny counts
+
  
 %% Compile stats for each prefix so we can plot them seperately
 for p = 1:numPrefixes
@@ -103,7 +114,7 @@ for p = 1:numPrefixes
 
     clusterResultsFolder = [liveExperiment.resultsFolder, filesep, ...
                             'cluster_analysis'];
-    load([clusterResultsFolder, filesep, 'ms2ClusterDistances_px.mat'],...
+    load([clusterResultsFolder, filesep, 'ms2ClusterDistances.mat'],...
          'ms2ClusterDistances');
 
     % For simplest analysis, just combine data from all nuclei and all frames
@@ -117,30 +128,56 @@ for p = 1:numPrefixes
     end
     
     % The data is in um, convert to nm
-    pixelSize_nm = liveExperiment.pixelSize_nm;
-%     distances_nm = distances_um .* 1000;
+    distances_nm = distances_um .* 1000;
 
-    distances_nm = distances_um * pixelSize_nm; %these are actually in pixels
+%     distances_nm = distances_um * pixelSize_nm; %these are actually in pixels
     
     % Bin data to make histogram plot
-%     histDistances = distances_nm(distances_nm <= maxDistanceForHist);
-    histDistances = distances_nm;
-    [histCounts, histEdges] = histcounts(histDistances,inputEdges);
+    histDistances = distances_nm(distances_nm <= maxDistanceForHist);
+%     histDistances = distances_nm;
+    [histCountsRaw, histEdges] = histcounts(histDistances,inputEdges);
     
-    histCountsNorm = histCounts ./ sum(histCounts);  %normalized by # of cluster detections to compare across experiment
-    histEdgesNorm = histEdges;
+    histCountsPerVoxel = histCountsRaw ./ binVolumes3D;
+    
+    histCountsPerVoxelNorm = histCountsPerVoxel ./ sum(histCountsRaw);  %normalized by # of cluster detections to compare across experiment
 
     % add all data to main structure
     distancesByPrefix(p).all_distances_nm = distances_nm;
-    distancesByPrefix(p).histCounts = histCounts;
-    distancesByPrefix(p).histCountsNorm = histCountsNorm;
-    distancesByPrefix(p).histEdgesNorm = histEdgesNorm;
+    distancesByPrefix(p).histEdges = histEdges;
+    distancesByPrefix(p).histCountsRaw = histCountsRaw;
+    distancesByPrefix(p).histCountsPerVoxel = histCountsPerVoxel;
+    distancesByPrefix(p).histCountsPerVoxelNorm = histCountsPerVoxelNorm;
 end
 
-% Combine all prefixes of the same DataType to plot together
+%% Combine all prefixes of the same DataType to plot together
 % TODO
-distancesByDataType = struct('DataType',[],'distances_all',[]);
+distancesByDataType = struct('DataType',dataTypes,'distances_all_nm',[]);
+% 
+for p = 1:numel(distancesByPrefix)
+    
+    switch distancesByPrefix(p).DataType
+        case dataTypes{1}
+            distancesByDataType(1).distances_all_nm = [distancesByDataType(1).distances_all_nm, distancesByPrefix(p).all_distances_nm];
+        case dataTypes{2}
+            distancesByDataType(2).distances_all_nm = [distancesByDataType(2).distances_all_nm, distancesByPrefix(p).all_distances_nm];
+    end
+    
+end
 
+for d = 1:numel(distancesByDataType)
+    histDistances = distancesByDataType(d).distances_all_nm(distancesByDataType(d).distances_all_nm <= maxDistanceForHist);
+    [histCountsRaw, histEdges] = histcounts(histDistances,inputEdges);
+
+    histCountsPerVoxel = histCountsRaw ./ binVolumes3D;
+
+    histCountsPerVoxelNorm = histCountsPerVoxel ./ sum(histCountsRaw);  %normalized by # of cluster detections to compare across experiment
+
+    % add all data to main structure
+    distancesByDataType(d).histEdges = histEdges;
+    distancesByDataType(d).histCountsRaw = histCountsRaw;
+    distancesByDataType(d).histCountsPerVoxel = histCountsPerVoxel;
+    distancesByDataType(d).histCountsPerVoxelNorm = histCountsPerVoxelNorm;
+end
 
 %% Generic plotting elements
 todaysDate = datestr(now, 'yyyy-mm-dd');
@@ -169,15 +206,50 @@ for p = 1:numPrefixes
         error('Not a supported gene.');
     end
     expName = [distancesByPrefix(p).DataType,'_', distancesByPrefix(p).embryoID];
-    nDetections = sum([distancesByPrefix(p).histCounts]);
+    nDetections = sum([distancesByPrefix(p).histCountsRaw]);
     
     hold on
-    hst = histogram('BinEdges',distancesByPrefix(p).histEdgesNorm,...
-                      'BinCounts',distancesByPrefix(p).histCountsNorm,...
+    hst = histogram('BinEdges',distancesByPrefix(p).histEdges,...
+                      'BinCounts',distancesByPrefix(p).histCountsPerVoxelNorm,...
                       'FaceColor', histColor, 'FaceAlpha', 1);
-    ylabel('number of cluster detections, normalized')
-    xlabel('distance from MS2 locus (px)')
-    lgnd = legend([expName, ', n = ' num2str(nDetections)]);
+    ylim([0 15])
+    ylabel({'number of cluster detections';'per voxel, normalized'})
+    xlabel('distance from MS2 locus (nm)')
+    lgnd = legend([expName, ', n = ' num2str(nDetections)],'Interpreter','none');
+    set(lgnd,'color','none','Box','off','Location','northwest');
+    StandardFigurePBoC(hst,gca);
+    hold off;
+    
+    % Save figure
+
+    filename = ['ms2ClusterDistance_', expName]; 
+    exportgraphics(figIndivHist,[figFolder, filesep, filename, '.png']);
+    exportgraphics(figIndivHist,[figFolder, filesep, filename, '.pdf']);
+end
+
+%% Combine all embryos by DataType histograms
+for d = 1:numel(distancesByDataType)
+    figIndivHist = figure(p+d);
+    figIndivHist.Position = [500,500,1000,330];
+    
+    if contains(distancesByDataType(d).DataType, 'sna', 'IgnoreCase', true)
+        histColor = targetGeneColor;
+    elseif contains(distancesByDataType(d).DataType, 'hb', 'IgnoreCase', true)
+        histColor = nontargetGeneColor;
+    else
+        error('Not a supported gene.');
+    end
+    expName = [distancesByDataType(d).DataType,'_allembryos'];
+    nDetections = sum([distancesByDataType(d).histCountsRaw]);
+    
+    hold on
+    hst = histogram('BinEdges',distancesByDataType(d).histEdges,...
+                      'BinCounts',distancesByDataType(d).histCountsPerVoxelNorm,...
+                      'FaceColor', histColor, 'FaceAlpha', 1);
+    ylim([0 15])
+    ylabel({'number of cluster detections';'per voxel, normalized'})
+    xlabel('distance from MS2 locus (nm)')
+    lgnd = legend([expName, ', n = ' num2str(nDetections)],'Interpreter','none');
     set(lgnd,'color','none','Box','off','Location','northwest');
     StandardFigurePBoC(hst,gca);
     hold off;

@@ -38,6 +38,10 @@ function maskCytoplasmForWeka(Prefix, varargin)
 %                         which are stored in a subfolder called
 %                         'PreProcessed\normalizedImages'
 %
+% 'gaussianSmoothing', sigma: Prior to masking, smooths the image with a 3D
+%                             Gaussian filter with the size of the filter 
+%                             specified by user input 'sigma'   
+%
 %
 % OUTPUT
 % normalizedFolder: path to the folder where the normalized movie frames
@@ -55,8 +59,8 @@ function maskCytoplasmForWeka(Prefix, varargin)
 radiusScale = 1.3;
 channelsToMask = [];
 maskNormIm = false;
-gauss_smooth = true;
-sigma = 1;
+gauss_smooth = false;
+sigma = NaN;
 % Determine if user set non-default options
 determineMaskCytoplasmOptions;
 
@@ -167,6 +171,14 @@ function determineMaskCytoplasmOptions
             % maskNormalizedImages option
             elseif strcmpi(varargin{i},'maskNormalizedImages')
                 maskNormIm = true;
+            elseif strcmpi(varargin{i}, 'gaussianSmoothing')
+                gauss_smooth = true;
+                if numel(varargin) > i && ~ischar(varargin{i+1})
+                    sigma = varargin{i+1};
+                else
+                    sigma = 1;
+                    warning('No sigma specified. Setting 3D Gaussian filter sigma to 1')
+                end
             % Notify user of invalid options
             else
                 error([varargin{i}, ' is not a valid input option.'])

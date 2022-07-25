@@ -1,6 +1,6 @@
 function Clusters = assignClusters2Nucleus(...
                             schnitzcells,Ellipses,Clusters,Spots,...
-                            currFrame,pixelSize,pixelZSize)
+                            currFrame,pixelSizeXY,pixelSizeZ)
 % DESCRIPTION
 % Assign all spots to the closest nucleus. No restrictions on number of 
 % spots that can be affiliated with a nucleus.
@@ -76,11 +76,11 @@ end
 for currSpot=1:length(newSpotsX)
 
     if hasNuclearZCoordinates
-        newSpotPos = [newSpotsX(currSpot)*pixelSize, newSpotsY(currSpot)*pixelSize, newSpotsZ(currSpot)*pixelZSize];
-        newEllipsePos =[newEllipsesX*pixelSize, newEllipsesY*pixelSize, newEllipsesZ*pixelZSize];
+        newSpotPos = [newSpotsX(currSpot)*pixelSizeXY, newSpotsY(currSpot)*pixelSizeXY, newSpotsZ(currSpot)*pixelSizeZ];
+        newEllipsePos =[newEllipsesX*pixelSizeXY, newEllipsesY*pixelSizeXY, newEllipsesZ*pixelSizeZ];
     else
-        newSpotPos = [newSpotsX(currSpot)*pixelSize, newSpotsY(currSpot)*pixelSize];
-        newEllipsePos =[newEllipsesX*pixelSize, newEllipsesY*pixelSize];
+        newSpotPos = [newSpotsX(currSpot)*pixelSizeXY, newSpotsY(currSpot)*pixelSizeXY];
+        newEllipsePos =[newEllipsesX*pixelSizeXY, newEllipsesY*pixelSizeXY];
     end
 
     distances(currSpot,:) = vecnorm(newSpotPos - newEllipsePos, 2, 2);

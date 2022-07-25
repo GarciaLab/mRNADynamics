@@ -37,8 +37,8 @@ preProcFolder = liveExperiment.preFolder;
 dropboxFolder = liveExperiment.userResultsFolder;
 outputFolder = [dropboxFolder, filesep, prefix];
 
-pixelSize = liveExperiment.pixelSize_um;
-pixelZSize = liveExperiment.zStep_um;
+pixelSizeXY_um = liveExperiment.pixelSize_um;
+pixelSizeZ_um = liveExperiment.zStep_um;
 
 anaphaseFrames = liveExperiment.anaphaseFrames';
 nc14 = anaphaseFrames(6);
@@ -95,7 +95,7 @@ for currFrame = nc14:nFrames
     waitbar((currFrame-nc14)/(length(Spots)-nc14),h, ...
             sprintf('Sorting clusters from frame: %d of %d', currFrame, length(Spots)));
     Clusters = assignClusters2Nucleus(schnitzcells,Ellipses,Clusters,...
-                                      Spots,currFrame,pixelSize,pixelZSize);
+                                      Spots,currFrame,pixelSizeXY_um,pixelSizeZ_um);
 %     disp(['processing frame:', num2str(currFrame)]);
                                   
 end

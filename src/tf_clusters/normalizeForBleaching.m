@@ -12,8 +12,9 @@ function normalizeForBleaching(Prefix, channel)
 %     bleaching is severe.
 %
 % INPUT ARGUMENTS
-% preProcessedFolder: path to the PreProcessedData folder containing all
-%                     frames for your movie
+% prefix:
+%
+% channel: 
 % 
 % OPTIONS
 % N/A

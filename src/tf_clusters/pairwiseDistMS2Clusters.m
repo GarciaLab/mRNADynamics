@@ -57,8 +57,8 @@ end
 %% Get info from LiveExperiment
 nFrames = liveExperiment.nFrames;
 % pixel sizes in um for accurate distance calculations
-pixelSizeXY = liveExperiment.pixelSize_um;
-pixelSizeZ = liveExperiment.zStep_um;
+pixelSizeXY_um = liveExperiment.pixelSize_um;
+pixelSizeZ_um = liveExperiment.zStep_um;
 
 % channel info
 inputChannels = liveExperiment.inputChannels;
@@ -148,14 +148,14 @@ for n = 1:numNucleiWithBoth
             spotsIndex = currParticle.Index(ms2FrameIndex);
             ms2Pos3D = Spots(f).Fits(spotsIndex).GaussPos3D;
             
-            % Positional data is in pixels, need to convert to nm to 
+            % Positional data is in pixels, need to convert to um to 
             % correctly calculate distances.
-            xyzPosMS2 = [ms2Pos3D(1)*pixelSizeXY,...
-                         ms2Pos3D(2)*pixelSizeXY,...
-                         ms2Pos3D(3)*pixelSizeZ];
-            xyzPosClusters(:,1) = [currClusters(f).ClusterFits.xPos]*pixelSizeXY;
-            xyzPosClusters(:,2) = [currClusters(f).ClusterFits.yPos]*pixelSizeXY;
-            xyzPosClusters(:,3) = [currClusters(f).ClusterFits.zPos]*pixelSizeZ;
+            xyzPosMS2 = [ms2Pos3D(1)*pixelSizeXY_um,...
+                         ms2Pos3D(2)*pixelSizeXY_um,...
+                         ms2Pos3D(3)*pixelSizeZ_um];
+            xyzPosClusters(:,1) = [currClusters(f).ClusterFits.xPos]*pixelSizeXY_um;
+            xyzPosClusters(:,2) = [currClusters(f).ClusterFits.yPos]*pixelSizeXY_um;
+            xyzPosClusters(:,3) = [currClusters(f).ClusterFits.zPos]*pixelSizeZ_um;
             
 %             % This is the wrong way to do it, b/c assumes isometric xyz
 %             % pixel size, when actually z is much larger than xy
@@ -175,8 +175,8 @@ for n = 1:numNucleiWithBoth
             ms2ClusterDistances(n).frames(f).xyzCoordClusters = uniqueXYZPosClusters;
             ms2ClusterDistances(n).frames(f).xyzCoordMS2 = xyzPosMS2;
 
-            ms2Coord = xyzPosMS2;
-            clusterCoords = uniqueXYZPosClusters;
+            ms2Coord = double(xyzPosMS2); % pdist2 complains if passed singles
+            clusterCoords = double(uniqueXYZPosClusters); % pdist2 complains if passed singles
 
             %% Calculate Pairwise distances
             if ~isempty(ms2Coord) && ~isempty(clusterCoords)
@@ -190,4 +190,4 @@ for n = 1:numNucleiWithBoth
 end
 
 %% Save
-save([writeFolder filesep 'ms2ClusterDistances_px.mat'],'ms2ClusterDistances');
+save([writeFolder filesep 'ms2ClusterDistances.mat'],'ms2ClusterDistances');
