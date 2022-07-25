@@ -199,12 +199,23 @@ else
     disp('loading Spots.mat structure for 3D fitting...')
     load([DropboxFolder, filesep, Prefix, filesep, 'Spots.mat'], 'Spots');
 end
+
+%% Clean up Spots structure
+% Remove duplicate spots 
+% MT, 2022-06-08: not sure why identical duplicates are making their way
+% into the Spots structure (with the TF cluster data), but it's best to fix
+% this before we try to do 3D Gaussian fitting which is super time
+% intensive
+% [TODO]
+
+
 %If we only have one channel, then convert Spots to a
 %standard structure.
 if nSpotChannels == 1 && iscell(Spots)
     Spots = Spots{1}; 
 end
 
+%% Save Spots.mat
 mkdir([DropboxFolder, filesep, Prefix]);
 if whos(var2str(Spots)).bytes < 2E9
     save([DropboxFolder, filesep, Prefix,...
@@ -216,8 +227,10 @@ else
     disp('Spots.mat saved.')
 end
 
+%% Track spots
 if track, TrackmRNADynamics(Prefix, 'noretrack'); end
 
+%% Fit 3D Gaussians to all segmented spots
 if fit3D > 0
     disp('Fitting 3D Gaussians...')
     fit3DGaussiansToAllSpots(Prefix, 'segmentSpots', Spots, ...
