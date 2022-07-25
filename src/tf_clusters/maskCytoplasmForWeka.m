@@ -38,6 +38,11 @@ function maskCytoplasmForWeka(Prefix, varargin)
 %                         which are stored in a subfolder called
 %                         'PreProcessed\normalizedImages'
 %
+% **This is defaulted to true with a sigma=1, need to come back and make it
+% a real option**
+% 'gaussSmoothing', sigma: Before masking, smooths stack with a 3D gaussian
+%                          kernel with sigma specified by user.
+%
 %
 % OUTPUT
 % normalizedFolder: path to the folder where the normalized movie frames
