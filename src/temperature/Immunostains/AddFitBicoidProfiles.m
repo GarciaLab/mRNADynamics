@@ -14,6 +14,7 @@ UseFitX2 = fitx2 >= 0.2 & fitx2 < 0.925;
 UsePredX2 = fitx2 >= 0.1 & fitx2 < 0.925;
 CompiledEmbryos.RescaledAvgFitModels = cell(1, size(CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles, 1));
 CompiledEmbryos.FitSlideRescaledDorsalAvgAPProfiles = NaN(size(CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles));
+CompiledEmbryos.FitZeroedSlideRescaledDorsalAvgAPProfiles = NaN(size(CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles));
 
 CompiledEmbryos.ZeroCorrectedSlideRescaledDorsalAvgAPProfiles = NaN(size(CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles));
 
@@ -26,13 +27,15 @@ for i = 1:size(CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles, 1)
     if ~isnan(beta0(1))
     CompiledEmbryos.RescaledAvgFitModels{i} = fitnlm(fitx2(UseFitX2),CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(i,UseFitX2,ch_index),f,beta0);
 
-    CompiledEmbryos.FitSlideRescaledDorsalAvgAPProfiles(i,UsePredX2,ch_index) = f(CompiledEmbryos.RescaledAvgFitModels{i}.Coefficients.Estimate, fitx2(UsePredX2))-...
+    CompiledEmbryos.FitSlideRescaledDorsalAvgAPProfiles(i,UsePredX2,ch_index) = f(CompiledEmbryos.RescaledAvgFitModels{i}.Coefficients.Estimate, fitx2(UsePredX2));
+    CompiledEmbryos.FitZeroedSlideRescaledDorsalAvgAPProfiles(i,UsePredX2,ch_index) = f(CompiledEmbryos.RescaledAvgFitModels{i}.Coefficients.Estimate, fitx2(UsePredX2))-...
         CompiledEmbryos.RescaledAvgFitModels{i}.Coefficients.Estimate(3);
     CompiledEmbryos.ZeroCorrectedSlideRescaledDorsalAvgAPProfiles(i,:,ch_index) = CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles(i,:,ch_index)-...
         CompiledEmbryos.RescaledAvgFitModels{i}.Coefficients.Estimate(3);
     
         if CompiledEmbryos.RescaledAvgFitModels{i}.Rsquared.Ordinary < 0.9
             CompiledEmbryos.FitSlideRescaledDorsalAvgAPProfiles(i,UsePredX2,ch_index) = NaN(1, sum(UsePredX2), 1);
+            CompiledEmbryos.FitZeroedSlideRescaledDorsalAvgAPProfiles(i,UsePredX2,ch_index) = NaN(1, sum(UsePredX2), 1);
             CompiledEmbryos.ZeroCorrectedSlideRescaledDorsalAvgAPProfiles(i,UsePredX2,ch_index) = NaN(1, sum(UsePredX2), 1);
             CompiledEmbryos.Approved(i) = false;
             CompiledEmbryos.IsNC14(i) = false;
@@ -58,6 +61,6 @@ end
 
 %%
 
-
-CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
-save(CEoutpath, 'CompiledEmbryos');
+% 
+% CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
+% save(CEoutpath, 'CompiledEmbryos');

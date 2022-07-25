@@ -1,5 +1,6 @@
 function [PlottedParams, PlottedParamSEs,R2s, ylab,OutputString,GlobalPlotYmax,GlobalPlotYmin,LogPlotYmin] = ...
-    getPlottingVariables(this, parameter,  TraceType, R2bound, UseRescaledFluo, UseRescaledParamTiming)
+    getPlottingVariables(this, parameter,  TraceType, R2bound, UseRescaledFluo, UseRescaledParamTiming,...
+    UsePerNucleusTraces, UseBinnedTraces, UseBinnedPerNucleusTraces)
 if ~exist('UseRescaledFluo', 'var')
     UseRescaledFluo = false;
 end
@@ -8,7 +9,59 @@ if ~exist('UseRescaledParamTiming', 'var')
     UseRescaledParamTiming = false;
 end
 
+if ~exist('UsePerNucleusTraces', 'var')
+    UsePerNucleusTraces = false;
+end
+if ~exist('UseBinnedTraces', 'var')
+    UseBinnedTraces = false;
+end
+if ~exist('UseBinnedPerNucleusTraces', 'var')
+    UseBinnedPerNucleusTraces = false;
+end
 %% Load relevant parameters into memory
+if UseBinnedPerNucleusTraces
+    InitiationRates = getBinnedPerNucleusTrapezoidParameters(this, 'MeanInitiationRates', TraceType, false);
+    SEInitiationRates = getBinnedPerNucleusTrapezoidParameters(this, 'MeanInitiationRates', TraceType, true);
+    TimeOns = getBinnedPerNucleusTrapezoidParameters(this, 'TimeOns', TraceType, false);
+    SETimeOns = getBinnedPerNucleusTrapezoidParameters(this, 'TimeOns', TraceType, true);
+    TimeOffs = getBinnedPerNucleusTrapezoidParameters(this, 'TimeOffs', TraceType, false);
+    SETimeOffs = getBinnedPerNucleusTrapezoidParameters(this, 'TimeOffs', TraceType, true);
+    ElongationTimes = getBinnedPerNucleusTrapezoidParameters(this, 'ElongationTimes', TraceType, false);
+    SEElongationTimes = getBinnedPerNucleusTrapezoidParameters(this, 'ElongationTimes', TraceType, true);
+    UnloadingRates = getBinnedPerNucleusTrapezoidParameters(this, 'UnloadingRates', TraceType, false);
+    SEUnloadingRates = getBinnedPerNucleusTrapezoidParameters(this, 'UnloadingRates', TraceType, true);
+    R2s = getBinnedPerNucleusTrapezoidParameters(this, 'R2s', TraceType);
+    [FractionOns, SchnitzCounts] = getCycleFractionOns(this, TraceType, UseBinnedTraces, UseBinnedPerNucleusTraces);
+    [MaxFluos, SEMaxFluos] = getBinnedPerNucleusMaxFluoMatForPlotting(this, TraceType);
+elseif UseBinnedTraces
+    InitiationRates = getBinnedTrapezoidParameters(this, 'MeanInitiationRates', TraceType, false);
+    SEInitiationRates = getBinnedTrapezoidParameters(this, 'MeanInitiationRates', TraceType, true);
+    TimeOns = getBinnedTrapezoidParameters(this, 'TimeOns', TraceType, false);
+    SETimeOns = getBinnedTrapezoidParameters(this, 'TimeOns', TraceType, true);
+    TimeOffs = getBinnedTrapezoidParameters(this, 'TimeOffs', TraceType, false);
+    SETimeOffs = getBinnedTrapezoidParameters(this, 'TimeOffs', TraceType, true);
+    ElongationTimes = getBinnedTrapezoidParameters(this, 'ElongationTimes', TraceType, false);
+    SEElongationTimes = getBinnedTrapezoidParameters(this, 'ElongationTimes', TraceType, true);
+    UnloadingRates = getBinnedTrapezoidParameters(this, 'UnloadingRates', TraceType, false);
+    SEUnloadingRates = getBinnedTrapezoidParameters(this, 'UnloadingRates', TraceType, true);
+    R2s = getBinnedTrapezoidParameters(this, 'R2s', TraceType);
+    [FractionOns, SchnitzCounts] = getCycleFractionOns(this, TraceType, UseBinnedTraces, UseBinnedPerNucleusTraces);
+    [MaxFluos, SEMaxFluos] = getBinnedMaxFluoMatForPlotting(this, TraceType);
+elseif UsePerNucleusTraces
+        InitiationRates = getPerNucleusTrapezoidParameters(this, 'MeanInitiationRates', TraceType, false);
+    SEInitiationRates = getPerNucleusTrapezoidParameters(this, 'MeanInitiationRates', TraceType, true);
+    TimeOns = getPerNucleusTrapezoidParameters(this, 'TimeOns', TraceType, false);
+    SETimeOns = getPerNucleusTrapezoidParameters(this, 'TimeOns', TraceType, true);
+    TimeOffs = getPerNucleusTrapezoidParameters(this, 'TimeOffs', TraceType, false);
+    SETimeOffs = getPerNucleusTrapezoidParameters(this, 'TimeOffs', TraceType, true);
+    ElongationTimes = getPerNucleusTrapezoidParameters(this, 'ElongationTimes', TraceType, false);
+    SEElongationTimes = getPerNucleusTrapezoidParameters(this, 'ElongationTimes', TraceType, true);
+    UnloadingRates = getPerNucleusTrapezoidParameters(this, 'UnloadingRates', TraceType, false);
+    SEUnloadingRates = getPerNucleusTrapezoidParameters(this, 'UnloadingRates', TraceType, true);
+    R2s = getPerNucleusTrapezoidParameters(this, 'R2s', TraceType);
+    [FractionOns, SchnitzCounts] = getCycleFractionOns(this, TraceType, UseBinnedTraces, UseBinnedPerNucleusTraces);
+    [MaxFluos, SEMaxFluos] = getPerNucleusTrapezoidParameters(this, TraceType);
+else
 InitiationRates = getTrapezoidParameters(this, 'MeanInitiationRates', TraceType, false);
 SEInitiationRates = getTrapezoidParameters(this, 'MeanInitiationRates', TraceType, true);
 TimeOns = getTrapezoidParameters(this, 'TimeOns', TraceType, false);
@@ -22,11 +75,12 @@ SEUnloadingRates = getTrapezoidParameters(this, 'UnloadingRates', TraceType, tru
 MeanSpotFluos = getTrapezoidParameters(this, 'MeanSpotFluos', TraceType, false);
 SEMeanSpotFluos = getTrapezoidParameters(this, 'MeanSpotFluos', TraceType, true);
 R2s = getTrapezoidParameters(this, 'R2s', TraceType);
-FractionOns = this.FractionOns;
-SchnitzCounts = this.SchnitzCounts;
+[FractionOns, SchnitzCounts] = getCycleFractionOns(this, TraceType, UseBinnedTraces, UseBinnedPerNucleusTraces);
 [MaxFluos, SEMaxFluos] = getMaxFluoMatForPlotting(this, TraceType);
+end
 
 %%
+if ~UseBinnedTraces & ~UseBinnedPerNucleusTraces
 NumSets = length(this.ExperimentPrefixes);
 
 if UseRescaledFluo
@@ -105,6 +159,61 @@ if UseRescaledParamTiming
     
 end
 
+else
+    NumTemperatures = length(this.UniqueTemperatures);
+
+if UseRescaledFluo
+
+    SetFluoCoeffs = this.FluoCoeffs;
+
+    for i = NumTemperatures
+            InitiationRates(i, :,:) = SetFluoCoeffs(i)*InitiationRates(i, :,:);
+            SEInitiationRates(i, :,:) = SetFluoCoeffs(i)*SEInitiationRates(i, :,:);
+            MeanSpotFluos(i,:,:) =  SetFluoCoeffs(i)*MeanSpotFluos(i, :,:);
+            SEMeanSpotFluos(i,:,:) =  SetFluoCoeffs(i)*SEMeanSpotFluos(i, :,:);
+            MaxFluos(i,:,:) =  SetFluoCoeffs(i)*MaxFluos(i, :,:);
+            SEMaxFluos(i,:,:) =  SetFluoCoeffs(i)*SEMaxFluos(i, :,:);
+
+        
+    end
+end
+
+
+
+
+if UseRescaledParamTiming
+    TimingCoeffs = NaN(NumTemperatures, 6);
+    for i = 1:NumTemperatures
+        for NC = 9:14
+            if NC == 14
+                if ~isnan(this.TimeScalingInfo.PropNCDivisionInfo(i, NC-9))
+                    TimingCoeffs(i, NC-8) =  1/this.TimeScalingInfo.PropNCDivisionInfo(i, NC-9);
+                else
+                    TimingCoeffs(i, NC-8) = this.TimingCoeffs(i);
+                end
+            elseif ~isnan(this.TimeScalingInfo.PropNCDivisionInfo(i, NC-8))
+                TimingCoeffs(i, NC-8) = 1/this.TimeScalingInfo.PropNCDivisionInfo(i, NC-8);
+            else
+                TimingCoeffs(i, NC-8) = this.TimingCoeffs(i);
+            end
+            
+            InitiationRates(i, :,NC-8) = InitiationRates(i, :,NC-8)/TimingCoeffs(i, NC-8);
+            SEInitiationRates(i, :,NC-8) = SEInitiationRates(i, :,NC-8)/TimingCoeffs(i, NC-8);
+            TimeOns(i, :,NC-8) = TimeOns(i, :,NC-8)*TimingCoeffs(i, NC-8);
+            SETimeOns(i, :,NC-8) = SETimeOns(i, :,NC-8)*TimingCoeffs(i, NC-8);
+            TimeOffs(i, :,NC-8) = TimeOffs(i, :,NC-8)*TimingCoeffs(i, NC-8);
+            SETimeOffs(i, :,NC-8) = SETimeOffs(i, :,NC-8)*TimingCoeffs(i, NC-8);
+            ElongationTimes(i, :,NC-8) = ElongationTimes(i, :,NC-8)*TimingCoeffs(i, NC-8);
+            SEElongationTimes(i, :,NC-8) = SEElongationTimes(i, :,NC-8)*TimingCoeffs(i, NC-8);
+            UnloadingRates(i, :,NC-8) = UnloadingRates(i, :,NC-8)/TimingCoeffs(i, NC-8);
+            SEUnloadingRates(i, :,NC-8) = SEUnloadingRates(i, :,NC-8)/TimingCoeffs(i, NC-8);
+            
+        end
+        
+    end
+    
+end
+end
 
 
 %%
@@ -121,6 +230,9 @@ if strcmpi(parameter, 'fractionons') | strcmpi(parameter, 'fractionon')
     GlobalPlotYmin = -0.05;
     LogPlotYmin = 0.05;
 elseif strcmpi(parameter, 'meanspotfluos') | strcmpi(parameter, 'meanspotfluo') 
+    if UseBinnedTraces | UseBinnedPerNucleusTraces | UsePerNucleusTraces
+        error('Cannot plot mean spot values for PerNucleus or Binned Traces because calculation was not done.')
+    end
     OutputString = 'MeanSpotFluos';
     PlottedParams = MeanSpotFluos;
     PlottedParamSEs = SEMeanSpotFluos;
@@ -289,11 +401,18 @@ elseif strcmpi(parameter, 'unloadingrates') | strcmpi(parameter, 'unloadingrate'
     LogPlotYmin = max(10, GlobalPlotYmin);
 elseif strcmpi(parameter, 'mrnaproductions') | strcmpi(parameter, 'mrnaproduction') | strcmpi(parameter, 'totalmrnaproductions') | strcmpi(parameter, 'totalmrnaproduction')
     OutputString = 'TotalmRNAProduction';
-    FractionOnsTemp = FractionOns;
-    FractionOnsTemp(SchnitzCounts < this.MinimumSchnitzCount) = NaN;
-    PlottedParams = FractionOnsTemp.*InitiationRates.*(TimeOffs-TimeOns);
-    PlottedParamSEs = sqrt(((FractionOnsTemp.^2).*(TimeOffs-TimeOns).^2).*(SEInitiationRates.^2)+...
-        (FractionOnsTemp.^2).*(InitiationRates.^2).*(SETimeOffs.^2+SETimeOns.^2));
+    if ~UseBinnedPerNucleusTraces & ~UsePerNucleusTraces
+        FractionOnsTemp = FractionOns;
+        FractionOnsTemp(SchnitzCounts < this.MinimumSchnitzCount) = NaN;
+        PlottedParams = FractionOnsTemp.*InitiationRates.*(TimeOffs-TimeOns);
+        PlottedParamSEs = sqrt(((FractionOnsTemp.^2).*(TimeOffs-TimeOns).^2).*(SEInitiationRates.^2)+...
+            (FractionOnsTemp.^2).*(InitiationRates.^2).*(SETimeOffs.^2+SETimeOns.^2));
+    else
+        PlottedParams = InitiationRates.*(TimeOffs-TimeOns);
+        PlottedParamSEs = sqrt(((TimeOffs-TimeOns).^2).*(SEInitiationRates.^2)+...
+            (InitiationRates.^2).*(SETimeOffs.^2+SETimeOns.^2));
+    end
+    
     if UseRescaledFluo
         ylab = 're-scaled mean mRNA produced per cell (AU)';
     else

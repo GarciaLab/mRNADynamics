@@ -22,7 +22,7 @@ counts_below_limit = 3;
 sigma = 5;
 window_multiplier = 3;
 NumBootstrappedFits = 200;
-NumPoints = 100;
+NumPoints =100;
 NumEmbryos = size(CompiledEmbryos.UnivScaledProfiles.TestSetSlideRescaledDorsalAvgAPProfiles.Rep1, 1);
 NumAPbins = size(CompiledEmbryos.UnivScaledProfiles.TestSetSlideRescaledDorsalAvgAPProfiles.Rep1, 2);
 NChannels =size(CompiledEmbryos.UnivScaledProfiles.TestSetSlideRescaledDorsalAvgAPProfiles.Rep1, 3);
@@ -140,6 +140,47 @@ CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgA
 CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped.TestSet.counts_above = NaN(Nxfits, NumAPbins, NChannels);
 CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped.ControlSet.counts_below = NaN(Nxfits, NumAPbins, NChannels);
 CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped.TestSet.counts_below = NaN(Nxfits, NumAPbins, NChannels);
+
+
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles = {};
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1 = {};
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.x = xfits;
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.ControlSet.mean = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.TestSet.mean = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.ControlSet.se = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.TestSet.se = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.ControlSet.counts =NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.TestSet.counts = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.ControlSet.counts_above =NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.TestSet.counts_above = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.ControlSet.counts_below = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.TestSet.counts_below = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2 = {};
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2.ControlSet.mean = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2.TestSet.mean = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2.ControlSet.se = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2.TestSet.se = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2.ControlSet.counts =NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2.TestSet.counts = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2.ControlSet.counts_above =NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2.TestSet.counts_above = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2.ControlSet.counts_below = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2.TestSet.counts_below = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped = {};
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped.ControlSet.mean = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped.TestSet.mean = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped.ControlSet.se = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped.TestSet.se = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped.ControlSet.counts =NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped.TestSet.counts = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped.ControlSet.counts_above =NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped.TestSet.counts_above = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped.ControlSet.counts_below = NaN(Nxfits, NumAPbins, NChannels);
+CompiledEmbryos.BootstrappedUnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped.TestSet.counts_below = NaN(Nxfits, NumAPbins, NChannels);
+
+
+
+
 CompiledEmbryos.BootstrappedUnivScaledProfiles.HybridTestSetRescaledDorsalAvgAPProfiles = {};
 
 CompiledEmbryos.BootstrappedUnivScaledProfiles.HybridTestSetRescaledDorsalAvgAPProfiles.Rep1 = {};
@@ -178,26 +219,30 @@ CompiledEmbryos.BootstrappedUnivScaledProfiles.HybridTestSetRescaledDorsalAvgAPP
 CompiledEmbryos.BootstrappedUnivScaledProfiles.HybridTestSetRescaledDorsalAvgAPProfiles.Flipped.TestSet.counts_below = NaN(1, Nxfits);
 
 ProfString1s = {'TestSetSlideRescaledDorsalAvgAPProfiles', 'TestSetZeroCorrectedSlideRescaledDorsalAvgAPProfiles',...
-    'TestSetFitSlideRescaledDorsalAvgAPProfiles','HybridTestSetRescaledDorsalAvgAPProfiles',...
+    'TestSetFitSlideRescaledDorsalAvgAPProfiles','TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles','HybridTestSetRescaledDorsalAvgAPProfiles',...
     'TestSetSlideRescaledDorsalAvgAPProfiles', 'TestSetZeroCorrectedSlideRescaledDorsalAvgAPProfiles',...
-    'TestSetFitSlideRescaledDorsalAvgAPProfiles', 'HybridTestSetRescaledDorsalAvgAPProfiles',...
+    'TestSetFitSlideRescaledDorsalAvgAPProfiles','TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles', 'HybridTestSetRescaledDorsalAvgAPProfiles',...
     'TestSetSlideRescaledDorsalAvgAPProfiles', 'TestSetZeroCorrectedSlideRescaledDorsalAvgAPProfiles',...
-    'TestSetFitSlideRescaledDorsalAvgAPProfiles', 'HybridTestSetRescaledDorsalAvgAPProfiles'};
+    'TestSetFitSlideRescaledDorsalAvgAPProfiles', 'TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles','HybridTestSetRescaledDorsalAvgAPProfiles'};
 
 ProfString2s = {'Rep1', 'Rep1',...
-    'Rep1','Rep1',...
-    'Rep2', 'Rep2',...
+    'Rep1','Rep1','Rep1',...
+    'Rep2','Rep2', 'Rep2',...
     'Rep2','Rep2',...
-    'Flipped', 'Flipped',...
+    'Flipped','Flipped', 'Flipped',...
     'Flipped','Flipped'};
 
 
 ProfString3s = {'SlideRescaledDorsalAvgAP', 'ZeroCorrectedSlideRescaledDorsalAvgAP',...
-    'FitSlideRescaledDorsalAvgAP','ZeroCorrectedSlideRescaledDorsalAvgAP',...
+    'FitSlideRescaledDorsalAvgAP','FitZeroedSlideRescaledDorsalAvgAP','ZeroCorrectedSlideRescaledDorsalAvgAP',...
     'SlideRescaledDorsalAvgAP', 'ZeroCorrectedSlideRescaledDorsalAvgAP',...
-    'FitSlideRescaledDorsalAvgAP', 'ZeroCorrectedSlideRescaledDorsalAvgAP',...
+    'FitSlideRescaledDorsalAvgAP','FitZeroedSlideRescaledDorsalAvgAP', 'ZeroCorrectedSlideRescaledDorsalAvgAP',...
     'SlideRescaledDorsalAvgAP', 'ZeroCorrectedSlideRescaledDorsalAvgAP',...
-    'FitSlideRescaledDorsalAvgAP', 'ZeroCorrectedSlideRescaledDorsalAvgAP'};
+    'FitSlideRescaledDorsalAvgAP','FitZeroedSlideRescaledDorsalAvgAP', 'ZeroCorrectedSlideRescaledDorsalAvgAP'};
+
+chLists = {[3 5], [3 5], [3], [3], [3],...
+    [3 5], [3 5], [3], [3], [3],...
+    [3 5], [3 5], [3], [3], [3]};
 
 
 NumTypes = length(ProfString1s);
@@ -229,7 +274,7 @@ for type_index = 1:NumTypes
     ProfString1 = ProfString1s{type_index};
     ProfString2 = ProfString2s{type_index};
     ProfString3 = ProfString3s{type_index};
-    if (IsRep1 & type_index < 5) | (IsRep2 & type_index >= 5 & type_index < 9) | (IsFlipped & type_index >= 9)
+    if (IsRep1 & type_index < 6) | (IsRep2 & type_index >= 6 & type_index < 11) | (IsFlipped & type_index >= 11)
         CompiledEmbryos.BootstrappedUnivScaledProfiles.(ProfString1).(ProfString2).x = ...
             CompiledEmbryos.BootstrappedProfiles.FitSlideRescaledDorsalAvgAP.x;
         CompiledEmbryos.BootstrappedUnivScaledProfiles.(ProfString1).(ProfString2).ControlSet.mean(:,:,:) = ...
@@ -242,6 +287,8 @@ for type_index = 1:NumTypes
             CompiledEmbryos.BootstrappedProfiles.(ProfString3).Control.counts_above;
         CompiledEmbryos.BootstrappedUnivScaledProfiles.(ProfString1).(ProfString2).ControlSet.counts_below = ...
             CompiledEmbryos.BootstrappedProfiles.(ProfString3).Control.counts_below;
+        
+
         
         CompiledEmbryos.BootstrappedUnivScaledProfiles.(ProfString1).(ProfString2).TestSet.mean(:,:,:) = ...
             CompiledEmbryos.BootstrappedProfiles.(ProfString3).Test.mean;
@@ -257,7 +304,7 @@ for type_index = 1:NumTypes
         continue
     end
     
-    for ch_index = [3 5]
+    for ch_index = chLists{type_index}
         disp(['Type: ', num2str(type_index), ', Channel: ', num2str(ch_index)]);
         x_sample = CompiledEmbryos.DubuisEmbryoTimes(UseTestTF);
         ys = CompiledEmbryos.UnivScaledProfiles.(ProfString1).(ProfString2);

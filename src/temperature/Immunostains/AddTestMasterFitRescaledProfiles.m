@@ -32,6 +32,12 @@ CompiledEmbryos.UnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Re
 CompiledEmbryos.UnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Rep2 = NaN(NumEmbryos, NumAPbins, NChannels);
 CompiledEmbryos.UnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped = NaN(NumEmbryos, NumAPbins, NChannels);
 
+CompiledEmbryos.UnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles = {};
+CompiledEmbryos.UnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.x = CompiledEmbryos.DubuisEmbryoTimes;
+CompiledEmbryos.UnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1 = NaN(NumEmbryos, NumAPbins, NChannels);
+CompiledEmbryos.UnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2 = NaN(NumEmbryos, NumAPbins, NChannels);
+CompiledEmbryos.UnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped = NaN(NumEmbryos, NumAPbins, NChannels);
+
 CompiledEmbryos.UnivScaledProfiles.HybridTestSetRescaledDorsalAvgAPProfiles = {};
 CompiledEmbryos.UnivScaledProfiles.HybridTestSetRescaledDorsalAvgAPProfiles.x = CompiledEmbryos.DubuisEmbryoTimes;
 CompiledEmbryos.UnivScaledProfiles.HybridTestSetRescaledDorsalAvgAPProfiles.Rep1 = NaN(NumEmbryos, NumAPbins, NChannels);
@@ -78,7 +84,7 @@ for ch_index = [3 5]
 end
 
 %% Then add FitSlideRescaledDorsalAvgAPProfiles of FitSlideRescaledDorsalAvgAPProfiles
-for ch_index = [3 5]
+for ch_index = 3
     slope_control = CompiledEmbryos.ScaleFits.TestSetFitSlideRescaledDorsalAvgAPProfiles.Rep1.ScaleEstimate(ch_index);
     intercept_control = CompiledEmbryos.ScaleFits.TestSetFitSlideRescaledDorsalAvgAPProfiles.Rep1.InterceptEstimate(ch_index);
     CompiledEmbryos.UnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Rep1(:,:,ch_index) = ...
@@ -95,21 +101,39 @@ for ch_index = [3 5]
         slope_control*CompiledEmbryos.FitSlideRescaledDorsalAvgAPProfiles(:,:,ch_index) + intercept_control;
 end
 
-%% Then add FitSlideRescaledDorsalAvgAPProfiles of ZeroCorrectedSlideRescaledDorsalAvgAPProfiles
-for ch_index = [3 5]
-    slope_control = CompiledEmbryos.ScaleFits.TestSetFitSlideRescaledDorsalAvgAPProfiles.Rep1.ScaleEstimate(ch_index);
-    intercept_control = CompiledEmbryos.ScaleFits.TestSetFitSlideRescaledDorsalAvgAPProfiles.Rep1.InterceptEstimate(ch_index);
-    CompiledEmbryos.UnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Rep1(:,:,ch_index) = ...
+
+%% Then add FitZeroedSlideRescaledDorsalAvgAPProfiles of FitZeroedSlideRescaledDorsalAvgAPProfiles
+for ch_index = 3
+    slope_control = CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.ScaleEstimate(ch_index);
+    intercept_control = CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.InterceptEstimate(ch_index);
+    CompiledEmbryos.UnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1(:,:,ch_index) = ...
+        slope_control*CompiledEmbryos.FitZeroedSlideRescaledDorsalAvgAPProfiles(:,:,ch_index) + intercept_control;
+    
+    slope_control = CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2.ScaleEstimate(ch_index);
+    intercept_control = CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2.InterceptEstimate(ch_index);
+    CompiledEmbryos.UnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2(:,:,ch_index) = ...
+        slope_control*CompiledEmbryos.FitZeroedSlideRescaledDorsalAvgAPProfiles(:,:,ch_index) + intercept_control;
+    
+    slope_control = CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped.ScaleEstimate(ch_index);
+    intercept_control = CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped.InterceptEstimate(ch_index);
+    CompiledEmbryos.UnivScaledProfiles.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped(:,:,ch_index) = ...
+        slope_control*CompiledEmbryos.FitZeroedSlideRescaledDorsalAvgAPProfiles(:,:,ch_index) + intercept_control;
+end
+%% Then add FitZeroedSlideRescaledDorsalAvgAPProfiles of ZeroCorrectedSlideRescaledDorsalAvgAPProfiles
+for ch_index = 3
+    slope_control = CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.ScaleEstimate(ch_index);
+    intercept_control = CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.InterceptEstimate(ch_index);
+    CompiledEmbryos.UnivScaledProfiles.HybridTestSetRescaledDorsalAvgAPProfiles.Rep1(:,:,ch_index) = ...
         slope_control*CompiledEmbryos.ZeroCorrectedSlideRescaledDorsalAvgAPProfiles(:,:,ch_index) + intercept_control;
     
-    slope_control = CompiledEmbryos.ScaleFits.TestSetFitSlideRescaledDorsalAvgAPProfiles.Rep2.ScaleEstimate(ch_index);
-    intercept_control = CompiledEmbryos.ScaleFits.TestSetFitSlideRescaledDorsalAvgAPProfiles.Rep2.InterceptEstimate(ch_index);
-    CompiledEmbryos.UnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Rep2(:,:,ch_index) = ...
+    slope_control = CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2.ScaleEstimate(ch_index);
+    intercept_control = CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2.InterceptEstimate(ch_index);
+    CompiledEmbryos.UnivScaledProfiles.HybridTestSetRescaledDorsalAvgAPProfiles.Rep2(:,:,ch_index) = ...
         slope_control*CompiledEmbryos.ZeroCorrectedSlideRescaledDorsalAvgAPProfiles(:,:,ch_index) + intercept_control;
     
-    slope_control = CompiledEmbryos.ScaleFits.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped.ScaleEstimate(ch_index);
-    intercept_control = CompiledEmbryos.ScaleFits.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped.InterceptEstimate(ch_index);
-    CompiledEmbryos.UnivScaledProfiles.TestSetFitSlideRescaledDorsalAvgAPProfiles.Flipped(:,:,ch_index) = ...
+    slope_control = CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped.ScaleEstimate(ch_index);
+    intercept_control = CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped.InterceptEstimate(ch_index);
+    CompiledEmbryos.UnivScaledProfiles.HybridTestSetRescaledDorsalAvgAPProfiles.Flipped(:,:,ch_index) = ...
         slope_control*CompiledEmbryos.ZeroCorrectedSlideRescaledDorsalAvgAPProfiles(:,:,ch_index) + intercept_control;
 end
 

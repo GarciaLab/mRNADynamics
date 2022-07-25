@@ -15,6 +15,9 @@ SkipAPSubplots = false;
 IncludeFits = true;
 UseRescaledParamTiming = false;
 UseRescaledFluo = false;
+UsePerNucleusTraces = false;
+UseBinnedTraces = false;
+UseBinnedPerNucleusTraces = false;
 
 subfn_varargin = {};
 x = 1;
@@ -48,6 +51,18 @@ while x <= length(varargin)
     elseif strcmpi(varargin{x}, 'ExcludeFits')
         IncludeFits = false;
         subfn_varargin = [subfn_varargin, 'ExcludeFits'];
+    elseif strcmpi(varargin{x}, 'UsePerNucleusTraces')
+        UsePerNucleusTraces = true;
+    elseif strcmpi(varargin{x}, 'UseBinnedTraces')
+        UseBinnedTraces = true;
+        SkipBinnedParamsVsAP = true;
+        SkipBinnedParamsVsTemp = true;
+    elseif strcmpi(varargin{x}, 'UseBinnedPerNucleusTraces')
+        UseBinnedPerNucleusTraces = true;
+        SkipBinnedParamsVsAP = true;
+        SkipBinnedParamsVsTemp = true;
+        UseBinnedTraces = false;
+        UsePerNucleusTraces = false;
     elseif strcmp(lower(varargin{x}), 'tracetype')
         TraceType = lower(varargin{x+1});
         x = x+1;
@@ -64,6 +79,20 @@ while x <= length(varargin)
     x = x+1;
 end
 
+if UseBinnedPerNucleusTraces
+    UsePerNucleusTraces = false;
+    UseBinnedTraces = false;
+    subfn_varargin = [subfn_varargin, 'UseBinnedPerNucleusTraces'];
+elseif UsePerNucleusTraces & UseBinnedTraces
+    UseBinnedPerNucleusTraces = true;
+    subfn_varargin = [subfn_varargin, 'UseBinnedPerNucleusTraces'];
+    UsePerNucleusTraces = false;
+    UseBinnedTraces = false;
+elseif UsePerNucleusTraces 
+    subfn_varargin = [subfn_varargin, 'UsePerNucleusTraces'];
+elseif UseBinnedTraces
+    subfn_varargin = [subfn_varargin, 'UseBinnedTraces'];
+end
 
 if ~exist('PlottingColors', 'var')
     PlottingColors = 'default';
@@ -89,14 +118,14 @@ else
     error('Invalid choice of trace type. Can use either "fluo", "fluo3d", "anaphasealigned", or "anaphasealigned3d".') % change to error
 end
 subfn_varargin = [subfn_varargin, 'TraceType', TraceType];
+%%
 
 
-
-if ~SkipParamsVsAP
+if ~SkipParamsVsAP & ~UseBinnedTraces & ~UseBinnedPerNucleusTraces
     PlotLTMTrapParamsVsAP(this, parameter, outdir, subfn_varargin{:});
 end
     
-if ~SkipSingleTempParamsVsAP
+if ~SkipSingleTempParamsVsAP & ~UseBinnedTraces & ~UseBinnedPerNucleusTraces
     PlotLTMSingleTempTrapParamsVsAP(this, parameter, outdir, subfn_varargin{:});
 end
     

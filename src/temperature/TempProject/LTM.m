@@ -29,15 +29,21 @@ classdef LTM
         MinimumFittingPoints = [];
         MinimumBinCount = [];
         MinimumSchnitzCount = [];
+        MinimumEmbryos = [];
         
         LegendLabels = {};
         
         APLengths = [];
         
         MeanProfiles = {};
+        BinnedMeanProfiles = {};
+
         
         GeneLength = [];
         
+        BinnedProfileParameters = {};
+        PerNucleusProfileParameters = {};
+        BinnedPerNucleusProfileParameters = {};
         MeanInitiationRates = {};
         TimeOns = {};
         TimeOffs = {};
@@ -58,6 +64,12 @@ classdef LTM
         MeanSpotFluo = {};
         
         ActivationEnergyFits = {};
+        BinnedActivationEnergyFits = {};
+        BinnedPerNucleusActivationEnergyFits = {};
+        PerNucleusActivationEnergyFits = {};
+        FluoAdjustedBinnedActivationEnergyFits = {};
+        FluoAdjustedBinnedPerNucleusActivationEnergyFits = {};
+        FluoAdjustedPerNucleusActivationEnergyFits = {};
         
         UniqueTemperatures = [];
         AutocorrElongationTimes = [];
@@ -69,6 +81,8 @@ classdef LTM
         FluoScalingInfo = {};
         TimeScalingInfo = {};
         
+        UseManualApproval = false;
+        
         
     end
     
@@ -79,7 +93,8 @@ classdef LTM
         
         
         function this = LTM(ProjectName, ProjectType, GeneLength, FluoParamPath, IncludedNCs, time_delta,...
-                MinimumTraceCount, MinimumTimePoints, MinimumBinCount, MinimumFittingPoints, MinimumSchnitzCount)
+                MinimumTraceCount, MinimumTimePoints, MinimumBinCount, MinimumFittingPoints, MinimumSchnitzCount,...
+                MinimumEmbryos, UseManualApproval)
             %liveProject Construct an instance of this class
             %   Detailed explanation goes here
             this.ProjectName = ProjectName;
@@ -88,58 +103,73 @@ classdef LTM
                 this.ProjectType = ProjectType;
             end
             
-            if exist('IncludedNCs', 'var')
+            if exist('IncludedNCs', 'var') & ~isempty(IncludedNCs)
                 this.IncludedNCs = IncludedNCs;
             else
                 this.IncludedNCs =[10, 11, 12, 13, 14];
             end
             
-            if exist('time_delta', 'var')
+            if exist('time_delta', 'var') & ~isempty(time_delta)
                 this.time_delta = time_delta;
             else
                 this.time_delta = 30; % unit: minutes
             end
             
-            if exist('MinimumTraceCount', 'var')
+            if exist('MinimumTraceCount', 'var') & ~isempty(MinimumTraceCount)
                 this.MinimumTraceCount = MinimumTraceCount;
             else
                 this.MinimumTraceCount = 5;
             end
-            if exist('MinimumTimePoints', 'var')
+            
+            
+            
+            if exist('MinimumTimePoints', 'var') & ~isempty(MinimumTimePoints)
                 this.MinimumTimePoints = MinimumTimePoints;
             else
-                this.MinimumTimePoints = 5;
+                this.MinimumTimePoints = 4;
             end
-            if exist('MinimumFittingPoints', 'var')
+            if exist('MinimumFittingPoints', 'var') & ~isempty(MinimumFittingPoints)
                 this.MinimumFittingPoints = MinimumFittingPoints;
             else
                 this.MinimumFittingPoints = 5;
             end
-            if exist('MinimumBinCount', 'var')
+            if exist('MinimumBinCount', 'var')& ~isempty(MinimumBinCount)
                 this.MinimumBinCount = MinimumBinCount;
             else
                 this.MinimumBinCount = 1;
             end
-            if exist('MinimumSchnitzCount', 'var')
+            if exist('MinimumSchnitzCount', 'var') & ~isempty(MinimumSchnitzCount)
                 this.MinimumSchnitzCount = MinimumSchnitzCount;
             else
                 this.MinimumSchnitzCount = 5;
             end
-            if exist('R2bound', 'var')
+            
+            if exist('MinimumEmbryos', 'var') & ~isempty(MinimumEmbryos)
+                this.MinimumEmbryos = MinimumEmbryos;
+            else
+                this.MinimumEmbryos = 2;
+            end
+            if exist('R2bound', 'var') & ~isempty(R2bound)
                 this.R2bound = R2bound;
             else
                 this.R2bound = 0.95;
             end
-            if exist('alpha', 'var')
+            if exist('alpha', 'var')  & ~isempty(alpha)
                 this.alpha = alpha;
             else
                 this.alpha = 0.95;
             end
             
-            if exist('GeneLength', 'var')
+            if exist('GeneLength', 'var') & ~isempty(GeneLength)
                 this.GeneLength = GeneLength;
             else
                 this.GeneLength = 5858;
+            end
+            
+            if exist('UseManualApproval', 'var') & ~isempty(UseManualApproval)
+                this.UseManualApproval = UseManualApproval;
+            else
+                this.UseManualApproval = false;
             end
             
             
@@ -186,14 +216,21 @@ classdef LTM
             end
             
             this.APLengths = AddAPLengths(this);
-            this = AddMeanProfiles(this);
-            this = AddMeanInitiationRates(this);
-            this = AddFractionOns(this);
-            this = AddHealthInfo(this);
-            this = CalculateMeanSpotFluo(this);
-            this = AddActivationEnergies(this);
-            
-            
+%             this = AddMeanProfiles(this);
+%             
+%             this = AddBinnedMeanProfiles(this);
+%             this = AddMeanInitiationRates(this);
+%             this = AddMeanPerNucleusInitiationRates(this);
+%             this = AddTBinnedMeanInitiationRates(this);
+%             this = AddTBinnedMeanPerNucleusInitiationRates(this);
+%             this = AddHealthInfo(this);
+%             this = CalculateMeanSpotFluo(this);
+%             TimingParamPath = 'S:/Gabriella\Dropbox\TemperatureParameters\hbBAC-MS2-V3\';
+%             this = AddTimingCoeffs(this, TimingParamPath);
+%             this = AddActivationEnergies(this);
+%             this = AddBinnedActivationEnergies(this);
+%             this = AddPerNucleusActivationEnergies(this);
+%             this = AddBinnedPerNucleusActivationEnergies(this);
         end
         
         

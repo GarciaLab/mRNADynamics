@@ -38,5 +38,5 @@ end
 %%
 
 
-CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
-save(CEoutpath, 'CompiledEmbryos');
+% CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
+% save(CEoutpath, 'CompiledEmbryos');

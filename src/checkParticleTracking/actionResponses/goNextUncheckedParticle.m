@@ -1,7 +1,7 @@
 function [lineFit, CurrentParticle, CurrentFrame, ManualZFlag, DisplayRange, TwinParticle] =...
     goNextUncheckedParticle(CurrentParticle, CurrentChannelIndex, HideApprovedFlag, Particles, UseTwinTraces)
 %GONEXTPARTICLE Summary of this function goes here
-%   Detailed explanation goes here
+%   TEMPORARILY CHANGED TO GO TO NEXT APPROVED PARTICLE
 
 if ~exist('UseTwinTraces', 'var')
     UseTwinTraces = false;
@@ -20,7 +20,11 @@ for i= ParticleIndices
         hasNucleus(i) = 1;
     end
 end
-NextParticle = find(ParticleApprovals == 0 & ParticleIndices > CurrentParticle & hasNucleus == 1, 1);
+%NextParticle = find(ParticleApprovals == 0 & ParticleIndices >
+%CurrentParticle & hasNucleus == 1, 1); CHANGE BACK WHEN FINISHED GM
+%7/24/22
+NextParticle = find(ParticleApprovals == 1 & ParticleIndices > CurrentParticle & hasNucleus == 1, 1);
+
 if isempty(NextParticle)
     NextParticle=numParticles;
 end

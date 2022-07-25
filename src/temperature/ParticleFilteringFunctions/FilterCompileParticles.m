@@ -1,7 +1,6 @@
-function [CompiledParticles] = FilterCompileParticles(Prefix, FluoString)
+function [CompiledParticles] = FilterCompileParticles(Prefix, FluoString, varargin)
 %% INITIALIZE ALL SAVED VARIABLES
 % Please initialize any new variables you have added and want to save!!!!
-
 
 
 FluoOptions = {'Fluo3DGauss', 'Fluo', 'Fluo3', 'FluoGauss'};
@@ -325,8 +324,8 @@ end
 
 CompiledParticles = CompileParticlesForFiltering(Prefix, 'SkipAll', 'UseAll');   
 schnitzcells = getSchnitzcells(liveExperiment);
-CompiledParticles = AddQCInfoToCompiledParticles(Prefix, CompiledParticles, FluoString);
-
+CompiledParticles = AddQCInfoToCompiledParticles(Prefix, CompiledParticles, FluoString, varargin{:});
+schnitzcells = getSchnitzcells(liveExperiment);
 
 %%
 CompiledParticles_ROI = cell(1,nSpotChannels); CompiledParticles_nonROI = cell(1,nSpotChannels);

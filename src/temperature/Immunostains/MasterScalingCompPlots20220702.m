@@ -1,5 +1,5 @@
 
-version = 12;
+version = 14;
 SizeDataPath = 'S:/Gabriella/Dropbox/EmbryoSizeMeasurements/EmbryoSizeData.mat';
 AllSetsProfFigPath = 'S:/Gabriella/Dropbox/ProteinProfiles/Figures/';
 AllCompiledPath = ['S:/Gabriella/Dropbox/ProteinProfiles/V',num2str(version),'Profiles/'];

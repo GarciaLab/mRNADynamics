@@ -62,6 +62,9 @@ for SetIndex = 1:length(ltm.ExperimentPrefixes)
     
     
     for sc_idx=1:length(schnitzcells)
+        if ~isfield(schnitzcells(sc_idx), 'Approved')
+            schnitzcells(sc_idx).Approved = 0;
+        end
         if (schnitzcells(sc_idx).Approved > 0)  & (schnitzcells(sc_idx).Flag ~= 6)
             SchnitzApproved(sc_idx) = 1;
         end

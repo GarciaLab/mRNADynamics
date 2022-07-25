@@ -158,6 +158,113 @@ for temp = [25 27.5 22.5 20 17.5]
         end
     end
     
+%% Add Fit ZeroCorrected Fits
+    FitTypeStrings = {'Rep1Rep2ComboFitZeroedSlideRescaledDorsalAvgAPProfiles', 'Rep1FlippedComboFitZeroedSlideRescaledDorsalAvgAPProfiles',...
+        'Rep2FlippedComboFitZeroedSlideRescaledDorsalAvgAPProfiles', 'AllCombinedFitZeroedSlideRescaledDorsalAvgAPProfiles'};
+    for i = 1:3
+        for j = 1:length(FitTypeStrings)
+            CCEs{i}.mdl.(FitTypeStrings{j}) = {};
+            CCEs{i}.ScaleFits.(FitTypeStrings{j}) = {};
+            for k = 1:length(SetStrings)
+                CCEs{i}.mdl.(FitTypeStrings{j}).(SetStrings{k}) = cell(NumMasterProfs, NChannels);
+                CCEs{i}.ScaleFits.(FitTypeStrings{j}).(SetStrings{k}) = {};
+                CCEs{i}.ScaleFits.(FitTypeStrings{j}).(SetStrings{k}).ScaleEstimate = NaN(NumMasterProfs, NChannels);
+                CCEs{i}.ScaleFits.(FitTypeStrings{j}).(SetStrings{k}).ScaleSE = NaN(NumMasterProfs, NChannels);
+                CCEs{i}.ScaleFits.(FitTypeStrings{j}).(SetStrings{k}).InterceptEstimate = NaN(NumMasterProfs, NChannels);
+                CCEs{i}.ScaleFits.(FitTypeStrings{j}).(SetStrings{k}).InterceptSE = NaN(NumMasterProfs, NChannels);
+            end
+            
+        end
+    end
+
+    for ch_index = [3 5]
+        for fittype_index = 1:size(FitTypeIncludedSets, 1)
+            for set_index = 1:length(SetStrings)
+                ControlSetTF = [];
+                AllDubuisTimes = [];
+                Allyset = [];
+                for i = 1:3
+                    if FitTypeIncludedSets(fittype_index, i)
+                        ControlSetTF = [ControlSetTF ...
+                            CCEs{i}.IsNC14 & CCEs{i}.ControlSetEmbryos & ~isnan(CCEs{i}.DubuisEmbryoTimes)];
+                    else
+                        ControlSetTF = [ControlSetTF  zeros(1, length(CCEs{i}.IsNC14), 'logical')];
+                    end
+                    if set_index ~= i
+                        Allyset = [Allyset ; CCEs{i}.UnivScaledProfiles.TestSetZeroCorrectedSlideRescaledDorsalAvgAPProfiles.(SetStrings{set_index})(:,:,ch_index)];
+                    else
+                        Allyset = [Allyset ; CCEs{i}.FitSlideRescaledDorsalAvgAPProfiles(:,:,ch_index)];
+                        CCEs{i}.UnivScaledProfiles.TestSetZeroCorrectedSlideRescaledDorsalAvgAPProfiles.(SetStrings{set_index})(:,:,ch_index) = ...
+                            CCEs{i}.ZeroCorrectedSlideRescaledDorsalAvgAPProfiles(:,:,ch_index);
+                    end
+                    AllDubuisTimes = [AllDubuisTimes CCEs{i}.DubuisEmbryoTimes];
+                end
+                
+                ControlSetTF = logical(ControlSetTF);
+                xsample = AllDubuisTimes(ControlSetTF);
+                yset = Allyset(ControlSetTF,:);
+                yset_flat = yset(:);
+                beta0 =[1, min(yset,[], 'all')];
+                if ~isnan(beta0(2))
+                    for ProfIndex = 1:NumMasterProfs
+                        MasterProfile = MeanSmoothedProfiles{ProfIndex}(:,:,ch_index);
+                        ysample = GetMasterProfileForEmbryoTimes(xsample, MasterProfile, xfits);
+                        ysample_flat = ysample(:);
+                       
+                        TFys = ~isnan(ysample_flat) & ~isnan(yset_flat);
+                        dlm =  fitnlm(ysample_flat(TFys),yset_flat(TFys),f,beta0);
+                        for i = 1:3
+                            if FitTypeIncludedSets(fittype_index, i)
+                                
+                                CCEs{i}.mdl.(FitTypeStrings{fittype_index}).(SetStrings{set_index}){ProfIndex, ch_index} = dlm;
+                                CCEs{i}.ScaleFits.(FitTypeStrings{fittype_index}).(SetStrings{set_index}).ScaleEstimate(ProfIndex, ch_index) = 1/dlm.Coefficients.Estimate(1);
+                                CCEs{i}.ScaleFits.(FitTypeStrings{fittype_index}).(SetStrings{set_index}).InterceptEstimate(ProfIndex, ch_index)  = -dlm.Coefficients.Estimate(2)/dlm.Coefficients.Estimate(1);
+                                CCEs{i}.ScaleFits.(FitTypeStrings{fittype_index}).(SetStrings{set_index}).ScaleSE(ProfIndex, ch_index)  = dlm.Coefficients.SE(1)/(dlm.Coefficients.Estimate(1)^2);
+                                CCEs{i}.ScaleFits.(FitTypeStrings{fittype_index}).(SetStrings{set_index}).InterceptSE(ProfIndex, ch_index)  = sqrt(dlm.Coefficients.SE(1)^2*dlm.Coefficients.Estimate(2)^2/(dlm.Coefficients.Estimate(1)^4)+...
+                                    dlm.Coefficients.SE(2)^2/(dlm.Coefficients.Estimate(1)^2));
+                            end
+                        end
+                    end
+                end
+                
+                if sum( FitTypeIncludedSets(fittype_index, :)) < 3
+                    NotSetIndex = find(~FitTypeIncludedSets(fittype_index, :));
+                    ControlSetTF = CCEs{NotSetIndex}.IsNC14 & ...
+                        CCEs{NotSetIndex}.ControlSetEmbryos & ~isnan(CCEs{NotSetIndex}.DubuisEmbryoTimes) ;
+                    xsample = CCEs{NotSetIndex}.DubuisEmbryoTimes(ControlSetTF);
+                    if set_index ~= NotSetIndex
+                        yset =  CCEs{NotSetIndex}.UnivScaledProfiles.TestSetZeroCorrectedSlideRescaledDorsalAvgAPProfiles.(SetStrings{set_index})(ControlSetTF,:,ch_index);
+                    else
+                        yset = CCEs{NotSetIndex}.ZeroCorrectedSlideRescaledDorsalAvgAPProfiles(ControlSetTF,:,ch_index);
+                    end
+                    
+                    beta0 =[1, min(yset,[], 'all')];
+                    if ~isnan(beta0(2))
+                        for ProfIndex = 1:NumMasterProfs
+                            MasterProfile = MeanSmoothedProfiles{ProfIndex}(:,:,ch_index);
+                            ysample = GetMasterProfileForEmbryoTimes(xsample, MasterProfile, xfits);
+                            
+                            dlm =  fitnlm(ysample(:),yset(:),f,beta0);
+                      
+                            
+                            CCEs{NotSetIndex}.mdl.(FitTypeStrings{fittype_index}).(SetStrings{set_index}){ProfIndex, ch_index} = dlm;
+                            CCEs{NotSetIndex}.ScaleFits.(FitTypeStrings{fittype_index}).(SetStrings{set_index}).ScaleEstimate(ProfIndex, ch_index) = 1/dlm.Coefficients.Estimate(1);
+                            CCEs{NotSetIndex}.ScaleFits.(FitTypeStrings{fittype_index}).(SetStrings{set_index}).InterceptEstimate(ProfIndex, ch_index)  = -dlm.Coefficients.Estimate(2)/dlm.Coefficients.Estimate(1);
+                            CCEs{NotSetIndex}.ScaleFits.(FitTypeStrings{fittype_index}).(SetStrings{set_index}).ScaleSE(ProfIndex, ch_index)  = dlm.Coefficients.SE(1)/(dlm.Coefficients.Estimate(1)^2);
+                            CCEs{NotSetIndex}.ScaleFits.(FitTypeStrings{fittype_index}).(SetStrings{set_index}).InterceptSE(ProfIndex, ch_index)  = sqrt(dlm.Coefficients.SE(1)^2*dlm.Coefficients.Estimate(2)^2/(dlm.Coefficients.Estimate(1)^4)+...
+                                dlm.Coefficients.SE(2)^2/(dlm.Coefficients.Estimate(1)^2));
+                            
+                        end
+                    end
+                    
+                end
+                %
+                
+            end
+        end
+    end
+    
+    
 %% Add Zero Corrected Fits
     FitTypeStrings = {'Rep1Rep2ComboZeroCorrectedSlideRescaledDorsalAvgAPProfiles', 'Rep1FlippedComboZeroCorrectedSlideRescaledDorsalAvgAPProfiles',...
         'Rep2FlippedComboZeroCorrectedSlideRescaledDorsalAvgAPProfiles', 'AllCombinedZeroCorrectedSlideRescaledDorsalAvgAPProfiles'};

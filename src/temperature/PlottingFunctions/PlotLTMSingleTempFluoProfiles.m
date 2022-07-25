@@ -215,7 +215,11 @@ for NC=this.IncludedNCs
         
         
         FrameProfFig = figure(1);
-        set(FrameProfFig,'units', 'normalized', 'position',[0.01, 0.05, .6, .6]);
+        if NumSets > 25
+            set(FrameProfFig,'units', 'normalized', 'position',[0.01, 0.05, .9, .6]);
+        else
+            set(FrameProfFig,'units', 'normalized', 'position',[0.01, 0.05, .6, .6]);
+        end
         set(gcf,'color','w');
         FrameProfAx = axes(FrameProfFig);
         eb = cell(1, length(TempMatches{TemperatureIndex}));
@@ -244,7 +248,7 @@ for NC=this.IncludedNCs
             
             set(get(get(eb{idx}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
             
-            prof{idx} = plot(APbins, ones(1, length(APbins)), MarkerStyles{marker_idx},...
+            prof{idx} = plot(APbins, ones(1, length(APbins)),  MarkerStyles{mod(marker_idx, length(MarkerStyles))+1},...
                 'MarkerEdgeColor', [0, 0, 0], 'MarkerFaceColor', colors(temp_idx,:),...
                 'MarkerSize', 6, 'LineStyle', '-', 'Color', colors(temp_idx,:));
             
@@ -351,7 +355,11 @@ for NC=this.IncludedNCs
             if ~sum(PlottedSets)
                 continue
             end
-            legend(FrameProfAx, legend_labels(PlottedSets), 'Location', 'eastoutside')
+            if NumSets > 25
+                lgd = legend(FrameProfAx, legend_labels(PlottedSets),'NumColumns', 2, 'Location', 'eastoutside');
+            else
+                lgd = legend(FrameProfAx, legend_labels(PlottedSets), 'Location', 'eastoutside');
+            end
             if exist('PlotTitle', 'var')
                 title(FrameProfAx, {PlotTitle,...
                     ['T = ', num2str(temperatures(TemperatureIndex)), '°C, Nuclear Cycle ',num2str(NC),', ',num2str((i-1)*this.time_delta/60), ' min. since anaphase'  ]})

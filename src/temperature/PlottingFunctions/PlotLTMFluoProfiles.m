@@ -4,9 +4,14 @@ function PlotLTMFluoProfiles(this, outdir, varargin)
 % PlotTitle, PlottingColors, UseDifferentColors,
 % UseDiffProfiles, UsePhysicalAPLength
 UsePhysicalAPLength = false;
-UseDifferentColors = true;
 useRescaledFluo = false;
 useRescaledTiming = false;
+SuppressErrorbars = false; 
+SuppressMarkers = false; 
+DownsampleTraces = false;
+DownsamplingRate = 1;
+UsePerNucleusTraces = false;
+
 
 x = 1;
 while x <= length(varargin)
@@ -21,6 +26,20 @@ while x <= length(varargin)
     elseif strcmp(lower(varargin{x}), 'tracetype')
         TraceType = lower(varargin{x+1});
         x = x+1;
+    elseif strcmpi(varargin{x}, 'SuppressErrorbars')
+        SuppressErrorbars = true;
+    elseif strcmpi(varargin{x}, 'SuppressMarkers')
+        SuppressMarkers = true;
+    elseif strcmpi(varargin{x}, 'UsePerNucleusTraces')
+        UsePerNucleusTraces = true;
+        SuppressErrorbars = true;
+    elseif strcmpi(varargin{x}, 'DownsampleTraces')
+        DownsampleTraces = true;
+        DownsamplingRate = 2;
+    elseif strcmpi(varargin{x}, 'DownsamplingRate')
+        DownsampleTraces = true;
+        DownsamplingRate = varargin{x+1};
+        x = x+1;
     elseif strcmpi(varargin{x}, 'rescalefluo') | strcmpi(varargin{x}, 'userescaledfluo')
         useRescaledFluo = true;
     elseif strcmpi(varargin{x}, 'userescaledtime') | strcmpi(varargin{x}, 'rescaletime') | ...
@@ -29,6 +48,7 @@ while x <= length(varargin)
     end
     x = x+1;
 end
+
 
 if ~exist('PlottingColors', 'var')
     PlottingColors = 'default';
@@ -63,6 +83,12 @@ else
     TimingString = '';
 end
 
+if UsePerNucleusTraces
+    PerNucleusString = 'PerNucleus';
+else
+    PerNucleusString = '';
+end
+
 
 Temp_obs = this.Temp_obs;
 Temp_sp = this.Temp_sps;
@@ -81,7 +107,34 @@ else
     GradString = 'Gradient';
 end
 
-SpecificDirString = FluoString;
+
+if SuppressErrorbars
+    ErrorbarString = 'NoErrorbars';
+else
+    ErrorbarString = '';
+end
+
+if SuppressMarkers
+    MarkerString = 'NoMarkers';
+else
+    MarkerString = '';
+end
+
+if DownsampleTraces
+    DownsamplingString = ['Downsampled', num2str(DownsamplingRate),'x'];
+else
+    DownsamplingString = '';
+end
+
+
+SpecificDirString = PerNucleusString;
+if ~isempty(FluoString)
+    if ~isempty(SpecificDirString)
+        SpecificDirString = [SpecificDirString, '_', FluoString];
+    else
+        SpecificDirString = FluoString;
+    end
+end
 if ~isempty(TimingString)
     if ~isempty(SpecificDirString)
         SpecificDirString = [SpecificDirString, '_', TimingString];
@@ -102,6 +155,29 @@ if ~isempty(GradString)
         SpecificDirString = [SpecificDirString, '_', GradString];
     else
         SpecificDirString = GradString;
+    end
+end
+
+
+if ~isempty(MarkerString)
+    if ~isempty(SpecificDirString)
+        SpecificDirString = [SpecificDirString, '_', MarkerString];
+    else
+        SpecificDirString = MarkerString;
+    end
+elseif ~isempty(ErrorbarString)
+    if ~isempty(SpecificDirString)
+        SpecificDirString = [SpecificDirString, '_', ErrorbarString];
+    else
+        SpecificDirString = ErrorbarString;
+    end
+end
+
+if ~isempty(DownsamplingString)
+    if ~isempty(SpecificDirString)
+        SpecificDirString = [SpecificDirString, '_', DownsamplingString];
+    else
+        SpecificDirString = DownsamplingString;
     end
 end
 
@@ -195,6 +271,7 @@ for nc_idx=1:length(this.IncludedNCs)
         NCTimes = cell(1, NumSets);
         MaximumNCTimes = NaN(1, NumSets);
         MaxFluos = NaN(1, NumSets);
+        MinFluos = NaN(1, NumSets);
         NumFrames = NaN(1, NumSets);
         MinAPs = NaN(1, NumSets);
         MaxAPs = NaN(1, NumSets);
@@ -203,9 +280,14 @@ for nc_idx=1:length(this.IncludedNCs)
             if ~ismember(idx, this.ProcessedExperiments)
                 continue
             end
+            
             ExpNCTimes = this.MeanProfiles{idx}.([traceName, 'CycleFrameTimes']){NC-8};
             IncludedRows = 1:length(ExpNCTimes);
-            ExpFluoMat = squeeze(this.MeanProfiles{idx}.([traceName, 'CycleMeanTraces'])(IncludedRows,:,NC-8));
+            if UsePerNucleusTraces
+                ExpFluoMat = squeeze(this.MeanProfiles{idx}.([traceName, 'CycleMeanPerNucleusTraces'])(IncludedRows,:,NC-8));
+            else
+                 ExpFluoMat = squeeze(this.MeanProfiles{idx}.([traceName, 'CycleMeanTraces'])(IncludedRows,:,NC-8));
+            end
             ExpStdMat = squeeze(this.MeanProfiles{idx}.([traceName, 'CycleTraceStdErrors'])(IncludedRows,:,NC-8));
             ExpNumNucMat = squeeze(this.MeanProfiles{idx}.([traceName, 'CycleNumOnNuclei'])(IncludedRows,:,NC-8));
             
@@ -236,7 +318,13 @@ for nc_idx=1:length(this.IncludedNCs)
                 NCTimes{idx} = ExpNCTimes(IncludedRows)/60;
                 
                 MaximumNCTimes(idx) = max(NCTimes{idx});
-                MaxFluos(idx) = max(max(MeanFluoMats{idx}+StdFluoMats{idx}));
+                if ~SuppressErrorbars & ~SuppressMarkers
+                    MaxFluos(idx) = max(max(MeanFluoMats{idx}+StdFluoMats{idx}));
+                    MinFluos(idx) = min(min(MeanFluoMats{idx}-StdFluoMats{idx}));
+                else
+                    MaxFluos(idx) = max(max(MeanFluoMats{idx}));
+                    MinFluos(idx) = min(min(MeanFluoMats{idx}));
+                end
                 NumFrames(idx) = length(NCTimes{idx});
             end
         end
@@ -244,13 +332,25 @@ for nc_idx=1:length(this.IncludedNCs)
     else
         [MeanFluoMats, StdFluoMats, NumNucMats, NCTimes, MaximumNCTimes,...
             MaxFluos, NumFrames, MinAPs, MaxAPs] = getLTMRescaledTimingMats(this, traceName, NC, useRescaledFluo);
+        MinFluos = NaN(1, NumSets);
+        for idx = 1:NumSets
+            if ismember(idx, this.IncludedExperiments) & ~isempty(MeanFluoMats{idx})
+                
+                if ~SuppressErrorbars & ~SuppressMarkers
+                    MinFluos(idx) = min(min(MeanFluoMats{idx}-StdFluoMats{idx}));
+                else
+                    
+                    MinFluos(idx) = min(min(MeanFluoMats{idx}));
+                end
+            end
+        end
     end
     if all(isnan(NumFrames))
         continue
     end
     
-    MinAPbin = nanmin(MinAPs);
-    MaxAPbin = nanmax(MaxAPs);
+    MinAPbin = 1;
+    MaxAPbin = NumAPbins;
     
     
     if ~UsePhysicalAPLength
@@ -264,8 +364,13 @@ for nc_idx=1:length(this.IncludedNCs)
     close all
     
     
+    
     FrameProfFig = figure(1);
-    set(FrameProfFig,'units', 'normalized', 'position',[0.01, 0.05, .6, .6]);
+    if NumSets > 25
+        set(FrameProfFig,'units', 'normalized', 'position',[0.01, 0.05, .9, .6]);
+    else
+        set(FrameProfFig,'units', 'normalized', 'position',[0.01, 0.05, .6, .6]);
+    end
     set(gcf,'color','w');
     FrameProfAx = axes(FrameProfFig);
     eb = cell(1, NumSets);
@@ -301,9 +406,30 @@ for nc_idx=1:length(this.IncludedNCs)
         
         set(get(get(eb{idx}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
         
-        prof{idx} = plot(APbins, ones(1, length(APbins)), MarkerStyles{marker_idx},...
-            'MarkerEdgeColor', [0, 0, 0], 'MarkerFaceColor', colors(temp_idx,:),...
-            'MarkerSize', 6, 'LineStyle', '-', 'Color', colors(temp_idx,:));
+        if ~SuppressErrorbars & ~SuppressMarkers
+            if marker_idx <= length(MarkerStyles)
+                prof{idx} = plot(APbins, ones(1, length(APbins)), MarkerStyles{mod(marker_idx, length(MarkerStyles))+1},...
+                    'MarkerEdgeColor', [0, 0, 0], 'MarkerFaceColor', colors(temp_idx,:),...
+                    'MarkerSize', 6, 'LineStyle', '-', 'Color', colors(temp_idx,:), 'LineWidth', 1.5);
+            else
+                prof{idx} = plot(APbins, ones(1, length(APbins)), MarkerStyles{mod(marker_idx, length(MarkerStyles))+1},...
+                    'MarkerEdgeColor', colors(temp_idx,:), 'MarkerFaceColor', colors(temp_idx,:),...
+                    'MarkerSize', 6, 'LineStyle', '-', 'Color', colors(temp_idx,:), 'LineWidth', 1.5);
+            end
+        elseif ~SuppressMarkers
+            if marker_idx <= length(MarkerStyles)
+                prof{idx} = plot(APbins, ones(1, length(APbins)), MarkerStyles{mod(marker_idx, length(MarkerStyles))+1},...
+                    'MarkerEdgeColor', [0, 0, 0], 'MarkerFaceColor', colors(temp_idx,:),...
+                    'MarkerSize', 6, 'LineStyle', '-', 'Color', colors(temp_idx,:), 'LineWidth', 1.5);
+            else
+                prof{idx} = plot(APbins, ones(1, length(APbins)), MarkerStyles{mod(marker_idx, length(MarkerStyles))+1},...
+                    'MarkerEdgeColor', colors(temp_idx,:), 'MarkerFaceColor', colors(temp_idx,:),...
+                    'MarkerSize', 6, 'LineStyle', '-', 'Color', colors(temp_idx,:), 'LineWidth', 1.5);
+            end
+        else
+            prof{idx} = plot(APbins, ones(1, length(APbins)), '-',...
+                'Color', colors(temp_idx,:), 'LineWidth', 3);
+        end
         
         
         set(eb{idx},'Visible','off'); %'off' or 'on'
@@ -325,6 +451,7 @@ for nc_idx=1:length(this.IncludedNCs)
     grid on
     
     hold off
+    
     if ~UsePhysicalAPLength
         xlabel('Fraction Embryo Length', 'FontSize', 16)
         xlim([MinAPLimit, MaxAPLimit])
@@ -346,17 +473,18 @@ for nc_idx=1:length(this.IncludedNCs)
         end
         
     end
-    FrameProfAx.YAxis.FontSize = 16;
-     FrameProfAx.XAxis.FontSize = 16;
-    ylim([0, max(max(MaxFluos)*1.1,1)])
-    ylim([0,3000])
+
+    ylim([floor(min([0 min(MinFluos)])/100)*100, ceil(max([1 max(MaxFluos)])/200)*200])
+    %
+    FrameProfAx.XAxis.FontSize = 18;
+    FrameProfAx.YAxis.FontSize = 18;
     %
     if strcmp(lower(TraceType), 'anaphasealigned') | strcmp(lower(TraceType), 'anaphasealigned3d')
         title(FrameProfAx, {'',...
-            ['Nuclear Cycle ',num2str(NC),', ',num2str(-1), ' min since anaphase' ]}, 'FontSize', 16)
+            ['Nuclear Cycle ',num2str(NC),', ',num2str(-1), ' min since anaphase' ]}, 'FontSize', 20)
     else
         title(FrameProfAx, {'',...
-            ['Nuclear Cycle ',num2str(NC),', ',num2str(-1), ' min' ]}, 'FontSize', 16)
+            ['Nuclear Cycle ',num2str(NC),', ',num2str(-1), ' min' ]}, 'FontSize', 20)
     end
     
     
@@ -390,20 +518,25 @@ for nc_idx=1:length(this.IncludedNCs)
                 FrameProfAx.Children(end-(2*(idx-1))).YPositiveDelta = .1*ones(1, length(APbins));
                 FrameProfAx.Children(end-(2*(idx-1))).YNegativeDelta = .1*ones(1, length(APbins));
                 set(FrameProfAx.Children(end-(2*(idx-1)+1)),'Visible','off'); %'off' or 'on'
+                if ~SuppressErrorbars
                 set(FrameProfAx.Children(end-(2*(idx-1))),'Visible','off'); %'off' or 'on'
+                end
                 set(get(get(FrameProfAx.Children(end-(2*(idx-1)+1)), 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
             else
                 APBinHasData = true;
                 PlottedSets(idx) = true;
                 FrameProfAx.Children(end-(2*(idx-1)+1)).YData = MeanFluoMats{idx}(i, use_idx);
                 FrameProfAx.Children(end-(2*(idx-1)+1)).XData =APLength*APbins(use_idx);
+                
                 FrameProfAx.Children(end-(2*(idx-1))).YData = MeanFluoMats{idx}(i, use_idx);
                 FrameProfAx.Children(end-(2*(idx-1))).XData = APLength*APbins(use_idx);
                 FrameProfAx.Children(end-(2*(idx-1))).YPositiveDelta = StdFluoMats{idx}(i, use_idx);
                 FrameProfAx.Children(end-(2*(idx-1))).YNegativeDelta  = StdFluoMats{idx}(i, use_idx);
                 
                 set(FrameProfAx.Children(end-(2*(idx-1)+1)),'Visible','on'); %'off' or 'on'
+                if ~SuppressErrorbars
                 set(FrameProfAx.Children(end-(2*(idx-1))),'Visible','on'); %'off' or 'on'
+                end
                 set(get(get(FrameProfAx.Children(end-(2*(idx-1)+1)), 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'on');
                 
             end
@@ -414,50 +547,56 @@ for nc_idx=1:length(this.IncludedNCs)
             continue
         end
         
-        lgd = legend(FrameProfAx, legend_labels(PlottedSets), 'Location', 'eastoutside');
+        if NumSets > 25
+            lgd = legend(FrameProfAx, legend_labels(PlottedSets),'NumColumns', 2, 'Location', 'eastoutside');
+        else
+            lgd = legend(FrameProfAx, legend_labels(PlottedSets), 'Location', 'eastoutside');
+        end
         lgd.FontSize = 10;
         if ~useRescaledTiming
-        if exist('PlotTitle', 'var')
-            
-            if strcmp(lower(TraceType), 'anaphasealigned') | strcmp(lower(TraceType), 'anaphasealigned3d')
-                title(FrameProfAx, {PlotTitle,...
-                    ['Nuclear Cycle ',num2str(NC),', ',num2str((i-1)*this.time_delta/60), ' min. since anaphase' ]}, 'FontSize', 16)
-            else
-                title(FrameProfAx, {PlotTitle,...
-                    ['Nuclear Cycle ',num2str(NC),', ',num2str((i-1)*this.time_delta/60), ' min.' ]}, 'FontSize', 16)
-            end
-        else
-            if strcmp(lower(TraceType), 'anaphasealigned') | strcmp(lower(TraceType), 'anaphasealigned3d')
-                title(FrameProfAx,  ['Nuclear Cycle ',num2str(NC),', ',num2str((i-1)*this.time_delta/60), ' min. since anaphase' ], 'FontSize', 16)
-            else
-                title(FrameProfAx,  ['Nuclear Cycle ',num2str(NC),', ',num2str((i-1)*this.time_delta/60), ' min.' ], 'FontSize', 16)
+            if exist('PlotTitle', 'var')
                 
-            end
-        end
-        else
-          if exist('PlotTitle', 'var')
-            
-            if strcmp(lower(TraceType), 'anaphasealigned') | strcmp(lower(TraceType), 'anaphasealigned3d')
-                title(FrameProfAx, {PlotTitle,...
-                    ['Nuclear Cycle ',num2str(NC),', ',num2str((i-1)*this.time_delta/60), ' temperature-scaled min. since anaphase' ]}, 'FontSize', 16)
+                if strcmp(lower(TraceType), 'anaphasealigned') | strcmp(lower(TraceType), 'anaphasealigned3d')
+                    title(FrameProfAx, {PlotTitle,...
+                        ['Nuclear Cycle ',num2str(NC),', ',num2str((i-1)*this.time_delta/60), ' min. since anaphase' ]}, 'FontSize', 16)
+                else
+                    title(FrameProfAx, {PlotTitle,...
+                        ['Nuclear Cycle ',num2str(NC),', ',num2str((i-1)*this.time_delta/60), ' min.' ]}, 'FontSize', 16)
+                end
             else
-                title(FrameProfAx, {PlotTitle,...
-                    ['Nuclear Cycle ',num2str(NC),', ',num2str((i-1)*this.time_delta/60), ' temperature-scaled min.' ]}, 'FontSize', 16)
+                if strcmp(lower(TraceType), 'anaphasealigned') | strcmp(lower(TraceType), 'anaphasealigned3d')
+                    title(FrameProfAx,  ['Nuclear Cycle ',num2str(NC),', ',num2str((i-1)*this.time_delta/60), ' min. since anaphase' ], 'FontSize', 16)
+                else
+                    title(FrameProfAx,  ['Nuclear Cycle ',num2str(NC),', ',num2str((i-1)*this.time_delta/60), ' min.' ], 'FontSize', 16)
+                    
+                end
             end
         else
-            if strcmp(lower(TraceType), 'anaphasealigned') | strcmp(lower(TraceType), 'anaphasealigned3d')
-                title(FrameProfAx,  ['Nuclear Cycle ',num2str(NC),', ',num2str((i-1)*this.time_delta/60), ' temperature-scaled min. since anaphase' ], 'FontSize', 16)
-            else
-                title(FrameProfAx,  ['Nuclear Cycle ',num2str(NC),', ',num2str((i-1)*this.time_delta/60), ' temperature-scaled min.' ], 'FontSize', 16)
+            if exist('PlotTitle', 'var')
                 
+                if strcmp(lower(TraceType), 'anaphasealigned') | strcmp(lower(TraceType), 'anaphasealigned3d')
+                    title(FrameProfAx, {PlotTitle,...
+                        ['Nuclear Cycle ',num2str(NC),', ',num2str((i-1)*this.time_delta/60), ' temperature-scaled min. since anaphase' ]}, 'FontSize', 16)
+                else
+                    title(FrameProfAx, {PlotTitle,...
+                        ['Nuclear Cycle ',num2str(NC),', ',num2str((i-1)*this.time_delta/60), ' temperature-scaled min.' ]}, 'FontSize', 16)
+                end
+            else
+                if strcmp(lower(TraceType), 'anaphasealigned') | strcmp(lower(TraceType), 'anaphasealigned3d')
+                    title(FrameProfAx,  ['Nuclear Cycle ',num2str(NC),', ',num2str((i-1)*this.time_delta/60), ' temperature-scaled min. since anaphase' ], 'FontSize', 16)
+                else
+                    title(FrameProfAx,  ['Nuclear Cycle ',num2str(NC),', ',num2str((i-1)*this.time_delta/60), ' temperature-scaled min.' ], 'FontSize', 16)
+                    
+                end
             end
-        end  
             
             
         end
         
-        outpath = [outdir4, filesep,FluoString, TimingString,PhysicalAPString,'FluoProfile_NC',num2str(NC),'_Frame', num2str(i),'.png'];
+        if sum(PlottedSets) > 0
+        outpath = [outdir4, filesep,'FluoProfile_NC',num2str(NC),'_Frame', num2str(i),'.png'];
         saveas(FrameProfFig,outpath);
+        end
         
     end
     

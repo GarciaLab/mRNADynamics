@@ -1,7 +1,5 @@
 function CompiledEmbryos = AddUniversalScalingFactorsToMasterProfiles(CompiledEmbryos, exp_index)
 %% List of Profiles to rescale
-
-
 AllSetInfo = GetFixedSetPrefixInfo;
 AllSetsCombinedEmbryosPath = 'S:/Gabriella/Dropbox/ProteinProfiles/CompiledEmbryos/';
 
@@ -11,28 +9,62 @@ OutEmbryoPath = [AllSetsCombinedEmbryosPath, SetLabel];
 
 NChannels = size(CompiledEmbryos.DorsalAvgAPProfiles, 3);
 
+NumMasterProfs = size(CompiledEmbryos.ScaleFits.SlideRescaledDorsalAvgAPProfiles.Control.ScaleEstimate, 1);
+
+
+SetLabel = AllSetInfo.SetLabels{exp_index};
+OutEmbryoPath = [AllSetsCombinedEmbryosPath, SetLabel];
+
+
+[NumEmbryos, NumAPbins, NChannels] = size(CompiledEmbryos.SlideRescaledDorsalAvgAPProfiles);
+
+FitTypeStrings = {'SlideRescaledDorsalAvgAPProfiles', 'ZeroCorrectedSlideRescaledDorsalAvgAPProfiles',...
+    'FitSlideRescaledDorsalAvgAPProfiles','FitZeroedSlideRescaledDorsalAvgAPProfiles',...
+    'HybridRescaledDorsalAvgAPProfiles'};
+SetStrings = {'Control', 'Test'};
+ProfileStrings = {'SlideRescaledDorsalAvgAPProfiles', 'ZeroCorrectedSlideRescaledDorsalAvgAPProfiles',...
+    'FitSlideRescaledDorsalAvgAPProfiles','FitZeroedSlideRescaledDorsalAvgAPProfiles',...
+    'ZeroCorrectedSlideRescaledDorsalAvgAPProfiles'};
+
+chLists = cell(1, 5);
+chLists{1} = [3 5];
+chLists{2} = [3 5];
+chLists{3} = [3];
+chLists{4} = [3];
+chLists{5} = [3 5];
+
+UseTestScaling = false;
+if AllSetInfo.Temperatures(exp_index) == 25
+    UseTestScaling = true;
+end
 %%
-CompiledEmbryos.UnivBootstrappedScaledProfiles = {};
+if ~isfield(CompiledEmbryos, 'UnivScaledProfiles')
+CompiledEmbryos.UnivScaledProfiles = {};
+end
 
-CompiledEmbryos.UnivBootstrappedScaledProfiles.FitSlideRescaledAvgAP = {};
-%CompiledEmbryos.UnivBootstrappedScaledProfiles.ZeroCorrectedSlideRescaledAvgAP = {};
-for i = 1:size(CompiledEmbryos.BootstrappedScaleFactors,1)
-    SetString = ['Set', num2str(i)];
-    CompiledEmbryos.UnivBootstrappedScaledProfiles.FitSlideRescaledAvgAP.(SetString).mean = NaN(size(CompiledEmbryos.FitSlideRescaledDorsalAvgAPProfiles));
-    %CompiledEmbryos.UnivBootstrappedScaledProfiles.ZeroCorrectedSlideRescaledAvgAP.(SetString).mean = NaN(size(CompiledEmbryos.FitSlideRescaledDorsalAvgAPProfiles));
-    for ch_index = 2:NChannels
-        CompiledEmbryos.UnivBootstrappedScaledProfiles.FitSlideRescaledAvgAP.(SetString).mean(:,:,ch_index) = ...
-            CompiledEmbryos.BootstrappedScaleFactors(i, ch_index)*CompiledEmbryos.FitSlideRescaledDorsalAvgAPProfiles(:,:,ch_index) + CompiledEmbryos.BootstrappedScaleIntercepts(i, ch_index);
-%         CompiledEmbryos.UnivBootstrappedScaledProfiles.ZeroCorrectedSlideRescaledAvgAP.(SetString).mean (:,:,ch_index) = ...
-%             CompiledEmbryos.BootstrappedScaleFactors(i, ch_index)*CompiledEmbryos.ZeroCorrectedSlideRescaledDorsalAvgAPProfiles(:,:,ch_index) + CompiledEmbryos.BootstrappedScaleIntercepts(i, ch_index);
+for i = 1:length(FitTypeStrings)
+    CompiledEmbryos.UnivScaledProfiles.(FitTypeStrings{i}) = {};%..
+    CompiledEmbryos.UnivScaledProfiles.(FitTypeStrings{i}).x = CompiledEmbryos.DubuisEmbryoTimes;
+    for j = 1:length(SetStrings)
+        CompiledEmbryos.UnivScaledProfiles.(FitTypeStrings{i}).([SetStrings{j}, 'Scaling'])=  NaN(NumEmbryos, NumAPbins, NChannels, NumMasterProfs);
+
+        if strcmpi(lower(SetStrings{j}), 'test') & ~UseTestScaling
+            continue
+        end
+        for ch_index = chLists{i}
+            for master_index = 1:NumMasterProfs
+                slope = CompiledEmbryos.ScaleFits.(ProfileStrings{i}).(SetStrings{j}).ScaleEstimate(master_index, ch_index);
+                intercept= CompiledEmbryos.ScaleFits.(ProfileStrings{i}).(SetStrings{j}).InterceptEstimate(master_index, ch_index);
+                CompiledEmbryos.UnivScaledProfiles.(FitTypeStrings{i}).([SetStrings{j}, 'Scaling'])(:,:,ch_index,master_index) = ...
+                    slope*CompiledEmbryos.(ProfileStrings{i})(:,:,ch_index)+intercept;
+            end
+        end
+        
     end
-
-
 end
 
 
 
-
 %%
-CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
-save(CEoutpath, 'CompiledEmbryos');
+% CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
+% save(CEoutpath, 'CompiledEmbryos');

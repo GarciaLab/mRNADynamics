@@ -30,7 +30,7 @@ elseif strcmp(lower(ParamType), 'meaninitiationrates')
         this.MeanInitiationRates.TbinnedStdError(SetIndex, APindex, NC-8) = se;
         this.MeanInitiationRates.TbinnedCIhigh(SetIndex, APindex, NC-8) = ci(2);
         this.MeanInitiationRates.TbinnedCIlow(SetIndex, APindex, NC-8) = ci(1);
-    elseif strcmp(lower(TraceType), 'anaphasealigned3d')
+    elseif strcmp(lower(TraceType), 'tbinned3d')
         this.MeanInitiationRates.Tbinned3D(SetIndex, APindex, NC-8) = p;
         this.MeanInitiationRates.Tbinned3DStdError(SetIndex, APindex, NC-8) = se;
         this.MeanInitiationRates.Tbinned3DCIhigh(SetIndex, APindex, NC-8) = ci(2);
@@ -62,7 +62,7 @@ elseif strcmp(lower(ParamType), 'timeons')
         this.TimeOns.TbinnedStdError(SetIndex, APindex, NC-8) = se;
         this.TimeOns.TbinnedCIhigh(SetIndex, APindex, NC-8) = ci(2);
         this.TimeOns.TbinnedCIlow(SetIndex, APindex, NC-8) = ci(1);
-    elseif strcmp(lower(TraceType), 'anaphasealigned3d')
+    elseif strcmp(lower(TraceType), 'tbinned3d')
         this.TimeOns.Tbinned3D(SetIndex, APindex, NC-8) = p;
         this.TimeOns.Tbinned3DStdError(SetIndex, APindex, NC-8) = se;
         this.TimeOns.Tbinned3DCIhigh(SetIndex, APindex, NC-8) = ci(2);
@@ -89,7 +89,7 @@ elseif strcmp(lower(ParamType), 'timeoffs')
     elseif strcmp(lower(TraceType), 'tbinned')
         this.TimeOffs.Tbinned(SetIndex, APindex, NC-8) = p;
         this.TimeOffs.TbinnedStdError(SetIndex, APindex, NC-8) = se;
-    elseif strcmp(lower(TraceType), 'anaphasealigned3d')
+    elseif strcmp(lower(TraceType), 'tbinned3d')
         this.TimeOffs.Tbinned3D(SetIndex, APindex, NC-8) = p;
         this.TimeOffs.Tbinned3DStdError(SetIndex, APindex, NC-8) = se;
     elseif strcmp(lower(TraceType), 'unaligned') | strcmp(lower(TraceType), 'fluo') 
@@ -135,7 +135,7 @@ elseif strcmp(lower(ParamType), 'unloadingrates')
         this.UnloadingRates.TbinnedStdError(SetIndex, APindex, NC-8) = se;
         this.UnloadingRates.TbinnedCIhigh(SetIndex, APindex, NC-8) = ci(2);
         this.UnloadingRates.TbinnedCIlow(SetIndex, APindex, NC-8) = ci(1);
-    elseif strcmp(lower(TraceType), 'anaphasealigned3d')
+    elseif strcmp(lower(TraceType), 'tbinned3d')
         this.UnloadingRates.Tbinned3D(SetIndex, APindex, NC-8) = p;
         this.UnloadingRates.Tbinned3DStdError(SetIndex, APindex, NC-8) = se;
         this.UnloadingRates.Tbinned3DCIhigh(SetIndex, APindex, NC-8) = ci(2);
@@ -158,7 +158,7 @@ elseif strcmp(lower(ParamType), 'r2s')
         this.MeanFitR2s.AnaphaseAligned3D(SetIndex, APindex, NC-8) = p;
     elseif strcmp(lower(TraceType), 'tbinned')
         this.MeanFitR2s.Tbinned(SetIndex, APindex, NC-8) = p;
-    elseif strcmp(lower(TraceType), 'anaphasealigned3d')
+    elseif strcmp(lower(TraceType), 'tbinned3d')
         this.MeanFitR2s.Tbinned3D(SetIndex, APindex, NC-8) = p;
     elseif strcmp(lower(TraceType), 'unaligned') | strcmp(lower(TraceType), 'fluo') 
         this.MeanFitR2s.Unaligned(SetIndex, APindex, NC-8) = p;

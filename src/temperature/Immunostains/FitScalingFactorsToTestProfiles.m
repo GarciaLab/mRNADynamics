@@ -120,6 +120,76 @@ end
 
 end
 
+%% Fit to Exponential-Fit Zero-Corrected Bicoid Profiles
+
+CompiledEmbryos.mdl.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles = {};
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles = {};
+
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1 = {};
+CompiledEmbryos.mdl.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1 = cell(1, NChannels);
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1 = {};
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.ScaleEstimate = NaN(1, NChannels);
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.ScaleSE = NaN(1, NChannels);
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.InterceptEstimate = NaN(1, NChannels);
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep1.InterceptSE = NaN(1, NChannels);
+
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2 = {};
+CompiledEmbryos.mdl.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2 = cell(1, NChannels);
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2 = {};
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2.ScaleEstimate = NaN(1, NChannels);
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2.ScaleSE = NaN(1, NChannels);
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2.InterceptEstimate = NaN(1, NChannels);
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Rep2.InterceptSE = NaN(1, NChannels);
+
+
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped = {};
+CompiledEmbryos.mdl.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped = cell(1, NChannels);
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped = {};
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped.ScaleEstimate = NaN(1, NChannels);
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped.ScaleSE = NaN(1, NChannels);
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped.InterceptEstimate = NaN(1, NChannels);
+CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.Flipped.InterceptSE = NaN(1, NChannels);
+
+
+
+
+for ch_index = [3]
+
+
+
+for master_index = 1:3
+    SetString = SetStrings{master_index};
+    if master_index == 1 & IsRep1
+        continue
+    elseif master_index == 2 & IsRep2
+        continue
+    elseif master_index == 3 & IsFlipped
+        continue
+    end
+    MasterProfile = AllCompiledEmbryos{SetIndices(master_index)}.BootstrappedProfiles.FitSlideRescaledDorsalAvgAP.Test.mean(:,:,ch_index);
+    xfits =  AllCompiledEmbryos{SetIndices(master_index)}.BootstrappedProfiles.FitSlideRescaledDorsalAvgAP.x;
+    xsample = CompiledEmbryos.DubuisEmbryoTimes(TestSetTF);
+    
+    ysample = GetMasterProfileForEmbryoTimes(xsample, MasterProfile, xfits);
+    
+    yset = CompiledEmbryos.FitZeroedSlideRescaledDorsalAvgAPProfiles(TestSetTF,:,ch_index);
+    
+    beta0 =[1, min(yset,[], 'all')];
+    if ~isnan(beta0(2))
+        dlm = fitnlm(ysample(:),yset(:),f,beta0);
+        CompiledEmbryos.mdl.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.(SetString){ch_index} = dlm;
+        CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.(SetString).ScaleEstimate(ch_index) = 1/dlm.Coefficients.Estimate(1);
+        CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.(SetString).InterceptEstimate(ch_index) = -dlm.Coefficients.Estimate(2)/dlm.Coefficients.Estimate(1);
+        CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.(SetString).ScaleSE(ch_index) = dlm.Coefficients.SE(1)/(dlm.Coefficients.Estimate(1)^2);
+        CompiledEmbryos.ScaleFits.TestSetFitZeroedSlideRescaledDorsalAvgAPProfiles.(SetString).InterceptSE(ch_index) = sqrt(dlm.Coefficients.SE(1)^2*dlm.Coefficients.Estimate(2)^2/(dlm.Coefficients.Estimate(1)^4)+...
+            dlm.Coefficients.SE(2)^2/(dlm.Coefficients.Estimate(1)^2));
+    end
+    
+
+end
+
+end
+
 %% Fit to Zero Corrected Slide Rescaled Dorsal Avg AP Profiles
 
 CompiledEmbryos.mdl.TestSetZeroCorrectedSlideRescaledDorsalAvgAPProfiles = {};

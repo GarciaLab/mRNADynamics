@@ -373,22 +373,31 @@ AllSetInfo.ControlDubuisTimesToUse{end+1} = ControlDubuisTimesToUse;
 % % T=17.5C, Replicate 1
 SetLabel = 'FixedT17_5CReplicate1';
 PlotLabel = '17.5°C Replicate 1';
+% SetPrefixes ={'2022-04-03-yw168-344m17_5C_Bcd488_Hb546_Hoechst_yw174-190m25C_Kni647_Rep1Slide6',...
+%     '2022-04-05-yw168-344m17_5C_Bcd488_Hb546_Hoechst_yw174-190m25C_Kni647_Rep1Slide10',...
+%     '2022-04-08-yw168-344m17_5C_Bcd488_Hb546_Hoechst_yw174-190m25C_Kni647_Rep1Slide7'};
 SetPrefixes ={'2022-04-03-yw168-344m17_5C_Bcd488_Hb546_Hoechst_yw174-190m25C_Kni647_Rep1Slide6',...
-    '2022-04-05-yw168-344m17_5C_Bcd488_Hb546_Hoechst_yw174-190m25C_Kni647_Rep1Slide10',...
-    '2022-04-08-yw168-344m17_5C_Bcd488_Hb546_Hoechst_yw174-190m25C_Kni647_Rep1Slide7'};
+    '2022-04-05-yw168-344m17_5C_Bcd488_Hb546_Hoechst_yw174-190m25C_Kni647_Rep1Slide10'};
 AllSetInfo.Temperatures(1, end+1) = 17.5;
 AllSetInfo.Replicates(1, end+1) = 1;
 AllSetInfo.Flipped(1, end+1) = 0;
 AllSetInfo.SetLabels{end+1} = SetLabel;
 AllSetInfo.PlotLabels{end+1} = PlotLabel;
 AllSetInfo.Prefixes{end+1} = SetPrefixes;
-AllSetInfo.DorsalAvgAPKnirpsBackgroundCutoff{end+1} = [0.8 7.5 6];
-AllSetInfo.UsePeakRatioToIdentifyControls{end+1} = logical([1 1 1]);
-AllSetInfo.DorsalAvgAPKnirpsPeakValueCutoff{end+1} = [1 10 10];
-AllSetInfo.UsePeakValueToIdentifyControls{end+1} = logical([1 1 1]);
-AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff{end+1} = [1 8 7];
-AllSetInfo.UseMeanValueToIdentifyControls{end+1} =logical([1 1 1]);
-AllSetInfo.MinimumFixCorrectedDeltaFC{end+1} = [0 0 0];
+% AllSetInfo.DorsalAvgAPKnirpsBackgroundCutoff{end+1} = [0.8 7.5 6];
+% AllSetInfo.UsePeakRatioToIdentifyControls{end+1} = logical([1 1 1]);
+% AllSetInfo.DorsalAvgAPKnirpsPeakValueCutoff{end+1} = [1 10 10];
+% AllSetInfo.UsePeakValueToIdentifyControls{end+1} = logical([1 1 1]);
+% AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff{end+1} = [1 8 7];
+% AllSetInfo.UseMeanValueToIdentifyControls{end+1} =logical([1 1 1]);
+% AllSetInfo.MinimumFixCorrectedDeltaFC{end+1} = [0 0 0];
+AllSetInfo.DorsalAvgAPKnirpsBackgroundCutoff{end+1} = [0.8 7.5];
+AllSetInfo.UsePeakRatioToIdentifyControls{end+1} = logical([1 1]);
+AllSetInfo.DorsalAvgAPKnirpsPeakValueCutoff{end+1} = [1 10];
+AllSetInfo.UsePeakValueToIdentifyControls{end+1} = logical([1 1]);
+AllSetInfo.DorsalAvgAPKnirpsMeanValueCutoff{end+1} = [1 8];
+AllSetInfo.UseMeanValueToIdentifyControls{end+1} =logical([1 1]);
+AllSetInfo.MinimumFixCorrectedDeltaFC{end+1} = [0 0];
 
 TestDubuisTimesToUse = zeros(5, 70, 'logical');
 TestDubuisTimesToUse(2:5,[7:10 13:14 20:21 23:38]+1) = true;

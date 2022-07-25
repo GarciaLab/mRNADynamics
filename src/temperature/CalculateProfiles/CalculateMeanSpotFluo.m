@@ -166,7 +166,7 @@ for SetIndex = 1:NumSets
                 NCCycleTraces_AP = NCCycleTraces_AP(~isnan(NCCycleTraces_AP));
                 if ~isempty(NCCycleTraces_AP)
                     this.MeanSpotFluo.Unaligned(SetIndex, APbinIndex, NC-8) = mean(NCCycleTraces_AP);
-                    this.MeanSpotFluo.UnalignedStdError(SetIndex, APbinIndex, NC-8) = std(NCCycleTraces_AP)/sqrt(length(NCCycleTraces_AP));
+                    this.MeanSpotFluo.UnalignedStdError(SetIndex, APbinIndex, NC-8) = std(NCCycleTraces_AP, 'omitnan');%/sqrt(length(NCCycleTraces_AP));
                     this.MeanSpotFluo.UnalignedNumOnNuclei(SetIndex, APbinIndex, NC-8) = length(NCCycleTraces_AP);
                 end
                 
@@ -177,7 +177,7 @@ for SetIndex = 1:NumSets
                 NC3DCycleTraces_AP = NC3DCycleTraces_AP(~isnan(NC3DCycleTraces_AP));
                 if ~isempty(NC3DCycleTraces_AP)
                     this.MeanSpotFluo.Unaligned3D(SetIndex, APbinIndex, NC-8) = mean(NC3DCycleTraces_AP);
-                    this.MeanSpotFluo.Unaligned3DStdError(SetIndex, APbinIndex, NC-8) = std(NC3DCycleTraces_AP)/sqrt(length(NC3DCycleTraces_AP));
+                    this.MeanSpotFluo.Unaligned3DStdError(SetIndex, APbinIndex, NC-8) = std(NC3DCycleTraces_AP, 'omitnan');%/sqrt(length(NC3DCycleTraces_AP));
                     this.MeanSpotFluo.Unaligned3DNumOnNuclei(SetIndex, APbinIndex, NC-8) = length(NC3DCycleTraces_AP);
                 end
                 
@@ -273,7 +273,7 @@ for SetIndex = 1:NumSets
                 NCCycleTraces_AP = NCCycleTraces_AP(~isnan(NCCycleTraces_AP));
                 if ~isempty(NCCycleTraces_AP)
                     this.MeanSpotFluo.AnaphaseAligned(SetIndex, APbinIndex, NC-8) = mean(NCCycleTraces_AP);
-                    this.MeanSpotFluo.AnaphaseAlignedStdError(SetIndex, APbinIndex, NC-8) = std(NCCycleTraces_AP)/sqrt(length(NCCycleTraces_AP));
+                    this.MeanSpotFluo.AnaphaseAlignedStdError(SetIndex, APbinIndex, NC-8) = std(NCCycleTraces_AP, 'omitnan');%/sqrt(length(NCCycleTraces_AP));
                     this.MeanSpotFluo.AnaphaseAlignedNumOnNuclei(SetIndex, APbinIndex, NC-8) = length(NCCycleTraces_AP);
                 end
                 
@@ -284,7 +284,7 @@ for SetIndex = 1:NumSets
                 NC3DCycleTraces_AP = NC3DCycleTraces_AP(~isnan(NC3DCycleTraces_AP));
                 if ~isempty(NC3DCycleTraces_AP)
                     this.MeanSpotFluo.AnaphaseAligned3D(SetIndex, APbinIndex, NC-8) = mean(NC3DCycleTraces_AP);
-                    this.MeanSpotFluo.AnaphaseAligned3DStdError(SetIndex, APbinIndex, NC-8) = std(NC3DCycleTraces_AP)/sqrt(length(NC3DCycleTraces_AP));
+                    this.MeanSpotFluo.AnaphaseAligned3DStdError(SetIndex, APbinIndex, NC-8) = std(NC3DCycleTraces_AP, 'omitnan');%/sqrt(length(NC3DCycleTraces_AP));
                     this.MeanSpotFluo.AnaphaseAligned3DNumOnNuclei(SetIndex, APbinIndex, NC-8) = length(NC3DCycleTraces_AP);
                 end
                 
@@ -379,7 +379,7 @@ for SetIndex = 1:NumSets
                 NCCycleTraces_AP = NCCycleTraces_AP(~isnan(NCCycleTraces_AP));
                 if ~isempty(NCCycleTraces_AP)
                     this.MeanSpotFluo.Tbinned(SetIndex, APbinIndex, NC-8) = mean(NCCycleTraces_AP);
-                    this.MeanSpotFluo.TbinnedStdError(SetIndex, APbinIndex, NC-8) = std(NCCycleTraces_AP)/sqrt(length(NCCycleTraces_AP));
+                    this.MeanSpotFluo.TbinnedStdError(SetIndex, APbinIndex, NC-8) = std(NCCycleTraces_AP, 'omitnan');%/sqrt(length(NCCycleTraces_AP));
                     this.MeanSpotFluo.TbinnedNumOnNuclei(SetIndex, APbinIndex, NC-8) = length(NCCycleTraces_AP);
                 end
                 
@@ -390,7 +390,7 @@ for SetIndex = 1:NumSets
                 NC3DCycleTraces_AP = NC3DCycleTraces_AP(~isnan(NC3DCycleTraces_AP));
                 if ~isempty(NC3DCycleTraces_AP)
                     this.MeanSpotFluo.Tbinned3D(SetIndex, APbinIndex, NC-8) = mean(NC3DCycleTraces_AP);
-                    this.MeanSpotFluo.Tbinned3DStdError(SetIndex, APbinIndex, NC-8) = std(NC3DCycleTraces_AP)/sqrt(length(NC3DCycleTraces_AP));
+                    this.MeanSpotFluo.Tbinned3DStdError(SetIndex, APbinIndex, NC-8) = std(NC3DCycleTraces_AP, 'omitnan');%)/sqrt(length(NC3DCycleTraces_AP));
                     this.MeanSpotFluo.Tbinned3DNumOnNuclei(SetIndex, APbinIndex, NC-8) = length(NC3DCycleTraces_AP);
                 end
                 

@@ -1,4 +1,4 @@
-function [colors, colors2] = getColorPalettes()
+function [colors, colors2, colors3] = getColorPalettes()
     colors = zeros(0, 3, 'double');
     colors(size(colors, 1)+1,:) = [201, 114, 92]/255; % [217, 77, 77]/255; % red
     colors(size(colors, 1)+1,:) = [229, 195, 115]/255; %[232, 193, 74]/255; % mustard
@@ -29,5 +29,13 @@ function [colors, colors2] = getColorPalettes()
     colors2(5,:) = [0.3010, 0.745, 0.9330]; % light blue
     colors2(6,:) = [0.4940, 0.1840, 0.5560]; % purple
     colors2(7,:) = [0.6350, 0.078, 0.1840]; % burgundy?
+    
+    colors3(1,:) = [223, 57, 79]/255; % red
+    colors3(2,:) = [254, 105, 71]/255; % orange 
+    colors3(3,:) = [88, 192, 165]/255; % green
+    colors3(4,:) =  [1, 137, 184]/255; % blue
+    colors3(5,:) =  [91, 82, 157]/255; % purple
+    
+    
 
 end

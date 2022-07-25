@@ -2,7 +2,7 @@ function  [AllCompiledEmbryos]   = GenerateProteinProfiles(version)
 %%
 clear all
 if ~exist('version', 'var')
-    version = 13;
+    version = 19;
 end
 SizeDataPath = 'S:/Gabriella/Dropbox/EmbryoSizeMeasurements/EmbryoSizeData.mat';
 AllSetsProfFigPath = 'S:/Gabriella/Dropbox/ProteinProfiles/Figures/';
@@ -29,9 +29,10 @@ NumAPbins = length(APbins);
 
 NarrowAPbins = 0:0.0125:1;
 NumNarrowAPbins = length(NarrowAPbins);
+
 AllCompiledEmbryos = {};
 
-%%
+
 for exp_index = 1:length(AllSetInfo.Temperatures)
 
 if AllSetInfo.Flipped(exp_index)
@@ -73,7 +74,7 @@ KnirpsIndex = 4;
 CompiledEmbryos = PartitionEmbryosTestControl(CompiledEmbryos, exp_index, KnirpsIndex);
 AllCompiledEmbryos{exp_index} = CompiledEmbryos;
 end
-%%
+
 parfor exp_index = 1:NumSets
     disp(['i = ', num2str(exp_index)])
     AllCompiledEmbryos{exp_index} = RescaleSlideFluos(AllCompiledEmbryos{exp_index} , exp_index);
@@ -98,81 +99,120 @@ end
 CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
 save(CEoutpath, 'CompiledEmbryos');
 end
-%%
 
 parfor exp_index = 1:NumSets
     disp(['i = ', num2str(exp_index)])
     AllCompiledEmbryos{exp_index} = AddFitBicoidProfiles(AllCompiledEmbryos{exp_index} , exp_index);
 end
-parfor exp_index = 1:NumSets
+
+for exp_index = 1:NumSets
      disp(['i = ', num2str(exp_index)])
     AllCompiledEmbryos{exp_index} = AddNonBicoidZeroCorrection(AllCompiledEmbryos{exp_index} , exp_index);
 end
-%%
 
 parfor exp_index = 1:NumSets
     disp(['i = ', num2str(exp_index)])
+    tic
     AllCompiledEmbryos{exp_index} = AddBootstrappedProfiles(AllCompiledEmbryos{exp_index} , exp_index);
+    toc
 end
+for exp_index=1:NumSets
+CompiledEmbryos = AllCompiledEmbryos{exp_index};
+SetLabel = AllSetInfo.SetLabels{exp_index};
+OutEmbryoPath = [AllSetsVersionCombinedEmbryosPath, filesep, SetLabel];
+if ~isdir(OutEmbryoPath)
+mkdir(OutEmbryoPath);
+end
+CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
+save(CEoutpath, 'CompiledEmbryos');
+end
+
 
 BootstrappedGaussianSmoothing(AllCompiledEmbryos); % Creates reference 25C profiles 
 
-
-%%
 parfor exp_index = 1:NumSets
     disp(['i = ', num2str(exp_index)])
     AllCompiledEmbryos{exp_index} = FitScalingFactorsToMasterProfiles(AllCompiledEmbryos{exp_index} , exp_index);
 end
 
-%%
-% 
 for exp_index = 1:NumSets
     disp(['i = ', num2str(exp_index)])
-    AllCompiledEmbryos{exp_index} = AddUniversalScalingProfiles(AllCompiledEmbryos{exp_index}  , exp_index);
+    AllCompiledEmbryos{exp_index} = AddUniversalScalingFactorsToMasterProfiles(AllCompiledEmbryos{exp_index}  , exp_index);
 end
-% 
-% 
-parfor exp_index = 1:NumSets
+
+disp('Running AddBootstrappedFitProfiles')
+parfor exp_index = 1:NumSets 
     disp(['i = ', num2str(exp_index)])
-    AllCompiledEmbryos{exp_index} = AddBootstrappedFitProfiles(AllCompiledEmbryos{exp_index}  , exp_index);
-end
-
-AllCompiledEmbryos = FitScalingFactorsToTestProfiles(AllCompiledEmbryos);
-
-
-
-parfor exp_index = 1:NumSets
-    disp(['i = ', num2str(exp_index)])
-    AllCompiledEmbryos{exp_index} = AddTestMasterFitRescaledProfiles(AllCompiledEmbryos{exp_index} , exp_index);
-end
-
-parfor exp_index = 1:NumSets
-    %disp(['Embryo Index = ', num2str(exp_index)])
     tic
-    AllCompiledEmbryos{exp_index}  =  AddBootstrappedUnivScaledTestFitProfiles(AllCompiledEmbryos{exp_index} , exp_index);
+    AllCompiledEmbryos{exp_index} = AddBootstrappedFitProfiles(AllCompiledEmbryos{exp_index}  , exp_index); 
     toc
 end
-
 %%
-
-AllCompiledEmbryos = FitComboScalingFactorsToMasterProfiles(AllCompiledEmbryos);
-
-
-
-parfor exp_index = 1:NumSets
-    AllCompiledEmbryos{exp_index}  = AddUniversalScaledTestMasterFitRescaledProfiles(AllCompiledEmbryos{exp_index}, exp_index);
-end
-
 for exp_index = 1:NumSets
     disp(['i = ', num2str(exp_index)])
-    AllCompiledEmbryos{exp_index} = AddBootstrappedTestFitProfiles(AllCompiledEmbryos{exp_index} , exp_index);
+    AllCompiledEmbryos{exp_index} = AddUniversalScaleNC13Profiles(AllCompiledEmbryos{exp_index}, exp_index);
+end
+AllCompiledEmbryos = NormalizeUnivScaledProfiles(AllCompiledEmbryos);
+
+%% For grouping fits before fitting scaling factor
+% disp('Running FitScalingFactorsToTestProfiles')
+% AllCompiledEmbryos = FitScalingFactorsToTestProfiles(AllCompiledEmbryos);
+% 
+% disp('Running AddTestMasterFitRescaledProfiles')
+% parfor exp_index = 1:NumSets % SWITCH TO PARFOR
+%     disp(['i = ', num2str(exp_index)])
+%     tic
+%     AllCompiledEmbryos{exp_index} = AddTestMasterFitRescaledProfiles(AllCompiledEmbryos{exp_index} , exp_index);
+%     toc
+% end
+% disp('Running AddBootstrappedTestFitProfiles')
+% parfor exp_index = 1:NumSets % SWITCH TO PARFOR
+%     disp(['i = ', num2str(exp_index)])
+%     tic
+%     AllCompiledEmbryos{exp_index} = AddBootstrappedTestFitProfiles(AllCompiledEmbryos{exp_index} , exp_index);
+%     toc
+% end
+% disp('Running FitComboScalingFactorsToMasterProfiles')
+% AllCompiledEmbryos = FitComboScalingFactorsToMasterProfiles(AllCompiledEmbryos);
+% for exp_index=1:NumSets
+% CompiledEmbryos = AllCompiledEmbryos{exp_index};
+% SetLabel = AllSetInfo.SetLabels{exp_index};
+% OutEmbryoPath = [AllSetsVersionCombinedEmbryosPath, filesep, SetLabel];
+% if ~isdir(OutEmbryoPath)
+% mkdir(OutEmbryoPath);
+% end
+% CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
+% save(CEoutpath, 'CompiledEmbryos');
+% end
+% 
+% %%
+% 
+% parfor exp_index = 1:NumSets
+%     AllCompiledEmbryos{exp_index}  = AddUniversalScaledTestMasterFitRescaledProfiles(AllCompiledEmbryos{exp_index}, exp_index);
+% end
+% 
+% %%
+% 
+% parfor exp_index = 1:NumSets
+%     disp(['Embryo Index = ', num2str(exp_index)])
+%     tic
+%     AllCompiledEmbryos{exp_index}  =  AddBootstrappedUnivScaledTestFitProfiles(AllCompiledEmbryos{exp_index} , exp_index);% FIX BOOTSTRAPPING PARAMETERS
+%     toc
+% end
+
+%%
+for exp_index=1:NumSets
+CompiledEmbryos = AllCompiledEmbryos{exp_index};
+SetLabel = AllSetInfo.SetLabels{exp_index};
+OutEmbryoPath = [AllSetsVersionCombinedEmbryosPath, filesep, SetLabel];
+if ~isdir(OutEmbryoPath)
+mkdir(OutEmbryoPath);
+end
+CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
+save(CEoutpath, 'CompiledEmbryos');
 end
 
-
-
-
-
-
+%%
 if ~isdir(AllCompiledPath)
     mkdir(AllCompiledPath)
 end

@@ -4,7 +4,7 @@ alpha = this.alpha;
 
 [MeanTrace, StdErrorTrace, NCTimes] = GetSpecifiedTracesForFitting(this, SetIndex, NC, APindex, TraceType);
 
-if length(MeanTrace) >= this.MinimumTimePoints
+if length(MeanTrace) >= max([this.MinimumTimePoints, 5])
     pos_slope = NaN;
     t_elongation = NaN;
     pos_yintercept = NaN;
@@ -162,7 +162,7 @@ if length(MeanTrace) >= this.MinimumTimePoints
     if ~isempty(PositiveFitIncludedIndices) & ~isempty(NegativeFitIncludedIndices) & (NC < 14)
         ft = fittype( 'trapezoidFitFunction(x, a, b, c, t1, t2 )' );
         
-        if EndIndex-StartIndex+1 >= this.MinimumTimePoints
+        if EndIndex-StartIndex+1 >= max([this.MinimumTimePoints 5])
              StartingPoints = zeros(1, 5);
              if ~isnan(pos_slope)
                  StartingPoints(1) = pos_slope;
@@ -249,7 +249,7 @@ if length(MeanTrace) >= this.MinimumTimePoints
     elseif ~isempty(PositiveFitIncludedIndices)
         ft2 = fittype( 'leftHalfTrapezoidFitFunction(x, a, b, t1)' );
         
-        if EndIndex-StartIndex+1 >= this.MinimumTimePoints
+        if EndIndex-StartIndex+1 >= max([this.MinimumTimePoints 5])
              StartingPoints = zeros(1, 3);
              if ~isnan(pos_slope)
                  StartingPoints(1) = pos_slope;

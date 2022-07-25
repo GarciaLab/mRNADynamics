@@ -40,8 +40,8 @@ CompiledEmbryos.ScaleFits.SlideRescaledDorsalAvgAPProfiles.Test.InterceptSE = Na
 
 
 for ch_index = [3 5]
-ControlSetTF = CompiledEmbryos.IsNC14 & CompiledEmbryos.ControlSetEmbryos & ~isnan(CompiledEmbryos.DubuisEmbryoTimes);
-TestSetTF = CompiledEmbryos.IsNC14 & CompiledEmbryos.TestSetEmbryos & ~isnan(CompiledEmbryos.DubuisEmbryoTimes);
+ControlSetTF = CompiledEmbryos.IsNC14 & CompiledEmbryos.ControlSetEmbryos & ~isnan(CompiledEmbryos.DubuisEmbryoTimes) & CompiledEmbryos.DubuisEmbryoTimes >= 30;
+TestSetTF = CompiledEmbryos.IsNC14 & CompiledEmbryos.TestSetEmbryos & ~isnan(CompiledEmbryos.DubuisEmbryoTimes) & CompiledEmbryos.DubuisEmbryoTimes >= 30;
 
 
 for ProfIndex = 1:NumMasterProfs
@@ -113,8 +113,8 @@ CompiledEmbryos.ScaleFits.ZeroCorrectedSlideRescaledDorsalAvgAPProfiles.Test.Int
 
 
 for ch_index = [3 5]
-ControlSetTF = CompiledEmbryos.IsNC14 & CompiledEmbryos.ControlSetEmbryos & ~isnan(CompiledEmbryos.DubuisEmbryoTimes);
-TestSetTF = CompiledEmbryos.IsNC14 & CompiledEmbryos.TestSetEmbryos & ~isnan(CompiledEmbryos.DubuisEmbryoTimes);
+ControlSetTF = CompiledEmbryos.IsNC14 & CompiledEmbryos.ControlSetEmbryos & ~isnan(CompiledEmbryos.DubuisEmbryoTimes) & CompiledEmbryos.DubuisEmbryoTimes >= 30;
+TestSetTF = CompiledEmbryos.IsNC14 & CompiledEmbryos.TestSetEmbryos & ~isnan(CompiledEmbryos.DubuisEmbryoTimes)& CompiledEmbryos.DubuisEmbryoTimes >= 30;
 
 
 for ProfIndex = 1:NumMasterProfs
@@ -185,8 +185,8 @@ CompiledEmbryos.ScaleFits.FitSlideRescaledDorsalAvgAPProfiles.Test.InterceptSE =
 
 
 for ch_index = [3]
-ControlSetTF = CompiledEmbryos.IsNC14 & CompiledEmbryos.ControlSetEmbryos & ~isnan(CompiledEmbryos.DubuisEmbryoTimes);
-TestSetTF = CompiledEmbryos.IsNC14 & CompiledEmbryos.TestSetEmbryos & ~isnan(CompiledEmbryos.DubuisEmbryoTimes);
+ControlSetTF = CompiledEmbryos.IsNC14 & CompiledEmbryos.ControlSetEmbryos & ~isnan(CompiledEmbryos.DubuisEmbryoTimes)& CompiledEmbryos.DubuisEmbryoTimes >= 30;
+TestSetTF = CompiledEmbryos.IsNC14 & CompiledEmbryos.TestSetEmbryos & ~isnan(CompiledEmbryos.DubuisEmbryoTimes)& CompiledEmbryos.DubuisEmbryoTimes >= 30;
 
 
 for ProfIndex = 1:NumMasterProfs
@@ -234,6 +234,78 @@ for ProfIndex = 1:NumMasterProfs
 end
 
 end
+
+%% Fit to Exponential-Fit Zero-Corrected Bicoid Profiles
+
+CompiledEmbryos.mdl.FitZeroedSlideRescaledDorsalAvgAPProfiles = {};
+CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles = {};
+
+CompiledEmbryos.mdl.FitZeroedSlideRescaledDorsalAvgAPProfiles.Control = cell(NumMasterProfs, NChannels);
+CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles.Control = {};
+CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles.Control.ScaleEstimate = NaN(NumMasterProfs, NChannels);
+CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles.Control.ScaleSE = NaN(NumMasterProfs, NChannels);
+CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles.Control.InterceptEstimate = NaN(NumMasterProfs, NChannels);
+CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles.Control.InterceptSE = NaN(NumMasterProfs, NChannels);
+
+CompiledEmbryos.mdl.FitZeroedSlideRescaledDorsalAvgAPProfiles.Test = cell(NumMasterProfs, NChannels);
+CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles.Test = {};
+CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles.Test.ScaleEstimate = NaN(NumMasterProfs, NChannels);
+CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles.Test.ScaleSE = NaN(NumMasterProfs, NChannels);
+CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles.Test.InterceptEstimate = NaN(NumMasterProfs, NChannels);
+CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles.Test.InterceptSE = NaN(NumMasterProfs, NChannels);
+
+
+
+for ch_index = [3]
+ControlSetTF = CompiledEmbryos.IsNC14 & CompiledEmbryos.ControlSetEmbryos & ~isnan(CompiledEmbryos.DubuisEmbryoTimes)& CompiledEmbryos.DubuisEmbryoTimes >= 30;
+TestSetTF = CompiledEmbryos.IsNC14 & CompiledEmbryos.TestSetEmbryos & ~isnan(CompiledEmbryos.DubuisEmbryoTimes)& CompiledEmbryos.DubuisEmbryoTimes >= 30;
+
+
+for ProfIndex = 1:NumMasterProfs
+    MasterProfile = MeanSmoothedProfiles{ProfIndex}(:,:,ch_index);
+    xsample = CompiledEmbryos.DubuisEmbryoTimes(ControlSetTF);
+    
+    ysample = GetMasterProfileForEmbryoTimes(xsample, MasterProfile, xfits);
+    
+    yset = CompiledEmbryos.FitZeroedSlideRescaledDorsalAvgAPProfiles(ControlSetTF,:,ch_index);
+    ysample = ysample(:);
+    yset = yset(:);
+    
+    TFys = ~isnan(ysample) & ~isnan(yset);
+    ysample = ysample(TFys);
+    yset = yset(TFys);
+    beta0 =[1, min(yset,[], 'all')];
+    if ~isempty(yset)
+        dlm = fitnlm(ysample,yset,f,beta0);
+        CompiledEmbryos.mdl.FitZeroedSlideRescaledDorsalAvgAPProfiles.Control{ProfIndex, ch_index} = dlm;
+        CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles.Control.ScaleEstimate(ProfIndex, ch_index) = 1/dlm.Coefficients.Estimate(1);
+        CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles.Control.InterceptEstimate(ProfIndex, ch_index) = -dlm.Coefficients.Estimate(2)/dlm.Coefficients.Estimate(1);
+        CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles.Control.ScaleSE(ProfIndex, ch_index) = dlm.Coefficients.SE(1)/(dlm.Coefficients.Estimate(1)^2);
+        CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles.Control.InterceptSE(ProfIndex, ch_index) = sqrt(dlm.Coefficients.SE(1)^2*dlm.Coefficients.Estimate(2)^2/(dlm.Coefficients.Estimate(1)^4)+...
+            dlm.Coefficients.SE(2)^2/(dlm.Coefficients.Estimate(1)^2));
+    end
+    
+    if (AllSetInfo.Temperatures(exp_index) == 25)
+        xsample = CompiledEmbryos.DubuisEmbryoTimes(TestSetTF);
+        
+        ysample = GetMasterProfileForEmbryoTimes(xsample, MasterProfile, xfits);
+        
+        yset = CompiledEmbryos.FitZeroedSlideRescaledDorsalAvgAPProfiles(TestSetTF,:,ch_index);
+        
+        beta0 =[1, min(yset,[], 'all')];
+        if ~isnan(beta0(2))
+            dlm = fitnlm(ysample(:),yset(:),f,beta0);
+            CompiledEmbryos.mdl.FitZeroedSlideRescaledDorsalAvgAPProfiles.Test{ProfIndex, ch_index} = dlm;
+            CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles.Test.ScaleEstimate(ProfIndex, ch_index) = 1/dlm.Coefficients.Estimate(1);
+            CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles.Test.InterceptEstimate(ProfIndex, ch_index) = -dlm.Coefficients.Estimate(2)/dlm.Coefficients.Estimate(1);
+            CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles.Test.ScaleSE(ProfIndex, ch_index) = dlm.Coefficients.SE(1)/(dlm.Coefficients.Estimate(1)^2);
+            CompiledEmbryos.ScaleFits.FitZeroedSlideRescaledDorsalAvgAPProfiles.Test.InterceptSE(ProfIndex, ch_index) = sqrt(dlm.Coefficients.SE(1)^2*dlm.Coefficients.Estimate(2)^2/(dlm.Coefficients.Estimate(1)^4)+...
+                dlm.Coefficients.SE(2)^2/(dlm.Coefficients.Estimate(1)^2));
+        end
+    end
+end
+
+end
 %%
-CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
-save(CEoutpath, 'CompiledEmbryos');
+% CEoutpath = [OutEmbryoPath, filesep, 'CompiledEmbryos.mat'];
+% save(CEoutpath, 'CompiledEmbryos');

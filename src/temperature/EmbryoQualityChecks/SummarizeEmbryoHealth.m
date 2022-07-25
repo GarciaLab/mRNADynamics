@@ -107,14 +107,14 @@ for NC = max(min(schnitzcycles), 10):max(schnitzcycles)
     HealthSummary.MeanTotalYDisplacement(NC-9) = nanmean(MeanTotalYDisplacement);
     HealthSummary.MeanTotalDisplacement(NC-9) = nanmean(MeanTotalDisplacement);
     HealthSummary.MeanDisplacementPerSecond(NC-9) = nanmean(MeanDisplacementPerSecond);
-    HealthSummary.StdTotalXDistanceTraveled(NC-9) = nanstd(MeanTotalXDistanceTraveled)/length(MeanTotalXDistanceTraveled(~isnan(MeanTotalXDistanceTraveled)));;
-    HealthSummary.StdTotalYDistanceTraveled(NC-9) = nanstd(MeanTotalYDistanceTraveled)/length(MeanTotalYDistanceTraveled(~isnan(MeanTotalYDistanceTraveled)));;
-    HealthSummary.StdTotalDistanceTraveled(NC-9) = nanstd(MeanTotalDistanceTraveled)/length(MeanTotalDistanceTraveled(~isnan(MeanTotalDistanceTraveled)));;
-    HealthSummary.StdDistanceTraveledPerSecond(NC-9) = nanstd(MeanDistanceTraveledPerSecond)/length(MeanDistanceTraveledPerSecond(~isnan(MeanDistanceTraveledPerSecond)));;
-    HealthSummary.StdTotalXDisplacement(NC-9) = nanstd(MeanTotalXDisplacement)/length(MeanTotalXDisplacement(~isnan(MeanTotalXDisplacement)));
-    HealthSummary.StdTotalYDisplacement(NC-9) = nanstd(MeanTotalYDisplacement)/length(MeanTotalYDisplacement(~isnan(MeanTotalYDisplacement)));
-    HealthSummary.StdTotalDisplacement(NC-9) = nanstd(MeanTotalDisplacement)/length(MeanTotalDisplacement(~isnan(MeanTotalDisplacement)));
-    HealthSummary.StdDisplacementPerSecond(NC-9) = nanstd(MeanDisplacementPerSecond)/length(MeanDisplacementPerSecond(~isnan(MeanDisplacementPerSecond)));
+    HealthSummary.StdTotalXDistanceTraveled(NC-9) = std(MeanTotalXDistanceTraveled, 'omitnan');%/length(MeanTotalXDistanceTraveled(~isnan(MeanTotalXDistanceTraveled)));;
+    HealthSummary.StdTotalYDistanceTraveled(NC-9) = std(MeanTotalYDistanceTraveled, 'omitnan');%/length(MeanTotalYDistanceTraveled(~isnan(MeanTotalYDistanceTraveled)));;
+    HealthSummary.StdTotalDistanceTraveled(NC-9) = std(MeanTotalDistanceTraveled, 'omitnan');%/length(MeanTotalDistanceTraveled(~isnan(MeanTotalDistanceTraveled)));;
+    HealthSummary.StdDistanceTraveledPerSecond(NC-9) = std(MeanDistanceTraveledPerSecond, 'omitnan');%/length(MeanDistanceTraveledPerSecond(~isnan(MeanDistanceTraveledPerSecond)));;
+    HealthSummary.StdTotalXDisplacement(NC-9) = std(MeanTotalXDisplacement, 'omitnan');%/length(MeanTotalXDisplacement(~isnan(MeanTotalXDisplacement)));
+    HealthSummary.StdTotalYDisplacement(NC-9) = std(MeanTotalYDisplacement, 'omitnan');%/length(MeanTotalYDisplacement(~isnan(MeanTotalYDisplacement)));
+    HealthSummary.StdTotalDisplacement(NC-9) = std(MeanTotalDisplacement, 'omitnan');%/length(MeanTotalDisplacement(~isnan(MeanTotalDisplacement)));
+    HealthSummary.StdDisplacementPerSecond(NC-9) = std(MeanDisplacementPerSecond, 'omitnan');%/length(MeanDisplacementPerSecond(~isnan(MeanDisplacementPerSecond)));
     
 end
 
@@ -140,7 +140,7 @@ text(-0.55,0.8,[Prefix]); axis off
 text(-0.55,0.6,['AP range: ', num2str(round(HealthSummary.APboundaries(1), 2)), ' - ', num2str(round(HealthSummary.APboundaries(2), 2))]); 
 subplot(2, 3, [2, 3])
 set(gcf, 'Units', 'Normalized', 'OuterPosition', [0, 0.04, 0.8, 0.8]);
-errorbar(10:13, HealthSummary.NCDivisionInfo, HealthSummary.DivisionStdInfo,'o',  'Color', 'r', 'MarkerFaceColor', 'w', 'MarkerEdgeColor', 'r')
+errorbar(10:14, HealthSummary.NCDivisionInfo, HealthSummary.DivisionStdInfo,'o',  'Color', 'r', 'MarkerFaceColor', 'w', 'MarkerEdgeColor', 'r')
 xlim([9, 14])
 xticks(9:14)
 try

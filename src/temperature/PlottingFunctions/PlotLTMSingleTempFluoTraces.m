@@ -6,6 +6,11 @@ function PlotLTMSingleTempFluoTraces(this, outdir, varargin)
 
 NormedCycleTimes = false;
 
+SuppressErrorbars = false; 
+SuppressMarkers = false; 
+DownsampleTraces = false;
+DownsamplingRate = 1;
+UsePerNucleusTraces = false;
 
 
 x = 1;
@@ -15,6 +20,20 @@ while x <= length(varargin)
         x = x+1;
     elseif strcmp(lower(varargin{x}), 'plottingcolors')
         PlottingColors = varargin{x+1};
+        x = x+1;
+    elseif strcmpi(varargin{x}, 'SuppressErrorbars')
+        SuppressErrorbars = true;
+    elseif strcmpi(varargin{x}, 'SuppressMarkers')
+        SuppressMarkers = true;
+    elseif strcmpi(varargin{x}, 'DownsampleTraces')
+        DownsampleTraces = true;
+        DownsamplingRate = 2;
+    elseif strcmpi(varargin{x}, 'UsePerNucleusTraces')
+        UsePerNucleusTraces = true;
+        SuppressErrorbars = true;
+    elseif strcmpi(varargin{x}, 'DownsamplingRate')
+        DownsampleTraces = true;
+        DownsamplingRate = varargin{x+1};
         x = x+1;
     elseif strcmpi(varargin{x}, 'NormalizeCycleTimes')
         NormedCycleTimes = true;
@@ -82,6 +101,74 @@ else
     NormString = '';
 end
 
+if SuppressErrorbars
+    ErrorbarString = 'NoErrorbars';
+else
+    ErrorbarString = '';
+end
+
+if UsePerNucleusTraces
+    PerNucleusString = 'PerNucleus';
+else
+    PerNucleusString = '';
+end
+
+
+if SuppressMarkers
+    MarkerString = 'NoMarkers';
+else
+    MarkerString = '';
+end
+
+if DownsampleTraces
+    DownsamplingString = ['Downsampled', num2str(DownsamplingRate),'x'];
+else
+    DownsamplingString = '';
+end
+
+
+SpecificDirString = PerNucleusString;
+
+if ~isempty(NormString)
+    if ~isempty(SpecificDirString)
+        SpecificDirString = [SpecificDirString, '_', NormString];
+    else
+        SpecificDirString = NormString;
+    end
+end
+
+if ~isempty(GradString)
+    if ~isempty(SpecificDirString)
+        SpecificDirString = [SpecificDirString, '_', GradString];
+    else
+        SpecificDirString = GradString;
+    end
+end
+
+
+if ~isempty(MarkerString)
+    if ~isempty(SpecificDirString)
+        SpecificDirString = [SpecificDirString, '_', MarkerString];
+    else
+        SpecificDirString = MarkerString;
+    end
+elseif ~isempty(ErrorbarString)
+    if ~isempty(SpecificDirString)
+        SpecificDirString = [SpecificDirString, '_', ErrorbarString];
+    else
+        SpecificDirString = ErrorbarString;
+    end
+end
+
+if ~isempty(DownsamplingString)
+    if ~isempty(SpecificDirString)
+        SpecificDirString = [SpecificDirString, '_', DownsamplingString];
+    else
+        SpecificDirString = DownsamplingString;
+    end
+end
+    
+
 
 
 %%
@@ -114,6 +201,27 @@ for t_index = 1:NumTemperatures
     counter = counter + length(TempMatches);
 end
 
+
+outdir2 = [outdir,filesep,'SingleTempFluoTraces'];
+if ~exist(outdir2, 'dir')
+    mkdir(outdir2)
+end
+
+if isempty(SpecificDirString)
+    outdir3 = [outdir2, filesep, TraceType];
+    if ~exist(outdir3, 'dir')
+        mkdir(outdir3)
+    end
+else
+    outdir3 = [outdir2, filesep, TraceType, filesep, SpecificDirString];
+    if ~exist(outdir3, 'dir')
+        mkdir(outdir3)
+    end
+end
+
+
+
+
 %%
 for NC=this.IncludedNCs
     if NormedCycleTimes & NC == 14
@@ -126,26 +234,17 @@ for NC=this.IncludedNCs
         if isempty(TempMatches{TemperatureIndex})
             continue
         end
-        outdir2 = [outdir, filesep, 'T', strrep(num2str(CurrentTemperature), '.', '_'), 'C_NC', num2str(NC)];
-        
-        if ~exist(outdir2, 'dir')
-            mkdir(outdir2)
-        end
-        
-        if ~NormedCycleTimes
-            outdir3 = [outdir2, filesep, TraceType];
-        else
-            outdir3 = [outdir2, filesep, TraceType, '_NormalizedNCTimes'];
-        end
-      
-        if ~exist(outdir3, 'dir')
-            mkdir(outdir3)
-        end
-        
-        outdir4 = [outdir3, filesep, datestr(now, 'yyyymmdd')];
+        outdir4 = [outdir3, filesep, 'T', strrep(num2str(CurrentTemperature), '.', '_'), 'C_NC', num2str(NC)];
         
         if ~exist(outdir4, 'dir')
             mkdir(outdir4)
+        end
+      
+        
+        outdir5 = [outdir4, filesep, datestr(now, 'yyyymmdd')];
+        
+        if ~exist(outdir5, 'dir')
+            mkdir(outdir5)
         end
       
         
@@ -169,7 +268,11 @@ for NC=this.IncludedNCs
             end
             ExpNCTimes = this.MeanProfiles{idx}.([TraceType, 'CycleFrameTimes']){NC-8};
             IncludedRows = 1:length(ExpNCTimes);
-            ExpFluoMat = squeeze(this.MeanProfiles{idx}.([TraceType, 'CycleMeanTraces'])(IncludedRows,:,NC-8));
+            if UsePerNucleusTraces
+                ExpFluoMat = squeeze(this.MeanProfiles{idx}.([TraceType, 'CycleMeanPerNucleusTraces'])(IncludedRows,:,NC-8));
+            else
+                ExpFluoMat = squeeze(this.MeanProfiles{idx}.([TraceType, 'CycleMeanTraces'])(IncludedRows,:,NC-8));
+            end
             ExpStdMat = squeeze(this.MeanProfiles{idx}.([TraceType, 'CycleTraceStdErrors'])(IncludedRows,:,NC-8));
             ExpNumNucMat = squeeze(this.MeanProfiles{idx}.([TraceType, 'CycleNumOnNuclei'])(IncludedRows,:,NC-8));
             NCLength = this.EmbryoStats.NCDivisionInfo(idx,NC-8);
@@ -219,7 +322,11 @@ for NC=this.IncludedNCs
         
         
         FrameProfFig = figure(1);
-        set(FrameProfFig,'units', 'normalized', 'position',[0.01, 0.05, .6, .6]);
+        if NumSets > 25
+            set(FrameProfFig,'units', 'normalized', 'position',[0.01, 0.05, .9, .6]);
+        else
+            set(FrameProfFig,'units', 'normalized', 'position',[0.01, 0.05, .6, .6]);
+        end
         set(gcf,'color','w');
         FrameProfAx = axes(FrameProfFig);
         eb = cell(1, length(TempMatches{TemperatureIndex}));
@@ -248,10 +355,15 @@ for NC=this.IncludedNCs
             
             set(get(get(eb{idx}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
             
-            prof{idx} = plot(APbins, ones(1, length(APbins)), MarkerStyles{marker_idx},...
+            if marker_idx <= length(MarkerStyles) 
+            prof{idx} = plot(APbins, ones(1, length(APbins)), MarkerStyles{mod(marker_idx, length(MarkerStyles))+1},...
                 'MarkerEdgeColor', [0, 0, 0], 'MarkerFaceColor', colors(temp_idx,:),...
                 'MarkerSize', 6, 'LineStyle', '-', 'Color', colors(temp_idx,:));
-            
+            else
+                prof{idx} = plot(APbins, ones(1, length(APbins)), MarkerStyles{mod(marker_idx, length(MarkerStyles))+1},...
+                'MarkerEdgeColor', colors(temp_idx,:), 'MarkerFaceColor', colors(temp_idx,:),...
+                'MarkerSize', 6, 'LineStyle', '-', 'Color', colors(temp_idx,:));
+            end
             
             set(eb{idx},'Visible','off'); %'off' or 'on'
             set(prof{idx},'Visible','off'); %'off' or 'on'
@@ -269,7 +381,7 @@ for NC=this.IncludedNCs
             h.Ticks =  FractionalTempRange(1:25:126); %Create 8 ticks from zero to 1
             h.TickLabels = {'15','17.5','20','22.5','25','27.5'} ;
         end
-        
+        grid on 
         hold off
         
         if NormedCycleTimes
@@ -279,8 +391,8 @@ for NC=this.IncludedNCs
         else
             xlabel('Time since NC start (min)')
         end
-        
-        
+        FrameProfAx.XAxis.FontSize = 18;
+        FrameProfAx.YAxis.FontSize = 18;
         if ~NormedCycleTimes
             xlim([0-0.01* max(MaximumNCTimes), max(MaximumNCTimes)*1.1]);
         else
@@ -347,15 +459,19 @@ for NC=this.IncludedNCs
             if ~sum(PlottedSets)
                 continue
             end
-            legend(FrameProfAx, legend_labels(PlottedSets), 'Location', 'eastoutside')
+            if NumSets > 25
+                lgd = legend(FrameProfAx, legend_labels(PlottedSets),'NumColumns', 2, 'Location', 'eastoutside');
+            else
+                lgd = legend(FrameProfAx, legend_labels(PlottedSets), 'Location', 'eastoutside');
+            end
             if exist('PlotTitle', 'var')
                 title(FrameProfAx, {PlotTitle,...
-                    ['T = ', num2str(temperatures(TemperatureIndex)), '°C, Nuclear Cycle ',num2str(NC),', Fraction Embryo Length: ',num2str(APbins(i)) ]})
+                    ['T = ', num2str(temperatures(TemperatureIndex)), '°C, Nuclear Cycle ',num2str(NC),', Fraction Embryo Length: ',num2str(APbins(i)) ]}, 'FontSize', 20)
             else
-                title(FrameProfAx, ['T = ', num2str(temperatures(TemperatureIndex)), '°C, Nuclear Cycle ',num2str(NC),', Fraction Embryo Length: ',num2str(APbins(i)) ])
+                title(FrameProfAx, ['T = ', num2str(temperatures(TemperatureIndex)), '°C, Nuclear Cycle ',num2str(NC),', Fraction Embryo Length: ',num2str(APbins(i)) ], 'FontSize', 20)
   
             end
-            
+       
              saveas(FrameProfFig,[outdir4, filesep, GradString, NormString,...
                 'FluoTrace_NC',num2str(NC),'_T',strrep(num2str(CurrentTemperature), '.', '_'),'_Bin', num2str(i),'.png']);
             

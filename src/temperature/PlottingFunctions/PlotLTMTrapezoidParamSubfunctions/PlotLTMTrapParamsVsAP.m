@@ -7,6 +7,10 @@ UsePhysicalAPLength = false;
 UseLines = true;
 UseRescaledFluo = false;
 UseRescaledParamTiming = false;
+UsePerNucleusTraces = false;
+UseBinnedTraces = false;
+UseBinnedPerNucleusTraces = false;
+UseThesisStyle = false;
 
 x = 1;
 while x <= length(varargin)
@@ -23,6 +27,17 @@ while x <= length(varargin)
     elseif strcmp(lower(varargin{x}), 'tracetype')
         TraceType = lower(varargin{x+1});
         x = x+1;
+    elseif strcmpi(varargin{x}, 'UsePerNucleusTraces')
+        UsePerNucleusTraces = true;
+    elseif strcmpi(varargin{x}, 'UseBinnedTraces')
+        UseBinnedTraces = true;
+    elseif strcmpi(varargin{x}, 'UseBinnedPerNucleusTraces')
+        UseBinnedPerNucleusTraces = true;
+        UseBinnedTraces = false;
+        UsePerNucleusTraces = false;
+    elseif strcmpi(varargin{x}, 'UseThesisStyle')
+        UseThesisStyle = true;
+        PlottingColors = 'thesis';
     elseif strcmpi(varargin{x}, 'userescaledtime') | strcmpi(varargin{x}, 'rescaletime') | ...
             strcmpi(varargin{x}, 'rescaletiming') | strcmpi(varargin{x}, 'userescaledtiming') | ...
             strcmpi(varargin{x}, 'userescaledparamtime') | strcmpi(varargin{x}, 'rescaleparamtime') | ...
@@ -37,7 +52,7 @@ end
 
 if ~exist('PlottingColors', 'var')
     PlottingColors = 'default';
-elseif ~strcmpi(PlottingColors, 'gradient') &~strcmp(lower(PlottingColors), 'default')  & ~strcmp(lower(PlottingColors), 'pboc')
+elseif ~strcmpi(PlottingColors, 'gradient') &~strcmp(lower(PlottingColors), 'default')  & ~strcmp(lower(PlottingColors), 'pboc')& ~strcmp(lower(PlottingColors), 'thesis')
     error('Invalid choice of plotting colors. Can use either "default", "pboc", or "gradient".') % change to error
 end
 if ~exist('TraceType', 'var')
@@ -109,11 +124,30 @@ else
     TimingString = '';
 end
 
+if UseBinnedPerNucleusTraces
+    BinnedPNString = 'BinnedPerNucleus';
+elseif UseBinnedTraces
+    BinnedPNString = 'Binned';
+elseif UsePerNucleusTraces 
+    BinnedPNString = 'PerNucleus';
+else
+    BinnedPNString = '';
+end
+if UseThesisStyle
+    ThesisString = 'Thesis';
+else
+    ThesisString = '';
+end
+
+
 if strcmp(lower(PlottingColors), 'default')
-    [~, colors] = getColorPalettes();
+    [~, colors, ~] = getColorPalettes();
     GradString = '';
 elseif strcmp(lower(PlottingColors), 'pboc')
-    [colors, ~] = getColorPalettes();
+    [colors, ~, ~] = getColorPalettes();
+    GradString = '';
+elseif strcmp(lower(PlottingColors), 'thesis')
+    [~, ~, colors] = getColorPalettes();
     GradString = '';
 else
     Temp_range = 15:0.1:max(this.Temp_obs);
@@ -122,7 +156,22 @@ else
     GradString = 'Gradient';
 end
 
-SpecificDirString = FluoString;
+SpecificDirString = ThesisString;
+if ~isempty(BinnedPNString)
+    if ~isempty(SpecificDirString)
+        SpecificDirString = [SpecificDirString, '_', BinnedPNString];
+    else
+        SpecificDirString = BinnedPNString;
+    end
+end
+if ~isempty(FluoString)
+    if ~isempty(SpecificDirString)
+        SpecificDirString = [SpecificDirString, '_', FluoString];
+    else
+        SpecificDirString = FluoString;
+    end
+end
+
 if ~isempty(TimingString)
     if ~isempty(SpecificDirString)
         SpecificDirString = [SpecificDirString, '_', TimingString];
@@ -166,10 +215,17 @@ NumAPbins = length(APbins);
 NumSets = length(this.ExperimentPrefixes);
 UseSet = ismember(1:NumSets, this.ProcessedExperiments);
 Nsigfigs = 3;
-legend_labels = this.LegendLabels;
+if ~UseBinnedTraces & ~ UseBinnedPerNucleusTraces
+    legend_labels = this.LegendLabels;
+else
+    legend_labels = cell(1, NumTemperatures);
+    for i = 1:NumTemperatures
+        legend_labels{i} = [num2str(temperatures(i)), 'ºC'];
+    end
+end
 
 
-MarkerStyles = {'o', 'd', 's', '>', '^','p', 'h', '*', 'x'};
+MarkerStyles = {'d','o',  's', '>', '^','p', 'h', '*', 'x'};
 
 TempMatches = cell(1, NumTemperatures);
 
@@ -180,7 +236,8 @@ end
 
 %% Load relevant parameters into memory
 [PlottedParams, PlottedParamSEs,R2s, ylab,OutputString,GlobalPlotYmax,GlobalPlotYmin,LogPlotYmin] = ...
-    getPlottingVariables(this, parameter,  TraceType, R2bound, UseRescaledFluo, UseRescaledParamTiming);
+    getPlottingVariables(this, parameter,  TraceType, R2bound, UseRescaledFluo, UseRescaledParamTiming,...
+    UsePerNucleusTraces, UseBinnedTraces, UseBinnedPerNucleusTraces);
 
 % Calculate Plot Xlims
 ParamMatCopy = PlottedParams;
@@ -199,8 +256,10 @@ if UsePhysicalAPLength
 end
 
 
+if ~UseBinnedTraces & ~UseBinnedPerNucleusTraces
 [BinnedParams, BinnedSEParams, Counts, ParamTemperatures, ParamSETemperatures] = ...
     getBinnedPlottingVariables(this, PlottedParams, PlottedParamSEs,R2s, R2bound);
+end
 %%
 
 outdir2 = [outdir,filesep,OutputString];
@@ -224,84 +283,142 @@ if ~exist(outdir4, 'dir')
     mkdir(outdir4)
 end
 
+if ~UseBinnedPerNucleusTraces & ~UseBinnedTraces
+    NumPlotSets = NumSets;
+else
+    NumPlotSets = NumTemperatures;
+end
 
-eb = cell(1, NumSets);
-prof = cell(1, NumSets);
+eb = cell(1, NumPlotSets);
+prof = cell(1, NumPlotSets);
+
+    
 close all
 FrameProfFig = figure(1);
-set(FrameProfFig,'units', 'normalized', 'position',[0.01, 0.05, .9, .7]);
+if UseThesisStyle
+    set(FrameProfFig,'units', 'normalized', 'position',[0.05, 0.05, .2, .2]);
+else
+    set(FrameProfFig,'units', 'normalized', 'position',[0.01, 0.05, .5, .7]);
+end
 set(gcf,'color','w');
 FrameProfAx = axes(FrameProfFig);
-for SetIndex =1:NumSets
-    if strcmp(lower(PlottingColors), 'gradient')
+for SetIndex =1:NumPlotSets
+    if strcmp(lower(PlottingColors), 'gradient') &  ~UseBinnedPerNucleusTraces & ~UseBinnedTraces
         ColIndex = find(abs(Temp_range-Temp_obs(SetIndex)) == min(abs(Temp_range-Temp_obs(SetIndex))));
-    else
+    elseif  ~UseBinnedPerNucleusTraces & ~UseBinnedTraces
         ColIndex = find(temperatures == Temp_sp(SetIndex));
+    else
+        ColIndex = SetIndex;
     end
     
-    MarkerIndex = find(TempMatches{ColIndex} == SetIndex);
-    if isempty(MarkerIndex)
-        MarkerIndex = length(MarkerStyles);
-    end
-  
-    eb{SetIndex} = errorbar(APbins, ones(1, length(APbins)), .1*ones(1, length(APbins)),...
-        'vertical', 'LineStyle', 'none');
-    hold on
-    if strcmp(lower(PlottingColors), 'gradient')
-        set(eb{SetIndex}, 'color', colors(ColIndex,:), 'LineWidth', 1, 'CapSize', 0);
+    if ~UseBinnedPerNucleusTraces & ~UseBinnedTraces
+        MarkerIndex = find(TempMatches{ColIndex} == SetIndex);
+        if isempty(MarkerIndex)
+            MarkerIndex = length(MarkerStyles);
+        end
     else
-        set(eb{SetIndex}, 'color', colors(ColIndex,:), 'LineWidth', 1, 'CapSize', 0);
+        MarkerIndex = 1;
     end
-    set(get(get(eb{SetIndex}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
-    if UseLines
-        prof{SetIndex} = plot(APbins, ones(1, length(APbins)), [MarkerStyles{MarkerIndex}, '-'],...
-            'MarkerEdgeColor', [0, 0, 0],'MarkerFaceColor', colors(ColIndex,:), 'Color', colors(ColIndex,:),...
-            'MarkerSize', 10);
-        
+    
+    if ~UseThesisStyle
+        eb{SetIndex} = errorbar(APbins, ones(1, length(APbins)), .1*ones(1, length(APbins)),...
+            'vertical', 'LineStyle', 'none', 'LineWidth', 2);
+        hold on
+        if strcmp(lower(PlottingColors), 'gradient')
+            set(eb{SetIndex}, 'color', colors(ColIndex,:), 'LineWidth', 2, 'CapSize', 0);
+        else
+            set(eb{SetIndex}, 'color', colors(ColIndex,:), 'LineWidth', 2, 'CapSize', 0);
+        end
+        set(get(get(eb{SetIndex}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
+        if UseLines
+            prof{SetIndex} = plot(APbins, ones(1, length(APbins)), [MarkerStyles{mod(MarkerIndex, length(MarkerStyles))+1}, '-'],...
+                'MarkerEdgeColor', [0, 0, 0],'MarkerFaceColor', colors(ColIndex,:), 'Color', colors(ColIndex,:),...
+                'MarkerSize', 10, 'LineWidth', 2);
+            
+        else
+            prof{SetIndex} = plot(APbins, ones(1, length(APbins)),MarkerStyles{mod(MarkerIndex, length(MarkerStyles))+1},...
+                'MarkerEdgeColor', [0, 0, 0],'MarkerFaceColor', colors(ColIndex,:),...
+                'MarkerSize', 10, 'linestyle', 'none', 'LineWidth', 2);
+            
+        end
     else
-        prof{SetIndex} = plot(APbins, ones(1, length(APbins)), MarkerStyles{MarkerIndex},...
-            'MarkerEdgeColor', [0, 0, 0],'MarkerFaceColor', colors(ColIndex,:),...
-            'MarkerSize', 10, 'linestyle', 'none');
-        
+        eb{SetIndex} = errorbar(APbins, ones(1, length(APbins)), .1*ones(1, length(APbins)),...
+            'vertical', 'LineStyle', 'none', 'LineWidth', 2);
+        hold on
+        if strcmp(lower(PlottingColors), 'gradient')
+            set(eb{SetIndex}, 'color', 'k',...%colors(ColIndex,:), 
+            'LineWidth', 1, 'CapSize', 0);
+        else
+            set(eb{SetIndex}, 'color','k',...% colors(ColIndex,:), 
+                'LineWidth', 1, 'CapSize', 0);
+        end
+        set(get(get(eb{SetIndex}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
+        if UseLines
+            prof{SetIndex} = plot(APbins, ones(1, length(APbins)), [MarkerStyles{mod(MarkerIndex, length(MarkerStyles))+1}, '-'],...
+                'MarkerEdgeColor', [0, 0, 0],'MarkerFaceColor', colors(ColIndex,:), 'Color','k',...% colors(ColIndex,:),...
+                'MarkerSize', 4, 'LineWidth', 1);
+            
+        else
+            prof{SetIndex} = plot(APbins, ones(1, length(APbins)),MarkerStyles{mod(MarkerIndex, length(MarkerStyles))+1},...
+                'MarkerEdgeColor', [0, 0, 0],'MarkerFaceColor', colors(ColIndex,:),...
+                'MarkerSize', 4, 'linestyle', 'none', 'LineWidth',1);
+            
+        end
     end
     
     set(eb{SetIndex},'Visible','off'); %'off' or 'on'
     set(prof{SetIndex},'Visible','off'); %'off' or 'on'
-    if ~ismember(SetIndex, this.ProcessedExperiments)
+    if ~ismember(SetIndex, this.ProcessedExperiments) &  ~UseBinnedTraces & ~UseBinnedPerNucleusTraces
         set(get(get(prof{SetIndex}, 'Annotation'), 'LegendInformation'),'IconDisplayStyle', 'off');
     end
     
 end
 
+if ~UseThesisStyle
 grid on 
+end
 hold off
 if ~UsePhysicalAPLength
-    xlabel('Fraction Embryo Length')
+    xlabel('fraction embryo length')
 else
     xlabel('Distance from the Anterior Pole (\mum)')
 end
-xlim([PlotXmin, PlotXmax])
+%xlim([PlotXmin, PlotXmax])
+xlim([0.1, 0.6])
 
-ylabel(ylab)
-ylim([GlobalPlotYmin, GlobalPlotYmax])
+if ~UseThesisStyle | strcmpi(parameter, 'maxfluos')
+    ylabel(ylab)
+else
+    ylabel('max fluorescence');
+end
+if ~UseThesisStyle | strcmpi(parameter, 'maxfluos')
+    ylim([GlobalPlotYmin, GlobalPlotYmax])
+else
+    ylim([0 2500]);
+end
 
+if ~UseThesisStyle
 FrameProfAx.YAxis.FontSize = 14; 
 FrameProfAx.XAxis.FontSize = 14; 
 title(FrameProfAx, ['Nuclear Cycle '], 'FontSize', 14);
+else
+    FrameProfAx.YAxis.FontSize = 8; 
+FrameProfAx.XAxis.FontSize = 8; 
+title(FrameProfAx, ['Nuclear Cycle '], 'FontSize', 8);
+end
 
 %%
 
 for NCIndex=1:length(this.IncludedNCs)
     NC = this.IncludedNCs(NCIndex);
     
-    
     % Prepare Traces for plotting
     
-    NCMaxParams = NaN(1, NumSets);
-    AllNCParams = NaN(NumSets, NumAPbins);
-    AllNCParamSEs = NaN(NumSets, NumAPbins);
-    AllR2s = NaN(NumSets, NumAPbins);
-    for SetIndex=1:NumSets
+    NCMaxParams = NaN(1, NumPlotSets);
+    AllNCParams = NaN(NumPlotSets, NumAPbins);
+    AllNCParamSEs = NaN(NumPlotSets, NumAPbins);
+    AllR2s = NaN(NumPlotSets, NumAPbins);
+    for SetIndex=1:NumPlotSets
         SetParams = PlottedParams(SetIndex,:,NC-8).';
         SetSEParams = PlottedParamSEs(SetIndex,:,NC-8).';
         SetR2s = R2s(SetIndex,:,NC-8).';
@@ -328,9 +445,9 @@ for NCIndex=1:length(this.IncludedNCs)
     
     
     
-    PlottedSets = zeros(1, NumSets, 'logical');
-    for SetIndex=1:NumSets
-        if ~ismember(SetIndex, this.ProcessedExperiments)
+    PlottedSets = zeros(1, NumPlotSets, 'logical');
+    for SetIndex=1:NumPlotSets
+        if ~ismember(SetIndex, this.ProcessedExperiments) & ~UseBinnedTraces & ~UseBinnedPerNucleusTraces
             continue
         end
         if UsePhysicalAPLength
@@ -392,9 +509,22 @@ for NCIndex=1:length(this.IncludedNCs)
         set(colorTitleHandle ,'String',titleString);
         h.Ticks =  FractionalTempRange(1:25:126); %Create 8 ticks from zero to 1
         h.TickLabels = {'15','17.5','20','22.5','25','27.5'} ;
-    else
+    elseif ~UseBinnedTraces & ~UseBinnedPerNucleusTraces
+        if length(legend_labels(PlottedSets)) > 25
+             hlegend = legend(legend_labels(PlottedSets), 'Location', 'eastoutside',...
+            'FontSize', 10, 'NumColumns', 2);
+        else
         hlegend = legend(legend_labels(PlottedSets), 'Location', 'eastoutside',...
             'FontSize', 14);
+        end
+    else
+        if length(legend_labels(PlottedSets)) > 25
+             hlegend = legend(legend_labels(PlottedSets), 'Location', 'northeast',...
+            'FontSize', 10, 'NumColumns', 2);
+        else
+        hlegend = legend(legend_labels(PlottedSets), 'Location', 'northeast',...
+            'FontSize', 14);
+        end
     end
     
     outpath = [outdir4, filesep,OutputString, '_NC',num2str(NC),'.png'];

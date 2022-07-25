@@ -229,12 +229,28 @@ for TemperatureIndex =1:NumTemperatures
     FrameProfAx = axes(FrameProfFig);
     for SetIndex =1:SubNumSets
         if UseDifferentColors
-            ColIndex = SetIndex;
+            if SetIndex <= size(colors, 1)
+                ColIndex = SetIndex;
+            else
+                ColIndex = mod(SetIndex, size(colors, 1));
+                if ColIndex == 0
+                    ColIndex = size(colors, 1);
+                end
+            end
         else
             ColIndex = TemperatureIndex;
         end
         
         MarkerIndex = SetIndex;
+        if SetIndex <= length(MarkerStyles)
+                MarkerIndex = SetIndex;
+            else
+                MarkerIndex = mod(SetIndex, length(MarkerStyles));
+                if MarkerIndex == 0
+                    MarkerIndex = length(MarkerStyles);
+                end
+        end
+
         if isempty(MarkerIndex)
             MarkerIndex = length(MarkerStyles);
         end

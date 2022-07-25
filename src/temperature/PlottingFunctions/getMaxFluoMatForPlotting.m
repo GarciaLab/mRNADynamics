@@ -31,7 +31,6 @@ Nbins = 1/(this.Experiments{1}.APResolution)+1;
 output_mat = NaN(Nsets, Nbins, 6);
 se_output_mat = NaN(Nsets, Nbins, 6);
 test_output_mat = NaN(Nsets, Nbins, 6);
-counts = NaN(Nsets, Nbins, 6);
 d1dummy = ones(1, Nbins*6, 'uint8');
 d2dummy = repmat(1:41,1,6);
 d3dummy = repmat(1:6,Nbins, 1);
@@ -40,9 +39,12 @@ for i=1:Nsets
     if ismember(i, this.ProcessedExperiments)
         means = this.MeanProfiles{i}.(fluoLabel);
         ses = this.MeanProfiles{i}.(seLabel);
-        counts = this.MeanProfiles{i}.(countLabel);
-        means(counts < this.MinimumTraceCount) = NaN;
-        ses(counts < this.MinimumTraceCount) = NaN;
+        counts= this.MeanProfiles{i}.(countLabel);
+        if ~all(size(counts) == size(means))
+            counts = counts(1:size(means, 1), :,:);
+        end
+        means(counts< this.MinimumTraceCount) = NaN;
+        ses(counts< this.MinimumTraceCount) = NaN;
         [output_mat(i,:,:), idx] = max(means, [], 1);
         idx = squeeze(idx);
         flatidx = reshape(idx, 1, size(idx, 1)*size(idx, 2));

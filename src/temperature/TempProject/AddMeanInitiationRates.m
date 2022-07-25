@@ -155,12 +155,12 @@
              for APindex = 1:NumAPbins
                  %disp([num2str(SetIndex),', ', num2str(NC),', ', num2str(APindex)])
                  for tindex = 1:length(TraceTypes)
+                     %disp(['NC: ', num2str(NC), ', APbin: ', num2str(APindex), ', TraceType: ', TraceTypes{tindex}])
                      this = FitTrapezoidsForMeanMS2Traces(this, SetIndex, NC,...
                          APindex, TraceTypes{tindex});
                  end
              end
          end
      end
-     disp('Done')
  end
         
