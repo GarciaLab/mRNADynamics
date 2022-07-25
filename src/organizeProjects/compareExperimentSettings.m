@@ -80,35 +80,20 @@ end
 %Store tolerances in a table to easily pass to other functions
 settingsTolerances = table(defaultDecimals,pinholeDecimals,pixelXYDecimals,laserPercent);
 
-%Convert to cell array if the user passed a single dataType as a char array
-if ischar(dataTypes)
-    projectList = {dataTypes};
-else
-    projectList = dataTypes;
-end
-
 % Get the experiment names (formerly prefixes) for the project(s)
-experimentNames = {};
-for i = 1:length(projectList)
-    projectName = projectList{i};
-    
-    %Grab only the experiments the user wants
-    if onlyApproved    
-        newExperimentNames = getProjectPrefixes(projectName,'onlyApproved');
-    else
-        newExperimentNames = getProjectPrefixes(projectName);
-    end
-    
-    %Add new experiments into the master list
-    numNew = length(newExperimentNames);
-    experimentNames(end+1:end+numNew,1) = newExperimentNames;
+if onlyApproved    
+    experimentNames = getProjectPrefixes(dataTypes,'onlyApproved');
+else
+    experimentNames = getProjectPrefixes(dataTypes);
 end
 
 
 %% Extract the MetaData from each experiment in the project
 
 numExperiments = length(experimentNames);
-experimentExistsCount = 1; %Counter only advances when dataset exists. Prevents empty entries in RawSettings, which can produce false negatives in ComparedSettings
+experimentExistsCount = 1; % Counter only advances when dataset exists. 
+                           % Prevents empty entries in RawSettings, which 
+                           % can produce false negatives in ComparedSettings
 
 for i = 1:numExperiments
     %Get raw data folder and file info for this experiment
