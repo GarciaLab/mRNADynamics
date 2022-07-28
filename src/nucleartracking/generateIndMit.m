@@ -25,7 +25,7 @@ for k = 2:length(anaphaseFrames)
     end
 end
 
-anaphaseFrames=anaphaseFrames(anaphaseFrames~=0);
+anaphaseFrames=anaphaseFrames(anaphaseFrames~=0 & ~isnan(anaphaseFrames));
 
 %Note that I'm adding a range of two frames frames before and after the
 %determines mitosis
