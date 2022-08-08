@@ -119,7 +119,7 @@ for i = 1:numel(projectList)
         end
 
         outPrefixes = currPrefixes(outSets);
-        prefixes = outPrefixes;
+        selected_prefixes = outPrefixes;
 
     elseif customApproved
         % Find the row in the DataStatus tab that contains the custom approval flag 
@@ -130,14 +130,14 @@ for i = 1:numel(projectList)
         approvalFlagLogicalArray = cell2mat(dataTypeTabContents(approvalFlagRow,2:end));
 
         approvedPrefixes = currPrefixes(find(approvalFlagLogicalArray));
-        prefixes = approvedPrefixes;
+        selected_prefixes = approvedPrefixes;
     else
-        prefixes = currPrefixes;
+        selected_prefixes = currPrefixes;
     end
     
     % Add the prefixes from this dataTypes into the main, compiled list
-    nNewPrefixes = length(currPrefixes);
-    allExperimentNames(end+1:end+nNewPrefixes, 1) = currPrefixes;
+    nNewPrefixes = length(selected_prefixes);
+    allExperimentNames(end+1:end+nNewPrefixes, 1) = selected_prefixes;
 end
 
 % Not quite ready to move fully away from the prefix naming scheme
