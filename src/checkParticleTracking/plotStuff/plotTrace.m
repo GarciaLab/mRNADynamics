@@ -179,10 +179,21 @@ cPoint2 = plot(traceFigAxes,traceFigTimeAxis(cptState.Frames==cptState.CurrentFr
     if strcmpi(ExperimentType, 'inputoutput')
         yyaxis(traceFigAxes,'right')
         %now we'll plot the input protein intensity on the right-hand axis.
-        if ~isfield(cptState.schnitzcells, 'Fluo') || ~isempty(cptState.getCurrentParticle().Nucleus == 0)
+        
+        if ~isfield(cptState.schnitzcells, 'Fluo') %|| ~isempty(cptState.getCurrentParticle().Nucleus == 0)
                 dummy = cell(length(cptState.schnitzcells), 1);
                 [cptState.schnitzcells.Fluo] = dummy{:};
         else
+            % MT 2022-08-18: The 2nd condition in the IF statement is 
+            % always true  when you have a Nucleus associated with the
+            % current particle, which leads to the erasure of the 
+            % integrated nuclear fluorescence trace for an input 
+            % experiment. I don't know what case it was supposed to catch, 
+            % so I just commented it out rather than trying to correct it. 
+            % *** If this section throws an error, consider finding the 
+            % correct way to have the 2nd condition catch your particular 
+            % edge case, while not resorting to erasing previously stored  
+            % nuclear fluorescence values.
             proteinLine = traceFigAxes.Children(end);
             proteinFluo = cptState.schnitzcells(cptState.getCurrentParticle().Nucleus).Fluo;
             if ~isempty(proteinFluo)
