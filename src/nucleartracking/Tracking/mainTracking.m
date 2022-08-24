@@ -485,7 +485,11 @@ for j = 1:numberOfPhases
         if firstFrameIsAnInterphase
             fprintf(['Processing mitosis between nuclear cycle ' num2str(nucCyc(0.5*j)) ' and ' num2str(nucCyc(0.5*j)+1) '... ']);
         else
-            fprintf(['Processing mitosis between nuclear cycle ' num2str(nucCyc(0.5*(j+1))-1) ' and ' num2str(nucCyc(0.5*(j+1))) '... ']);
+            try
+                fprintf(['Processing mitosis between nuclear cycle ' num2str(nucCyc(0.5*(j+1))-1) ' and ' num2str(nucCyc(0.5*(j+1))) '... ']);
+            catch
+                warning('weirdness with how we specify nc13-only datasets in MovieDatabase')
+            end
         end
         
 %         try
