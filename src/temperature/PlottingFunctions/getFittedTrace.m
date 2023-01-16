@@ -1,9 +1,12 @@
 function [t_vector, fit_solution, ci, pos_slope, se_pos_slope, neg_slope,...
     se_neg_slope, time_on, se_time_on, time_off, se_time_off, time_peak, se_time_peak, R2] = ...
-    getFittedTrace(this, SetIndex, APindex, NC, TraceType, MaxTime)
+    getFittedTrace(this, SetIndex, APindex, NC, TraceType, MaxTime, UseBinnedParameters)
+if ~exist('UseBinnedParameters', 'var')
+    UseBinnedParameters = false;
+end
 [pos_slope, se_pos_slope, neg_slope, se_neg_slope, time_on, se_time_on,...
     time_off, se_time_off, time_peak, se_time_peak, R2, fitresult] = ...
-    getFittedTrapezoidParameters(this, SetIndex, APindex, NC, TraceType);
+    getFittedTrapezoidParameters(this, SetIndex, APindex, NC, TraceType, UseBinnedParameters);
 if all(~isnan([pos_slope, neg_slope, time_on, time_off, time_peak]))
     plateau_height = pos_slope*time_peak+time_on;
     time_dark = (neg_slope*time_off-plateau_height)/neg_slope;

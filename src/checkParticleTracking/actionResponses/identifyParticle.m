@@ -11,7 +11,7 @@ end
 
 if ~isempty(ConnectPosition)
     
-    display(ConnectPosition);
+    %display(ConnectPosition);
     
     %Find the closest particle
     [ParticleOutput,~]=FindClickedParticle(ConnectPosition,CurrentFrame,...

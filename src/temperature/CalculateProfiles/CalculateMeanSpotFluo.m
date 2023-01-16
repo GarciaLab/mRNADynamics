@@ -64,13 +64,13 @@ for SetIndex = 1:NumSets
                     end
                 end
             end
-            if all(CompiledParticles{ChN}(cp).FlaggingInfo.FrameApprovedFinal == 1)
+            if all(CompiledParticles{ChN}(cp).FlaggingInfo.UseTraceFluo)
                 PercentageFramesApproved(cp) = 1;
             else
-                PercentageFramesApproved(cp) = sum(CompiledParticles{ChN}(cp).FlaggingInfo.FrameApprovedFinal == 1)/length(CompiledParticles{ChN}(cp).FlaggingInfo.FrameApprovedFinal);
+                PercentageFramesApproved(cp) = sum(CompiledParticles{ChN}(cp).FlaggingInfo.UseTraceFluo)/length(CompiledParticles{ChN}(cp).FlaggingInfo.UseTraceFluo);
             end
-            if ~isempty(find(CompiledParticles{ChN}(cp).FlaggingInfo.FrameApprovedFinal == 0, 1))
-                if find(CompiledParticles{ChN}(cp).FlaggingInfo.FrameApprovedFinal == 0, 1) >...
+            if ~isempty(find(~CompiledParticles{ChN}(cp).FlaggingInfo.UseTraceFluo, 1))
+                if find(~CompiledParticles{ChN}(cp).FlaggingInfo.UseTraceFluo, 1) >...
                         CompiledParticles{ChN}(cp).Frame(1)
                     HasSpotsBeforeDisapproved(cp) = 1;
                 end
@@ -126,11 +126,11 @@ for SetIndex = 1:NumSets
             for i = 1:length(IncludedTraceIndices)
                 trace_index = IncludedTraceIndices(i);
                 CurrentCompiledParticle = CompiledParticles{ChN}(trace_index);
-                CycleTraces{NC-8}(CurrentCompiledParticle.FlaggingInfo.TrueFrames(CurrentCompiledParticle.FlaggingInfo.FrameApprovedFinal == 1), i) = 0;
-                CycleTraces{NC-8}(CurrentCompiledParticle.Frame(CurrentCompiledParticle.FrameApproved == 1), i) = CurrentCompiledParticle.Fluo(CurrentCompiledParticle.FrameApproved == 1);
+                CycleTraces{NC-8}(CurrentCompiledParticle.FlaggingInfo.AllSchnitzFrames(CurrentCompiledParticle.FlaggingInfo.UseTraceFluo), i) = 0;
+                CycleTraces{NC-8}(CurrentCompiledParticle.Frame(CurrentCompiledParticle.FrameApproved == 1), i) = CurrentCompiledParticle.Fluo(CurrentCompiledParticle.FrameApproved);
                 CycleTraces{NC-8}(CurrentCompiledParticle.Frame(CurrentCompiledParticle.FrameApproved == 0), i) = NaN;
-                CycleTraces3D{NC-8}(CurrentCompiledParticle.FlaggingInfo.TrueFrames(CurrentCompiledParticle.FlaggingInfo.FrameApprovedFinal == 1), i) = 0;
-                CycleTraces3D{NC-8}(CurrentCompiledParticle.Frame(CurrentCompiledParticle.FrameApproved == 1), i) = CurrentCompiledParticle.Fluo3DGauss(CurrentCompiledParticle.FrameApproved == 1);
+                CycleTraces3D{NC-8}(CurrentCompiledParticle.FlaggingInfo.AllSchnitzFrames(CurrentCompiledParticle.FlaggingInfo.UseTraceFluo), i) = 0;
+                CycleTraces3D{NC-8}(CurrentCompiledParticle.Frame(CurrentCompiledParticle.FrameApproved == 1), i) = CurrentCompiledParticle.Fluo3DGauss(CurrentCompiledParticle.FrameApproved);
                 CycleTraces3D{NC-8}(CurrentCompiledParticle.Frame(CurrentCompiledParticle.FrameApproved == 0), i) = NaN;
                 %CycleTraces3Derror(CurrentCompiledParticle.Frame, i) = CurrentCompiledParticle.Fluo3DGaussz;
                 MeanAPs{NC-8}(i) = mean(CurrentCompiledParticle.schnitzcell.APpos);

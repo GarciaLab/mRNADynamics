@@ -57,11 +57,23 @@ HealthSummary.APboundaries = NaN(1,2);
 
 %%
 if isfield(schnitzcells, 'Checked')
-    ApprovedFlagArray = [schnitzcells(:).Approved];
-    CheckedFlagArray = [schnitzcells(:).Checked];
-    CyclesArray =  [schnitzcells(:).Checked];
-    FinishedNuclearTracking = (ApprovedFlagArray == 1) | (CheckedFlagArray == 1) | (CyclesArray == min(CyclesArray)) ;
-    if sum(FinishedNuclearTracking)/length(FinishedNuclearTracking) > .99
+    ApprovedFlagArray = zeros(1, length(schnitzcells));
+    CheckedFlagArray = zeros(1, length(schnitzcells));
+    CyclesArray =  NaN(1, length(schnitzcells));
+    for sc = 1:length(schnitzcells)
+         if ~isempty(schnitzcells(sc).Approved)
+        ApprovedFlagArray(sc) = schnitzcells(sc).Approved;
+         end
+        if ~isempty(schnitzcells(sc).Checked)
+        CheckedFlagArray(sc) = schnitzcells(sc).Checked;
+        end
+        if ~isempty(schnitzcells(sc).cycle)
+        CyclesArray(sc) = schnitzcells(sc).cycle;
+        end
+    end
+    
+    FinishedNuclearTracking = (ApprovedFlagArray == 1) | (CheckedFlagArray == 1) | (CyclesArray <= min(CyclesArray(CyclesArray > 0))) ;
+    if sum(FinishedNuclearTracking)/length(FinishedNuclearTracking) > .95
         HealthSummary.NuclearTrackingDone = true;
     end
 end

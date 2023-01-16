@@ -126,7 +126,7 @@ classdef LTM
             if exist('MinimumTimePoints', 'var') & ~isempty(MinimumTimePoints)
                 this.MinimumTimePoints = MinimumTimePoints;
             else
-                this.MinimumTimePoints = 4;
+                this.MinimumTimePoints = 5;
             end
             if exist('MinimumFittingPoints', 'var') & ~isempty(MinimumFittingPoints)
                 this.MinimumFittingPoints = MinimumFittingPoints;
@@ -141,13 +141,13 @@ classdef LTM
             if exist('MinimumSchnitzCount', 'var') & ~isempty(MinimumSchnitzCount)
                 this.MinimumSchnitzCount = MinimumSchnitzCount;
             else
-                this.MinimumSchnitzCount = 5;
+                this.MinimumSchnitzCount = 3;
             end
             
             if exist('MinimumEmbryos', 'var') & ~isempty(MinimumEmbryos)
                 this.MinimumEmbryos = MinimumEmbryos;
             else
-                this.MinimumEmbryos = 2;
+                this.MinimumEmbryos = 1;
             end
             if exist('R2bound', 'var') & ~isempty(R2bound)
                 this.R2bound = R2bound;
@@ -216,21 +216,21 @@ classdef LTM
             end
             
             this.APLengths = AddAPLengths(this);
-%             this = AddMeanProfiles(this);
-%             
-%             this = AddBinnedMeanProfiles(this);
-%             this = AddMeanInitiationRates(this);
-%             this = AddMeanPerNucleusInitiationRates(this);
-%             this = AddTBinnedMeanInitiationRates(this);
-%             this = AddTBinnedMeanPerNucleusInitiationRates(this);
-%             this = AddHealthInfo(this);
-%             this = CalculateMeanSpotFluo(this);
-%             TimingParamPath = 'S:/Gabriella\Dropbox\TemperatureParameters\hbBAC-MS2-V3\';
-%             this = AddTimingCoeffs(this, TimingParamPath);
-%             this = AddActivationEnergies(this);
-%             this = AddBinnedActivationEnergies(this);
-%             this = AddPerNucleusActivationEnergies(this);
-%             this = AddBinnedPerNucleusActivationEnergies(this);
+            this = AddMeanProfiles(this);
+            
+            this = AddBinnedMeanProfiles(this);
+            this = AddMeanInitiationRates(this);
+            this = AddMeanPerNucleusInitiationRates(this);
+            this = AddTBinnedMeanInitiationRates(this);
+            this = AddTBinnedMeanPerNucleusInitiationRates(this);
+            this = AddHealthInfo(this);
+            this = CalculateMeanSpotFluo(this);
+            TimingParamPath = 'S:/Gabriella\Dropbox\TemperatureParameters\hbBAC-MS2-V6\';
+            this = AddTimingCoeffs(this, TimingParamPath);
+            this = AddActivationEnergies(this);
+            this = AddBinnedActivationEnergies(this);
+            this = AddPerNucleusActivationEnergies(this);
+            this = AddBinnedPerNucleusActivationEnergies(this);
         end
         
         

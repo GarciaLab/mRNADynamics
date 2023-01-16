@@ -1,6 +1,10 @@
 function [pos_slope, se_pos_slope, neg_slope, se_neg_slope, time_on, se_time_on,...
     time_off, se_time_off, time_peak, se_time_peak, R2, fitresult] = ...
-    getFittedTrapezoidParameters(this, SetIndex, APindex, NC, TraceType)
+    getFittedTrapezoidParameters(this, SetIndex, APindex, NC, TraceType, UseBinnedParameters)
+if ~exist('UseBinnedParameters', 'var')
+    UseBinnedParameters = false;
+end
+if ~UseBinnedParameters
 if strcmp(lower(TraceType), 'anaphasealigned')
     pos_slope =  this.MeanInitiationRates.AnaphaseAligned(SetIndex, APindex, NC-8);
     se_pos_slope=  this.MeanInitiationRates.AnaphaseAlignedStdError(SetIndex, APindex, NC-8);
@@ -80,4 +84,31 @@ elseif strcmp(lower(TraceType), 'fluo3d')
     R2 = this.MeanFitR2s.Unaligned3D(SetIndex, APindex, NC-8);
     fitresult = this.Fits.Unaligned3D{SetIndex, APindex, NC-8};
 end
+else
+    if strcmp(lower(TraceType), 'anaphasealigned')
+        traceName = 'AnaphaseAligned';
+    elseif strcmp(lower(TraceType), 'anaphasealigned3d')
+        traceName = 'AnaphaseAligned3D';
+    elseif strcmp(lower(TraceType), 'tbinned')
+        traceName = 'Tbinned';
+    elseif strcmp(lower(TraceType), 'tbinned3d')
+        traceName = 'Tbinned3D';
+    elseif strcmp(lower(TraceType), 'fluo')
+        traceName = 'Unaligned';
+    elseif strcmp(lower(TraceType), 'fluo3d')
+        traceName = 'Unaligned3D';
+    end
+    pos_slope =  this.BinnedProfileParameters.MeanInitiationRates.(traceName)(SetIndex, APindex, NC-8);
+    se_pos_slope=  this.BinnedProfileParameters.MeanInitiationRates.([traceName, 'StdError'])(SetIndex, APindex, NC-8);
+    neg_slope = this.BinnedProfileParameters.UnloadingRates.(traceName)(SetIndex, APindex, NC-8);
+    se_neg_slope=  this.BinnedProfileParameters.UnloadingRates.([traceName, 'StdError'])(SetIndex, APindex, NC-8);
+    time_on = this.BinnedProfileParameters.TimeOns.(traceName)(SetIndex, APindex, NC-8);
+    se_time_on = this.BinnedProfileParameters.TimeOns.([traceName, 'StdError'])(SetIndex, APindex, NC-8);
+    time_off = this.BinnedProfileParameters.TimeOffs.(traceName)(SetIndex, APindex, NC-8);
+    se_time_off = this.BinnedProfileParameters.TimeOffs.([traceName, 'StdError'])(SetIndex, APindex, NC-8);
+    time_peak = this.BinnedProfileParameters.ElongationTimes.(traceName)(SetIndex, APindex, NC-8)+time_on;
+    se_time_peak = sqrt(this.BinnedProfileParameters.ElongationTimes.([traceName, 'StdError'])(SetIndex, APindex, NC-8)^2+se_time_on^2);
+    R2 = this.BinnedProfileParameters.MeanFitR2s.(traceName)(SetIndex, APindex, NC-8);
+    fitresult = this.BinnedProfileParameters.Fits.(traceName){SetIndex, APindex, NC-8};
+    end
 %disp('Check point')

@@ -33,6 +33,9 @@ if UseBinnedPerNucleusTraces
     R2s = getBinnedPerNucleusTrapezoidParameters(this, 'R2s', TraceType);
     [FractionOns, SchnitzCounts] = getCycleFractionOns(this, TraceType, UseBinnedTraces, UseBinnedPerNucleusTraces);
     [MaxFluos, SEMaxFluos] = getBinnedPerNucleusMaxFluoMatForPlotting(this, TraceType);
+    MinimumCount = this.MinimumEmbryos;
+    MeanSpotFluos= NaN(size(MaxFluos));
+      SEMeanSpotFluos= NaN(size(MaxFluos));
 elseif UseBinnedTraces
     InitiationRates = getBinnedTrapezoidParameters(this, 'MeanInitiationRates', TraceType, false);
     SEInitiationRates = getBinnedTrapezoidParameters(this, 'MeanInitiationRates', TraceType, true);
@@ -47,6 +50,9 @@ elseif UseBinnedTraces
     R2s = getBinnedTrapezoidParameters(this, 'R2s', TraceType);
     [FractionOns, SchnitzCounts] = getCycleFractionOns(this, TraceType, UseBinnedTraces, UseBinnedPerNucleusTraces);
     [MaxFluos, SEMaxFluos] = getBinnedMaxFluoMatForPlotting(this, TraceType);
+     MinimumCount = this.MinimumEmbryos;
+     MeanSpotFluos= NaN(size(MaxFluos));
+      SEMeanSpotFluos= NaN(size(MaxFluos));
 elseif UsePerNucleusTraces
         InitiationRates = getPerNucleusTrapezoidParameters(this, 'MeanInitiationRates', TraceType, false);
     SEInitiationRates = getPerNucleusTrapezoidParameters(this, 'MeanInitiationRates', TraceType, true);
@@ -60,7 +66,11 @@ elseif UsePerNucleusTraces
     SEUnloadingRates = getPerNucleusTrapezoidParameters(this, 'UnloadingRates', TraceType, true);
     R2s = getPerNucleusTrapezoidParameters(this, 'R2s', TraceType);
     [FractionOns, SchnitzCounts] = getCycleFractionOns(this, TraceType, UseBinnedTraces, UseBinnedPerNucleusTraces);
-    [MaxFluos, SEMaxFluos] = getPerNucleusTrapezoidParameters(this, TraceType);
+    MaxFluos = getPerNucleusMaxFluoMatForPlotting(this, TraceType);
+    SEMaxFluos = NaN(size(MaxFluos));
+     MinimumCount = this.MinimumSchnitzCount;
+     MeanSpotFluos= NaN(size(MaxFluos));
+      SEMeanSpotFluos= NaN(size(MaxFluos));
 else
 InitiationRates = getTrapezoidParameters(this, 'MeanInitiationRates', TraceType, false);
 SEInitiationRates = getTrapezoidParameters(this, 'MeanInitiationRates', TraceType, true);
@@ -76,7 +86,9 @@ MeanSpotFluos = getTrapezoidParameters(this, 'MeanSpotFluos', TraceType, false);
 SEMeanSpotFluos = getTrapezoidParameters(this, 'MeanSpotFluos', TraceType, true);
 R2s = getTrapezoidParameters(this, 'R2s', TraceType);
 [FractionOns, SchnitzCounts] = getCycleFractionOns(this, TraceType, UseBinnedTraces, UseBinnedPerNucleusTraces);
-[MaxFluos, SEMaxFluos] = getMaxFluoMatForPlotting(this, TraceType);
+MaxFluos = getMaxFluoMatForPlotting(this, TraceType);
+    SEMaxFluos = NaN(size(MaxFluos));
+ MinimumCount = this.MinimumSchnitzCount;
 end
 
 %%
@@ -220,11 +232,11 @@ end
 if strcmpi(parameter, 'fractionons') | strcmpi(parameter, 'fractionon') 
     OutputString = 'FractionOn';
     PlottedParams = FractionOns;
-    PlottedParams(SchnitzCounts < this.MinimumSchnitzCount) = NaN;
+    PlottedParams(SchnitzCounts < MinimumCount) = NaN;
     PlottedParamSEs = NaN(size(PlottedParams));
     R2s = ones(size(PlottedParams));
     R2s(isnan(PlottedParams)) = NaN;
-    R2s(SchnitzCounts < this.MinimumSchnitzCount)  = 0;
+    R2s(SchnitzCounts < MinimumCount)  = 0;
     ylab = 'Fraction Competent';
     GlobalPlotYmax = 1.05;
     GlobalPlotYmin = -0.05;
@@ -235,10 +247,12 @@ elseif strcmpi(parameter, 'meanspotfluos') | strcmpi(parameter, 'meanspotfluo')
     end
     OutputString = 'MeanSpotFluos';
     PlottedParams = MeanSpotFluos;
+    PlottedParams(SchnitzCounts < MinimumCount) = NaN;
     PlottedParamSEs = SEMeanSpotFluos;
+    PlottedParamSEs(SchnitzCounts < MinimumCount) = NaN;
     R2s = ones(size(PlottedParams));
     R2s(isnan(PlottedParams)) = NaN;
-    R2s(SchnitzCounts < this.MinimumSchnitzCount)  = 0;
+    R2s(SchnitzCounts < MinimumCount)  = 0;
     if UseRescaledFluo
         ylab = 're-scaled mean spot fluo. (AU)';
     else
@@ -252,7 +266,9 @@ elseif strcmpi(parameter, 'meanspotfluos') | strcmpi(parameter, 'meanspotfluo')
 elseif strcmpi(parameter, 'timeons') | strcmpi(parameter, 'timeon')
     OutputString = 'TimeOn';
     PlottedParams = TimeOns;
+     PlottedParams(SchnitzCounts < MinimumCount) = NaN;
     PlottedParamSEs = SETimeOns;
+     PlottedParamSEs(SchnitzCounts < MinimumCount) = NaN;
     if UseRescaledParamTiming
         ylab = 'T-adjusted t_{on} (25ºC min)';
     else
@@ -267,7 +283,9 @@ elseif strcmpi(parameter, 'timeons') | strcmpi(parameter, 'timeon')
 elseif strcmpi(parameter, 'timeoffs') | strcmpi(parameter, 'timeoff')
     OutputString = 'TimeOff';
     PlottedParams = TimeOffs;
+      PlottedParams(SchnitzCounts < MinimumCount) = NaN;
     PlottedParamSEs = SETimeOffs;
+      PlottedParamSEs(SchnitzCounts < MinimumCount) = NaN;
     if UseRescaledParamTiming
         ylab = 'T-adjusted t_{off} (25ºC min)';
     else
@@ -281,7 +299,9 @@ elseif strcmpi(parameter, 'timeoffs') | strcmpi(parameter, 'timeoff')
 elseif strcmpi(parameter, 'elongationtimes') | strcmpi(parameter, 'elongationtime')
     OutputString = 'ElongationTime';
     PlottedParams = ElongationTimes;
+      PlottedParams(SchnitzCounts < MinimumCount) = NaN;
     PlottedParamSEs = SEElongationTimes;
+      PlottedParamSEs(SchnitzCounts < MinimumCount) = NaN;
     if UseRescaledParamTiming
         ylab = 'T-adjusted elongation time (25ºC min)';
     else
@@ -295,7 +315,9 @@ elseif strcmpi(parameter, 'elongationtimes') | strcmpi(parameter, 'elongationtim
 elseif strcmpi(parameter, 'elongationrates') | strcmpi(parameter, 'elongationrate')
     OutputString = 'ElongationRate';
     PlottedParams = this.GeneLength/ElongationTimes;
+      PlottedParams(SchnitzCounts < MinimumCount) = NaN;
     PlottedParamSEs = PlottedParams.*SEElongationTimes./ElongationTimes;
+      PlottedParamSEs(SchnitzCounts < MinimumCount) = NaN;
     if UseRescaledParamTiming
         ylab = 'T-adjusted elongation rate (bp/25ºC min)';
     else
@@ -311,7 +333,9 @@ elseif strcmpi(parameter, 'loadingrates') | strcmpi(parameter, 'loadingrate') | 
         strcmpi(parameter, 'meaninitiationrates') | strcmpi(parameter, 'meaninitiationrate') 
     OutputString = 'LoadingRate';
     PlottedParams = InitiationRates;
+      PlottedParams(SchnitzCounts < MinimumCount) = NaN;
     PlottedParamSEs = SEInitiationRates;
+      PlottedParamSEs(SchnitzCounts < MinimumCount) = NaN;
     if UseRescaledFluo
 
         if UseRescaledParamTiming
@@ -334,7 +358,9 @@ elseif strcmpi(parameter, 'loadingrates') | strcmpi(parameter, 'loadingrate') | 
 elseif strcmpi(parameter, 'transcriptionwindows') | strcmpi(parameter, 'transcriptionwindow')
     OutputString = 'TranscriptionWindow';
     PlottedParams = TimeOffs-TimeOns;
+      PlottedParams(SchnitzCounts < MinimumCount) = NaN;
     PlottedParamSEs = sqrt(SETimeOffs.^2+SETimeOns.^2);
+      PlottedParamSEs(SchnitzCounts < MinimumCount) = NaN;
     if UseRescaledParamTiming
         ylab = 'T-adjusted txn window (25ºC min)';
     else
@@ -348,7 +374,9 @@ elseif strcmpi(parameter, 'transcriptionwindows') | strcmpi(parameter, 'transcri
 elseif strcmpi(parameter, 'maxfluos') | strcmpi(parameter, 'maxfluo')
     OutputString = 'MaxFluos';
     PlottedParams = MaxFluos;
+      PlottedParams(SchnitzCounts < MinimumCount) = NaN;
     PlottedParamSEs = SEMaxFluos;
+      PlottedParamSEs(SchnitzCounts < MinimumCount) = NaN;
     if UseRescaledFluo
         ylab = 're-scaled max fluoresence (AU)';
     else
@@ -363,8 +391,10 @@ elseif strcmpi(parameter, 'maxfluos') | strcmpi(parameter, 'maxfluo')
 elseif strcmpi(parameter, 'plateauheights') | strcmpi(parameter, 'plateauheight')
     OutputString = 'PlateauHeights';
     PlottedParams = InitiationRates.*ElongationTimes;
+      PlottedParams(SchnitzCounts < MinimumCount) = NaN;
     PlottedParamSEs = sqrt((InitiationRates.^2).*(SEElongationTimes.^2)+...
         (ElongationTimes.^2).*(SEInitiationRates.^2) );
+      PlottedParamSEs(SchnitzCounts < MinimumCount) = NaN;
     if UseRescaledFluo
         ylab = 're-scaled Fitted max polymerases loaded (AU)';
     else
@@ -379,7 +409,9 @@ elseif strcmpi(parameter, 'plateauheights') | strcmpi(parameter, 'plateauheight'
 elseif strcmpi(parameter, 'unloadingrates') | strcmpi(parameter, 'unloadingrate')
     OutputString = 'UnloadingRate';
     PlottedParams = -UnloadingRates;
+      PlottedParams(SchnitzCounts < MinimumCount) = NaN;
     PlottedParamSEs = SEUnloadingRates;
+      PlottedParamSEs(SchnitzCounts < MinimumCount) = NaN;
     if UseRescaledFluo
 
         if UseRescaledParamTiming
@@ -403,14 +435,18 @@ elseif strcmpi(parameter, 'mrnaproductions') | strcmpi(parameter, 'mrnaproductio
     OutputString = 'TotalmRNAProduction';
     if ~UseBinnedPerNucleusTraces & ~UsePerNucleusTraces
         FractionOnsTemp = FractionOns;
-        FractionOnsTemp(SchnitzCounts < this.MinimumSchnitzCount) = NaN;
+        FractionOnsTemp(SchnitzCounts < MinimumCount) = NaN;
         PlottedParams = FractionOnsTemp.*InitiationRates.*(TimeOffs-TimeOns);
+          PlottedParams(SchnitzCounts < MinimumCount) = NaN;
         PlottedParamSEs = sqrt(((FractionOnsTemp.^2).*(TimeOffs-TimeOns).^2).*(SEInitiationRates.^2)+...
             (FractionOnsTemp.^2).*(InitiationRates.^2).*(SETimeOffs.^2+SETimeOns.^2));
+          PlottedParamSEs(SchnitzCounts < MinimumCount) = NaN;
     else
         PlottedParams = InitiationRates.*(TimeOffs-TimeOns);
+          PlottedParams(SchnitzCounts < MinimumCount) = NaN;
         PlottedParamSEs = sqrt(((TimeOffs-TimeOns).^2).*(SEInitiationRates.^2)+...
             (InitiationRates.^2).*(SETimeOffs.^2+SETimeOns.^2));
+          PlottedParamSEs(SchnitzCounts < MinimumCount) = NaN;
     end
     
     if UseRescaledFluo
@@ -428,8 +464,10 @@ elseif strcmpi(parameter, 'unweightedmrnaproductions') | strcmpi(parameter, 'unw
     OutputString = 'UnweightedTota lmRNAProduction';
     
     PlottedParams = InitiationRates.*(TimeOffs-TimeOns);
+      PlottedParams(SchnitzCounts < MinimumCount) = NaN;
     PlottedParamSEs = sqrt(((TimeOffs-TimeOns).^2).*(SEInitiationRates.^2)+...
         (InitiationRates.^2).*(SETimeOffs.^2+SETimeOns.^2));
+      PlottedParamSEs(SchnitzCounts < MinimumCount) = NaN;
     if UseRescaledFluo
         ylab = 're-scaled mean mRNA produced per cell (AU)';
     else

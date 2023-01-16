@@ -5,6 +5,7 @@ if ~exist('includeRescaling', 'var')
 end
 if ~exist('TempParamPath', 'var')
     TempParamPath = 'S:/Gabriella\Dropbox\TemperatureParameters\hbBAC-MS2\';
+    TempParamPath = 'S:/Gabriella\Dropbox\TemperatureParameters\hbBAC-MS2-V6\';
     warning('Using general temperature parameters for hbBAC-MS2.');
 end
 
@@ -274,6 +275,7 @@ if ~PrescaledBins
                 end
             else
                 CompiledParameters.AutocorrElongationTimes = NaN(1, length(CompiledParameters.UniqueTemperatures));
+                 CompiledParameters.AutocorrElongationTimes= [175 210 245 315 405];
             end
             
             if isfile([TempParamPath filesep 'DevTimeCoefficients.mat'])
@@ -283,7 +285,7 @@ if ~PrescaledBins
                 for i = 1:length(DevTimeTemps)
                     match_index = find(round(CompiledParameters.UniqueTemperatures, 1) == round(DevTimeTemps(i), 1));
                     if ~isempty(match_index)
-                        CompiledParameters.TimingCoeffs(match_index) = TimingInfo.TimeCoeffs(i);
+                        CompiledParameters.TimingCoeffs(match_index) =TimingInfo.MeanNCDivisionInfo(2, 5)/TimingInfo.MeanNCDivisionInfo(i, 5);
                     end
                 end
             else
@@ -295,6 +297,7 @@ if ~PrescaledBins
             
         else
             CompiledParameters.AutocorrElongationTimes = NaN(1, length(CompiledParameters.UniqueTemperatures));
+            CompiledParameters.AutocorrElongationTimes= [175 210 245 315 405];
             CompiledParameters.TimingCoeffs = NaN(1, length(CompiledParameters.UniqueTemperatures));
             
         end

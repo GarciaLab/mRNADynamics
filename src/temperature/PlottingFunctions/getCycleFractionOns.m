@@ -23,12 +23,36 @@ if UseBinnedPerNucleusTraces | UseBinnedTraces
     counts = NaN(length(this.UniqueTemperatures), NumAPbins, 6);
     AllNumNuclei = this.BinnedMeanProfiles.([traceName, 'CycleTotalNuclei']);
     AllNumOffNuclei = this.BinnedMeanProfiles.([traceName, 'CycleTotalOffNuclei']);
+    TimeOffs = this.BinnedProfileParameters.TimeOffs.(traceName);
+    TimeOns = this.BinnedProfileParameters.TimeOns.(traceName);
+    
     FractionOn = (AllNumNuclei-AllNumOffNuclei)./AllNumNuclei;
     FractionOn(AllNumNuclei <= this.MinimumSchnitzCount) = NaN;
-    CycleFractionOn = squeeze(mean(FractionOn, 1, 'omitnan'));
+    
+    
+    MeanFractionOn = NaN(length(this.UniqueTemperatures), NumAPbins, 6);
+    SEFractionOn = NaN(length(this.UniqueTemperatures), NumAPbins, 6);
+    for APindex = 1:NumAPbins
+        for nc_index = 1:6
+            for temp_index = 1:5
+                FractionOnVec = FractionOn(:,APindex, nc_index, temp_index).';
+                TimeOnBin = TimeOns(temp_index, APindex, nc_index);
+                TimeOffBin = TimeOffs(temp_index, APindex, nc_index);
+                if ~isnan(TimeOnBin) & ~isnan(TimeOffBin)
+                    RoundedTimeOnBin = ceil(TimeOnBin/(this.time_delta/60))+1;
+                    RoundedTimeOffBin = floor(TimeOffBin/(this.time_delta/60))+1;
+                    MeanFractionOn(temp_index, APindex, nc_index) = mean(FractionOnVec(RoundedTimeOnBin:RoundedTimeOffBin), 'omitnan');
+                    SEFractionOn(temp_index, APindex, nc_index) = std(FractionOnVec(RoundedTimeOnBin:RoundedTimeOffBin), 'omitnan');
+                    
+                end
+            end
+        end
+    end
+    
+    
     CycleSchnitzCount = squeeze(max(AllNumNuclei,[], 1, 'omitnan'));
     for i = 1:length(this.UniqueTemperatures)
-        params(i,:,:) = CycleFractionOn(:,:,i);
+        params(i,:,:) = MeanFractionOn(i,:,:);
         counts(i,:,:) = CycleSchnitzCount(:,:,i);
     end
     
@@ -42,11 +66,31 @@ else
         end
         AllNumNuclei = this.MeanProfiles{i}.([traceName, 'CycleNumNuclei']);
         AllNumOffNuclei = this.MeanProfiles{i}.([traceName, 'CycleNumOffNuclei']);
+        TimeOffs = squeeze(this.TimeOffs.(traceName)(i,:,:));
+        TimeOns = squeeze(this.TimeOns.(traceName)(i,:,:));
         FractionOn = (AllNumNuclei-AllNumOffNuclei)./AllNumNuclei;
         FractionOn(AllNumNuclei <= this.MinimumSchnitzCount) = NaN;
         
-        CycleFractionOn = mean(FractionOn, 1, 'omitnan');
-        params(i,:,:) = CycleFractionOn;
+        MeanFractionOn = NaN(NumAPbins, 6);
+        SEFractionOn = NaN(NumAPbins, 6);
+        for APindex = 1:NumAPbins
+            for nc_index = 1:6
+                for temp_index = 1:5
+                    FractionOnVec = FractionOn(:,APindex, nc_index).';
+                    TimeOnBin = TimeOns(APindex, nc_index);
+                    TimeOffBin = TimeOffs(APindex, nc_index);
+                    if ~isnan(TimeOnBin) & ~isnan(TimeOffBin)
+                        RoundedTimeOnBin = ceil(TimeOnBin/(this.time_delta/60))+1;
+                        RoundedTimeOffBin = floor(TimeOffBin/(this.time_delta/60))+1;
+                        MeanFractionOn(APindex, nc_index) = mean(FractionOnVec(RoundedTimeOnBin:RoundedTimeOffBin), 'omitnan');
+                        SEFractionOn( APindex, nc_index) = std(FractionOnVec(RoundedTimeOnBin:RoundedTimeOffBin), 'omitnan');
+                        
+                    end
+                end
+            end
+        end
+        
+        params(i,:,:) = MeanFractionOn;
         
         CycleSchnitzCount = squeeze(max(AllNumNuclei,[], 1, 'omitnan'));
         counts(i,:,:) = CycleSchnitzCount;

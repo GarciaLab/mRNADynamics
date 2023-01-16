@@ -5,9 +5,9 @@ elseif isempty(deltaTbinWidth)
     deltaTbinWidth = 30;
 end
 if ~exist('MinTimePoints', 'var')
-    MinTimePoints = 4;
+    MinTimePoints = 5;
 elseif isempty(MinTimePoints)
-    MinTimePoints = 4;
+    MinTimePoints = 5;
 end
 if ~exist('UseManualApproval', 'var')
     UseManualApproval = false;
@@ -42,127 +42,122 @@ nc_info = [liveExperiment.nc9, liveExperiment.nc10, liveExperiment.nc11,...
     liveExperiment.nc12, liveExperiment.nc13, liveExperiment.nc14, length(FrameInfo)];
 PixelSize = liveExperiment.pixelSize_um;
 load([liveExperiment.resultsFolder, 'CompiledParticles.mat'], 'CompiledParticles')
+ParticleFluos = GetParticleFluoDist(CompiledParticles);
+MaxParticleFluo = 6000;%max(ParticleFluos);
+MaxTraceLengths = GetParticleTraceLengthDist(CompiledParticles);
+pOnCutoffs = 5:5:50;
+ChN = 1;
+EarliestTurnOnTimeCells = cell(1, 6);
+EarliestTurnOnTimes = NaN(1, 6);
+for NC = 9:14
+    EarliestTurnOnTimeCells{NC-8} = [];
+    for i =1:length(CompiledParticles{ChN})
+        if schnitzcells(CompiledParticles{ChN}(i).schnitz).cycle == NC & ...
+                min(CompiledParticles{ChN}(i).Frame) >= nc_info(NC-8)-1
+            if sum(CompiledParticles{ChN}(i).FrameApproved) > 0
+                EarliestTurnOnTimeCells{NC-8}(end+1) = min(CompiledParticles{ChN}(i).FlaggingInfo.AllSchnitzFrames(CompiledParticles{ChN}(i).FlaggingInfo.UseTraceFluo));
+            end
+        end
+    end
+    if ~isempty(EarliestTurnOnTimeCells{NC-8})
+        EarliestTurnOnTimes(NC-8) = prctile(EarliestTurnOnTimeCells{NC-8}, 20);
+        EarliestTurnOnTimes(NC-8) = max([EarliestTurnOnTimes(NC-8) nc_info(NC-8)+0.2*(nc_info(NC-7)-nc_info(NC-8))]);
+    end
+end
+NumSchnitz = length(schnitzcells);
 %%
 % First make average profiles binning everything by first anaphase of the
 % nuclear cycle
 NChannels = length(liveExperiment.spotChannels);
 for ChN=1:NChannels
-    % Store schnitz info
-    schnitzCycles = NaN(1, length(schnitzcells));
-    schnitzFlags = NaN(1, length(schnitzcells));
-    schnitzApproved = NaN(1, length(schnitzcells));
-    schnitzAnaphaseFrames = NaN(1, length(schnitzcells));
-    schnitzInferredAnaphaseFrames = zeros(1, length(schnitzcells), 'logical');
-    schnitzFirstFrameContainedInTrace =zeros(1, length(schnitzcells), 'logical');
-    schnitzLastFrameContainedInTrace = zeros(1, length(schnitzcells), 'logical');
-    schnitzAPpos = NaN(1, length(schnitzcells));
-    schnitzFractionFramesApproved =NaN(1, length(schnitzcells));
-    schnitzAllFramesApproved = zeros(1, length(schnitzcells), 'logical');
-    NumSchnitz = length(schnitzcells);
-    AllSchnitzIndices = 1:NumSchnitz;
+    % First Do Fraction On Calculations
+    
+    ParticlesAreGood = ones(1, length(CompiledParticles{ChN}), 'logical');
+    ParticleCycles = NaN(1, length(CompiledParticles{ChN}));
+    ParticleSchnitzIndex = NaN(1, length(CompiledParticles{ChN}));
+    for p_idx = 1:length(CompiledParticles{ChN})
+        ParticlesAreGood(p_idx) = true;
+        if ~isempty(CompiledParticles{ChN}(p_idx).Approved)
+            if CompiledParticles{ChN}(p_idx).Approved ~= 1
+                ParticlesAreGood(p_idx) = false;
+            end
+        end
+        if ~CompiledParticles{ChN}(p_idx).FlaggingInfo.SpotStateCanBeCalled
+            ParticlesAreGood(p_idx) = false;
+        end
+        if ~isempty(CompiledParticles{ChN}(p_idx).cycle)
+            ParticleCycles(p_idx) = CompiledParticles{ChN}(p_idx).cycle;
+        end
+        if ~isempty(CompiledParticles{ChN}(p_idx).schnitz)
+            ParticleSchnitzIndex(p_idx) = CompiledParticles{ChN}(p_idx).schnitz;
+            CompiledParticles{ChN}(p_idx).schnitzcell = schnitzcells(ParticleSchnitzIndex(p_idx));
+            if ~all(CompiledParticles{ChN}(p_idx).schnitzcell.FlaggingInfo.SchnitzAwayFromBoundary(CompiledParticles{ChN}(p_idx).schnitzcell.FlaggingInfo.AllSchnitzFrames >= EarliestTurnOnTimes(CompiledParticles{ChN}(p_idx).schnitzcell.cycle-8) ))
+                if sum(CompiledParticles{ChN}(p_idx).schnitzcell.FlaggingInfo.SchnitzAwayFromBoundary(CompiledParticles{ChN}(p_idx).schnitzcell.FlaggingInfo.AllSchnitzFrames >= EarliestTurnOnTimes(CompiledParticles{ChN}(p_idx).schnitzcell.cycle-8) ))/...
+                        length(CompiledParticles{ChN}(p_idx).schnitzcell.FlaggingInfo.AllSchnitzFrames(CompiledParticles{ChN}(p_idx).schnitzcell.FlaggingInfo.AllSchnitzFrames >= EarliestTurnOnTimes(CompiledParticles{ChN}(p_idx).schnitzcell.cycle-8) )) < 0.95
+                    ParticlesAreGood(p_idx) = false;
+                end
+            end
+            if ~isempty(CompiledParticles{ChN}(p_idx).schnitzcell.anaphaseFrame)
+                if CompiledParticles{ChN}(p_idx).schnitzcell.anaphaseFrame == 0 | isnan(CompiledParticles{ChN}(p_idx).schnitzcell.anaphaseFrame)
+                    ParticlesAreGood(p_idx)= false;
+                end
+            end
+            if CompiledParticles{ChN}(p_idx).schnitzcell.Approved ~= 1 | CompiledParticles{ChN}(p_idx).schnitzcell.Flag ~= 0
+                ParticlesAreGood(p_idx)= false;
+            end
+        else
+            ParticlesAreGood(p_idx) = false;
+        end
+        
+    end
+    
+    SchnitzesAreGood = ones(1, length(schnitzcells), 'logical');
+    SchnitzCycles = NaN(1, length(schnitzcells));
+    SchnitzAnaphaseFrames =  NaN(1, length(schnitzcells));
+    SchnitzParticleIndex = NaN(1, length(schnitzcells));
     for sc_idx = 1:length(schnitzcells)
-        if ~isempty(schnitzcells(sc_idx).cycle)
-            schnitzCycles(sc_idx) = schnitzcells(sc_idx).cycle;
+        SchnitzesAreGood(sc_idx) = true;
+        if ismember(sc_idx, ParticleSchnitzIndex)
+            SchnitzParticleIndex(sc_idx) = find(ParticleSchnitzIndex == sc_idx);
         end
         if ~isempty(schnitzcells(sc_idx).Flag)
-            schnitzFlags(sc_idx) = schnitzcells(sc_idx).Flag;
+            if schnitzcells(sc_idx).Flag ~= 0
+                SchnitzesAreGood(sc_idx) = false;
+            end
         end
         if ~isempty(schnitzcells(sc_idx).Approved)
-            schnitzApproved(sc_idx) = schnitzcells(sc_idx).Approved;
+            if schnitzcells(sc_idx).Approved ~= 1
+                SchnitzesAreGood(sc_idx) = false;
+            end
+        end
+        if ~isempty(schnitzcells(sc_idx).cycle)
+            SchnitzCycles(sc_idx) = schnitzcells(sc_idx).cycle;
+            if EarliestTurnOnTimes(schnitzcells(sc_idx).cycle-8) < min(schnitzcells(sc_idx).FlaggingInfo.AllSchnitzFrames(schnitzcells(sc_idx).FlaggingInfo.SchnitzAwayFromBoundary))
+                SchnitzesAreGood(sc_idx) = false;
+            end
+        end
+        if ~all(schnitzcells(sc_idx).FlaggingInfo.SchnitzPresent(schnitzcells(sc_idx).FlaggingInfo.AllSchnitzFrames >= EarliestTurnOnTimes(schnitzcells(sc_idx).cycle-8)  ))
+            if sum(schnitzcells(sc_idx).FlaggingInfo.SchnitzPresent(schnitzcells(sc_idx).FlaggingInfo.AllSchnitzFrames >= EarliestTurnOnTimes(schnitzcells(sc_idx).cycle-8) ))/...
+                    length(schnitzcells(sc_idx).FlaggingInfo.AllSchnitzFrames(schnitzcells(sc_idx).FlaggingInfo.AllSchnitzFrames >= EarliestTurnOnTimes(schnitzcells(sc_idx).cycle-8) )) < 0.95
+                SchnitzesAreGood(sc_idx) = false;
+            end
         end
         if ~isempty(schnitzcells(sc_idx).anaphaseFrame)
-            schnitzAnaphaseFrames(sc_idx) = schnitzcells(sc_idx).anaphaseFrame;
-        end
-        if ~isempty(schnitzcells(sc_idx).inferredAnaphaseFrame)
-            schnitzInferredAnaphaseFrames(sc_idx) = schnitzcells(sc_idx).inferredAnaphaseFrame;
-        end
-        if ~isempty(schnitzcells(sc_idx).containsFirstFrameOfCycle)
-            schnitzFirstFrameContainedInTrace(sc_idx) = schnitzcells(sc_idx).containsFirstFrameOfCycle;
-        end
-        if ~isempty(schnitzcells(sc_idx).containsLastFrameOfCycle)
-            schnitzLastFrameContainedInTrace(sc_idx) = schnitzcells(sc_idx).containsLastFrameOfCycle;
-        end
-        if ~isempty(schnitzcells(sc_idx).APpos)
-            schnitzAPpos(sc_idx) = mean(schnitzcells(sc_idx).APpos);
-        end
-        if ~isempty(schnitzcells(sc_idx).VelocityInfo.SchnitzHasAllFrames)
-            schnitzAllFramesApproved(sc_idx) = [schnitzcells(sc_idx).VelocityInfo.SchnitzHasAllFrames];
-        end
-        if ~isempty(schnitzcells(sc_idx).FrameApproved)
-            schnitzFractionFramesApproved(sc_idx) = sum(schnitzcells(sc_idx).FrameApproved)/length(schnitzcells(sc_idx).FrameApproved);
-        end
-    end
-    
-    ApprovedCount = zeros(1, length(CompiledParticles{ChN}));
-    AllApproved = zeros(1, length(CompiledParticles{ChN}));
-    FirstApproved = zeros(1, length(CompiledParticles{ChN}));
-    PercentageFramesApproved = zeros(1, length(CompiledParticles{ChN}));
-    HasSpotsBeforeDisapproved = zeros(1, length(CompiledParticles{ChN}));
-    HasMinimumTimePoints = zeros(1, length(CompiledParticles{ChN}));
-    ApprovedVector = zeros(1, length(CompiledParticles{ChN}));
-    CPcycles = NaN(1, length(CompiledParticles{ChN}));
-    ParticleSchnitzIndices = NaN(1, length(CompiledParticles{ChN}));
-    ConstantlyPresentNucleiVector = zeros(1,length(CompiledParticles{ChN}), 'logical');
-    for cp=1:length(CompiledParticles{ChN})
-        if (CompiledParticles{ChN}(cp).ManualApproved >= 1) & (CompiledParticles{ChN}(cp).schnitzcell.Approved > 0) & ...
-                (CompiledParticles{ChN}(cp).schnitzcell.Flag ~= 6)
-            ApprovedVector(cp) = 1;
-        end
-        if (CompiledParticles{ChN}(cp).Approved == 1) & (CompiledParticles{ChN}(cp).schnitzcell.Approved > 0) & ...
-                (CompiledParticles{ChN}(cp).schnitzcell.Flag ~= 6)
-            ApprovedCount(cp) = 1;
-        end
-        if CompiledParticles{ChN}(cp).schnitzcell.VelocityInfo.SchnitzHasAllFrames
-            AllApproved(cp) =  1;
-        end
-        
-        
-        if HasHistone
-            if isfield('schnitzcells', 'containsFirstFrameOfCycle')
-                if CompiledParticles{ChN}(cp).schnitzcell.containsFirstFrameOfCycle
-                    FirstApproved(cp) =  1;
-                end
+            if schnitzcells(sc_idx).anaphaseFrame == 0 | isnan(schnitzcells(sc_idx).anaphaseFrame)
+                SchnitzesAreGood(sc_idx) = false;
             else
-                if ~isempty(CompiledParticles{ChN}(cp).schnitzcell.anaphaseFrame)
-                    if ~CompiledParticles{ChN}(cp).schnitzcell.inferredAnaphaseFrame
-                        FirstApproved(cp) =  1;
-                    end
-                end
+                SchnitzAnaphaseFrames(sc_idx) = schnitzcells(sc_idx).anaphaseFrame;
             end
         else
-            FirstApproved(cp) =  1;
-        end
-        if all(CompiledParticles{ChN}(cp).FlaggingInfo.FrameApprovedFinal == 1)
-            PercentageFramesApproved(cp) = 1;
-        else
-            PercentageFramesApproved(cp) = sum(CompiledParticles{ChN}(cp).FlaggingInfo.FrameApprovedFinal == 1)/length(CompiledParticles{ChN}(cp).FlaggingInfo.FrameApprovedFinal);
-        end
-        if ~isempty(find(CompiledParticles{ChN}(cp).FlaggingInfo.FrameApprovedFinal == 0, 1))
-            if find(CompiledParticles{ChN}(cp).FlaggingInfo.FrameApprovedFinal == 0, 1) >...
-                    CompiledParticles{ChN}(cp).Frame(1)
-                HasSpotsBeforeDisapproved(cp) = 1;
-            end
-        else
-            HasSpotsBeforeDisapproved(cp)  = 1;
-        end
-        if length(CompiledParticles{ChN}(cp).Frame(CompiledParticles{ChN}(cp).FrameApproved == 1)) >= MinTimePoints
-            HasMinimumTimePoints(cp) = 1;
+            SchnitzesAreGood(sc_idx) = false;
         end
         
-        if (AllApproved(cp) == 1) & (ApprovedCount(cp) == 1) &  (ApprovedVector(cp) == 1) & ...
-                (CompiledParticles{ChN}(cp).schnitzcell.containsFirstFrameOfCycle) & ...
-                (PercentageFramesApproved(cp) ==1)
-            ConstantlyPresentNucleiVector(cp) = true;
-        end
-        if ~isempty(CompiledParticles{ChN}(cp).cycle)
-            CPcycles(cp) = CompiledParticles{ChN}(cp).cycle;
-        end
-        if ~isempty(CompiledParticles{ChN}(cp).schnitz)
-            ParticleSchnitzIndices(cp) = CompiledParticles{ChN}(cp).schnitz;
-        end
     end
     
-    % Not supported for NChannels > 1
+    
+    
+    
+    
     SchnitzUnalignedTotalNuclei = zeros(numFrames, length(APbins), 6, NumSchnitz);
     SchnitzUnalignedOffNuclei = zeros(numFrames, length(APbins), 6, NumSchnitz);
     SchnitzUnalignedOnNuclei = zeros(numFrames, length(APbins), 6, NumSchnitz);
@@ -170,151 +165,184 @@ for ChN=1:NChannels
     SchnitzUnalignedFinishedTranscribingNuclei =  zeros(numFrames, length(APbins), 6, NumSchnitz);
     SchnitzUnalignedMeanTraces = NaN(numFrames, length(APbins), 6, NumSchnitz);
     SchnitzUnalignedTraceCount = zeros(numFrames, length(APbins), 6, NumSchnitz);
-    SchnitzUnaligned3DMeanTraces = NaN(numFrames, length(APbins), 6, NumSchnitz);
-    SchnitzUnaligned3DTraceCount = zeros(numFrames, length(APbins), 6, NumSchnitz);
+    SchnitzUnalignedActiveNuclei = zeros(length(APbins), 6, NumSchnitz);
+    SchnitzUnalignedInactiveNuclei = zeros(length(APbins), 6, NumSchnitz);
+    SchnitzUnalignedNucleiCount = zeros(length(APbins), 6, NumSchnitz);
+    SchnitzUnalignedGradedOnNuclei = zeros(numFrames, length(APbins), 6,10, NumSchnitz);
+    SchnitzUnalignedGradedOffNuclei = zeros(numFrames, length(APbins), 6,10, NumSchnitz);
+    SchnitzUnalignedGradedTotalNuclei = zeros(numFrames, length(APbins), 6,10, NumSchnitz);
+    SchnitzUnalignedGradedActiveNuclei = zeros(length(APbins), 6,10, NumSchnitz);
+    SchnitzUnalignedGradedInactiveNuclei = zeros(length(APbins), 6,10, NumSchnitz);
+    SchnitzUnalignedGradedNucleiCount = zeros(length(APbins), 6,10, NumSchnitz);
     
-    sc_approved_p_not = zeros(1, length(schnitzcells), 'logical');
-    for sc_idx = 1:length(schnitzcells)%496:496
-        
-        if (schnitzFlags(sc_idx) ~= 0) | (schnitzApproved(sc_idx) ~= 1) | ...
-                ~schnitzFirstFrameContainedInTrace(sc_idx) | ~schnitzLastFrameContainedInTrace(sc_idx) | ...
-                (schnitzFractionFramesApproved(sc_idx) < 1)
+    for sc_idx =1:length(schnitzcells)
+        if ~SchnitzesAreGood(sc_idx)
             continue
         end
-        scAP = schnitzAPpos(sc_idx);
+        
+        scAP = mean(schnitzcells(sc_idx).APpos);
         scAPvector = schnitzcells(sc_idx).APpos;
-        scAPbin = find((scAP < APbins+APResolution/2) & (scAP >= APbins-APResolution/2));
-        scNC = schnitzCycles(sc_idx);
-        SchnitzFrames = schnitzcells(sc_idx).frames.';
-        CandidateAnaphaseFrames = schnitzAnaphaseFrames(schnitzCycles == scNC & abs(schnitzAnaphaseFrames-anaphaseFrames(scNC-8)) <= 3 & schnitzAnaphaseFrames > 0);
+        Embryo_scAPbin = find((scAP < APbins+APResolution/2) & (scAP >= APbins-APResolution/2));
+        scNC = SchnitzCycles(sc_idx);
+        if (scNC < 9) | (scNC > 14) | isempty(scAPvector)
+            continue
+        end
+        
+        
+        
+        
+        CandidateAnaphaseFrames = SchnitzAnaphaseFrames(SchnitzCycles == scNC & abs(SchnitzAnaphaseFrames-anaphaseFrames(scNC-8)) <= 3 & SchnitzAnaphaseFrames > 0);
         if ~isempty(CandidateAnaphaseFrames)
             SchnitzFrameMin = min([CandidateAnaphaseFrames anaphaseFrames(scNC-8)]);
         else
             SchnitzFrameMin = anaphaseFrames(scNC-8);
         end
-        SchnitzHasParticle = ismember(sc_idx, ParticleSchnitzIndices);
-        if SchnitzHasParticle
-            p_idx = find(ParticleSchnitzIndices == sc_idx);
-            if length(p_idx) > 1
-                continue
-            elseif length(p_idx) == 0
-                if (scNC >= 9) & (scNC <= 14) & ~isempty(scAPvector)
-                    for fr_idx = 1:length(SchnitzFrames)
-                        scAPbin = find((scAPvector(fr_idx) < APbins+APResolution/2) & (scAPvector(fr_idx) >= APbins-APResolution/2));
-                        SchnitzUnalignedTotalNuclei(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
-                        SchnitzUnalignedOffNuclei(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
-                        SchnitzUnalignedMeanTraces(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 0;
-                        SchnitzUnaligned3DMeanTraces(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 0;
-                        SchnitzUnalignedTraceCount(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 0;
-                        SchnitzUnaligned3DTraceCount(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 0;
+        SchnitzHasParticle = ~isnan(SchnitzParticleIndex(sc_idx));
+        if ~SchnitzHasParticle
+            AllSchnitzFrames = schnitzcells(sc_idx).FlaggingInfo.AllSchnitzFrames;
+            
+            for frame_index = 1:length(AllSchnitzFrames)
+                if schnitzcells(sc_idx).FlaggingInfo.SpotStateDefinitive(frame_index)
+                    %scAPbin = find((scAPvector(frame_index) < APbins+APResolution/2) & (scAPvector(frame_index) >= APbins-APResolution/2));
+                    scAPbin = Embryo_scAPbin;
+                    SchnitzUnalignedTotalNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
+                    SchnitzUnalignedOffNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
+                    
+                    for grade_index = 1:length(pOnCutoffs)
+                        SchnitzUnalignedGradedOffNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                        SchnitzUnalignedGradedTotalNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                        
                     end
                 end
-            elseif length(p_idx) == 1
-                if CompiledParticles{ChN}(p_idx).ManualApproved
-                    if (~all(CompiledParticles{ChN}(p_idx).FlaggingInfo.PositionApproved) | ~all(CompiledParticles{ChN}(p_idx).FlaggingInfo.FluoApproved))
-                        sc_approved_p_not(sc_idx) = true;
-                    else
-                        pFluoVector = CompiledParticles{ChN}(p_idx).FlaggingInfo.MaxSpotFluoLevel;
-                        pFrames = CompiledParticles{ChN}(p_idx).FlaggingInfo.TrueFrames;
-                        pOrigFluoVector = CompiledParticles{ChN}(p_idx).Fluo;
-                        pOrigFrames = CompiledParticles{ChN}(p_idx).Frame;
-                        pOrigFluo3DVector = CompiledParticles{ChN}(p_idx).Fluo3DGauss;
-                        if sum(~isnan(pFluoVector)) < MinTimePoints
-                            for fr_idx = 1:length(SchnitzFrames)
-                                scAPbin = find((scAPvector(fr_idx) < APbins+APResolution/2) & (scAPvector(fr_idx) >= APbins-APResolution/2));
-                                SchnitzUnalignedTotalNuclei(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
-                                SchnitzUnalignedOffNuclei(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
-                                SchnitzUnalignedMeanTraces(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 0;
-                                SchnitzUnaligned3DMeanTraces(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 0;
-                                SchnitzUnalignedTraceCount(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 0;
-                                SchnitzUnaligned3DTraceCount(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 0;
-                            end
-                            continue
-                        end
-                        
-                        
-                        for fr_idx = 1:length(SchnitzFrames)
-                            scAPbin = find((scAPvector(fr_idx) < APbins+APResolution/2) & (scAPvector(fr_idx) >= APbins-APResolution/2));
-                            SchnitzUnalignedTotalNuclei(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
-                            pfr_idx = find(pFrames == SchnitzFrames(fr_idx));
-                            orig_pfr_idx = find(pOrigFrames == SchnitzFrames(fr_idx));
-                            if ~isempty(pfr_idx)
-                                if ~isnan(pFluoVector(pfr_idx))
-                                    SchnitzUnalignedOnNuclei(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
-                                elseif sum(pFrames > SchnitzFrames(fr_idx) & ~isnan(pFluoVector)) > 0
-                                    SchnitzUnalignedQuiescentNuclei(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
-                                elseif sum(pFrames < SchnitzFrames(fr_idx) & ~isnan(pFluoVector)) > 0
-                                    SchnitzUnalignedFinishedTranscribingNuclei(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
-                                else
-                                    SchnitzUnalignedOffNuclei(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
-                                end
-                            else
-                                if sum(pFrames > SchnitzFrames(fr_idx) & ~isnan(pFluoVector)) > 0
-                                    SchnitzUnalignedQuiescentNuclei(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
-                                elseif sum(pFrames < SchnitzFrames(fr_idx) & ~isnan(pFluoVector)) > 0
-                                    SchnitzUnalignedFinishedTranscribingNuclei(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
-                                else
-                                    SchnitzUnalignedOffNuclei(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-6, sc_idx) = 1;
-                                end
-                            end
-                            
-                            if ~isempty(orig_pfr_idx)
-                                if ~isnan(pOrigFluoVector(orig_pfr_idx))
-                                    SchnitzUnalignedMeanTraces(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = pOrigFluoVector(orig_pfr_idx);
-                                    SchnitzUnalignedTraceCount(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
-                                else
-                                    SchnitzUnalignedMeanTraces(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 0;
-                                end
-                                
-                            else
-                                SchnitzUnalignedMeanTraces(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 0;
-                            end
-                            
-                            if ~isempty(orig_pfr_idx)
-                                if ~isnan(pOrigFluo3DVector(orig_pfr_idx))
-                                    SchnitzUnaligned3DMeanTraces(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = pOrigFluo3DVector(orig_pfr_idx);
-                                    SchnitzUnaligned3DTraceCount(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
-                                else
-                                    SchnitzUnaligned3DMeanTraces(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 0;
-                                end
-                            else
-                                SchnitzUnaligned3DMeanTraces(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 0;
-                            end
-                        end
-                        
-                    end
-                else % Fill in what to do if particle is there but is not approved!
-                    if length(CompiledParticles{ChN}(p_idx).Frame) < MinTimePoints | length(CompiledParticles{ChN}(p_idx).Frame)/length(CompiledParticles{ChN}(p_idx).TrueFrames) < .1
-                        if (scNC >= 9) & (scNC <= 14) & ~isempty(scAPvector)
-                            for fr_idx = 1:length(SchnitzFrames)
-                                scAPbin = find((scAPvector(fr_idx) < APbins+APResolution/2) & (scAPvector(fr_idx) >= APbins-APResolution/2));
-                                SchnitzUnalignedTotalNuclei(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
-                                SchnitzUnalignedOffNuclei(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
-                                SchnitzUnalignedMeanTraces(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 0;
-                                SchnitzUnaligned3DMeanTraces(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 0;
-                            end
-                        end
-                    end
-                end
-                
+            end
+            SchnitzUnalignedNucleiCount(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+            SchnitzUnalignedInactiveNuclei(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+            
+            for grade_index = 1:length(pOnCutoffs)
+                SchnitzUnalignedGradedInactiveNuclei(scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                SchnitzUnalignedGradedNucleiCount(scAPbin, scNC-8, grade_index, sc_idx) = 1;
                 
             end
+            
+            
+            
+            
         else
-            if (scNC >= 9) & (scNC <= 14) & ~isempty(scAPvector)
-                for fr_idx = 1:length(SchnitzFrames)
-                    scAPbin = find((scAPvector(fr_idx) < APbins+APResolution/2) & (scAPvector(fr_idx) >= APbins-APResolution/2));
-                    SchnitzUnalignedTotalNuclei(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
-                    SchnitzUnalignedOffNuclei(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
-                    SchnitzUnalignedMeanTraces(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 0;
-                    SchnitzUnaligned3DMeanTraces(SchnitzFrames(fr_idx)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 0;
+            p_idx = SchnitzParticleIndex(sc_idx);
+            CurrentParticle = CompiledParticles{ChN}(p_idx);
+            AllSchnitzFrames = CurrentParticle.FlaggingInfo.AllSchnitzFrames;
+            if ParticlesAreGood(p_idx)
+                if (sum(CurrentParticle.FlaggingInfo.SchnitzOn) >= MinTimePoints) & (scNC >= 9) & (scNC <= 14) & ~isempty(scAPvector)
+                    for frame_index = 1:length(AllSchnitzFrames)
+                        if CurrentParticle.FlaggingInfo.SpotStateDefinitive(frame_index)
+                            %scAPbin = find((scAPvector(frame_index) < APbins+APResolution/2) & (scAPvector(frame_index) >= APbins-APResolution/2));
+                            scAPbin = Embryo_scAPbin;
+                            
+                            if CurrentParticle.FlaggingInfo.SchnitzOn(frame_index)
+                                SchnitzUnalignedOnNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
+                                SchnitzUnalignedTotalNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
+                                
+                            elseif CurrentParticle.FlaggingInfo.SchnitzOff(frame_index)
+                                SchnitzUnalignedOffNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
+                                SchnitzUnalignedTotalNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
+                            elseif CurrentParticle.FlaggingInfo.SchnitzTemporarilyOff(frame_index)
+                                SchnitzUnalignedQuiescentNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
+                                SchnitzUnalignedTotalNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
+                            elseif CurrentParticle.FlaggingInfo.SchnitzFinishedTranscribing(frame_index)
+                                SchnitzUnalignedFinishedTranscribingNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
+                                SchnitzUnalignedTotalNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
+                            end
+                            
+                            
+                            if CurrentParticle.FlaggingInfo.SchnitzOn(frame_index)
+                                for grade_index = 1:length(pOnCutoffs)
+                                    if CurrentParticle.FlaggingInfo.UseTraceFluo(frame_index)
+                                        SchnitzUnalignedGradedTotalNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                                        if CurrentParticle.FlaggingInfo.FluoVector(frame_index) > pOnCutoffs(grade_index)*MaxParticleFluo
+                                            SchnitzUnalignedGradedOnNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                                        else
+                                            SchnitzUnalignedGradedOffNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                                        end
+                                    end
+                                end
+                                
+                            elseif CurrentParticle.FlaggingInfo.SchnitzOff(frame_index)| ...
+                                    CurrentParticle.FlaggingInfo.SchnitzTemporarilyOff(frame_index) | ...
+                                    CurrentParticle.FlaggingInfo.SchnitzFinishedTranscribing(frame_index)
+                                for grade_index = 1:length(pOnCutoffs)
+                                    SchnitzUnalignedGradedOffNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                                    SchnitzUnalignedGradedTotalNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8,grade_index, sc_idx) = 1;
+                                end
+                            end
+                            
+                            
+                            
+                            
+                        end
+                    end
+                    
+                    if all(CurrentParticle.FlaggingInfo.SchnitzOff(CurrentParticle.FlaggingInfo.SpotStateDefinitive))
+                        SchnitzUnalignedInactiveNuclei(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                    else
+                        SchnitzUnalignedActiveNuclei(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                    end
+                    SchnitzUnalignedNucleiCount(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                    
+                    for grade_index = 1:length(pOnCutoffs)
+                        if all(SchnitzUnalignedGradedTotalNuclei(:, scAPbin, scNC-8,grade_index, sc_idx) ==0 | ...
+                                (SchnitzUnalignedGradedTotalNuclei(:, scAPbin, scNC-8,grade_index, sc_idx) ==1 & SchnitzUnalignedGradedOffNuclei(:, scAPbin, scNC-8,grade_index, sc_idx) ==1 ))
+                            SchnitzUnalignedGradedInactiveNuclei(Embryo_scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                        else
+                            SchnitzUnalignedGradedActiveNuclei(Embryo_scAPbin, scNC-8, grade_index,sc_idx) = 1;
+                        end
+                        SchnitzUnalignedGradedNucleiCount(Embryo_scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                    end
+                    
+                else
+                    for frame_index = 1:length(AllSchnitzFrames)
+                        if CurrentParticle.FlaggingInfo.SpotStateDefinitive(frame_index)
+                            %scAPbin = find((scAPvector(frame_index) < APbins+APResolution/2) & (scAPvector(frame_index) >= APbins-APResolution/2));
+                            scAPbin = Embryo_scAPbin;
+                            SchnitzUnalignedTotalNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
+                            SchnitzUnalignedOffNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
+                            for grade_index = 1:length(pOnCutoffs)
+                                SchnitzUnalignedGradedOffNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                                SchnitzUnalignedGradedTotalNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                            end
+                        end
+                    end
+                    SchnitzUnalignedInactiveNuclei(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                    SchnitzUnalignedNucleiCount(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                    
+                    for grade_index = 1:length(pOnCutoffs)
+                        SchnitzUnalignedGradedInactiveNuclei(scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                        SchnitzUnalignedGradedNucleiCount(scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                    end
+                end
+            elseif CurrentParticle.Approved == -1 & CurrentParticle.FlaggingInfo.SpotStateCanBeCalled
+                for frame_index = 1:length(AllSchnitzFrames)
+                    if CurrentParticle.FlaggingInfo.SpotStateDefinitive(frame_index)
+                        scAPbin = Embryo_scAPbin;
+                        for grade_index = 1:length(pOnCutoffs)
+                            SchnitzUnalignedGradedOffNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                            SchnitzUnalignedGradedTotalNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                        end
+                        SchnitzUnalignedTotalNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
+                        SchnitzUnalignedOffNuclei(AllSchnitzFrames(frame_index)-SchnitzFrameMin+1, scAPbin, scNC-8, sc_idx) = 1;
+                        
+                    end
+                end
+                SchnitzUnalignedInactiveNuclei(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                SchnitzUnalignedNucleiCount(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                for grade_index = 1:length(pOnCutoffs)
+                    SchnitzUnalignedGradedInactiveNuclei(scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                    SchnitzUnalignedGradedNucleiCount(scAPbin, scNC-8, grade_index, sc_idx) = 1;
                 end
             end
         end
-        
-        
     end
     
-    CandidateAnaphaseFrames = schnitzAnaphaseFrames(schnitzCycles == 14 & abs(schnitzAnaphaseFrames-anaphaseFrames(14-8)) <= 3 & schnitzAnaphaseFrames > 0);
+    CandidateAnaphaseFrames = SchnitzAnaphaseFrames(SchnitzCycles == 14 & abs(SchnitzAnaphaseFrames-anaphaseFrames(14-8)) <= 3 & SchnitzAnaphaseFrames > 0);
     if ~isempty(CandidateAnaphaseFrames)
         SchnitzFrameMin = min([CandidateAnaphaseFrames anaphaseFrames(14-8)]);
     else
@@ -328,166 +356,230 @@ for ChN=1:NChannels
     SchnitzTbinnedFinishedTranscribingNuclei =  zeros(numBinnedFrames, length(APbins), 6, NumSchnitz);
     SchnitzTbinnedMeanTraces = NaN(numBinnedFrames, length(APbins), 6, NumSchnitz);
     SchnitzTbinnedTraceCount = zeros(numBinnedFrames, length(APbins), 6, NumSchnitz);
-    SchnitzTbinned3DMeanTraces = NaN(numBinnedFrames, length(APbins), 6, NumSchnitz);
-    SchnitzTbinned3DTraceCount = zeros(numBinnedFrames, length(APbins), 6, NumSchnitz);
+    SchnitzTbinnedActiveNuclei = zeros(length(APbins), 6, NumSchnitz);
+    SchnitzTbinnedInactiveNuclei = zeros(length(APbins), 6, NumSchnitz);
+    SchnitzTbinnedNucleiCount = zeros(length(APbins), 6, NumSchnitz);
+    SchnitzTbinnedGradedOnNuclei = zeros(numFrames, length(APbins), 6,10, NumSchnitz);
+    SchnitzTbinnedGradedOffNuclei = zeros(numFrames, length(APbins), 6,10, NumSchnitz);
+    SchnitzTbinnedGradedTotalNuclei = zeros(numFrames, length(APbins), 6,10, NumSchnitz);
+    SchnitzTbinnedGradedActiveNuclei = zeros(length(APbins), 6,10, NumSchnitz);
+    SchnitzTbinnedGradedInactiveNuclei = zeros(length(APbins), 6,10, NumSchnitz);
+    SchnitzTbinnedGradedNucleiCount = zeros(length(APbins), 6,10, NumSchnitz);
     
     TbinnedTimeVector = 0:deltaTbinWidth:(max(FrameTimes)-FrameTimes(nc_info(6)));
     if length(TbinnedTimeVector) < numBinnedFrames
         TbinnedTimeVector(end+1) = max(TbinnedTimeVector)+deltaTbinWidth;
     end
     TbinnedTimeVecIndex = 1:length(TbinnedTimeVector);
-    for sc_idx = 1:length(schnitzcells)%496:496
-        
-        if  (schnitzFlags(sc_idx) ~= 0) | (schnitzApproved(sc_idx) ~= 1) | ...
-                ~schnitzFirstFrameContainedInTrace(sc_idx) | ~schnitzLastFrameContainedInTrace(sc_idx) | ...
-                (schnitzFractionFramesApproved(sc_idx) < 0.9)
+    
+    for sc_idx =1:length(schnitzcells)
+        if ~SchnitzesAreGood(sc_idx)
             continue
         end
-        scAP = schnitzAPpos(sc_idx);
+        
+        scAP = mean(schnitzcells(sc_idx).APpos);
         scAPvector = schnitzcells(sc_idx).APpos;
-        scAPbin = find((scAP < APbins+APResolution/2) & (scAP >= APbins-APResolution/2));
-        scNC = schnitzCycles(sc_idx);
-        SchnitzFrames = schnitzcells(sc_idx).frames.';
-        CandidateAnaphaseFrames = schnitzAnaphaseFrames(schnitzCycles == scNC & abs(schnitzAnaphaseFrames-anaphaseFrames(scNC-8)) <= 3 & schnitzAnaphaseFrames > 0);
+        Embryo_scAPbin = find((scAP < APbins+APResolution/2) & (scAP >= APbins-APResolution/2));
+        scNC = SchnitzCycles(sc_idx);
+        if (scNC < 9) | (scNC > 14) | isempty(scAPvector)
+            continue
+        end
+        
+        
+        
+        
+        CandidateAnaphaseFrames = SchnitzAnaphaseFrames(SchnitzCycles == scNC & abs(SchnitzAnaphaseFrames-anaphaseFrames(scNC-8)) <= 3 & SchnitzAnaphaseFrames > 0);
         if ~isempty(CandidateAnaphaseFrames)
             SchnitzFrameMin = min([CandidateAnaphaseFrames anaphaseFrames(scNC-8)]);
         else
             SchnitzFrameMin = anaphaseFrames(scNC-8);
         end
-        SchnitzTimes = [FrameInfo(SchnitzFrames).Time]-FrameInfo(SchnitzFrameMin).Time;
+        SchnitzHasParticle = ~isnan(SchnitzParticleIndex(sc_idx));
         
-        SchnitzHasParticle = ismember(sc_idx, ParticleSchnitzIndices);
-        if SchnitzHasParticle
-            p_idx = find(ParticleSchnitzIndices == sc_idx);
-            if length(p_idx) > 1
-                continue
-            elseif length(p_idx) == 0
-                if (scNC >= 9) & (scNC <= 14) & ~isempty(scAPvector)
-                    InterpAPvec = interp1(SchnitzTimes,scAPvector,TbinnedTimeVector);
-                    for fr_idx = 1:length(TbinnedTimeVector)
-                        if ~isnan(InterpAPvec(fr_idx))
-                            scAPbin = find((InterpAPvec(fr_idx) < APbins+APResolution/2) & (InterpAPvec(fr_idx) >= APbins-APResolution/2));
-                            SchnitzTbinnedTotalNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                            SchnitzTbinnedOffNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                            SchnitzTbinnedMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
-                            SchnitzTbinned3DMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
-                        end
-                    end
-                end
-            elseif length(p_idx) == 1
-                if CompiledParticles{ChN}(p_idx).ManualApproved
-                    if (~all(CompiledParticles{ChN}(p_idx).FlaggingInfo.PositionApproved) | ~all(CompiledParticles{ChN}(p_idx).FlaggingInfo.FluoApproved))
-                        continue
-                    else
-                        pFluoVector = CompiledParticles{ChN}(p_idx).FlaggingInfo.MaxSpotFluoLevel;
-                        pFrames = CompiledParticles{ChN}(p_idx).FlaggingInfo.TrueFrames;
-                        pOrigFluoVector = CompiledParticles{ChN}(p_idx).Fluo;
-                        pOrigFrames = CompiledParticles{ChN}(p_idx).Frame;
-                        pOrigFluo3DVector = CompiledParticles{ChN}(p_idx).Fluo3DGauss;
-                        if sum(~isnan(pFluoVector)) < MinTimePoints
-                            if length(scAPvector) <= 1
-                                continue
-                            end
-                            InterpAPvec = interp1(SchnitzTimes,scAPvector,TbinnedTimeVector);
-                            for fr_idx = 1:length(TbinnedTimeVector)
-                                if ~isnan(InterpAPvec(fr_idx))
-                                    scAPbin = find((InterpAPvec(fr_idx) < APbins+APResolution/2) & (InterpAPvec(fr_idx) >= APbins-APResolution/2));
-                                    SchnitzTbinnedTotalNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                    SchnitzTbinnedOffNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                    SchnitzTbinnedMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
-                                    SchnitzTbinned3DMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
-                                end
-                            end
-                            continue
-                        end
-                        
-                        FullFluoVector = NaN(1, length(min(SchnitzFrames):max(SchnitzFrames)));
-                        FullOrigFluoVector = NaN(1, length(min(SchnitzFrames):max(SchnitzFrames)));
-                        FullOrigFluo3DVector = NaN(1, length(min(SchnitzFrames):max(SchnitzFrames)));
-                        if min(pFrames) < min(SchnitzFrames) | max(pFrames) > max(SchnitzFrames)
-                            continue
-                        end
-                        if min(pOrigFrames) < min(SchnitzFrames) | max(pOrigFrames) > max(SchnitzFrames)
-                            continue
-                        end
-                        FullFluoVector(find(ismember(min(SchnitzFrames):max(SchnitzFrames), pFrames))) = pFluoVector;
-                        FullOrigFluoVector(find(ismember(min(SchnitzFrames):max(SchnitzFrames), pOrigFrames))) = pOrigFluoVector;
-                        FullOrigFluo3DVector(find(ismember(min(SchnitzFrames):max(SchnitzFrames), pOrigFrames))) = pOrigFluo3DVector;
-                        if length(scAPvector) <= 1
-                            continue
-                        end
-                        InterpAPvec = interp1(SchnitzTimes,scAPvector,TbinnedTimeVector);
-                        SchnitzPatchedTime = [FrameInfo(min(SchnitzFrames):max(SchnitzFrames)).Time]-FrameInfo(anaphaseFrames(scNC-8)).Time;
-                        InterpFluoVec = interp1(SchnitzPatchedTime,FullFluoVector,TbinnedTimeVector);
-                        InterpOrigFluoVec = interp1(SchnitzPatchedTime,FullOrigFluoVector,TbinnedTimeVector);
-                        InterpOrigFluo3DVec = interp1(SchnitzPatchedTime,FullOrigFluo3DVector,TbinnedTimeVector);
-                        for fr_idx = 1:length(TbinnedTimeVector)
-                            if ~isnan(InterpAPvec(fr_idx))
-                                scAPbin = find((InterpAPvec(fr_idx) < APbins+APResolution/2) & (InterpAPvec(fr_idx) >= APbins-APResolution/2));
-                                SchnitzTbinnedTotalNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                
-                                if ~isnan(InterpFluoVec(fr_idx))
-                                    SchnitzTbinnedOnNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                elseif sum(TbinnedTimeVector > TbinnedTimeVector(fr_idx) & ~isnan(InterpFluoVec)) > 0
-                                    SchnitzTbinnedQuiescentNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                elseif sum(TbinnedTimeVector < TbinnedTimeVector(fr_idx) & ~isnan(InterpFluoVec)) > 0
-                                    SchnitzTbinnedFinishedTranscribingNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                else
-                                    SchnitzTbinnedOffNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                end
-                                
-                                if ~isnan(InterpOrigFluoVec(fr_idx))
-                                    SchnitzTbinnedMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = InterpOrigFluoVec(fr_idx);
-                                    SchnitzTbinnedTraceCount(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                else
-                                    SchnitzTbinnedMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
-                                end
-                                
-                                if ~isnan(InterpOrigFluo3DVec(fr_idx))
-                                    SchnitzTbinned3DMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = InterpOrigFluo3DVec(fr_idx);
-                                    SchnitzTbinned3DTraceCount(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                else
-                                    SchnitzTbinned3DMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
-                                end
-                                
-                            end
-                        end
+        if ~SchnitzHasParticle
+            AllSchnitzFrames = schnitzcells(sc_idx).FlaggingInfo.AllSchnitzFrames;
+            AllSchnitzTimes = [FrameInfo(AllSchnitzFrames).Time]-FrameInfo(SchnitzFrameMin).Time;
+            %AllscAPvector = NaN(1, length(AllSchnitzFrames));
+            %AllscAPvector(find(ismember(schnitzcells(sc_idx).frames', schnitzcells(sc_idx).FlaggingInfo.AllSchnitzFrames))) = scAPvector;
+            %InterpAPvec = interp1(AllSchnitzTimes,AllscAPvector,TbinnedTimeVector);
+            
+            DefinitiveSchnitzDouble = double(schnitzcells(sc_idx).FlaggingInfo.SpotStateDefinitive);
+            InterpDefinitiveSchnitz = interp1(AllSchnitzTimes,DefinitiveSchnitzDouble,TbinnedTimeVector);
+            
+            
+            for frame_index = 1:length(TbinnedTimeVector)
+                if InterpDefinitiveSchnitz(frame_index) == 1 %&  ~isnan(InterpAPvec(frame_index))
+                    %scAPbin = find((InterpAPvec(frame_index) < APbins+APResolution/2) & (InterpAPvec(frame_index) >= APbins-APResolution/2));
+                    scAPbin = Embryo_scAPbin;
+                    SchnitzTbinnedTotalNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                    SchnitzTbinnedOffNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                    
+                    for grade_index = 1:length(pOnCutoffs)
+                        SchnitzTbinnedGradedOffNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                        SchnitzTbinnedGradedTotalNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
                         
                     end
-                else % Fill in what to do if particle is there but is not approved!
-                    if length(CompiledParticles{ChN}(p_idx).Frame) < MinTimePoints | length(CompiledParticles{ChN}(p_idx).Frame)/length(CompiledParticles{ChN}(p_idx).TrueFrames) < .1
-                        if (scNC >= 9) & (scNC <= 14) & ~isempty(scAPvector)
-                            InterpAPvec = interp1(SchnitzTimes,scAPvector,TbinnedTimeVector);
-                            for fr_idx = 1:length(TbinnedTimeVector)
-                                if ~isnan(InterpAPvec(fr_idx))
-                                    scAPbin = find((InterpAPvec(fr_idx) < APbins+APResolution/2) & (InterpAPvec(fr_idx) >= APbins-APResolution/2));
-                                    SchnitzTbinnedTotalNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                    SchnitzTbinnedOffNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                    SchnitzTbinnedMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
-                                    SchnitzTbinned3DMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
-                                end
-                            end
-                        end
-                    end
                 end
-                
-                
             end
+            SchnitzTbinnedNucleiCount(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+            SchnitzTbinnedInactiveNuclei(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+            
+            for grade_index = 1:length(pOnCutoffs)
+                SchnitzTbinnedGradedInactiveNuclei(Embryo_scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                SchnitzTbinnedGradedNucleiCount(Embryo_scAPbin, scNC-8, grade_index, sc_idx) = 1;
+            end
+            
         else
-            if (scNC >= 9) & (scNC <= 14) & ~isempty(scAPvector) & length(scAPvector) > 1
-                InterpAPvec = interp1(SchnitzTimes,scAPvector,TbinnedTimeVector);
-                for fr_idx = 1:length(TbinnedTimeVector)
-                    if ~isnan(InterpAPvec(fr_idx))
-                        scAPbin = find((InterpAPvec(fr_idx) < APbins+APResolution/2) & (InterpAPvec(fr_idx) >= APbins-APResolution/2));
-                        SchnitzTbinnedTotalNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                        SchnitzTbinnedOffNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                        SchnitzTbinnedMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
-                        SchnitzTbinned3DMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
+            p_idx = SchnitzParticleIndex(sc_idx);
+            CurrentParticle = CompiledParticles{ChN}(p_idx);
+            CurrentSchnitz = schnitzcells(sc_idx);
+            AllSchnitzFrames = CurrentParticle.FlaggingInfo.AllSchnitzFrames;
+            AllSchnitzTimes = [FrameInfo(AllSchnitzFrames).Time]-FrameInfo(SchnitzFrameMin).Time;
+            if ParticlesAreGood(p_idx)
+                if (sum(CurrentParticle.FlaggingInfo.SchnitzOn) >= MinTimePoints) & (scNC >= 9) & (scNC <= 14) & ~isempty(scAPvector)
+                    %AllscAPvectorSchnitz = NaN(1, length(CurrentSchnitz.FlaggingInfo.AllSchnitzFrames));
+                    %AllscAPvectorSchnitz(find(ismember(CurrentSchnitz.frames', CurrentSchnitz.FlaggingInfo.AllSchnitzFrames))) = scAPvector;
+                    %AllscAPvector =  NaN(1, length(CurrentParticle.FlaggingInfo.AllSchnitzFrames));
+                    %AllscAPvector(find(ismember(CurrentSchnitz.FlaggingInfo.AllSchnitzFrames, CurrentParticle.FlaggingInfo.AllSchnitzFrames))) = AllscAPvectorSchnitz;
+                    
+                    %InterpAPvec = interp1(AllSchnitzTimes,AllscAPvector,TbinnedTimeVector);
+                    
+                    DefinitiveSchnitzDouble = double(CurrentParticle.FlaggingInfo.SpotStateDefinitive);
+                    InterpDefinitiveSchnitz = interp1(AllSchnitzTimes,DefinitiveSchnitzDouble,TbinnedTimeVector);
+                    
+                    DefinitiveSchnitzOff = double(CurrentParticle.FlaggingInfo.SchnitzOff);
+                    InterpSchnitzOff = interp1(AllSchnitzTimes,DefinitiveSchnitzOff,TbinnedTimeVector);
+                    DefinitiveSchnitzOn = double(CurrentParticle.FlaggingInfo.SchnitzOn);
+                    InterpSchnitzOn = interp1(AllSchnitzTimes,DefinitiveSchnitzOn,TbinnedTimeVector);
+                    DefinitiveSchnitzQuiescent = double(CurrentParticle.FlaggingInfo.SchnitzTemporarilyOff);
+                    InterpSchnitzQuiescent = interp1(AllSchnitzTimes,DefinitiveSchnitzQuiescent,TbinnedTimeVector);
+                    DefinitiveSchnitzFinishedTranscribing = double(CurrentParticle.FlaggingInfo.SchnitzFinishedTranscribing);
+                    InterpSchnitzFinishedTranscribing = interp1(AllSchnitzTimes,DefinitiveSchnitzFinishedTranscribing,TbinnedTimeVector);
+                    DefinitiveUseTraceFluo = double(CurrentParticle.FlaggingInfo.UseTraceFluo);
+                    InterpUseTraceFluo = interp1(AllSchnitzTimes,DefinitiveUseTraceFluo,TbinnedTimeVector);
+                    DefinitiveFluoVector = double(CurrentParticle.FlaggingInfo.FluoVector);
+                    InterpUseTraceFluo = interp1(AllSchnitzTimes,DefinitiveFluoVector,TbinnedTimeVector);
+                    
+                    for frame_index = 1:length(TbinnedTimeVector)
+                        if (InterpDefinitiveSchnitz(frame_index) == 1) %% &  ~isnan(InterpAPvec(frame_index))
+                            %scAPbin = find((InterpAPvec(frame_index) < APbins+APResolution/2) & (InterpAPvec(frame_index) >= APbins-APResolution/2));
+                            scAPbin = Embryo_scAPbin;
+                            if (InterpSchnitzOn(frame_index) == 1)
+                                SchnitzTbinnedOnNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                                SchnitzTbinnedTotalNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                            elseif (InterpSchnitzOff(frame_index) == 1)
+                                SchnitzTbinnedOffNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                                SchnitzTbinnedTotalNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                            elseif (InterpSchnitzQuiescent(frame_index) == 1)
+                                SchnitzTbinnedQuiescentNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                                SchnitzTbinnedTotalNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                            elseif (InterpSchnitzFinishedTranscribing(frame_index) == 1)
+                                SchnitzTbinnedFinishedTranscribingNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                                SchnitzTbinnedTotalNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                            end
+                            if (InterpSchnitzOn(frame_index) == 1)
+                                for grade_index = 1:length(pOnCutoffs)
+                                    if InterpUseTraceFluo(frame_index) == 1
+                                        SchnitzTbinnedGradedTotalNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                                        if DefinitiveFluoVector(frame_index) > pOnCutoffs(grade_index)*MaxParticleFluo
+                                            SchnitzTbinnedGradedOnNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                                        else
+                                            SchnitzTbinnedGradedOffNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                                        end
+                                    end
+                                end
+                            elseif (InterpSchnitzOff(frame_index) == 1)| ...
+                                    (InterpSchnitzQuiescent(frame_index) == 1) | ...
+                                    (InterpSchnitzFinishedTranscribing(frame_index) == 1)
+                                for grade_index = 1:length(pOnCutoffs)
+                                    SchnitzTbinnedGradedOffNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                                    SchnitzTbinnedGradedTotalNuclei(frame_index, scAPbin, scNC-8,grade_index, sc_idx) = 1;
+                                end
+                            end
+                            
+                            
+                        end
+                        
+                    end
+                    
+                    if all(InterpSchnitzOff(InterpDefinitiveSchnitz == 1))
+                        SchnitzTbinnedInactiveNuclei(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                    else
+                        SchnitzTbinnedActiveNuclei(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                    end
+                    SchnitzTbinnedNucleiCount(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                    
+                    for grade_index = 1:length(pOnCutoffs)
+                        if all(SchnitzTbinnedGradedTotalNuclei(:, scAPbin, scNC-8,grade_index, sc_idx) ==0 | ...
+                                (SchnitzTbinnedGradedTotalNuclei(:, scAPbin, scNC-8,grade_index, sc_idx) ==1 & SchnitzTbinnedGradedOffNuclei(:, scAPbin, scNC-8,grade_index, sc_idx) ==1 ))
+                            SchnitzTbinnedGradedInactiveNuclei(Embryo_scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                        else
+                            SchnitzTbinnedGradedActiveNuclei(Embryo_scAPbin, scNC-8, grade_index,sc_idx) = 1;
+                        end
+                        SchnitzTbinnedGradedNucleiCount(Embryo_scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                    end
+                    
+                else
+                    %AllscAPvectorSchnitz = NaN(1, length(CurrentSchnitz.FlaggingInfo.AllSchnitzFrames));
+                    %AllscAPvectorSchnitz(find(ismember(CurrentSchnitz.frames', CurrentSchnitz.FlaggingInfo.AllSchnitzFrames))) = scAPvector;
+                    %AllscAPvector =  NaN(1, length(CurrentParticle.FlaggingInfo.AllSchnitzFrames));
+                    %AllscAPvector(find(ismember(CurrentSchnitz.FlaggingInfo.AllSchnitzFrames, CurrentParticle.FlaggingInfo.AllSchnitzFrames))) = AllscAPvectorSchnitz;
+                    
+                    %InterpAPvec = interp1(AllSchnitzTimes,AllscAPvector,TbinnedTimeVector);
+                    DefinitiveSchnitzDouble = double(CurrentParticle.FlaggingInfo.SpotStateDefinitive);
+                    InterpDefinitiveSchnitz = interp1(AllSchnitzTimes,DefinitiveSchnitzDouble,TbinnedTimeVector);
+                    
+                    DefinitiveSchnitzOff = double(CurrentParticle.FlaggingInfo.SchnitzOff);
+                    
+                    for frame_index = 1:length(TbinnedTimeVector)
+                        if (InterpDefinitiveSchnitz(frame_index) == 1)% &  ~isnan(InterpAPvec(frame_index))
+                            %scAPbin = find((InterpAPvec(frame_index) < APbins+APResolution/2) & (InterpAPvec(frame_index) >= APbins-APResolution/2));
+                            scAPbin = Embryo_scAPbin;
+                            SchnitzTbinnedOffNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                            SchnitzTbinnedTotalNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                            for grade_index = 1:length(pOnCutoffs)
+                                SchnitzTbinnedGradedOffNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                                SchnitzTbinnedGradedTotalNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                            end
+                        end
+                    end
+                    SchnitzTbinnedInactiveNuclei(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                    SchnitzTbinnedNucleiCount(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                    for grade_index = 1:length(pOnCutoffs)
+                        SchnitzTbinnedGradedInactiveNuclei(scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                        SchnitzTbinnedGradedNucleiCount(scAPbin, scNC-8, grade_index, sc_idx) = 1;
                     end
                 end
+            elseif CurrentParticle.Approved == -1 & CurrentParticle.FlaggingInfo.SpotStateCanBeCalled
+                %AllscAPvectorSchnitz = NaN(1, length(CurrentSchnitz.FlaggingInfo.AllSchnitzFrames));
+                %AllscAPvectorSchnitz(find(ismember(CurrentSchnitz.frames', CurrentSchnitz.FlaggingInfo.AllSchnitzFrames))) = scAPvector;
+                %AllscAPvector =  NaN(1, length(CurrentParticle.FlaggingInfo.AllSchnitzFrames));
+                %AllscAPvector(find(ismember(CurrentSchnitz.FlaggingInfo.AllSchnitzFrames, CurrentParticle.FlaggingInfo.AllSchnitzFrames))) = AllscAPvectorSchnitz;
+                
+                %InterpAPvec = interp1(AllSchnitzTimes,AllscAPvector,TbinnedTimeVector);
+                DefinitiveSchnitzDouble = double(CurrentParticle.FlaggingInfo.SpotStateDefinitive);
+                InterpDefinitiveSchnitz = interp1(AllSchnitzTimes,DefinitiveSchnitzDouble,TbinnedTimeVector);
+                
+                for frame_index = 1:length(AllSchnitzFrames)
+                    if (InterpDefinitiveSchnitz(frame_index) == 1) %&  ~isnan(InterpAPvec(frame_index))
+                        %scAPbin = find((InterpAPvec(frame_index) < APbins+APResolution/2) & (InterpAPvec(frame_index) >= APbins-APResolution/2));
+                        scAPbin = Embryo_scAPbin;
+                        SchnitzTbinnedTotalNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                        SchnitzTbinnedOffNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                        for grade_index = 1:length(pOnCutoffs)
+                            SchnitzTbinnedGradedOffNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                            SchnitzTbinnedGradedTotalNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                        end
+                    end
+                end
+                
+                SchnitzTbinnedInactiveNuclei(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                SchnitzTbinnedNucleiCount(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                for grade_index = 1:length(pOnCutoffs)
+                    SchnitzTbinnedGradedInactiveNuclei(scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                    SchnitzTbinnedGradedNucleiCount(scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                end
             end
-            
-            
         end
     end
     
@@ -498,165 +590,228 @@ for ChN=1:NChannels
     SchnitzAnaphaseAlignedFinishedTranscribingNuclei =  zeros(numBinnedFrames, length(APbins), 6, NumSchnitz);
     SchnitzAnaphaseAlignedMeanTraces = NaN(numBinnedFrames, length(APbins), 6, NumSchnitz);
     SchnitzAnaphaseAlignedTraceCount = zeros(numBinnedFrames, length(APbins), 6, NumSchnitz);
-    SchnitzAnaphaseAligned3DMeanTraces = NaN(numBinnedFrames, length(APbins), 6, NumSchnitz);
-    SchnitzAnaphaseAligned3DTraceCount = zeros(numBinnedFrames, length(APbins), 6, NumSchnitz);
+    SchnitzAnaphaseAlignedActiveNuclei = zeros(length(APbins), 6, NumSchnitz);
+    SchnitzAnaphaseAlignedInactiveNuclei = zeros(length(APbins), 6, NumSchnitz);
+    SchnitzAnaphaseAlignedNucleiCount = zeros(length(APbins), 6, NumSchnitz);
+    SchnitzAnaphaseAlignedGradedOnNuclei = zeros(numFrames, length(APbins), 6,10, NumSchnitz);
+    SchnitzAnaphaseAlignedGradedOffNuclei = zeros(numFrames, length(APbins), 6,10, NumSchnitz);
+    SchnitzAnaphaseAlignedGradedTotalNuclei = zeros(numFrames, length(APbins), 6,10, NumSchnitz);
+    SchnitzAnaphaseAlignedGradedActiveNuclei = zeros(length(APbins), 6,10, NumSchnitz);
+    SchnitzAnaphaseAlignedGradedInactiveNuclei = zeros(length(APbins), 6,10, NumSchnitz);
+    SchnitzAnaphaseAlignedGradedNucleiCount = zeros(length(APbins), 6,10, NumSchnitz);
     
-    for sc_idx = 1:length(schnitzcells)%496:496
+    for sc_idx =1:length(schnitzcells)
+        if ~SchnitzesAreGood(sc_idx)
+            continue
+        end
         
-        if  (schnitzFlags(sc_idx) ~= 0) | (schnitzApproved(sc_idx) ~= 1) | ...
-                ~schnitzFirstFrameContainedInTrace(sc_idx) | ~schnitzLastFrameContainedInTrace(sc_idx) | ...
-                (schnitzFractionFramesApproved(sc_idx) < 0.9)
-            continue
-        end
-        scAP = schnitzAPpos(sc_idx);
+        scAP = mean(schnitzcells(sc_idx).APpos);
         scAPvector = schnitzcells(sc_idx).APpos;
-        scAPbin = find((scAP < APbins+APResolution/2) & (scAP >= APbins-APResolution/2));
-        scNC = schnitzCycles(sc_idx);
-        SchnitzFrames = schnitzcells(sc_idx).frames.';
-        if isempty(schnitzcells(sc_idx).anaphaseFrame) | isnan(schnitzcells(sc_idx).anaphaseFrame) | (schnitzcells(sc_idx).anaphaseFrame == 0)
+        Embryo_scAPbin = find((scAP < APbins+APResolution/2) & (scAP >= APbins-APResolution/2));
+        scNC = SchnitzCycles(sc_idx);
+        if (scNC < 9) | (scNC > 14) | isempty(scAPvector)
             continue
         end
-        SchnitzTimes = [FrameInfo(SchnitzFrames).Time]-FrameInfo(schnitzcells(sc_idx).anaphaseFrame).Time;
-        %
-        SchnitzHasParticle = ismember(sc_idx, ParticleSchnitzIndices);
-        if SchnitzHasParticle
-            p_idx = find(ParticleSchnitzIndices == sc_idx);
-            if length(p_idx) > 1
-                continue
-            elseif length(p_idx) == 0
-                if (scNC >= 9) & (scNC <= 14) & ~isempty(scAPvector)
-                    InterpAPvec = interp1(SchnitzTimes,scAPvector,TbinnedTimeVector);
-                    for fr_idx = 1:length(TbinnedTimeVector)
-                        if ~isnan(InterpAPvec(fr_idx))
-                            scAPbin = find((InterpAPvec(fr_idx) < APbins+APResolution/2) & (InterpAPvec(fr_idx) >= APbins-APResolution/2));
-                            SchnitzAnaphaseAlignedTotalNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                            SchnitzAnaphaseAlignedOffNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                            SchnitzAnaphaseAlignedMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
-                            SchnitzAnaphaseAligned3DMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
-                        end
-                    end
+        
+        
+        
+        
+        CandidateAnaphaseFrames = SchnitzAnaphaseFrames(SchnitzCycles == scNC & abs(SchnitzAnaphaseFrames-anaphaseFrames(scNC-8)) <= 3 & SchnitzAnaphaseFrames > 0);
+        if ~isempty(CandidateAnaphaseFrames)
+            SchnitzFrameMin = min([CandidateAnaphaseFrames anaphaseFrames(scNC-8)]);
+        else
+            SchnitzFrameMin = anaphaseFrames(scNC-8);
+        end
+        SchnitzHasParticle = ~isnan(SchnitzParticleIndex(sc_idx));
+        
+        if ~SchnitzHasParticle
+            AllSchnitzFrames = schnitzcells(sc_idx).FlaggingInfo.AllSchnitzFrames;
+            AllSchnitzTimes = [FrameInfo(AllSchnitzFrames).Time]-FrameInfo(schnitzcells(sc_idx).anaphaseFrame).Time;
+            %AllscAPvector = NaN(1, length(AllSchnitzFrames));
+            %AllscAPvector(find(ismember(schnitzcells(sc_idx).frames', schnitzcells(sc_idx).FlaggingInfo.AllSchnitzFrames))) = scAPvector;
+            %InterpAPvec = interp1(AllSchnitzTimes,AllscAPvector,TbinnedTimeVector);
+            DefinitiveSchnitzDouble = double(schnitzcells(sc_idx).FlaggingInfo.SpotStateDefinitive);
+            InterpDefinitiveSchnitz = interp1(AllSchnitzTimes,DefinitiveSchnitzDouble,TbinnedTimeVector);
+            
+            
+            for frame_index = 1:length(TbinnedTimeVector)
+                if (InterpDefinitiveSchnitz(frame_index) == 1) %&  ~isnan(InterpAPvec(frame_index))
+                    %scAPbin = find((InterpAPvec(frame_index) < APbins+APResolution/2) & (InterpAPvec(frame_index) >= APbins-APResolution/2));
+                    scAPbin = Embryo_scAPbin;
+                    SchnitzAnaphaseAlignedTotalNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                    SchnitzAnaphaseAlignedOffNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
                 end
-            elseif length(p_idx) == 1
-                if CompiledParticles{ChN}(p_idx).ManualApproved
-                    if (~all(CompiledParticles{ChN}(p_idx).FlaggingInfo.PositionApproved) | ~all(CompiledParticles{ChN}(p_idx).FlaggingInfo.FluoApproved))
-                        continue
-                    else
-                        pFluoVector = CompiledParticles{ChN}(p_idx).FlaggingInfo.MaxSpotFluoLevel;
-                        pFrames = CompiledParticles{ChN}(p_idx).FlaggingInfo.TrueFrames;
-                        pOrigFluoVector = CompiledParticles{ChN}(p_idx).Fluo;
-                        pOrigFrames = CompiledParticles{ChN}(p_idx).Frame;
-                        pOrigFluo3DVector = CompiledParticles{ChN}(p_idx).Fluo3DGauss;
-                        if sum(~isnan(pFluoVector)) < MinTimePoints
-                            if length(scAPvector) <= 1
-                                continue
+                for grade_index = 1:length(pOnCutoffs)
+                    SchnitzAnaphaseAlignedGradedOffNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                    SchnitzAnaphaseAlignedGradedTotalNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                    
+                end
+            end
+            SchnitzAnaphaseAlignedNucleiCount(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+            SchnitzAnaphaseAlignedInactiveNuclei(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+            for grade_index = 1:length(pOnCutoffs)
+                SchnitzAnaphaseAlignedGradedInactiveNuclei(Embryo_scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                SchnitzAnaphaseAlignedGradedNucleiCount(Embryo_scAPbin, scNC-8, grade_index, sc_idx) = 1;
+            end
+            
+        else
+            p_idx = SchnitzParticleIndex(sc_idx);
+            CurrentParticle = CompiledParticles{ChN}(p_idx);
+            CurrentSchnitz = schnitzcells(sc_idx);
+            AllSchnitzFrames = CurrentParticle.FlaggingInfo.AllSchnitzFrames;
+            AllSchnitzTimes = [FrameInfo(AllSchnitzFrames).Time]-FrameInfo(CurrentParticle.schnitzcell.anaphaseFrame).Time;
+            if ParticlesAreGood(p_idx)
+                if (sum(CurrentParticle.FlaggingInfo.SchnitzOn) >= MinTimePoints) & (scNC >= 9) & (scNC <= 14) & ~isempty(scAPvector)
+                    %AllscAPvectorSchnitz = NaN(1, length(CurrentSchnitz.FlaggingInfo.AllSchnitzFrames));
+                    %AllscAPvectorSchnitz(find(ismember(CurrentSchnitz.frames', CurrentSchnitz.FlaggingInfo.AllSchnitzFrames))) = scAPvector;
+                    %AllscAPvector =  NaN(1, length(CurrentParticle.FlaggingInfo.AllSchnitzFrames));
+                    %AllscAPvector(find(ismember(CurrentSchnitz.FlaggingInfo.AllSchnitzFrames, CurrentParticle.FlaggingInfo.AllSchnitzFrames))) = AllscAPvectorSchnitz;
+                    
+                    %InterpAPvec = interp1(AllSchnitzTimes,AllscAPvector,TbinnedTimeVector);
+                    DefinitiveSchnitzDouble = double(CurrentParticle.FlaggingInfo.SpotStateDefinitive);
+                    InterpDefinitiveSchnitz = interp1(AllSchnitzTimes,DefinitiveSchnitzDouble,TbinnedTimeVector);
+                    
+                    DefinitiveSchnitzOff = double(CurrentParticle.FlaggingInfo.SchnitzOff);
+                    InterpSchnitzOff = interp1(AllSchnitzTimes,DefinitiveSchnitzOff,TbinnedTimeVector);
+                    DefinitiveSchnitzOn = double(CurrentParticle.FlaggingInfo.SchnitzOn);
+                    InterpSchnitzOn = interp1(AllSchnitzTimes,DefinitiveSchnitzOn,TbinnedTimeVector);
+                    DefinitiveSchnitzQuiescent = double(CurrentParticle.FlaggingInfo.SchnitzTemporarilyOff);
+                    InterpSchnitzQuiescent = interp1(AllSchnitzTimes,DefinitiveSchnitzQuiescent,TbinnedTimeVector);
+                    DefinitiveSchnitzFinishedTranscribing = double(CurrentParticle.FlaggingInfo.SchnitzFinishedTranscribing);
+                    InterpSchnitzFinishedTranscribing = interp1(AllSchnitzTimes,DefinitiveSchnitzFinishedTranscribing,TbinnedTimeVector);
+                    DefinitiveUseTraceFluo = double(CurrentParticle.FlaggingInfo.UseTraceFluo);
+                    InterpUseTraceFluo = interp1(AllSchnitzTimes,DefinitiveUseTraceFluo,TbinnedTimeVector);
+                    DefinitiveFluoVector = double(CurrentParticle.FlaggingInfo.FluoVector);
+                    InterpUseTraceFluo = interp1(AllSchnitzTimes,DefinitiveFluoVector,TbinnedTimeVector);
+                    
+                    for frame_index = 1:length(TbinnedTimeVector)
+                        if (InterpDefinitiveSchnitz(frame_index) == 1)% &  ~isnan(InterpAPvec(frame_index))
+                            %scAPbin = find((InterpAPvec(frame_index) < APbins+APResolution/2) & (InterpAPvec(frame_index) >= APbins-APResolution/2));
+                            scAPbin = Embryo_scAPbin;
+                            if (InterpSchnitzOn(frame_index) == 1)
+                                SchnitzAnaphaseAlignedOnNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                                SchnitzAnaphaseAlignedTotalNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                            elseif (InterpSchnitzOff(frame_index) == 1)
+                                SchnitzAnaphaseAlignedOffNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                                SchnitzAnaphaseAlignedTotalNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                            elseif (InterpSchnitzQuiescent(frame_index) == 1)
+                                SchnitzAnaphaseAlignedQuiescentNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                                SchnitzAnaphaseAlignedTotalNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                            elseif (InterpSchnitzFinishedTranscribing(frame_index) == 1)
+                                SchnitzAnaphaseAlignedFinishedTranscribingNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                                SchnitzAnaphaseAlignedTotalNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
                             end
-                            InterpAPvec = interp1(SchnitzTimes,scAPvector,TbinnedTimeVector);
-                            for fr_idx = 1:length(TbinnedTimeVector)
-                                if ~isnan(InterpAPvec(fr_idx))
-                                    scAPbin = find((InterpAPvec(fr_idx) < APbins+APResolution/2) & (InterpAPvec(fr_idx) >= APbins-APResolution/2));
-                                    SchnitzAnaphaseAlignedTotalNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                    SchnitzAnaphaseAlignedOffNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                    SchnitzAnaphaseAlignedMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
-                                    SchnitzAnaphaseAligned3DMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
+                            
+                            if (InterpSchnitzOn(frame_index) == 1)
+                                for grade_index = 1:length(pOnCutoffs)
+                                    if InterpUseTraceFluo(frame_index) == 1
+                                        SchnitzAnaphaseAlignedGradedTotalNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                                        if DefinitiveFluoVector(frame_index) > pOnCutoffs(grade_index)*MaxParticleFluo
+                                            SchnitzAnaphaseAlignedGradedOnNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                                        else
+                                            SchnitzAnaphaseAlignedGradedOffNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                                        end
+                                    end
                                 end
-                            end
-                        end
-                        
-                        FullFluoVector = NaN(1, length(min(SchnitzFrames):max(SchnitzFrames)));
-                        FullOrigFluoVector = NaN(1, length(min(SchnitzFrames):max(SchnitzFrames)));
-                        FullOrigFluo3DVector = NaN(1, length(min(SchnitzFrames):max(SchnitzFrames)));
-                        if min(pFrames) < min(SchnitzFrames) | max(pFrames) > max(SchnitzFrames)
-                            continue
-                        end
-                        if min(pOrigFrames) < min(SchnitzFrames) | max(pOrigFrames) > max(SchnitzFrames)
-                            continue
-                        end
-                        FullFluoVector(find(ismember(min(SchnitzFrames):max(SchnitzFrames), pFrames))) = pFluoVector;
-                        FullOrigFluoVector(find(ismember(min(SchnitzFrames):max(SchnitzFrames), pOrigFrames))) = pOrigFluoVector;
-                        FullOrigFluo3DVector(find(ismember(min(SchnitzFrames):max(SchnitzFrames), pOrigFrames))) = pOrigFluo3DVector;
-                        if length(scAPvector) <= 1
-                            continue
-                        end
-                        InterpAPvec = interp1(SchnitzTimes,scAPvector,TbinnedTimeVector);
-                        SchnitzPatchedTime = [FrameInfo(min(SchnitzFrames):max(SchnitzFrames)).Time]-FrameInfo(schnitzcells(sc_idx).anaphaseFrame).Time;
-                        InterpFluoVec = interp1(SchnitzPatchedTime,FullFluoVector,TbinnedTimeVector);
-                        InterpOrigFluoVec = interp1(SchnitzPatchedTime,FullOrigFluoVector,TbinnedTimeVector);
-                        InterpOrigFluo3DVec = interp1(SchnitzPatchedTime,FullOrigFluo3DVector,TbinnedTimeVector);
-                        for fr_idx = 1:length(TbinnedTimeVector)
-                            if ~isnan(InterpAPvec(fr_idx))
-                                scAPbin = find((InterpAPvec(fr_idx) < APbins+APResolution/2) & (InterpAPvec(fr_idx) >= APbins-APResolution/2));
-                                SchnitzAnaphaseAlignedTotalNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                
-                                if ~isnan(InterpFluoVec(fr_idx))
-                                    SchnitzAnaphaseAlignedOnNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                elseif sum(TbinnedTimeVector > TbinnedTimeVector(fr_idx) & ~isnan(InterpFluoVec)) > 0
-                                    SchnitzAnaphaseAlignedQuiescentNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                elseif sum(TbinnedTimeVector < TbinnedTimeVector(fr_idx) & ~isnan(InterpFluoVec)) > 0
-                                    SchnitzAnaphaseAlignedFinishedTranscribingNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                else
-                                    SchnitzAnaphaseAlignedOffNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                end
-                                
-                                
-                                if ~isnan(InterpOrigFluoVec(fr_idx))
-                                    SchnitzAnaphaseAlignedMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx)= InterpOrigFluoVec(fr_idx);
-                                    SchnitzAnaphaseAlignedTraceCount(fr_idx, scAPbin, scNC-8, sc_idx)= 1;
-                                else
-                                    SchnitzAnaphaseAlignedMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
-                                end
-                                
-                                if ~isnan(InterpOrigFluo3DVec(fr_idx))
-                                    SchnitzAnaphaseAligned3DMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx)= InterpOrigFluo3DVec(fr_idx);
-                                    SchnitzAnaphaseAligned3DTraceCount(fr_idx, scAPbin, scNC-8, sc_idx)= 1;
-                                else
-                                    SchnitzAnaphaseAligned3DMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
+                            elseif (InterpSchnitzOff(frame_index) == 1)| ...
+                                    (InterpSchnitzQuiescent(frame_index) == 1) | ...
+                                    (InterpSchnitzFinishedTranscribing(frame_index) == 1)
+                                for grade_index = 1:length(pOnCutoffs)
+                                    SchnitzAnaphaseAlignedGradedOffNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                                    SchnitzAnaphaseAlignedGradedTotalNuclei(frame_index, scAPbin, scNC-8,grade_index, sc_idx) = 1;
                                 end
                             end
                             
                         end
+                        
+                        
                     end
-                else % Fill in what to do if particle is there but is not approved!
-                    if length(CompiledParticles{ChN}(p_idx).Frame) <= 3 & length(CompiledParticles{ChN}(p_idx).Frame)/length(CompiledParticles{ChN}(p_idx).TrueFrames) < .1
-                        if (scNC >= 9) & (scNC <= 14) & ~isempty(scAPvector)
-                            InterpAPvec = interp1(SchnitzTimes,scAPvector,TbinnedTimeVector);
-                            for fr_idx = 1:length(TbinnedTimeVector)
-                                if ~isnan(InterpAPvec(fr_idx))
-                                    scAPbin = find((InterpAPvec(fr_idx) < APbins+APResolution/2) & (InterpAPvec(fr_idx) >= APbins-APResolution/2));
-                                    SchnitzAnaphaseAlignedTotalNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                    SchnitzAnaphaseAlignedOffNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                                    SchnitzAnaphaseAlignedMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
-                                    SchnitzAnaphaseAligned3DMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
-                                end
+                    
+                    if all(InterpSchnitzOff(InterpDefinitiveSchnitz == 1))
+                        SchnitzAnaphaseAlignedInactiveNuclei(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                    else
+                        SchnitzAnaphaseAlignedActiveNuclei(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                    end
+                    SchnitzAnaphaseAlignedNucleiCount(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                    
+                    for grade_index = 1:length(pOnCutoffs)
+                        if all(SchnitzAnaphaseAlignedGradedTotalNuclei(:, scAPbin, scNC-8,grade_index, sc_idx) ==0 | ...
+                                (SchnitzAnaphaseAlignedGradedTotalNuclei(:, scAPbin, scNC-8,grade_index, sc_idx) ==1 & SchnitzAnaphaseAlignedGradedOffNuclei(:, scAPbin, scNC-8,grade_index, sc_idx) ==1 ))
+                            SchnitzAnaphaseAlignedGradedInactiveNuclei(Embryo_scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                        else
+                            SchnitzAnaphaseAlignedGradedActiveNuclei(Embryo_scAPbin, scNC-8, grade_index,sc_idx) = 1;
+                        end
+                        SchnitzAnaphaseAlignedGradedNucleiCount(Embryo_scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                    end
+                    
+                else
+                    %AllscAPvectorSchnitz = NaN(1, length(CurrentSchnitz.FlaggingInfo.AllSchnitzFrames));
+                    %AllscAPvectorSchnitz(find(ismember(CurrentSchnitz.frames', CurrentSchnitz.FlaggingInfo.AllSchnitzFrames))) = scAPvector;
+                    %AllscAPvector =  NaN(1, length(CurrentParticle.FlaggingInfo.AllSchnitzFrames));
+                    %AllscAPvector(find(ismember(CurrentSchnitz.FlaggingInfo.AllSchnitzFrames, CurrentParticle.FlaggingInfo.AllSchnitzFrames))) = AllscAPvectorSchnitz;
+                    
+                    %InterpAPvec = interp1(AllSchnitzTimes,AllscAPvector,TbinnedTimeVector);
+                    DefinitiveSchnitzDouble = double(CurrentParticle.FlaggingInfo.SpotStateDefinitive);
+                    InterpDefinitiveSchnitz = interp1(AllSchnitzTimes,DefinitiveSchnitzDouble,TbinnedTimeVector);
+                    
+                    DefinitiveSchnitzOff = double(CurrentParticle.FlaggingInfo.SchnitzOff);
+                    
+                    for frame_index = 1:length(TbinnedTimeVector)
+                        if (InterpDefinitiveSchnitz(frame_index) == 1) % &  ~isnan(InterpAPvec(frame_index))
+                            %scAPbin = find((InterpAPvec(frame_index) < APbins+APResolution/2) & (InterpAPvec(frame_index) >= APbins-APResolution/2));
+                            scAPbin = Embryo_scAPbin;
+                            SchnitzAnaphaseAlignedOffNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                            SchnitzAnaphaseAlignedTotalNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                            for grade_index = 1:length(pOnCutoffs)
+                                SchnitzAnaphaseAlignedGradedOffNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                                SchnitzAnaphaseAlignedGradedTotalNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
                             end
+                        end
+                        
+                    end
+                    SchnitzAnaphaseAlignedInactiveNuclei(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                    SchnitzAnaphaseAlignedNucleiCount(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                    for grade_index = 1:length(pOnCutoffs)
+                        SchnitzAnaphaseAlignedGradedInactiveNuclei(scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                        SchnitzAnaphaseAlignedGradedNucleiCount(scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                    end
+                end
+            elseif CurrentParticle.Approved == -1 & CurrentParticle.FlaggingInfo.SpotStateCanBeCalled
+                %AllscAPvectorSchnitz = NaN(1, length(CurrentSchnitz.FlaggingInfo.AllSchnitzFrames));
+                %AllscAPvectorSchnitz(find(ismember(CurrentSchnitz.frames', CurrentSchnitz.FlaggingInfo.AllSchnitzFrames))) = scAPvector;
+                %AllscAPvector =  NaN(1, length(CurrentParticle.FlaggingInfo.AllSchnitzFrames));
+                %AllscAPvector(find(ismember(CurrentSchnitz.FlaggingInfo.AllSchnitzFrames, CurrentParticle.FlaggingInfo.AllSchnitzFrames))) = AllscAPvectorSchnitz;
+                
+                %InterpAPvec = interp1(AllSchnitzTimes,AllscAPvector,TbinnedTimeVector);
+                DefinitiveSchnitzDouble = double(CurrentParticle.FlaggingInfo.SpotStateDefinitive);
+                InterpDefinitiveSchnitz = interp1(AllSchnitzTimes,DefinitiveSchnitzDouble,TbinnedTimeVector);
+                
+                for frame_index = 1:length(AllSchnitzFrames)
+                    if (InterpDefinitiveSchnitz(frame_index) == 1)% &  ~isnan(InterpAPvec(frame_index))
+                        %scAPbin = find((InterpAPvec(frame_index) < APbins+APResolution/2) & (InterpAPvec(frame_index) >= APbins-APResolution/2));
+                        scAPbin = Embryo_scAPbin;
+                        SchnitzAnaphaseAlignedTotalNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                        SchnitzAnaphaseAlignedOffNuclei(frame_index, scAPbin, scNC-8, sc_idx) = 1;
+                        for grade_index = 1:length(pOnCutoffs)
+                            SchnitzAnaphaseAlignedGradedOffNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                            SchnitzAnaphaseAlignedGradedTotalNuclei(frame_index, scAPbin, scNC-8, grade_index, sc_idx) = 1;
                         end
                     end
                 end
                 
-                
-            end
-        else
-            if (scNC >= 9) & (scNC <= 14) & ~isempty(scAPvector) & length(scAPvector) > 1
-                InterpAPvec = interp1(SchnitzTimes,scAPvector,TbinnedTimeVector);
-                for fr_idx = 1:length(TbinnedTimeVector)
-                    if ~isnan(InterpAPvec(fr_idx))
-                        scAPbin = find((InterpAPvec(fr_idx) < APbins+APResolution/2) & (InterpAPvec(fr_idx) >= APbins-APResolution/2));
-                        SchnitzAnaphaseAlignedTotalNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                        SchnitzAnaphaseAlignedOffNuclei(fr_idx, scAPbin, scNC-8, sc_idx) = 1;
-                        SchnitzAnaphaseAlignedMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
-                        SchnitzAnaphaseAligned3DMeanTraces(fr_idx, scAPbin, scNC-8, sc_idx) = 0;
-                    end
+                SchnitzAnaphaseAlignedInactiveNuclei(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                SchnitzAnaphaseAlignedNucleiCount(Embryo_scAPbin, scNC-8, sc_idx) = 1;
+                for grade_index = 1:length(pOnCutoffs)
+                    SchnitzAnaphaseAlignedGradedInactiveNuclei(scAPbin, scNC-8, grade_index, sc_idx) = 1;
+                    SchnitzAnaphaseAlignedGradedNucleiCount(scAPbin, scNC-8, grade_index, sc_idx) = 1;
                 end
             end
-            
-            
         end
     end
     
     
     
-    
-    
-    
+    %%
     
     
     UnalignedCycleMeanTraces = NaN(numFrames, length(APbins), 6);
@@ -664,10 +819,23 @@ for ChN=1:NChannels
     UnalignedCycleTraceCount=  NaN(numFrames, length(APbins), 6);
     UnalignedCycleNumNuclei =  sum(SchnitzUnalignedTotalNuclei, 4);
     UnalignedCycleNumOnNuclei =  sum(SchnitzUnalignedOnNuclei, 4);
+    UnalignedCycleGradedOnNuclei = sum(SchnitzUnalignedGradedOnNuclei, 5);
+    UnalignedCycleGradedOffNuclei = sum(SchnitzUnalignedGradedOffNuclei, 5);
+    UnalignedCycleGradedTotalNuclei = sum(SchnitzUnalignedGradedTotalNuclei, 5);
+    UnalignedCycleGradedFractionOn = UnalignedCycleGradedOnNuclei./UnalignedCycleGradedTotalNuclei;
+    
     UnalignedCycleFractionOn=  UnalignedCycleNumOnNuclei./UnalignedCycleNumNuclei;
     UnalignedCycleNumOffNuclei =  sum(SchnitzUnalignedOffNuclei, 4);
+    
     UnalignedCycleNumQuiescentNuclei =  sum(SchnitzUnalignedQuiescentNuclei, 4);
     UnalignedCycleNumFinishedTranscribingNuclei =  sum(SchnitzUnalignedFinishedTranscribingNuclei, 4);
+    UnalignedCycleActiveNuclei = sum(SchnitzUnalignedActiveNuclei, 3);
+    UnalignedCycleInactiveNuclei = sum(SchnitzUnalignedInactiveNuclei, 3);
+    UnalignedCycleNucleiCount = sum(SchnitzUnalignedNucleiCount, 3);
+    UnalignedCycleGradedActiveNuclei = sum(SchnitzUnalignedGradedActiveNuclei, 4);
+    UnalignedCycleGradedInactiveNuclei = sum(SchnitzUnalignedGradedInactiveNuclei, 4);
+    UnalignedCycleGradedNucleiCount = sum(SchnitzUnalignedGradedNucleiCount, 4);
+    
     Unaligned3DCycleMeanTraces = NaN(numFrames, length(APbins), 6);
     Unaligned3DCycleTraceStdErrors =  NaN(numFrames, length(APbins), 6);
     Unaligned3DCycleTraceCount=  NaN(numFrames, length(APbins), 6);
@@ -677,6 +845,19 @@ for ChN=1:NChannels
     Unaligned3DCycleNumQuiescentNuclei =  sum(SchnitzUnalignedQuiescentNuclei, 4);
     Unaligned3DCycleNumFinishedTranscribingNuclei =  sum(SchnitzUnalignedFinishedTranscribingNuclei, 4);
     Unaligned3DCycleFractionOn=  Unaligned3DCycleNumOnNuclei./Unaligned3DCycleNumNuclei;
+    Unaligned3DCycleActiveNuclei = sum(SchnitzUnalignedActiveNuclei, 3);
+    Unaligned3DCycleInactiveNuclei = sum(SchnitzUnalignedInactiveNuclei, 3);
+    Unaligned3DCycleNucleiCount = sum(SchnitzUnalignedNucleiCount, 3);
+    Unaligned3DCycleGradedOnNuclei = sum(SchnitzUnalignedGradedOnNuclei, 5);
+    Unaligned3DCycleGradedOffNuclei = sum(SchnitzUnalignedGradedOffNuclei, 5);
+    Unaligned3DCycleGradedTotalNuclei = sum(SchnitzUnalignedGradedTotalNuclei, 5);
+    Unaligned3DCycleGradedFractionOn = UnalignedCycleGradedOnNuclei./UnalignedCycleGradedTotalNuclei;
+    Unaligned3DCycleGradedActiveNuclei = sum(SchnitzUnalignedGradedActiveNuclei, 4);
+    Unaligned3DCycleGradedInactiveNuclei = sum(SchnitzUnalignedGradedInactiveNuclei, 4);
+    Unaligned3DCycleGradedNucleiCount = sum(SchnitzUnalignedGradedNucleiCount, 4);
+    
+    
+    
     CycleTraces = cell(1, 6);
     CycleTraces3D = cell(1, 6);
     MeanAPs = cell(1, 6);
@@ -694,6 +875,17 @@ for ChN=1:NChannels
     AnaphaseAlignedCycleNumOffNuclei =  sum(SchnitzAnaphaseAlignedOffNuclei, 4);
     AnaphaseAlignedCycleNumQuiescentNuclei =  sum(SchnitzAnaphaseAlignedQuiescentNuclei, 4);
     AnaphaseAlignedCycleNumFinishedTranscribingNuclei =  sum(SchnitzAnaphaseAlignedFinishedTranscribingNuclei, 4);
+    AnaphaseAlignedCycleActiveNuclei = sum(SchnitzAnaphaseAlignedActiveNuclei, 3);
+    AnaphaseAlignedCycleInactiveNuclei = sum(SchnitzAnaphaseAlignedInactiveNuclei, 3);
+    AnaphaseAlignedCycleNucleiCount = sum(SchnitzAnaphaseAlignedNucleiCount, 3);
+    AnaphaseAlignedCycleGradedOnNuclei = sum(SchnitzAnaphaseAlignedGradedOnNuclei, 5);
+    AnaphaseAlignedCycleGradedOffNuclei = sum(SchnitzAnaphaseAlignedGradedOffNuclei, 5);
+    AnaphaseAlignedCycleGradedTotalNuclei = sum(SchnitzAnaphaseAlignedGradedTotalNuclei, 5);
+    AnaphaseAlignedCycleGradedFractionOn = AnaphaseAlignedCycleGradedOnNuclei./AnaphaseAlignedCycleGradedTotalNuclei;
+    AnaphaseAlignedCycleGradedActiveNuclei = sum(SchnitzAnaphaseAlignedGradedActiveNuclei, 4);
+    AnaphaseAlignedCycleGradedInactiveNuclei = sum(SchnitzAnaphaseAlignedGradedInactiveNuclei, 4);
+    AnaphaseAlignedCycleGradedNucleiCount = sum(SchnitzAnaphaseAlignedGradedNucleiCount, 4);
+    
     AnaphaseAligned3DCycleMeanTraces = NaN(numBinnedFrames, length(APbins), 6);
     AnaphaseAligned3DCycleTraceStdErrors =  NaN(numBinnedFrames, length(APbins), 6);
     AnaphaseAligned3DCycleTraceCount=  NaN(numBinnedFrames, length(APbins), 6);
@@ -703,6 +895,17 @@ for ChN=1:NChannels
     AnaphaseAligned3DCycleNumOffNuclei =  sum(SchnitzAnaphaseAlignedOffNuclei, 4);
     AnaphaseAligned3DCycleNumQuiescentNuclei =  sum(SchnitzAnaphaseAlignedQuiescentNuclei, 4);
     AnaphaseAligned3DCycleNumFinishedTranscribingNuclei =  sum(SchnitzAnaphaseAlignedFinishedTranscribingNuclei, 4);
+    AnaphaseAligned3DCycleNumFinishedTranscribingNuclei =  sum(SchnitzAnaphaseAlignedFinishedTranscribingNuclei, 4);
+    AnaphaseAligned3DCycleActiveNuclei = sum(SchnitzAnaphaseAlignedActiveNuclei, 3);
+    AnaphaseAligned3DCycleInactiveNuclei = sum(SchnitzAnaphaseAlignedInactiveNuclei, 3);
+    AnaphaseAligned3DCycleNucleiCount = sum(SchnitzAnaphaseAlignedNucleiCount, 3);
+    AnaphaseAligned3DCycleGradedOnNuclei = sum(SchnitzAnaphaseAlignedGradedOnNuclei, 5);
+    AnaphaseAligned3DCycleGradedOffNuclei = sum(SchnitzAnaphaseAlignedGradedOffNuclei, 5);
+    AnaphaseAligned3DCycleGradedTotalNuclei = sum(SchnitzAnaphaseAlignedGradedTotalNuclei, 5);
+    AnaphaseAligned3DCycleGradedFractionOn = AnaphaseAlignedCycleGradedOnNuclei./AnaphaseAlignedCycleGradedTotalNuclei;
+    AnaphaseAligned3DCycleGradedActiveNuclei = sum(SchnitzAnaphaseAlignedGradedActiveNuclei, 4);
+    AnaphaseAligned3DCycleGradedInactiveNuclei = sum(SchnitzAnaphaseAlignedGradedInactiveNuclei, 4);
+    AnaphaseAligned3DCycleGradedNucleiCount = sum(SchnitzAnaphaseAlignedGradedNucleiCount, 4);
     CycleTracesWithAnaphaseAlignment = cell(1, 6);
     Cycle3DTracesWithAnaphaseAlignment = cell(1, 6);
     AnaphaseAlignedCycleFrameTimes = cell(1, 6);
@@ -717,6 +920,17 @@ for ChN=1:NChannels
     TbinnedCycleNumOffNuclei =  sum(SchnitzTbinnedOffNuclei, 4);
     TbinnedCycleNumQuiescentNuclei =  sum(SchnitzTbinnedQuiescentNuclei, 4);
     TbinnedCycleNumFinishedTranscribingNuclei =  sum(SchnitzTbinnedFinishedTranscribingNuclei, 4);
+    TbinnedCycleActiveNuclei = sum(SchnitzTbinnedActiveNuclei, 3);
+    TbinnedCycleInactiveNuclei = sum(SchnitzTbinnedInactiveNuclei, 3);
+    TbinnedCycleNucleiCount = sum(SchnitzTbinnedNucleiCount, 3);
+    TbinnedCycleGradedOnNuclei = sum(SchnitzTbinnedGradedOnNuclei, 5);
+    TbinnedCycleGradedOffNuclei = sum(SchnitzTbinnedGradedOffNuclei, 5);
+    TbinnedCycleGradedTotalNuclei = sum(SchnitzTbinnedGradedTotalNuclei, 5);
+    TbinnedCycleGradedFractionOn = TbinnedCycleGradedOnNuclei./TbinnedCycleGradedTotalNuclei;
+    TbinnedCycleGradedActiveNuclei = sum(SchnitzTbinnedGradedActiveNuclei, 4);
+    TbinnedCycleGradedInactiveNuclei = sum(SchnitzTbinnedGradedInactiveNuclei, 4);
+    TbinnedCycleGradedNucleiCount = sum(SchnitzTbinnedGradedNucleiCount, 4);
+    
     Tbinned3DCycleMeanTraces = NaN(numBinnedFrames, length(APbins), 6);
     Tbinned3DCycleTraceStdErrors =  NaN(numBinnedFrames, length(APbins), 6);
     Tbinned3DCycleTraceCount=  NaN(numBinnedFrames, length(APbins), 6);
@@ -726,21 +940,80 @@ for ChN=1:NChannels
     Tbinned3DCycleNumOffNuclei =  sum(SchnitzTbinnedOffNuclei, 4);
     Tbinned3DCycleNumQuiescentNuclei =  sum(SchnitzTbinnedQuiescentNuclei, 4);
     Tbinned3DCycleNumFinishedTranscribingNuclei =  sum(SchnitzTbinnedFinishedTranscribingNuclei, 4);
+    Tbinned3DCycleActiveNuclei = sum(SchnitzTbinnedActiveNuclei, 3);
+    Tbinned3DCycleInactiveNuclei = sum(SchnitzTbinnedInactiveNuclei, 3);
+    Tbinned3DCycleNucleiCount = sum(SchnitzTbinnedNucleiCount, 3);
+    Tbinned3DCycleGradedOnNuclei = sum(SchnitzTbinnedGradedOnNuclei, 5);
+    Tbinned3DCycleGradedOffNuclei = sum(SchnitzTbinnedGradedOffNuclei, 5);
+    Tbinned3DCycleGradedTotalNuclei = sum(SchnitzTbinnedGradedTotalNuclei, 5);
+    Tbinned3DCycleGradedFractionOn = TbinnedCycleGradedOnNuclei./TbinnedCycleGradedTotalNuclei;
+    Tbinned3DCycleGradedActiveNuclei = sum(SchnitzTbinnedGradedActiveNuclei, 4);
+    Tbinned3DCycleGradedInactiveNuclei = sum(SchnitzTbinnedGradedInactiveNuclei, 4);
+    Tbinned3DCycleGradedNucleiCount = sum(SchnitzTbinnedGradedNucleiCount, 4);
     TbinnedCycleTraces = cell(1, 6);
     Tbinned3DCycleTraces = cell(1, 6);
     TbinnedCycleFrameTimes = cell(1, 6);
     Tbinned3DCycleFrameTimes = cell(1, 6);
+    %%
+    ParticlesAreGood = ones(1, length(CompiledParticles{ChN}), 'logical');
+    ParticleCycles = NaN(1, length(CompiledParticles{ChN}));
+    ParticleSchnitzIndex = NaN(1, length(CompiledParticles{ChN}));
+    ParticleHasAnaphaseFrame = zeros(1, length(CompiledParticles{ChN}), 'logical');
+    for p_idx = 1:length(CompiledParticles{ChN})
+        if ~isempty(CompiledParticles{ChN}(p_idx).Approved)
+            if CompiledParticles{ChN}(p_idx).Approved < 1
+                ParticlesAreGood(p_idx) = false;
+            elseif CompiledParticles{ChN}(p_idx).Approved  == 2 & ~isempty(CompiledParticles{ChN}(p_idx).cycle)
+                if sum(CompiledParticles{ChN}(p_idx).FlaggingInfo.SpotStateDefinitive | CompiledParticles{ChN}(p_idx).FlaggingInfo.UseTraceFluo)/MaxTraceLengths(CompiledParticles{ChN}(p_idx).cycle) < 0.5
+                    ParticlesAreGood(p_idx) = false;
+                end
+            end
+        end
+        
+        if ~isempty(CompiledParticles{ChN}(p_idx).cycle)
+            ParticleCycles(p_idx) = CompiledParticles{ChN}(p_idx).cycle;
+        else
+            ParticlesAreGood(p_idx) = false;
+        end
+        if ~isempty(CompiledParticles{ChN}(p_idx).schnitz)
+            if ~SchnitzesAreGood(CompiledParticles{ChN}(p_idx).schnitz)
+                ParticlesAreGood(p_idx) = false;
+            end
+            ParticleSchnitzIndex(p_idx) = CompiledParticles{ChN}(p_idx).schnitz;
+            CompiledParticles{ChN}(p_idx).schnitzcell = schnitzcells(ParticleSchnitzIndex(p_idx));
+            %             if ~all(CompiledParticles{ChN}(p_idx).schnitzcell.FlaggingInfo.SchnitzAwayFromBoundary(CompiledParticles{ChN}(p_idx).schnitzcell.FlaggingInfo.AllSchnitzFrames >= EarliestTurnOnTimes(CompiledParticles{ChN}(p_idx).schnitzcell.cycle-8) ))
+            %                 if sum(CompiledParticles{ChN}(p_idx).schnitzcell.FlaggingInfo.SchnitzAwayFromBoundary(CompiledParticles{ChN}(p_idx).schnitzcell.FlaggingInfo.AllSchnitzFrames >= EarliestTurnOnTimes(CompiledParticles{ChN}(p_idx).schnitzcell.cycle-8) ))/...
+            %                         length(CompiledParticles{ChN}(p_idx).schnitzcell.FlaggingInfo.AllSchnitzFrames(CompiledParticles{ChN}(p_idx).schnitzcell.FlaggingInfo.AllSchnitzFrames >= EarliestTurnOnTimes(CompiledParticles{ChN}(p_idx).schnitzcell.cycle-8) )) < 0.8
+            %                     ParticlesAreGood(p_idx) = false;
+            %                 end
+            %             end
+            if ~isempty(CompiledParticles{ChN}(p_idx).schnitzcell.anaphaseFrame)
+                if CompiledParticles{ChN}(p_idx).schnitzcell.inferredAnaphaseFrame | CompiledParticles{ChN}(p_idx).schnitzcell.anaphaseFrame == 0 | isnan(CompiledParticles{ChN}(p_idx).schnitzcell.anaphaseFrame)
+                    ParticleHasAnaphaseFrame(p_idx) = false;
+                elseif CompiledParticles{ChN}(p_idx).schnitzcell.anaphaseFrame >= nc_info(ParticleCycles(p_idx)-8)-2
+                    ParticleHasAnaphaseFrame(p_idx) = true;
+                end
+            else
+                ParticlesAreGood(p_idx)= false;
+            end
+            if CompiledParticles{ChN}(p_idx).schnitzcell.Approved ~= 1 | CompiledParticles{ChN}(p_idx).schnitzcell.Flag ~= 0
+                ParticlesAreGood(p_idx)= false;
+            end
+            
+        else
+            ParticlesAreGood(p_idx) = false;
+        end
+        
+    end
+    %%
     
     
-    IncludedNCs = min(CPcycles):max(CPcycles);
+    IncludedNCs = min(ParticleCycles):max(ParticleCycles);
     for k = 1:length(IncludedNCs)
         NC = IncludedNCs(k);
-        if UseManualApproval
-            IncludedTraceIndices = find((CPcycles == NC) & (ApprovedVector == 1));
-        else
-            IncludedTraceIndices = find((CPcycles == NC) & (FirstApproved == 1) &...
-                (ApprovedCount == 1) & (HasMinimumTimePoints == 1) & (PercentageFramesApproved == 1));
-        end
+        
+        IncludedTraceIndices = find((ParticleCycles == NC) & ParticlesAreGood);
+        
         if isempty(IncludedTraceIndices)
             continue
         end
@@ -755,22 +1028,26 @@ for ChN=1:NChannels
         MeanAPs{NC-8} = zeros(1, length(IncludedTraceIndices));
         ParticleAPbinIndices{NC-8} = zeros(1, length(IncludedTraceIndices), 'uint16');
         NCMinTraceFrames = NaN(1, length(IncludedTraceIndices));
+        NCParticleAnaphases = NaN(1, length(IncludedTraceIndices));
         for i = 1:length(IncludedTraceIndices)
             trace_index = IncludedTraceIndices(i);
+            
             CurrentCompiledParticle = CompiledParticles{ChN}(trace_index);
-            NCMinTraceFrames(i) = min(CurrentCompiledParticle.FlaggingInfo.TrueFrames(CurrentCompiledParticle.FlaggingInfo.FrameApprovedFinal == 1));
-            CycleTraces{NC-8}(CurrentCompiledParticle.FlaggingInfo.TrueFrames(CurrentCompiledParticle.FlaggingInfo.FrameApprovedFinal == 1), i) = 0;
-            CycleTraces{NC-8}(CurrentCompiledParticle.Frame(CurrentCompiledParticle.FrameApproved == 1), i) = CurrentCompiledParticle.Fluo(CurrentCompiledParticle.FrameApproved == 1);
-            CycleTraces{NC-8}(CurrentCompiledParticle.Frame(CurrentCompiledParticle.FrameApproved == 0), i) = NaN;
-            CycleTraces3D{NC-8}(CurrentCompiledParticle.FlaggingInfo.TrueFrames(CurrentCompiledParticle.FlaggingInfo.FrameApprovedFinal == 1), i) = 0;
-            CycleTraces3D{NC-8}(CurrentCompiledParticle.Frame(CurrentCompiledParticle.FrameApproved == 1), i) = CurrentCompiledParticle.Fluo3DGauss(CurrentCompiledParticle.FrameApproved == 1);
-            CycleTraces3D{NC-8}(CurrentCompiledParticle.Frame(CurrentCompiledParticle.FrameApproved == 0), i) = NaN;
-            %CycleTraces3Derror(CurrentCompiledParticle.Frame, i) = CurrentCompiledParticle.Fluo3DGaussz;
+            if ParticleHasAnaphaseFrame(trace_index)
+                NCParticleAnaphases(i) = CurrentCompiledParticle.schnitzcell.anaphaseFrame;
+            end
+            NCMinTraceFrames(i) = min(CurrentCompiledParticle.FlaggingInfo.AllSchnitzFrames);
+            CycleTraces{NC-8}(CurrentCompiledParticle.FlaggingInfo.AllSchnitzFrames, i) = 0;
+            CycleTraces{NC-8}(CurrentCompiledParticle.FlaggingInfo.AllSchnitzFrames(CurrentCompiledParticle.FlaggingInfo.UseTraceFluo), i) = ...
+                CurrentCompiledParticle.Fluo(CurrentCompiledParticle.FrameApproved);
+            CycleTraces3D{NC-8}(CurrentCompiledParticle.FlaggingInfo.AllSchnitzFrames, i) = 0;
+            CycleTraces3D{NC-8}(CurrentCompiledParticle.FlaggingInfo.AllSchnitzFrames(CurrentCompiledParticle.FlaggingInfo.UseTraceFluo), i) = ...
+                CurrentCompiledParticle.Fluo3DGauss(CurrentCompiledParticle.FrameApproved);
             MeanAPs{NC-8}(i) = mean(CurrentCompiledParticle.schnitzcell.APpos);
             ParticleAPbinIndices{NC-8}(i) = find((MeanAPs{NC-8}(i) < APbins+APResolution/2) & (MeanAPs{NC-8}(i) >= APbins-APResolution/2));
             
         end
-        SchnitzNCFrameMins = schnitzAnaphaseFrames(schnitzCycles == NC & abs(schnitzAnaphaseFrames - anaphaseFrames(NC-8)) <= 2 & schnitzAnaphaseFrames ~= 0);
+        SchnitzNCFrameMins = SchnitzAnaphaseFrames(SchnitzCycles == NC & abs(SchnitzAnaphaseFrames - anaphaseFrames(NC-8)) <= 2 & SchnitzAnaphaseFrames ~= 0);
         
         APbinsInMovie = min(ParticleAPbinIndices{NC-8}):max(ParticleAPbinIndices{NC-8});
         NCCycleTraces = CycleTraces{NC-8};
@@ -781,11 +1058,12 @@ for ChN=1:NChannels
         else
             SchnitzNCFrameMin = min(SchnitzNCFrameMins);
         end
-        if min(IncludedRowsInBin) > SchnitzNCFrameMin
-            IncludedRowsInBin = [SchnitzNCFrameMin:(min(IncludedRowsInBin)-1) IncludedRowsInBin];
+        if min(IncludedRowsInBin) > min([NCParticleAnaphases SchnitzNCFrameMins] )
+            IncludedRowsInBin = [min([NCParticleAnaphases SchnitzNCFrameMins] ):(min(IncludedRowsInBin)-1) IncludedRowsInBin];
         end
         NCRealMinFrame = min(IncludedRowsInBin,[], 'omitnan');
         UnalignedCycleFrameTimes{NC-8}= FrameTimes(IncludedRowsInBin)-min(FrameTimes(IncludedRowsInBin));
+        NCParticleAnaphases = NCParticleAnaphases-min(IncludedRowsInBin)+1;
         CycleTraces{NC-8} = NCCycleTraces(IncludedRowsInBin,:);
         NCCycleTraces = NCCycleTraces(IncludedRowsInBin,:);
         
@@ -814,11 +1092,10 @@ for ChN=1:NChannels
             Unaligned3DCycleMeanTraces(IncludedRowsInBin3D, APbinIndex, NC-8) = 0;
             Unaligned3DCycleTraceStdErrors(IncludedRowsInBin3D, APbinIndex, NC-8) = 0;
             
-            
-            
             IncludedRowsInBin = find(sum(~isnan(NCCycleTraces(:,IncludedColumnsInBin)),2).' > 0);
             IncludedRowsInBin3D = find(sum(~isnan(NC3DCycleTraces(:,IncludedColumnsInBin)),2).' > 0);
-            UnalignedCycleMeanTraces(IncludedRowsInBin, APbinIndex, NC-8) = nanmean(NCCycleTraces(IncludedRowsInBin, IncludedColumnsInBin), 2);
+            
+            UnalignedCycleMeanTraces(IncludedRowsInBin, APbinIndex, NC-8) = mean(NCCycleTraces(IncludedRowsInBin, IncludedColumnsInBin), 2, 'omitnan');
             if size(NCCycleTraces(IncludedRowsInBin, IncludedColumnsInBin), 2) > 1
                 for r = IncludedRowsInBin
                     UnalignedCycleTraceStdErrors(r, APbinIndex, NC-8) = std(NCCycleTraces(r, IncludedColumnsInBin),'omitnan');
@@ -854,7 +1131,7 @@ for ChN=1:NChannels
         % Do anaphase alignment and bin
         CurrentNCTraces = CycleTraces{NC-8};
         IncludedRowsInBin = find(sum(~isnan(CurrentNCTraces),2).' > 0);
-    
+        
         NCFrameTimes = UnalignedCycleFrameTimes{NC-8};
         NumBins = ceil((max(NCFrameTimes)-min(NCFrameTimes))/deltaTbinWidth)+1;
         AnaphaseAlignedCycleFrameTimes{NC-8} = (0:NumBins-1)*deltaTbinWidth;
@@ -865,28 +1142,31 @@ for ChN=1:NChannels
         end
         CycleTracesWithAnaphaseAlignment{NC-8} = NaN(NumBins, size(CurrentNCTraces, 2));
         for trace_index = 1:size(CurrentNCTraces, 2)
-            CurrentTrace = CurrentNCTraces(:,trace_index);
-            TraceIncludedRowsInBin = find(~isnan(CurrentTrace));
-            TraceFrameTimes = NCFrameTimes(TraceIncludedRowsInBin)-min(NCFrameTimes(TraceIncludedRowsInBin));
-            CurrentTrace = CurrentTrace(TraceIncludedRowsInBin);
-            IncludedInterpolatedFrames = ones(1, length(AnaphaseAlignedCycleFrameTimes{NC-8}));
-            IncludedInterpolatedFrames(AnaphaseAlignedCycleFrameTimes{NC-8} > max(TraceFrameTimes)) = 0;
-            for bin_index = 1:NumBins
-                if ~isempty(find(AnaphaseAlignedCycleFrameTimes{NC-8}(bin_index) == TraceFrameTimes, 1))
-                    continue
+            if ~isnan(NCParticleAnaphases(trace_index))
+                CurrentTrace = CurrentNCTraces(:,trace_index);
+                TraceIncludedRowsInBin = find(~isnan(CurrentTrace));
+                TraceFrameTimes = NCFrameTimes(TraceIncludedRowsInBin)-NCFrameTimes(NCParticleAnaphases(trace_index));
+                CurrentTrace = CurrentTrace(TraceIncludedRowsInBin);
+                IncludedInterpolatedFrames = ones(1, length(AnaphaseAlignedCycleFrameTimes{NC-8}));
+                IncludedInterpolatedFrames(AnaphaseAlignedCycleFrameTimes{NC-8} > max(TraceFrameTimes)) = 0;
+                for bin_index = 1:NumBins
+                    if ~isempty(find(AnaphaseAlignedCycleFrameTimes{NC-8}(bin_index) == TraceFrameTimes, 1))
+                        continue
+                    end
+                    if IncludedInterpolatedFrames(bin_index) == 0
+                        continue
+                    end
+                    TimeInterval = TraceFrameTimes(find(TraceFrameTimes > AnaphaseAlignedCycleFrameTimes{NC-8}(bin_index), 1))-TraceFrameTimes(find(TraceFrameTimes < AnaphaseAlignedCycleFrameTimes{NC-8}(bin_index), 1, 'last'));
+                    if TimeInterval > deltaTbinWidth*3
+                        IncludedInterpolatedFrames(bin_index) = 0;
+                    end
                 end
-                if IncludedInterpolatedFrames(bin_index) == 0
-                    continue
-                end
-                TimeInterval = TraceFrameTimes(find(TraceFrameTimes > AnaphaseAlignedCycleFrameTimes{NC-8}(bin_index), 1))-TraceFrameTimes(find(TraceFrameTimes < AnaphaseAlignedCycleFrameTimes{NC-8}(bin_index), 1, 'last'));
-                if TimeInterval > deltaTbinWidth*3
-                    IncludedInterpolatedFrames(bin_index) = 0;
+                if length(TraceFrameTimes) >= MinTimePoints
+                    InterpolatedCurrentTrace = interp1(TraceFrameTimes,CurrentTrace,AnaphaseAlignedCycleFrameTimes{NC-8}(find(IncludedInterpolatedFrames == 1)));
+                    CycleTracesWithAnaphaseAlignment{NC-8}(find(IncludedInterpolatedFrames == 1), trace_index) =InterpolatedCurrentTrace;
                 end
             end
-            if length(TraceFrameTimes) >= MinTimePoints
-                InterpolatedCurrentTrace = interp1(TraceFrameTimes,CurrentTrace,AnaphaseAlignedCycleFrameTimes{NC-8}(find(IncludedInterpolatedFrames == 1)));
-                CycleTracesWithAnaphaseAlignment{NC-8}(find(IncludedInterpolatedFrames == 1), trace_index) =InterpolatedCurrentTrace;
-            end
+            
         end
         % Do anaphase alignment and bin with 3D fluo info
         CurrentNCTraces3D = CycleTraces3D{NC-8};
@@ -1141,6 +1421,16 @@ for ChN=1:NChannels
     MeanProfiles.UnalignedCycleTraceCount = UnalignedCycleTraceCount;
     UnalignedCycleMeanPerNucleusTraces = UnalignedCycleMeanTraces.*UnalignedCycleFractionOn;
     MeanProfiles.UnalignedCycleMeanPerNucleusTraces = UnalignedCycleMeanPerNucleusTraces;
+    MeanProfiles.UnalignedCycleNumActiveNuclei = UnalignedCycleActiveNuclei;
+    MeanProfiles.UnalignedCycleNumInactiveNuclei = UnalignedCycleInactiveNuclei;
+    MeanProfiles.UnalignedCycleNucleiCount = UnalignedCycleNucleiCount;
+    MeanProfiles.UnalignedCycleGradedOnNuclei = UnalignedCycleGradedOnNuclei ;
+    MeanProfiles.UnalignedCycleGradedOffNuclei =  UnalignedCycleGradedOffNuclei ;
+    MeanProfiles.UnalignedCycleGradedTotalNuclei = UnalignedCycleGradedTotalNuclei;
+    MeanProfiles.UnalignedCycleGradedFractionOn = UnalignedCycleGradedFractionOn ;
+    MeanProfiles.UnalignedCycleGradedActiveNuclei = UnalignedCycleGradedActiveNuclei ;
+    MeanProfiles.UnalignedCycleGradedInactiveNuclei = UnalignedCycleGradedInactiveNuclei ;
+    MeanProfiles.UnalignedCycleGradedNucleiCount =  UnalignedCycleGradedNucleiCount ;
     
     MeanProfiles.Unaligned3DCycleMeanTraces = Unaligned3DCycleMeanTraces;
     MeanProfiles.Unaligned3DCycleNumNuclei = Unaligned3DCycleNumNuclei;
@@ -1153,6 +1443,16 @@ for ChN=1:NChannels
     MeanProfiles.Unaligned3DCycleTraceCount = Unaligned3DCycleTraceCount;
     Unaligned3DCycleMeanPerNucleusTraces = Unaligned3DCycleMeanTraces.*Unaligned3DCycleFractionOn;
     MeanProfiles.Unaligned3DCycleMeanPerNucleusTraces = Unaligned3DCycleMeanPerNucleusTraces;
+    MeanProfiles.Unaligned3DCycleNumActiveNuclei = Unaligned3DCycleActiveNuclei;
+    MeanProfiles.Unaligned3DCycleNumInactiveNuclei = Unaligned3DCycleInactiveNuclei;
+    MeanProfiles.Unaligned3DCycleNucleiCount = Unaligned3DCycleNucleiCount;
+    MeanProfiles.Unaligned3DCycleGradedOnNuclei = Unaligned3DCycleGradedOnNuclei ;
+    MeanProfiles.Unaligned3DCycleGradedOffNuclei =  Unaligned3DCycleGradedOffNuclei ;
+    MeanProfiles.Unaligned3DCycleGradedTotalNuclei = Unaligned3DCycleGradedTotalNuclei;
+    MeanProfiles.Unaligned3DCycleGradedFractionOn = Unaligned3DCycleGradedFractionOn ;
+    MeanProfiles.Unaligned3DCycleGradedActiveNuclei = Unaligned3DCycleGradedActiveNuclei ;
+    MeanProfiles.Unaligned3DCycleGradedInactiveNuclei = Unaligned3DCycleGradedInactiveNuclei ;
+    MeanProfiles.Unaligned3DCycleGradedNucleiCount =  Unaligned3DCycleGradedNucleiCount ;
     
     MeanProfiles.AnaphaseAlignedCycleMeanTraces = AnaphaseAlignedCycleMeanTraces;
     MeanProfiles.AnaphaseAlignedCycleNumNuclei = AnaphaseAlignedCycleNumNuclei;
@@ -1163,96 +1463,19 @@ for ChN=1:NChannels
     MeanProfiles.AnaphaseAlignedCycleNumFinishedTranscribingNuclei = AnaphaseAlignedCycleNumFinishedTranscribingNuclei;
     MeanProfiles.AnaphaseAlignedCycleTraceStdErrors = AnaphaseAlignedCycleTraceStdErrors;
     MeanProfiles.AnaphaseAlignedCycleTraceCount = AnaphaseAlignedCycleTraceCount;
-    if size(AnaphaseAlignedCycleMeanTraces, 1) == size(AnaphaseAlignedCycleFractionOn, 1)
-        AnaphaseAlignedCycleMeanPerNucleusTraces = AnaphaseAlignedCycleMeanTraces.*AnaphaseAlignedCycleFractionOn;
-    end
-    while size(AnaphaseAlignedCycleMeanTraces, 1) ~= size(AnaphaseAlignedCycleFractionOn, 1)
-    if size(AnaphaseAlignedCycleMeanTraces, 1) == size(AnaphaseAlignedCycleFractionOn, 1)
-        AnaphaseAlignedCycleMeanPerNucleusTraces = AnaphaseAlignedCycleMeanTraces.*AnaphaseAlignedCycleFractionOn;
-    elseif size(AnaphaseAlignedCycleMeanTraces, 1)  > size(AnaphaseAlignedCycleFractionOn, 1)
-        FirstMeanTraces = find(AnaphaseAlignedCycleMeanTraces(:,13,6).' > 0, 1);
-        FirstFractionOns = find(AnaphaseAlignedCycleFractionOn(:,13,6).' > 0, 1);
-        if FirstMeanTraces == FirstFractionOns
-            AnaphaseAlignedCycleFractionOn = [AnaphaseAlignedCycleFractionOn ; AnaphaseAlignedCycleFractionOn(end,:,:)];
-            MeanProfiles.AnaphaseAlignedCycleFractionOn = AnaphaseAlignedCycleFractionOn;
-            
-            AnaphaseAlignedCycleNumNuclei = [AnaphaseAlignedCycleNumNuclei ; AnaphaseAlignedCycleNumNuclei(end,:,:)];
-            MeanProfiles.AnaphaseAlignedCycleNumNuclei = AnaphaseAlignedCycleNumNuclei;
-            
-            AnaphaseAlignedCycleNumOnNuclei = [AnaphaseAlignedCycleNumOnNuclei ; AnaphaseAlignedCycleNumOnNuclei(end,:,:)];
-            MeanProfiles.AnaphaseAlignedCycleNumOnNuclei = AnaphaseAlignedCycleNumOnNuclei;
-            
-            AnaphaseAlignedCycleNumOffNuclei = [AnaphaseAlignedCycleNumOffNuclei ; AnaphaseAlignedCycleNumOffNuclei(end,:,:)];
-            MeanProfiles.AnaphaseAlignedCycleNumOffNuclei = AnaphaseAlignedCycleNumOffNuclei;
-            
-            AnaphaseAlignedCycleNumQuiescentNuclei = [AnaphaseAlignedCycleNumQuiescentNuclei ; AnaphaseAlignedCycleNumQuiescentNuclei(end,:,:)];
-            MeanProfiles.AnaphaseAlignedCycleNumQuiescentNuclei = AnaphaseAlignedCycleNumQuiescentNuclei;
-            
-            AnaphaseAlignedCycleNumFinishedTranscribingNuclei = [AnaphaseAlignedCycleNumFinishedTranscribingNuclei ; AnaphaseAlignedCycleNumFinishedTranscribingNuclei(end,:,:)];
-            MeanProfiles.AnaphaseAlignedCycleNumFinishedTranscribingNuclei = AnaphaseAlignedCycleNumFinishedTranscribingNuclei;
-        else
-            AnaphaseAlignedCycleFractionOn = [AnaphaseAlignedCycleFractionOn(1,:,:) ; AnaphaseAlignedCycleFractionOn];
-            MeanProfiles.AnaphaseAlignedCycleFractionOn = AnaphaseAlignedCycleFractionOn;
-            
-            AnaphaseAlignedCycleNumNuclei = [AnaphaseAlignedCycleNumNuclei(1,:,:) ; AnaphaseAlignedCycleNumNuclei];
-            MeanProfiles.AnaphaseAlignedCycleNumNuclei = AnaphaseAlignedCycleNumNuclei;
-            
-            AnaphaseAlignedCycleNumOnNuclei = [AnaphaseAlignedCycleNumOnNuclei(1,:,:) ; AnaphaseAlignedCycleNumOnNuclei];
-            MeanProfiles.AnaphaseAlignedCycleNumOnNuclei = AnaphaseAlignedCycleNumOnNuclei;
-            
-            AnaphaseAlignedCycleNumOffNuclei = [AnaphaseAlignedCycleNumOffNuclei(1,:,:) ; AnaphaseAlignedCycleNumOffNuclei];
-            MeanProfiles.AnaphaseAlignedCycleNumOffNuclei = AnaphaseAlignedCycleNumOffNuclei;
-            
-            AnaphaseAlignedCycleNumQuiescentNuclei = [AnaphaseAlignedCycleNumQuiescentNuclei(1,:,:) ; AnaphaseAlignedCycleNumQuiescentNuclei];
-            MeanProfiles.AnaphaseAlignedCycleNumQuiescentNuclei = AnaphaseAlignedCycleNumQuiescentNuclei;
-            
-            AnaphaseAlignedCycleNumFinishedTranscribingNuclei = [AnaphaseAlignedCycleNumFinishedTranscribingNuclei(1,:,:) ; AnaphaseAlignedCycleNumFinishedTranscribingNuclei];
-            MeanProfiles.AnaphaseAlignedCycleNumFinishedTranscribingNuclei = AnaphaseAlignedCycleNumFinishedTranscribingNuclei;
-        end
-    else
-        FirstMeanTraces = find(AnaphaseAlignedCycleMeanTraces(:,13,6).' > 0, 1);
-        FirstFractionOns = find(AnaphaseAlignedCycleFractionOn(:,13,6).' > 0, 1);
-        if FirstMeanTraces == FirstFractionOns
-            AnaphaseAlignedCycleFractionOn = AnaphaseAlignedCycleFractionOn(1:end-1,:,:);
-            MeanProfiles.AnaphaseAlignedCycleFractionOn = AnaphaseAlignedCycleFractionOn;
-            
-            AnaphaseAlignedCycleNumNuclei = AnaphaseAlignedCycleNumNuclei(1:end-1,:,:);
-            MeanProfiles.AnaphaseAlignedCycleNumNuclei = AnaphaseAlignedCycleNumNuclei;
-            
-            AnaphaseAlignedCycleNumOnNuclei = AnaphaseAlignedCycleNumOnNuclei(1:end-1,:,:);
-            MeanProfiles.AnaphaseAlignedCycleNumOnNuclei = AnaphaseAlignedCycleNumOnNuclei;
-            
-            AnaphaseAlignedCycleNumOffNuclei = AnaphaseAlignedCycleNumOffNuclei(1:end-1,:,:);
-            MeanProfiles.AnaphaseAlignedCycleNumOffNuclei = AnaphaseAlignedCycleNumOffNuclei;
-            
-            AnaphaseAlignedCycleNumQuiescentNuclei = AnaphaseAlignedCycleNumQuiescentNuclei(1:end-1,:,:);
-            MeanProfiles.AnaphaseAlignedCycleNumQuiescentNuclei = AnaphaseAlignedCycleNumQuiescentNuclei;
-            
-            AnaphaseAlignedCycleNumFinishedTranscribingNuclei = AnaphaseAlignedCycleNumFinishedTranscribingNuclei(1:end-1,:,:);
-            MeanProfiles.AnaphaseAlignedCycleNumFinishedTranscribingNuclei = AnaphaseAlignedCycleNumFinishedTranscribingNuclei;
-        else
-            AnaphaseAlignedCycleFractionOn = AnaphaseAlignedCycleFractionOn(2:end,:,:);
-            MeanProfiles.AnaphaseAlignedCycleFractionOn = AnaphaseAlignedCycleFractionOn;
-            
-            AnaphaseAlignedCycleNumNuclei = AnaphaseAlignedCycleNumNuclei(2:end,:,:);
-            MeanProfiles.AnaphaseAlignedCycleNumNuclei = AnaphaseAlignedCycleNumNuclei;
-            
-            AnaphaseAlignedCycleNumOnNuclei = AnaphaseAlignedCycleNumOnNuclei(2:end,:,:);
-            MeanProfiles.AnaphaseAlignedCycleNumOnNuclei = AnaphaseAlignedCycleNumOnNuclei;
-            
-            AnaphaseAlignedCycleNumOffNuclei = AnaphaseAlignedCycleNumOffNuclei(2:end,:,:);
-            MeanProfiles.AnaphaseAlignedCycleNumOffNuclei = AnaphaseAlignedCycleNumOffNuclei;
-            
-            AnaphaseAlignedCycleNumQuiescentNuclei = AnaphaseAlignedCycleNumQuiescentNuclei(2:end,:,:);
-            MeanProfiles.AnaphaseAlignedCycleNumQuiescentNuclei = AnaphaseAlignedCycleNumQuiescentNuclei;
-            
-            AnaphaseAlignedCycleNumFinishedTranscribingNuclei = AnaphaseAlignedCycleNumFinishedTranscribingNuclei(2:end,:,:);
-            MeanProfiles.AnaphaseAlignedCycleNumFinishedTranscribingNuclei = AnaphaseAlignedCycleNumFinishedTranscribingNuclei;
-        end
-    end
-    end
+    
     AnaphaseAlignedCycleMeanPerNucleusTraces = AnaphaseAlignedCycleMeanTraces.*AnaphaseAlignedCycleFractionOn;
     MeanProfiles.AnaphaseAlignedCycleMeanPerNucleusTraces = AnaphaseAlignedCycleMeanPerNucleusTraces;
+    MeanProfiles.AnaphaseAlignedCycleNumActiveNuclei = AnaphaseAlignedCycleActiveNuclei;
+    MeanProfiles.AnaphaseAlignedCycleNumInactiveNuclei = AnaphaseAlignedCycleInactiveNuclei;
+    MeanProfiles.AnaphaseAlignedCycleNucleiCount = AnaphaseAlignedCycleNucleiCount;
+    MeanProfiles.AnaphaseAlignedCycleGradedOnNuclei = AnaphaseAlignedCycleGradedOnNuclei ;
+    MeanProfiles.AnaphaseAlignedCycleGradedOffNuclei =  AnaphaseAlignedCycleGradedOffNuclei ;
+    MeanProfiles.AnaphaseAlignedCycleGradedTotalNuclei = AnaphaseAlignedCycleGradedTotalNuclei;
+    MeanProfiles.AnaphaseAlignedCycleGradedFractionOn = AnaphaseAlignedCycleGradedFractionOn ;
+    MeanProfiles.AnaphaseAlignedCycleGradedActiveNuclei = AnaphaseAlignedCycleGradedActiveNuclei ;
+    MeanProfiles.AnaphaseAlignedCycleGradedInactiveNuclei = AnaphaseAlignedCycleGradedInactiveNuclei ;
+    MeanProfiles.AnaphaseAlignedCycleGradedNucleiCount =  AnaphaseAlignedCycleGradedNucleiCount ;
     
     MeanProfiles.AnaphaseAligned3DCycleMeanTraces = AnaphaseAligned3DCycleMeanTraces;
     MeanProfiles.AnaphaseAligned3DCycleNumNuclei = AnaphaseAligned3DCycleNumNuclei;
@@ -1263,97 +1486,19 @@ for ChN=1:NChannels
     MeanProfiles.AnaphaseAligned3DCycleNumFinishedTranscribingNuclei = AnaphaseAligned3DCycleNumFinishedTranscribingNuclei;
     MeanProfiles.AnaphaseAligned3DCycleTraceStdErrors = AnaphaseAligned3DCycleTraceStdErrors;
     MeanProfiles.AnaphaseAligned3DCycleTraceCount = AnaphaseAligned3DCycleTraceCount;
-    if size(AnaphaseAligned3DCycleMeanTraces, 1) == size(AnaphaseAligned3DCycleFractionOn, 1)
-        AnaphaseAligned3DCycleMeanPerNucleusTraces = AnaphaseAligned3DCycleMeanTraces.*AnaphaseAligned3DCycleFractionOn;
-    end
-    while size(AnaphaseAligned3DCycleMeanTraces, 1) ~= size(AnaphaseAligned3DCycleFractionOn, 1)
-    if size(AnaphaseAligned3DCycleMeanTraces, 1) == size(AnaphaseAligned3DCycleFractionOn, 1)
-        AnaphaseAligned3DCycleMeanPerNucleusTraces = AnaphaseAligned3DCycleMeanTraces.*AnaphaseAligned3DCycleFractionOn;
-    elseif size(AnaphaseAligned3DCycleMeanTraces, 1)  > size(AnaphaseAligned3DCycleFractionOn, 1)
-        FirstMeanTraces = find(AnaphaseAligned3DCycleMeanTraces(:,13,6).' > 0, 1);
-        FirstFractionOns = find(AnaphaseAligned3DCycleFractionOn(:,13,6).' > 0, 1);
-        if FirstMeanTraces == FirstFractionOns
-            AnaphaseAligned3DCycleFractionOn = [AnaphaseAligned3DCycleFractionOn ; AnaphaseAligned3DCycleFractionOn(end,:,:)];
-            MeanProfiles.AnaphaseAligned3DCycleFractionOn = AnaphaseAligned3DCycleFractionOn;
-            
-            AnaphaseAligned3DCycleNumNuclei = [AnaphaseAligned3DCycleNumNuclei ; AnaphaseAligned3DCycleNumNuclei(end,:,:)];
-            MeanProfiles.AnaphaseAligned3DCycleNumNuclei = AnaphaseAligned3DCycleNumNuclei;
-            
-            AnaphaseAligned3DCycleNumOnNuclei = [AnaphaseAligned3DCycleNumOnNuclei ; AnaphaseAligned3DCycleNumOnNuclei(end,:,:)];
-            MeanProfiles.AnaphaseAligned3DCycleNumOnNuclei = AnaphaseAligned3DCycleNumOnNuclei;
-            
-            AnaphaseAligned3DCycleNumOffNuclei = [AnaphaseAligned3DCycleNumOffNuclei ; AnaphaseAligned3DCycleNumOffNuclei(end,:,:)];
-            MeanProfiles.AnaphaseAligned3DCycleNumOffNuclei = AnaphaseAligned3DCycleNumOffNuclei;
-            
-            AnaphaseAligned3DCycleNumQuiescentNuclei = [AnaphaseAligned3DCycleNumQuiescentNuclei ; AnaphaseAligned3DCycleNumQuiescentNuclei(end,:,:)];
-            MeanProfiles.AnaphaseAligned3DCycleNumQuiescentNuclei = AnaphaseAligned3DCycleNumQuiescentNuclei;
-            
-            AnaphaseAligned3DCycleNumFinishedTranscribingNuclei = [AnaphaseAligned3DCycleNumFinishedTranscribingNuclei ; AnaphaseAligned3DCycleNumFinishedTranscribingNuclei(end,:,:)];
-            MeanProfiles.AnaphaseAligned3DCycleNumFinishedTranscribingNuclei = AnaphaseAligned3DCycleNumFinishedTranscribingNuclei;
-        else
-            AnaphaseAligned3DCycleFractionOn = [AnaphaseAligned3DCycleFractionOn(1,:,:) ; AnaphaseAligned3DCycleFractionOn];
-            MeanProfiles.AnaphaseAligned3DCycleFractionOn = AnaphaseAligned3DCycleFractionOn;
-            
-            AnaphaseAligned3DCycleNumNuclei = [AnaphaseAligned3DCycleNumNuclei(1,:,:) ; AnaphaseAligned3DCycleNumNuclei];
-            MeanProfiles.AnaphaseAligned3DCycleNumNuclei = AnaphaseAligned3DCycleNumNuclei;
-            
-            AnaphaseAligned3DCycleNumOnNuclei = [AnaphaseAligned3DCycleNumOnNuclei(1,:,:) ; AnaphaseAligned3DCycleNumOnNuclei];
-            MeanProfiles.AnaphaseAligned3DCycleNumOnNuclei = AnaphaseAligned3DCycleNumOnNuclei;
-            
-            AnaphaseAligned3DCycleNumOffNuclei = [AnaphaseAligned3DCycleNumOffNuclei(1,:,:) ; AnaphaseAligned3DCycleNumOffNuclei];
-            MeanProfiles.AnaphaseAligned3DCycleNumOffNuclei = AnaphaseAligned3DCycleNumOffNuclei;
-            
-            AnaphaseAligned3DCycleNumQuiescentNuclei = [AnaphaseAligned3DCycleNumQuiescentNuclei(1,:,:) ; AnaphaseAligned3DCycleNumQuiescentNuclei];
-            MeanProfiles.AnaphaseAligned3DCycleNumQuiescentNuclei = AnaphaseAligned3DCycleNumQuiescentNuclei;
-            
-            AnaphaseAligned3DCycleNumFinishedTranscribingNuclei = [AnaphaseAligned3DCycleNumFinishedTranscribingNuclei(1,:,:) ; AnaphaseAligned3DCycleNumFinishedTranscribingNuclei];
-            MeanProfiles.AnaphaseAligned3DCycleNumFinishedTranscribingNuclei = AnaphaseAligned3DCycleNumFinishedTranscribingNuclei;
-        end
-    else
-        FirstMeanTraces = find(AnaphaseAligned3DCycleMeanTraces(:,13,6).' > 0, 1);
-        FirstFractionOns = find(AnaphaseAligned3DCycleFractionOn(:,13,6).' > 0, 1);
-        if FirstMeanTraces == FirstFractionOns
-            AnaphaseAligned3DCycleFractionOn = AnaphaseAligned3DCycleFractionOn(1:end-1,:,:);
-            MeanProfiles.AnaphaseAligned3DCycleFractionOn = AnaphaseAligned3DCycleFractionOn;
-            
-            AnaphaseAligned3DCycleNumNuclei = AnaphaseAligned3DCycleNumNuclei(1:end-1,:,:);
-            MeanProfiles.AnaphaseAligned3DCycleNumNuclei = AnaphaseAligned3DCycleNumNuclei;
-            
-            AnaphaseAligned3DCycleNumOnNuclei = AnaphaseAligned3DCycleNumOnNuclei(1:end-1,:,:);
-            MeanProfiles.AnaphaseAligned3DCycleNumOnNuclei = AnaphaseAligned3DCycleNumOnNuclei;
-            
-            AnaphaseAligned3DCycleNumOffNuclei = AnaphaseAligned3DCycleNumOffNuclei(1:end-1,:,:);
-            MeanProfiles.AnaphaseAligned3DCycleNumOffNuclei = AnaphaseAligned3DCycleNumOffNuclei;
-            
-            AnaphaseAligned3DCycleNumQuiescentNuclei = AnaphaseAligned3DCycleNumQuiescentNuclei(1:end-1,:,:);
-            MeanProfiles.AnaphaseAligned3DCycleNumQuiescentNuclei = AnaphaseAligned3DCycleNumQuiescentNuclei;
-            
-            AnaphaseAligned3DCycleNumFinishedTranscribingNuclei = AnaphaseAligned3DCycleNumFinishedTranscribingNuclei(1:end-1,:,:);
-            MeanProfiles.AnaphaseAligned3DCycleNumFinishedTranscribingNuclei = AnaphaseAligned3DCycleNumFinishedTranscribingNuclei;
-        else
-            AnaphaseAligned3DCycleFractionOn = AnaphaseAligned3DCycleFractionOn(2:end,:,:);
-            MeanProfiles.AnaphaseAligned3DCycleFractionOn = AnaphaseAligned3DCycleFractionOn;
-            
-            AnaphaseAligned3DCycleNumNuclei = AnaphaseAligned3DCycleNumNuclei(2:end,:,:);
-            MeanProfiles.AnaphaseAligned3DCycleNumNuclei = AnaphaseAligned3DCycleNumNuclei;
-            
-            AnaphaseAligned3DCycleNumOnNuclei = AnaphaseAligned3DCycleNumOnNuclei(2:end,:,:);
-            MeanProfiles.AnaphaseAligned3DCycleNumOnNuclei = AnaphaseAligned3DCycleNumOnNuclei;
-            
-            AnaphaseAligned3DCycleNumOffNuclei = AnaphaseAligned3DCycleNumOffNuclei(2:end,:,:);
-            MeanProfiles.AnaphaseAligned3DCycleNumOffNuclei = AnaphaseAligned3DCycleNumOffNuclei;
-            
-            AnaphaseAligned3DCycleNumQuiescentNuclei = AnaphaseAligned3DCycleNumQuiescentNuclei(2:end,:,:);
-            MeanProfiles.AnaphaseAligned3DCycleNumQuiescentNuclei = AnaphaseAligned3DCycleNumQuiescentNuclei;
-            
-            AnaphaseAligned3DCycleNumFinishedTranscribingNuclei = AnaphaseAligned3DCycleNumFinishedTranscribingNuclei(2:end,:,:);
-            MeanProfiles.AnaphaseAligned3DCycleNumFinishedTranscribingNuclei = AnaphaseAligned3DCycleNumFinishedTranscribingNuclei;
-        end
-    end
-    end
     
     AnaphaseAligned3DCycleMeanPerNucleusTraces = AnaphaseAligned3DCycleMeanTraces.*AnaphaseAligned3DCycleFractionOn;
     MeanProfiles.AnaphaseAligned3DCycleMeanPerNucleusTraces = AnaphaseAligned3DCycleMeanPerNucleusTraces;
+    MeanProfiles.AnaphaseAligned3DCycleNumActiveNuclei = AnaphaseAligned3DCycleActiveNuclei;
+    MeanProfiles.AnaphaseAligned3DCycleNumInactiveNuclei = AnaphaseAligned3DCycleInactiveNuclei;
+    MeanProfiles.AnaphaseAligned3DCycleNucleiCount = AnaphaseAligned3DCycleNucleiCount;
+    MeanProfiles.AnaphaseAligned3DCycleGradedOnNuclei = AnaphaseAligned3DCycleGradedOnNuclei ;
+    MeanProfiles.AnaphaseAligned3DCycleGradedOffNuclei =  AnaphaseAligned3DCycleGradedOffNuclei ;
+    MeanProfiles.AnaphaseAligned3DCycleGradedTotalNuclei = AnaphaseAligned3DCycleGradedTotalNuclei;
+    MeanProfiles.AnaphaseAligned3DCycleGradedFractionOn = AnaphaseAligned3DCycleGradedFractionOn ;
+    MeanProfiles.AnaphaseAligned3DCycleGradedActiveNuclei = AnaphaseAligned3DCycleGradedActiveNuclei ;
+    MeanProfiles.AnaphaseAligned3DCycleGradedInactiveNuclei = AnaphaseAligned3DCycleGradedInactiveNuclei ;
+    MeanProfiles.AnaphaseAligned3DCycleGradedNucleiCount =  AnaphaseAligned3DCycleGradedNucleiCount ;
     
     
     MeanProfiles.TbinnedCycleMeanTraces = TbinnedCycleMeanTraces;
@@ -1366,96 +1511,18 @@ for ChN=1:NChannels
     MeanProfiles.TbinnedCycleTraceStdErrors = TbinnedCycleTraceStdErrors;
     MeanProfiles.TbinnedCycleTraceCount = TbinnedCycleTraceCount;
     
-    if size(TbinnedCycleMeanTraces, 1) == size(TbinnedCycleFractionOn, 1)
-        TbinnedCycleMeanPerNucleusTraces = TbinnedCycleMeanTraces.*TbinnedCycleFractionOn;
-    end
-    while size(TbinnedCycleMeanTraces, 1) ~= size(TbinnedCycleFractionOn, 1)
-    if size(TbinnedCycleMeanTraces, 1) == size(TbinnedCycleFractionOn, 1)
-        TbinnedCycleMeanPerNucleusTraces = TbinnedCycleMeanTraces.*TbinnedCycleFractionOn;
-    elseif size(TbinnedCycleMeanTraces, 1)  > size(TbinnedCycleFractionOn, 1)
-        FirstMeanTraces = find(TbinnedCycleMeanTraces(:,13,6).' > 0, 1);
-        FirstFractionOns = find(TbinnedCycleFractionOn(:,13,6).' > 0, 1);
-        if FirstMeanTraces == FirstFractionOns
-            TbinnedCycleFractionOn = [TbinnedCycleFractionOn ; TbinnedCycleFractionOn(end,:,:)];
-            MeanProfiles.TbinnedCycleFractionOn = TbinnedCycleFractionOn;
-            
-            TbinnedCycleNumNuclei = [TbinnedCycleNumNuclei ; TbinnedCycleNumNuclei(end,:,:)];
-            MeanProfiles.TbinnedCycleNumNuclei = TbinnedCycleNumNuclei;
-            
-            TbinnedCycleNumOnNuclei = [TbinnedCycleNumOnNuclei ; TbinnedCycleNumOnNuclei(end,:,:)];
-            MeanProfiles.TbinnedCycleNumOnNuclei = TbinnedCycleNumOnNuclei;
-            
-            TbinnedCycleNumOffNuclei = [TbinnedCycleNumOffNuclei ; TbinnedCycleNumOffNuclei(end,:,:)];
-            MeanProfiles.TbinnedCycleNumOffNuclei = TbinnedCycleNumOffNuclei;
-            
-            TbinnedCycleNumQuiescentNuclei = [TbinnedCycleNumQuiescentNuclei ; TbinnedCycleNumQuiescentNuclei(end,:,:)];
-            MeanProfiles.TbinnedCycleNumQuiescentNuclei = TbinnedCycleNumQuiescentNuclei;
-            
-            TbinnedCycleNumFinishedTranscribingNuclei = [TbinnedCycleNumFinishedTranscribingNuclei ; TbinnedCycleNumFinishedTranscribingNuclei(end,:,:)];
-            MeanProfiles.TbinnedCycleNumFinishedTranscribingNuclei = TbinnedCycleNumFinishedTranscribingNuclei;
-        else
-            TbinnedCycleFractionOn = [TbinnedCycleFractionOn(1,:,:) ; TbinnedCycleFractionOn];
-            MeanProfiles.TbinnedCycleFractionOn = TbinnedCycleFractionOn;
-            
-            TbinnedCycleNumNuclei = [TbinnedCycleNumNuclei(1,:,:) ; TbinnedCycleNumNuclei];
-            MeanProfiles.TbinnedCycleNumNuclei = TbinnedCycleNumNuclei;
-            
-            TbinnedCycleNumOnNuclei = [TbinnedCycleNumOnNuclei(1,:,:) ; TbinnedCycleNumOnNuclei];
-            MeanProfiles.TbinnedCycleNumOnNuclei = TbinnedCycleNumOnNuclei;
-            
-            TbinnedCycleNumOffNuclei = [TbinnedCycleNumOffNuclei(1,:,:) ; TbinnedCycleNumOffNuclei];
-            MeanProfiles.TbinnedCycleNumOffNuclei = TbinnedCycleNumOffNuclei;
-            
-            TbinnedCycleNumQuiescentNuclei = [TbinnedCycleNumQuiescentNuclei(1,:,:) ; TbinnedCycleNumQuiescentNuclei];
-            MeanProfiles.TbinnedCycleNumQuiescentNuclei = TbinnedCycleNumQuiescentNuclei;
-            
-            TbinnedCycleNumFinishedTranscribingNuclei = [TbinnedCycleNumFinishedTranscribingNuclei(1,:,:) ; TbinnedCycleNumFinishedTranscribingNuclei];
-            MeanProfiles.TbinnedCycleNumFinishedTranscribingNuclei = TbinnedCycleNumFinishedTranscribingNuclei;
-        end
-    else
-        FirstMeanTraces = find(TbinnedCycleMeanTraces(:,13,6).' > 0, 1);
-        FirstFractionOns = find(TbinnedCycleFractionOn(:,13,6).' > 0, 1);
-        if FirstMeanTraces == FirstFractionOns
-            TbinnedCycleFractionOn = TbinnedCycleFractionOn(1:end-1,:,:);
-            MeanProfiles.TbinnedCycleFractionOn = TbinnedCycleFractionOn;
-            
-            TbinnedCycleNumNuclei = TbinnedCycleNumNuclei(1:end-1,:,:);
-            MeanProfiles.TbinnedCycleNumNuclei = TbinnedCycleNumNuclei;
-            
-            TbinnedCycleNumOnNuclei = TbinnedCycleNumOnNuclei(1:end-1,:,:);
-            MeanProfiles.TbinnedCycleNumOnNuclei = TbinnedCycleNumOnNuclei;
-            
-            TbinnedCycleNumOffNuclei = TbinnedCycleNumOffNuclei(1:end-1,:,:);
-            MeanProfiles.TbinnedCycleNumOffNuclei = TbinnedCycleNumOffNuclei;
-            
-            TbinnedCycleNumQuiescentNuclei = TbinnedCycleNumQuiescentNuclei(1:end-1,:,:);
-            MeanProfiles.TbinnedCycleNumQuiescentNuclei = TbinnedCycleNumQuiescentNuclei;
-            
-            TbinnedCycleNumFinishedTranscribingNuclei = TbinnedCycleNumFinishedTranscribingNuclei(1:end-1,:,:);
-            MeanProfiles.TbinnedCycleNumFinishedTranscribingNuclei = TbinnedCycleNumFinishedTranscribingNuclei;
-        else
-            TbinnedCycleFractionOn = TbinnedCycleFractionOn(2:end,:,:);
-            MeanProfiles.TbinnedCycleFractionOn = TbinnedCycleFractionOn;
-            
-            TbinnedCycleNumNuclei = TbinnedCycleNumNuclei(2:end,:,:);
-            MeanProfiles.TbinnedCycleNumNuclei = TbinnedCycleNumNuclei;
-            
-            TbinnedCycleNumOnNuclei = TbinnedCycleNumOnNuclei(2:end,:,:);
-            MeanProfiles.TbinnedCycleNumOnNuclei = TbinnedCycleNumOnNuclei;
-            
-            TbinnedCycleNumOffNuclei = TbinnedCycleNumOffNuclei(2:end,:,:);
-            MeanProfiles.TbinnedCycleNumOffNuclei = TbinnedCycleNumOffNuclei;
-            
-            TbinnedCycleNumQuiescentNuclei = TbinnedCycleNumQuiescentNuclei(2:end,:,:);
-            MeanProfiles.TbinnedCycleNumQuiescentNuclei = TbinnedCycleNumQuiescentNuclei;
-            
-            TbinnedCycleNumFinishedTranscribingNuclei = TbinnedCycleNumFinishedTranscribingNuclei(2:end,:,:);
-            MeanProfiles.TbinnedCycleNumFinishedTranscribingNuclei = TbinnedCycleNumFinishedTranscribingNuclei;
-        end
-    end
-    end
     TbinnedCycleMeanPerNucleusTraces = TbinnedCycleMeanTraces.*TbinnedCycleFractionOn;
     MeanProfiles.TbinnedCycleMeanPerNucleusTraces = TbinnedCycleMeanPerNucleusTraces;
+    MeanProfiles.TbinnedCycleNumActiveNuclei = TbinnedCycleActiveNuclei;
+    MeanProfiles.TbinnedCycleNumInactiveNuclei =TbinnedCycleInactiveNuclei;
+    MeanProfiles.TbinnedCycleNucleiCount = TbinnedCycleNucleiCount;
+    MeanProfiles.TbinnedCycleGradedOnNuclei = TbinnedCycleGradedOnNuclei ;
+    MeanProfiles.TbinnedCycleGradedOffNuclei =  TbinnedCycleGradedOffNuclei ;
+    MeanProfiles.TbinnedCycleGradedTotalNuclei = TbinnedCycleGradedTotalNuclei;
+    MeanProfiles.TbinnedCycleGradedFractionOn = TbinnedCycleGradedFractionOn ;
+    MeanProfiles.TbinnedCycleGradedActiveNuclei = TbinnedCycleGradedActiveNuclei ;
+    MeanProfiles.TbinnedCycleGradedInactiveNuclei = TbinnedCycleGradedInactiveNuclei ;
+    MeanProfiles.TbinnedCycleGradedNucleiCount =  TbinnedCycleGradedNucleiCount ;
     
     MeanProfiles.Tbinned3DCycleMeanTraces = Tbinned3DCycleMeanTraces;
     MeanProfiles.Tbinned3DCycleNumNuclei = Tbinned3DCycleNumNuclei;
@@ -1473,98 +1540,18 @@ for ChN=1:NChannels
     MeanProfiles.Unaligned3DCycleFrameTimes = Unaligned3DCycleFrameTimes;
     MeanProfiles.TbinnedCycleFrameTimes = TbinnedCycleFrameTimes;
     MeanProfiles.Tbinned3DCycleFrameTimes = Tbinned3DCycleFrameTimes;
-    if size(Tbinned3DCycleMeanTraces, 1) == size(Tbinned3DCycleFractionOn, 1)
-        Tbinned3DCycleMeanPerNucleusTraces = Tbinned3DCycleMeanTraces.*Tbinned3DCycleFractionOn;
-    end
-    while size(Tbinned3DCycleMeanTraces, 1) ~= size(Tbinned3DCycleFractionOn, 1)
-    if size(Tbinned3DCycleMeanTraces, 1) == size(Tbinned3DCycleFractionOn, 1)
-        Tbinned3DCycleMeanPerNucleusTraces = Tbinned3DCycleMeanTraces.*Tbinned3DCycleFractionOn;
-    elseif size(Tbinned3DCycleMeanTraces, 1)  > size(Tbinned3DCycleFractionOn, 1)
-        FirstMeanTraces = find(Tbinned3DCycleMeanTraces(:,13,6).' > 0, 1);
-        FirstFractionOns = find(Tbinned3DCycleFractionOn(:,13,6).' > 0, 1);
-        if FirstMeanTraces == FirstFractionOns
-            Tbinned3DCycleFractionOn = [Tbinned3DCycleFractionOn ; Tbinned3DCycleFractionOn(end,:,:)];
-            MeanProfiles.Tbinned3DCycleFractionOn = Tbinned3DCycleFractionOn;
-            
-            Tbinned3DCycleNumNuclei = [Tbinned3DCycleNumNuclei ; Tbinned3DCycleNumNuclei(end,:,:)];
-            MeanProfiles.Tbinned3DCycleNumNuclei = Tbinned3DCycleNumNuclei;
-            
-            Tbinned3DCycleNumOnNuclei = [Tbinned3DCycleNumOnNuclei ; Tbinned3DCycleNumOnNuclei(end,:,:)];
-            MeanProfiles.Tbinned3DCycleNumOnNuclei = Tbinned3DCycleNumOnNuclei;
-            
-            Tbinned3DCycleNumOffNuclei = [Tbinned3DCycleNumOffNuclei ; Tbinned3DCycleNumOffNuclei(end,:,:)];
-            MeanProfiles.Tbinned3DCycleNumOffNuclei = Tbinned3DCycleNumOffNuclei;
-            
-            Tbinned3DCycleNumQuiescentNuclei = [Tbinned3DCycleNumQuiescentNuclei ; Tbinned3DCycleNumQuiescentNuclei(end,:,:)];
-            MeanProfiles.Tbinned3DCycleNumQuiescentNuclei = Tbinned3DCycleNumQuiescentNuclei;
-            
-            Tbinned3DCycleNumFinishedTranscribingNuclei = [Tbinned3DCycleNumFinishedTranscribingNuclei ; Tbinned3DCycleNumFinishedTranscribingNuclei(end,:,:)];
-            MeanProfiles.Tbinned3DCycleNumFinishedTranscribingNuclei = Tbinned3DCycleNumFinishedTranscribingNuclei;
-        else
-            Tbinned3DCycleFractionOn = [Tbinned3DCycleFractionOn(1,:,:) ; Tbinned3DCycleFractionOn];
-            MeanProfiles.Tbinned3DCycleFractionOn = Tbinned3DCycleFractionOn;
-            
-            Tbinned3DCycleNumNuclei = [Tbinned3DCycleNumNuclei(1,:,:) ; Tbinned3DCycleNumNuclei];
-            MeanProfiles.Tbinned3DCycleNumNuclei = Tbinned3DCycleNumNuclei;
-            
-            Tbinned3DCycleNumOnNuclei = [Tbinned3DCycleNumOnNuclei(1,:,:) ; Tbinned3DCycleNumOnNuclei];
-            MeanProfiles.Tbinned3DCycleNumOnNuclei = Tbinned3DCycleNumOnNuclei;
-            
-            Tbinned3DCycleNumOffNuclei = [Tbinned3DCycleNumOffNuclei(1,:,:) ; Tbinned3DCycleNumOffNuclei];
-            MeanProfiles.Tbinned3DCycleNumOffNuclei = Tbinned3DCycleNumOffNuclei;
-            
-            Tbinned3DCycleNumQuiescentNuclei = [Tbinned3DCycleNumQuiescentNuclei(1,:,:) ; Tbinned3DCycleNumQuiescentNuclei];
-            MeanProfiles.Tbinned3DCycleNumQuiescentNuclei = Tbinned3DCycleNumQuiescentNuclei;
-            
-            Tbinned3DCycleNumFinishedTranscribingNuclei = [Tbinned3DCycleNumFinishedTranscribingNuclei(1,:,:) ; Tbinned3DCycleNumFinishedTranscribingNuclei];
-            MeanProfiles.Tbinned3DCycleNumFinishedTranscribingNuclei = Tbinned3DCycleNumFinishedTranscribingNuclei;
-        end
-    else
-        FirstMeanTraces = find(Tbinned3DCycleMeanTraces(:,13,6).' > 0, 1);
-        FirstFractionOns = find(Tbinned3DCycleFractionOn(:,13,6).' > 0, 1);
-        if FirstMeanTraces == FirstFractionOns
-            Tbinned3DCycleFractionOn = Tbinned3DCycleFractionOn(1:end-1,:,:);
-            MeanProfiles.Tbinned3DCycleFractionOn = Tbinned3DCycleFractionOn;
-            
-            Tbinned3DCycleNumNuclei = Tbinned3DCycleNumNuclei(1:end-1,:,:);
-            MeanProfiles.Tbinned3DCycleNumNuclei = Tbinned3DCycleNumNuclei;
-            
-            Tbinned3DCycleNumOnNuclei = Tbinned3DCycleNumOnNuclei(1:end-1,:,:);
-            MeanProfiles.Tbinned3DCycleNumOnNuclei = Tbinned3DCycleNumOnNuclei;
-            
-            Tbinned3DCycleNumOffNuclei = Tbinned3DCycleNumOffNuclei(1:end-1,:,:);
-            MeanProfiles.Tbinned3DCycleNumOffNuclei = Tbinned3DCycleNumOffNuclei;
-            
-            Tbinned3DCycleNumQuiescentNuclei = Tbinned3DCycleNumQuiescentNuclei(1:end-1,:,:);
-            MeanProfiles.Tbinned3DCycleNumQuiescentNuclei = Tbinned3DCycleNumQuiescentNuclei;
-            
-            Tbinned3DCycleNumFinishedTranscribingNuclei = Tbinned3DCycleNumFinishedTranscribingNuclei(1:end-1,:,:);
-            MeanProfiles.Tbinned3DCycleNumFinishedTranscribingNuclei = Tbinned3DCycleNumFinishedTranscribingNuclei;
-        else
-            Tbinned3DCycleFractionOn = Tbinned3DCycleFractionOn(2:end,:,:);
-            MeanProfiles.Tbinned3DCycleFractionOn = Tbinned3DCycleFractionOn;
-            
-            Tbinned3DCycleNumNuclei = Tbinned3DCycleNumNuclei(2:end,:,:);
-            MeanProfiles.Tbinned3DCycleNumNuclei = Tbinned3DCycleNumNuclei;
-            
-            Tbinned3DCycleNumOnNuclei = Tbinned3DCycleNumOnNuclei(2:end,:,:);
-            MeanProfiles.Tbinned3DCycleNumOnNuclei = Tbinned3DCycleNumOnNuclei;
-            
-            Tbinned3DCycleNumOffNuclei = Tbinned3DCycleNumOffNuclei(2:end,:,:);
-            MeanProfiles.Tbinned3DCycleNumOffNuclei = Tbinned3DCycleNumOffNuclei;
-            
-            Tbinned3DCycleNumQuiescentNuclei = Tbinned3DCycleNumQuiescentNuclei(2:end,:,:);
-            MeanProfiles.Tbinned3DCycleNumQuiescentNuclei = Tbinned3DCycleNumQuiescentNuclei;
-            
-            Tbinned3DCycleNumFinishedTranscribingNuclei = Tbinned3DCycleNumFinishedTranscribingNuclei(2:end,:,:);
-            MeanProfiles.Tbinned3DCycleNumFinishedTranscribingNuclei = Tbinned3DCycleNumFinishedTranscribingNuclei;
-        end
-    end
-    end
-    TbinnedCycleMeanPerNucleusTraces = TbinnedCycleMeanTraces.*TbinnedCycleFractionOn;
-    MeanProfiles.TbinnedCycleMeanPerNucleusTraces = TbinnedCycleMeanPerNucleusTraces;
     Tbinned3DCycleMeanPerNucleusTraces = Tbinned3DCycleMeanTraces.*Tbinned3DCycleFractionOn;
     MeanProfiles.Tbinned3DCycleMeanPerNucleusTraces = Tbinned3DCycleMeanPerNucleusTraces;
+    MeanProfiles.Tbinned3DCycleNumActiveNuclei = Tbinned3DCycleActiveNuclei;
+    MeanProfiles.Tbinned3DCycleNumInactiveNuclei =Tbinned3DCycleInactiveNuclei;
+    MeanProfiles.Tbinned3DCycleNucleiCount = Tbinned3DCycleNucleiCount;
+    MeanProfiles.Tbinned3DCycleGradedOnNuclei = Tbinned3DCycleGradedOnNuclei ;
+    MeanProfiles.Tbinned3DCycleGradedOffNuclei =  Tbinned3DCycleGradedOffNuclei ;
+    MeanProfiles.Tbinned3DCycleGradedTotalNuclei = Tbinned3DCycleGradedTotalNuclei;
+    MeanProfiles.Tbinned3DCycleGradedFractionOn = Tbinned3DCycleGradedFractionOn ;
+    MeanProfiles.Tbinned3DCycleGradedActiveNuclei = Tbinned3DCycleGradedActiveNuclei ;
+    MeanProfiles.Tbinned3DCycleGradedInactiveNuclei = Tbinned3DCycleGradedInactiveNuclei ;
+    MeanProfiles.Tbinned3DCycleGradedNucleiCount =  Tbinned3DCycleGradedNucleiCount ;
     
     savedVariables = {'UnalignedCycleMeanTraces', 'UnalignedCycleNumNuclei',  'UnalignedCycleNumOnNuclei',...
         'UnalignedCycleNumOffNuclei', 'UnalignedCycleFractionOn',  'UnalignedCycleNumQuiescentNuclei',...
@@ -1603,6 +1590,15 @@ end
 
 
 
+
+
+
+
+
+
+
+
+end
 
 
 
